@@ -188,7 +188,7 @@ public class AmsStreamHbase {
 		private String extractJson(String field, JsonObject root){
 			JsonElement el = root.get(field);
 			if (el!=null && !(el.isJsonNull())){
-				
+			
 				return el.getAsString();
 				
 			}
