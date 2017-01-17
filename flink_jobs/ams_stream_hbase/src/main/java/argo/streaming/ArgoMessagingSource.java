@@ -21,6 +21,7 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 	private String token = null;
 	private String project = null;
 	private String sub = null;
+	private transient Object rateLck; //lock for waiting to establish rate 
 
 	private volatile boolean isRunning = true;
 
@@ -42,6 +43,9 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 			if (res != ""){
 					ctx.collect(res);
 			}
+			synchronized (rateLck) {
+				rateLck.wait(100L);
+			}
 			
 		}
 
@@ -60,6 +64,8 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 	// Initializes 
 	@Override
 	public void open(Configuration parameters) throws Exception {
+		// init rate lock
+		rateLck = new Object();
 		// init client
 		String fendpoint=this.endpoint;
 		if (this.port!=null && !this.port.isEmpty()){
@@ -80,6 +86,9 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 	public void close() throws Exception {
 		if (this.client != null) {
 			client.close();
+		}
+		synchronized (rateLck) {
+			rateLck.notify();
 		}
 	}
 

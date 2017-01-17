@@ -164,6 +164,8 @@ public class ArgoMessagingClient {
 					
 				} else {
 					Log.info("No acknowledment");
+					Log.info("Ack id"+ack);
+					Log.info(ackRes);
 				}
 			} 
 
