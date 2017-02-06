@@ -1,0 +1,35 @@
+{
+  
+  "name": "ap1",
+  "namespace": "test",
+  "metric_profile": "ch.cern.sam.ROC_CRITICAL",
+  "metric_ops":"AND",
+  "group_type": "sites",
+  "operation":"AND",
+  "groups": {
+    "compute": {
+      "services":{
+        "CREAM-CE":"OR",
+        "ARC-CE":"OR",
+        "GRAM5":"OR",
+        "unicore6.TargetSystemFactory":"OR",
+        "QCG.Computing":"OR"
+        },
+       "operation":"OR"
+    },
+    "storage": {
+      "services":{
+        "SRM":"OR",
+        "SRMv2":"OR"
+        },
+       "operation":"OR"
+    },
+    "information": {
+      "services":{
+        "Site-BDII":"OR"
+        },
+       "operation":"OR"
+    }
+    
+  } 
+}
