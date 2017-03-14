@@ -301,7 +301,8 @@ public class StatusManager {
 	}
 	
 	private String genEvent(String type,String group, String service, String host, String metric, String status, Date ts) throws ParseException{
-		StatusEvent evnt = new StatusEvent(type,group,service,host,metric,status,toZulu(ts));
+		String tsProc = toZulu(new Date());
+		StatusEvent evnt = new StatusEvent(type,group,service,host,metric,status,toZulu(ts),tsProc);
 	    Gson gson = new Gson();
 		return gson.toJson(evnt);
 	}
