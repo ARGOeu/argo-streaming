@@ -64,7 +64,7 @@ public class StatusManagerTest {
 
 	    
 
-		StatusEvent evnt = new StatusEvent("metric","GR-01-AUTH","CREAM-CE","cream01.grid.auth.gr","eu.egi.CREAM-IGTF","OK","2017-03-03T15:00:00Z");
+		StatusEvent evnt = new StatusEvent("metric","GR-01-AUTH","CREAM-CE","cream01.grid.auth.gr","eu.egi.CREAM-IGTF","OK","2017-03-03T15:00:00Z","2017-03-03T16:00:00Z");
 		Gson gson = new Gson();
 
 		assertTrue(gson.toJson(evnt).equals(list4.get(0)));

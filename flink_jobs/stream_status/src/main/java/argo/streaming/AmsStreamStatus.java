@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -154,10 +155,11 @@ public class AmsStreamStatus {
 			String hostname = pr.get("hostname").toString();
 			String metric = pr.get("metric").toString();
 			String status = pr.get("status").toString();
-			String timestamp = pr.get("timestamp").toString();
+			String tsMon = pr.get("ts_monitored").toString();
+			
 
 			ArrayList<String> events = sm.setStatus(pr.get("service").toString(), pr.get("hostname").toString(),
-					pr.get("metric").toString(), pr.get("status").toString(), pr.get("timestamp").toString());
+					pr.get("metric").toString(), pr.get("status").toString(), pr.get("ts_monitored").toString());
 
 			for (String item : events) {
 				out.collect(item);
