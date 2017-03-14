@@ -126,6 +126,7 @@ Status events are generated as JSON messages that are defined by the following c
 `hostname`: is the hostname of the affected endpoint
 `metric`: is the name of the affected metric
 `status`: is the value of the new status
+`monitoring_host`: hostname of the monitoring node that produced the event
 `ts_monitored`: the timestamp when the event was generated in the monitoring engine
 `ts_processed`: the timestamp when the event was processed in streaming engine
 

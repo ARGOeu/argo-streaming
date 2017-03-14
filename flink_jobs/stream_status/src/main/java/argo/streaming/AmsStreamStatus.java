@@ -156,10 +156,10 @@ public class AmsStreamStatus {
 			String metric = pr.get("metric").toString();
 			String status = pr.get("status").toString();
 			String tsMon = pr.get("ts_monitored").toString();
-			
+			String monHost = pr.get("monitoring_host").toString();
 
-			ArrayList<String> events = sm.setStatus(pr.get("service").toString(), pr.get("hostname").toString(),
-					pr.get("metric").toString(), pr.get("status").toString(), pr.get("ts_monitored").toString());
+			ArrayList<String> events = sm.setStatus(service, hostname,
+					metric, status, monHost, tsMon);
 
 			for (String item : events) {
 				out.collect(item);

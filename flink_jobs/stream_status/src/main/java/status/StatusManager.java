@@ -188,7 +188,7 @@ public class StatusManager {
 		return utcFormat.format(ts);
 	}
 	
-	public ArrayList<String> setStatus(String service, String hostname, String metric, String statusStr, String tsStr) throws ParseException{
+	public ArrayList<String> setStatus(String service, String hostname, String metric, String statusStr, String monHost, String tsStr) throws ParseException{
 		ArrayList<String> results = new ArrayList<String>();
 		
 		int status = ops.getIntStatus(statusStr);
@@ -248,7 +248,7 @@ public class StatusManager {
 							metricNode.item.timestamp = ts;
 							updMetric = true;
 							// generate event
-							results.add(genEvent("metric",group,service,hostname,metric,ops.getStrStatus(status),ts));
+							results.add(genEvent("metric",group,service,hostname,metric,ops.getStrStatus(status),monHost,ts));
 						}
 						
 					}
@@ -262,7 +262,7 @@ public class StatusManager {
 							endpointNode.item.status = endpNewStatus;
 							updEndpoint = true;
 							// generate event
-							results.add(genEvent("endpoint",group,service,hostname,"",ops.getStrStatus(endpNewStatus),ts));
+							results.add(genEvent("endpoint",group,service,hostname,"",ops.getStrStatus(endpNewStatus),monHost,ts));
 						}
 					}
 				}
@@ -276,7 +276,7 @@ public class StatusManager {
 						serviceNode.item.status = servNewStatus;
 						updService = true;
 						// generate event
-						results.add(genEvent("service",group,service,"","",ops.getStrStatus(servNewStatus),ts));
+						results.add(genEvent("service",group,service,"","",ops.getStrStatus(servNewStatus),monHost,ts));
 						
 						
 					}
@@ -292,7 +292,7 @@ public class StatusManager {
 					groupNode.item.status = groupNewStatus;
 					updGroup = true;
 					// generate event
-					results.add(genEvent("endpoint_group",group,"","","",ops.getStrStatus(groupNewStatus),ts));
+					results.add(genEvent("endpoint_group",group,"","","",ops.getStrStatus(groupNewStatus),monHost,ts));
 				}
 			}
 		}
@@ -300,9 +300,9 @@ public class StatusManager {
 		return results;
 	}
 	
-	private String genEvent(String type,String group, String service, String host, String metric, String status, Date ts) throws ParseException{
+	private String genEvent(String type,String group, String service, String host,  String metric, String status, String monHost, Date ts) throws ParseException{
 		String tsProc = toZulu(new Date());
-		StatusEvent evnt = new StatusEvent(type,group,service,host,metric,status,toZulu(ts),tsProc);
+		StatusEvent evnt = new StatusEvent(type,group,service,host,metric,status,monHost,toZulu(ts),tsProc);
 	    Gson gson = new Gson();
 		return gson.toJson(evnt);
 	}
