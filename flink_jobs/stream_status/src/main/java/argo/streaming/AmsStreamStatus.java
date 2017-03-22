@@ -15,7 +15,7 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
-
+import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -24,12 +24,18 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
-
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
-
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import status.StatusManager;
@@ -71,7 +77,6 @@ public class AmsStreamStatus {
 		final StatusConfig conf = new StatusConfig(parameterTool);
 
 		StreamExecutionEnvironment see = setupEnvironment(conf);
-		
 
 		// Initialize Input Source : ARGO Messaging Source
 		String endpoint = parameterTool.getRequired("ams.endpoint");
@@ -79,19 +84,22 @@ public class AmsStreamStatus {
 		String token = parameterTool.getRequired("ams.token");
 		String project = parameterTool.getRequired("ams.project");
 		String sub = parameterTool.getRequired("ams.sub");
-		String brList = parameterTool.getRequired("kafka.hosts");
-		String brTopic = parameterTool.getRequired("kafka.topic");
-		DataStream<String> messageStream = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, sub));
 
-		FlinkKafkaProducer09<String> myProducer = new FlinkKafkaProducer09<String>(brList, // broker
-																							// list
-				brTopic, // target topic
-				new SimpleStringSchema()); // serialization schema
+		// Initialize Output : Hbase Output Format
+		HBaseOutputFormat hbf = new HBaseOutputFormat();
+		hbf.setMaster(parameterTool.getRequired("hbase.master"));
+		hbf.setMasterPort(parameterTool.getRequired("hbase.master.port"));
+		hbf.setZkQuorum(parameterTool.getRequired("hbase.zk.quorum"));
+		hbf.setZkPort(parameterTool.getRequired("hbase.zk.port"));
+		hbf.setNamespace(parameterTool.getRequired("hbase.namespace"));
+		hbf.setTableName(parameterTool.getRequired("hbase.table"));
+
+		DataStream<String> messageStream = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, sub));
 
 		// Intermediate Transformation
 		// Map function: json msg -> payload -> base64decode -> avrodecode ->
 		// kafka
-		messageStream.flatMap(new StatusMap(conf)).addSink(myProducer);
+		messageStream.flatMap(new StatusMap(conf)).writeUsingOutputFormat(hbf);
 
 		// Execute flink dataflow
 		see.execute();
@@ -120,15 +128,14 @@ public class AmsStreamStatus {
 
 			sm = new StatusManager();
 			sm.loadAll(egpF, mpsF, apsF, opsF);
-			
+
 			// Get runDate parameter
-			if (config.runDate.equals("")){
+			if (config.runDate.equals("")) {
 				sm.construct(sm.getOps().getIntStatus("OK"), sm.getToday());
-			}else {
+			} else {
 				sm.construct(sm.getOps().getIntStatus("OK"), sm.setDate(config.runDate));
 			}
-			
-			
+
 		}
 
 		@Override
@@ -158,8 +165,7 @@ public class AmsStreamStatus {
 			String tsMon = pr.get("ts_monitored").toString();
 			String monHost = pr.get("monitoring_host").toString();
 
-			ArrayList<String> events = sm.setStatus(service, hostname,
-					metric, status, monHost, tsMon);
+			ArrayList<String> events = sm.setStatus(service, hostname, metric, status, monHost, tsMon);
 
 			for (String item : events) {
 				out.collect(item);
@@ -167,6 +173,127 @@ public class AmsStreamStatus {
 			}
 		}
 
+	}
+
+	// Hbase output format
+	private static class HBaseOutputFormat implements OutputFormat<String> {
+
+		private String master = null;
+		private String masterPort = null;
+		private String zkQuorum = null;
+		private String zkPort = null;
+		private String namespace = null;
+		private String tname = null;
+		private Connection connection = null;
+		private Table ht = null;
+
+		private static final long serialVersionUID = 1L;
+
+		// Setters
+		public void setMasterPort(String masterPort) {
+			this.masterPort = masterPort;
+		}
+
+		public void setMaster(String master) {
+			this.master = master;
+		}
+
+		public void setZkQuorum(String zkQuorum) {
+			this.zkQuorum = zkQuorum;
+		}
+
+		public void setZkPort(String zkPort) {
+			this.zkPort = zkPort;
+		}
+
+		public void setNamespace(String namespace) {
+			this.namespace = namespace;
+		}
+
+		public void setTableName(String tname) {
+			this.tname = tname;
+		}
+
+		@Override
+		public void configure(Configuration parameters) {
+
+		}
+
+		@Override
+		public void open(int taskNumber, int numTasks) throws IOException {
+			// Create hadoop based configuration for hclient to use
+			org.apache.hadoop.conf.Configuration config = HBaseConfiguration.create();
+			// Modify configuration to job needs
+			config.setInt("timeout", 120000);
+			if (masterPort != null && !masterPort.isEmpty()) {
+				config.set("hbase.master", master + ":" + masterPort);
+			} else {
+				config.set("hbase.master", master + ":60000");
+			}
+
+			config.set("hbase.zookeeper.quorum", zkQuorum);
+			config.set("hbase.zookeeper.property.clientPort", (zkPort));
+			// Create the connection
+			connection = ConnectionFactory.createConnection(config);
+			if (namespace != null) {
+				ht = connection.getTable(TableName.valueOf(namespace + ":" + tname));
+			} else {
+				ht = connection.getTable(TableName.valueOf(tname));
+			}
+
+		}
+
+		private String extractJson(String field, JsonObject root) {
+			JsonElement el = root.get(field);
+			if (el != null && !(el.isJsonNull())) {
+
+				return el.getAsString();
+
+			}
+			return "";
+		}
+
+		@Override
+		public void writeRecord(String record) throws IOException {
+
+			JsonParser jsonParser = new JsonParser();
+			// parse the json root object
+			JsonObject jRoot = jsonParser.parse(record).getAsJsonObject();
+			// Get fields
+
+			String tp = extractJson("type", jRoot);
+			String eGroup = extractJson("endpoint_group", jRoot);
+			String service = extractJson("service", jRoot);
+			String hostname = extractJson("hostname", jRoot);
+			String metric = extractJson("metric", jRoot);
+			String status = extractJson("status", jRoot);
+			String tsm = extractJson("ts_monitored", jRoot);
+			String tsp = extractJson("ts_processed", jRoot);
+
+			// Compile key
+			String key = hostname + "|" + service + "|" + metric + "|" + tp + "|" + tsm;
+
+			// Prepare columns
+			Put put = new Put(Bytes.toBytes(key));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("type"), Bytes.toBytes(tp));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("endpoint_group"), Bytes.toBytes(eGroup));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("service"), Bytes.toBytes(service));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("hostname"), Bytes.toBytes(hostname));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("metric"), Bytes.toBytes(metric));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("status"), Bytes.toBytes(status));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_monitored"), Bytes.toBytes(tsm));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_processed"), Bytes.toBytes(tsp));
+
+			// Insert row in hbase
+			ht.put(put);
+
+		}
+
+		@Override
+		public void close() throws IOException {
+			ht.close();
+			connection.close();
+		}
 	}
 
 }
