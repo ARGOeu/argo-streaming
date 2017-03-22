@@ -85,7 +85,7 @@ Prepare job to submit in flink:
 
 Run jar in flink:
 
-- `flink run streaming-status-0.1.jar --ams-endpoint {...} --ams-port {...} --ams-token {...} -ams-project {...} --ams-sub {...} --avro-schema {...} --kafka-list {...} --kafka-topic {...} --sync-mps {...} --sync-egp {...} --sync-aps {...} --sync-ops {...}`
+- `flink run streaming-status-0.1.jar --ams-endpoint {...} --ams-port {...} --ams-token {...} -ams-project {...} --ams-sub {...} --avro-schema {...} --hbase-master {...} --hbase-zk-quorum {...} --hbase-zk-port {...} --hbase-namespace {...} --hbase-table {...} --hbase-master-port {...} --sync-mps {...} --sync-egp {...} --sync-aps {...} --sync-ops {...}`
 
 Job required cli parameters:
 
@@ -101,9 +101,17 @@ Job required cli parameters:
 
 `--avro.schema`       : Schema used for the decoding of metric data payload
 
-`--kafka.hosts`        : List of kafka servers
+`--hbase-master`      : hbase endpoint
 
-`--kafka.topic`       : Kafka topic to receive the status events
+`--hbase-master-port` : hbase master port
+
+`--hbase-zk-quorum`   : comma separated list of hbase zookeeper servers
+
+`--hbase-zk-port`     : port used by hbase zookeeper servers
+
+`--hbase-namespace`   : table namespace used (usually tenant name)
+
+`--hbase-table`       : table name (usually metric_data)
 
 `--sync.mps`          : Metric profile file used
 
