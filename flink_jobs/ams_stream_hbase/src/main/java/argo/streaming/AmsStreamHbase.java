@@ -214,7 +214,7 @@ public class AmsStreamHbase {
 				String tags = extractJson("tags",jRoot);
 
 				// Compile key
-				String key =  host + "|" + service + "|" + metric + "|" + mHost + "|" + ts;
+				String key =  host + "|" + service + "|" + metric + "|" +ts+ "|" + mHost;
 
 				// Prepare columns
 				Put put = new Put(Bytes.toBytes(key));
