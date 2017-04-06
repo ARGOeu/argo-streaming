@@ -84,7 +84,9 @@ public class AmsStreamStatus {
 		String token = parameterTool.getRequired("ams.token");
 		String project = parameterTool.getRequired("ams.project");
 		String sub = parameterTool.getRequired("ams.sub");
-
+		
+		String report = parameterTool.getRequired("report");
+		
 		// Initialize Output : Hbase Output Format
 		HBaseOutputFormat hbf = new HBaseOutputFormat();
 		hbf.setMaster(parameterTool.getRequired("hbase.master"));
@@ -178,6 +180,7 @@ public class AmsStreamStatus {
 	// Hbase output format
 	private static class HBaseOutputFormat implements OutputFormat<String> {
 
+		private String report = null;
 		private String master = null;
 		private String masterPort = null;
 		private String zkQuorum = null;
@@ -212,6 +215,10 @@ public class AmsStreamStatus {
 
 		public void setTableName(String tname) {
 			this.tname = tname;
+		}
+		
+		public void setReport(String report){
+			this.report = report;
 		}
 
 		@Override
@@ -271,7 +278,7 @@ public class AmsStreamStatus {
 			String tsp = extractJson("ts_processed", jRoot);
 
 			// Compile key
-			String key = hostname + "|" + service + "|" + metric + "|" + tp + "|" + tsm;
+			String key = eGroup + "|" + report + "|" + "type" + "|" + tsm + "|" + service + "|" + hostname + "|" + metric;
 
 			// Prepare columns
 			Put put = new Put(Bytes.toBytes(key));
