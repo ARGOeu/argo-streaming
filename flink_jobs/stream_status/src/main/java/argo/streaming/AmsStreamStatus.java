@@ -268,26 +268,35 @@ public class AmsStreamStatus {
 			JsonObject jRoot = jsonParser.parse(record).getAsJsonObject();
 			// Get fields
 
+			String rep = extractJson("report",jRoot);
 			String tp = extractJson("type", jRoot);
+			String dt = extractJson("dt",jRoot);
 			String eGroup = extractJson("endpoint_group", jRoot);
 			String service = extractJson("service", jRoot);
 			String hostname = extractJson("hostname", jRoot);
 			String metric = extractJson("metric", jRoot);
 			String status = extractJson("status", jRoot);
+			String prevStatus = extractJson("prev_status", jRoot);
+			String prevTs = extractJson("prev_ts", jRoot);
 			String tsm = extractJson("ts_monitored", jRoot);
 			String tsp = extractJson("ts_processed", jRoot);
 
 			// Compile key
-			String key = eGroup + "|" + report + "|" + "type" + "|" + tsm + "|" + service + "|" + hostname + "|" + metric;
+			// Key is constructed based on 
+			// report > metric_type > date(day) > endpoint group > service > hostname > metric
+			String key = rep + "|" + tp + "|" + dt + "|" + eGroup + "|" + service + "|" + hostname + "|" + metric;
 
 			// Prepare columns
 			Put put = new Put(Bytes.toBytes(key));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("report"), Bytes.toBytes(rep));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("type"), Bytes.toBytes(tp));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("endpoint_group"), Bytes.toBytes(eGroup));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("service"), Bytes.toBytes(service));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("hostname"), Bytes.toBytes(hostname));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("metric"), Bytes.toBytes(metric));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("status"), Bytes.toBytes(status));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_status"), Bytes.toBytes(tp));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_ts"), Bytes.toBytes(tp));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_monitored"), Bytes.toBytes(tsm));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_processed"), Bytes.toBytes(tsp));
 

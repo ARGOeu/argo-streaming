@@ -50,6 +50,7 @@ public class StatusManagerTest {
 		File avroMPSFile = new File(resMPSAvroFile.toURI());
 
 		StatusManager sm = new StatusManager();
+		sm.report="Critical";
 		sm.loadAll(avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
 
 		Date ts1 = sm.fromZulu("2017-03-03T00:00:00Z");
@@ -76,8 +77,9 @@ public class StatusManagerTest {
 		JsonElement jRoot = jsonParser.parse(list4.get(0));
 
 		String jproc = jRoot.getAsJsonObject().get("ts_processed").getAsString();
-		StatusEvent evnt = new StatusEvent("metric", "GR-01-AUTH", "CREAM-CE", "cream01.grid.auth.gr",
-				"eu.egi.CREAM-IGTF", "OK", "mon01.argo.eu", "2017-03-03T15:00:00Z", jproc);
+		StatusEvent evnt = new StatusEvent("Critical","metric","20170303","GR-01-AUTH", "CREAM-CE", "cream01.grid.auth.gr",
+				"eu.egi.CREAM-IGTF", "OK", "mon01.argo.eu", "2017-03-03T15:00:00Z", jproc,"WARNING","2017-03-03T05:00:00Z");
+		
 		assertTrue(gson.toJson(evnt).equals(list4.get(0)));
 
 	}
