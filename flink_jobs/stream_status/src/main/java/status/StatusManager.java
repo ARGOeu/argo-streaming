@@ -31,6 +31,8 @@ public class StatusManager {
 
 	static Logger LOG = LoggerFactory.getLogger(StatusManager.class);
 	
+	String report;
+	
 	EndpointGroups egp = new EndpointGroups();
 	MetricProfiles mps = new MetricProfiles();
 	AvailabilityProfiles aps = new AvailabilityProfiles();
@@ -209,13 +211,21 @@ public class StatusManager {
 		boolean updEndpoint = false;
 		boolean updService = false;
 		boolean updGroup = false;
+		
+		Date oldGroup;
+		Date oldService;
+		Date oldEndpoint;
+		Date oldMetric;
+		
 		// Open groups
 		groupNode = this.groups.get(group);
 		if (groupNode != null){
 			// check if ts is behind groupNode ts
 			if (groupNode.item.timestamp.compareTo(ts) > 0) return results;
 			// update ts
+			oldGroup = groupNode.item.timestamp;
 			groupNode.item.timestamp = ts;
+			
 			
 			
 			// Open services
@@ -225,6 +235,7 @@ public class StatusManager {
 				// check if ts is behind groupNode ts
 				if (serviceNode.item.timestamp.compareTo(ts) > 0) return results;
 				// update ts
+				oldService = serviceNode.item.timestamp;
 				serviceNode.item.timestamp = ts;
 				
 				// Open endpoints
@@ -234,6 +245,7 @@ public class StatusManager {
 					// check if ts is behind groupNode ts
 					if (endpointNode.item.timestamp.compareTo(ts) > 0) return results;
 					// update ts
+					oldEndpoint = endpointNode.item.timestamp;
 					endpointNode.item.timestamp = ts;
 					
 					// Open metrics
@@ -244,11 +256,13 @@ public class StatusManager {
 						// check if ts is after previous timestamp
 						if (endpointNode.item.timestamp.compareTo(ts) <= 0) {
 							// update status
+							oldMetric = metricNode.item.timestamp;
+							// generate event
+							results.add(genEvent("metric",group,service,hostname,metric,ops.getStrStatus(status),monHost,ts,ops.getStrStatus(metricNode.item.status),oldMetric));
 							metricNode.item.status = status;
 							metricNode.item.timestamp = ts;
 							updMetric = true;
-							// generate event
-							results.add(genEvent("metric",group,service,hostname,metric,ops.getStrStatus(status),monHost,ts));
+							
 						}
 						
 					}
@@ -259,10 +273,11 @@ public class StatusManager {
 						int endpNewStatus = aggregate(endpointNode,ts);
 						// check if status changed
 						if (endpointNode.item.status != endpNewStatus){
+							
+							// generate event
+							results.add(genEvent("endpoint",group,service,hostname,"",ops.getStrStatus(endpNewStatus),monHost,ts,ops.getStrStatus(endpointNode.item.status),oldEndpoint));
 							endpointNode.item.status = endpNewStatus;
 							updEndpoint = true;
-							// generate event
-							results.add(genEvent("endpoint",group,service,hostname,"",ops.getStrStatus(endpNewStatus),monHost,ts));
 						}
 					}
 				}
@@ -273,11 +288,11 @@ public class StatusManager {
 					int servNewStatus = aggregate(serviceNode,ts);
 					// check if status changed
 					if (serviceNode.item.status != servNewStatus){
+						
+						// generate event
+						results.add(genEvent("service",group,service,"","",ops.getStrStatus(servNewStatus),monHost,ts,ops.getStrStatus(serviceNode.item.status),oldService));
 						serviceNode.item.status = servNewStatus;
 						updService = true;
-						// generate event
-						results.add(genEvent("service",group,service,"","",ops.getStrStatus(servNewStatus),monHost,ts));
-						
 						
 					}
 				}
@@ -289,10 +304,11 @@ public class StatusManager {
 				int groupNewStatus = aggregate(groupNode,ts);
 				// check if status changed
 				if (groupNode.item.status != groupNewStatus){
+					
+					// generate event
+					results.add(genEvent("endpoint_group",group,"","","",ops.getStrStatus(groupNewStatus),monHost,ts,ops.getStrStatus(groupNode.item.status),oldGroup));
 					groupNode.item.status = groupNewStatus;
 					updGroup = true;
-					// generate event
-					results.add(genEvent("endpoint_group",group,"","","",ops.getStrStatus(groupNewStatus),monHost,ts));
 				}
 			}
 		}
@@ -300,9 +316,11 @@ public class StatusManager {
 		return results;
 	}
 	
-	private String genEvent(String type,String group, String service, String host,  String metric, String status, String monHost, Date ts) throws ParseException{
+	private String genEvent(String type,String group, String service, String host,  String metric, String status, String monHost, Date ts, String prevStatus, Date prevTs) throws ParseException{
+		String tsStr = toZulu(ts);
+		String dt = tsStr.split("T")[0].replaceAll("-", "");
 		String tsProc = toZulu(new Date());
-		StatusEvent evnt = new StatusEvent(type,group,service,host,metric,status,monHost,toZulu(ts),tsProc);
+		StatusEvent evnt = new StatusEvent(this.report,type,dt,group,service,host,metric,status,monHost,toZulu(ts),tsProc,prevStatus,toZulu(prevTs));
 	    Gson gson = new Gson();
 		return gson.toJson(evnt);
 	}
