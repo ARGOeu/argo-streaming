@@ -126,7 +126,15 @@
 			<groupId>junit-addons</groupId>
 			<artifactId>junit-addons</artifactId>
 			<version>1.4</version>
+			<scope>test</scope>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/xerces/xercesImpl -->
+		<dependency>
+			<groupId>xerces</groupId>
+			<artifactId>xercesImpl</artifactId>
+			<version>2.7.1</version>
+		</dependency>
+
 
 
 
@@ -304,6 +312,14 @@
 										<exclude>org/apache/flink/shaded/com/**</exclude>
 										<exclude>web-docs/**</exclude>
 									</excludes>
+								</filter>
+								<filter>
+									<!-- This solves the hadoop 2.6.0 problem with ClassNotFound of 
+										"org.apache.xerces.jaxp.DocumentBuilderFactoryImpl" -->
+									<artifact>xerces:*</artifact>
+									<includes>
+										<include>**</include>
+									</includes>
 								</filter>
 								<filter>
 									<!-- Do not copy the signatures in the META-INF folder. Otherwise, 
