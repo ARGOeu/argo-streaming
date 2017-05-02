@@ -44,8 +44,6 @@ import status.StatusManager;
 //--ams.token         : ARGO messaging api token
 //--ams.project       : ARGO messaging api project to connect to
 //--ams.sub           : ARGO messaging subscription to pull from
-//--kafka.list        : kafka broker list
-//--kafka.topic       : kafka topic
 //--avro.schema       : avro-schema used for decoding payloads
 //--sync.mps          : metric-profile file used 
 //--sync.egp          : endpoint-group file used for topology

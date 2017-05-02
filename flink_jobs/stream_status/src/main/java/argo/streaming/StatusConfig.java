@@ -19,9 +19,6 @@ public class StatusConfig implements Serializable {
 	public String amsProject;
 	public String amsSub;
 	
-	// Kafka parameters
-	public String kafkaHosts;
-	public String kafkaTopic;
 	
 	// Avro schema
 	public String avroSchema;
@@ -42,8 +39,6 @@ public class StatusConfig implements Serializable {
 	   this.amsPort = pt.get("ams.port","443");
 	   this.amsToken = pt.get("ams.token","metric");
 	   this.amsProject = pt.get("ams.project","TESTPROJECT");
-	   this.kafkaHosts = pt.get("kafka.hosts","localhost:9092");
-	   this.kafkaTopic = pt.get("kafka.topic","events");
 	   this.avroSchema = pt.get("avro.schema","metric_data.avsc");
 	   this.aps = pt.get("avro.aps","ap1.json");
 	   this.mps = pt.get("sync.mps","metric_data.avro");
