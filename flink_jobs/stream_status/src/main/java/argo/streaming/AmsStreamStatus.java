@@ -49,10 +49,22 @@ import status.StatusManager;
 //--sync.egp          : endpoint-group file used for topology
 //--sync.aps          : availability profile used 
 //--sync.ops          : operations profile used 
+
+
+/**
+ *  Represents an ARGO AMS Streaming job in flink
+ */
 public class AmsStreamStatus {
 	// setup logger
 	static Logger LOG = LoggerFactory.getLogger(AmsStreamStatus.class);
 
+	
+	/**
+	 *  Sets configuration parameters to streaming enviroment
+	 *  
+	 *  @param  config  A StatusConfig object that holds configuration parameters for this job
+	 *  @return         Stream execution enviroment       
+	 */
 	private static StreamExecutionEnvironment setupEnvironment(StatusConfig config) {
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.getConfig().setGlobalJobParameters(config.getParameters());
@@ -60,11 +72,12 @@ public class AmsStreamStatus {
 		return env;
 	}
 
+	/**
+	 *  Main dataflow of flink job     
+	 */
 	public static void main(String[] args) throws Exception {
 
-		// // Create flink execution enviroment
-		// StreamExecutionEnvironment see =
-		// StreamExecutionEnvironment.getExecutionEnvironment();
+	
 
 		// Initialize cli parameter tool
 		final ParameterTool parameterTool = ParameterTool.fromArgs(args);
@@ -73,6 +86,8 @@ public class AmsStreamStatus {
 
 		StreamExecutionEnvironment see = setupEnvironment(conf);
 
+		
+		see.setParallelism(1);
 		// Initialize Input Source : ARGO Messaging Source
 		String endpoint = parameterTool.getRequired("ams.endpoint");
 		String port = parameterTool.getRequired("ams.port");
@@ -103,6 +118,11 @@ public class AmsStreamStatus {
 		see.execute();
 	}
 
+	/**
+	 *  StatusMap implements a rich flat map fucntion which holds status information
+	 *  for all entities in topology and for each received metric generates the 
+	 *  appropriate status events   
+	 */
 	private static class StatusMap extends RichFlatMapFunction<String, String> {
 
 		private static final long serialVersionUID = 1L;
@@ -112,10 +132,15 @@ public class AmsStreamStatus {
 		public StatusConfig config;
 
 		public StatusMap(StatusConfig config) {
-			LOG.info("--- Created new Status map");
+			LOG.info("Created new Status map");
 			this.config = config;
 		}
 
+		/**
+		 *  Initializes constructs in the beginning of operation
+		 *  
+		 *  @param parameters Configuration parameters to initialize structures
+		 */
 		@Override
 		public void open(Configuration parameters) throws IOException, ParseException {
 			LOG.info("initializing status manager");
@@ -129,13 +154,20 @@ public class AmsStreamStatus {
 
 			// Get runDate parameter
 			if (config.runDate.equals("")) {
-				sm.construct(sm.getOps().getIntStatus("OK"), sm.getToday());
+				sm.construct(sm.getOps().getIntStatus("MISSING"), sm.getToday());
 			} else {
-				sm.construct(sm.getOps().getIntStatus("OK"), sm.setDate(config.runDate));
+				sm.construct(sm.getOps().getIntStatus("MISSING"), sm.setDate(config.runDate));
 			}
 
 		}
 
+		/**
+		 *  The main flat map function that accepts metric data and generates 
+		 *  status events 
+		 *  
+		 *  @param  value   Input metric data in base64 encoded format from AMS service
+		 *  @param  out     Collection of generated status events as json strings    
+		 */
 		@Override
 		public void flatMap(String value, Collector<String> out) throws IOException, ParseException {
 
@@ -148,7 +180,6 @@ public class AmsStreamStatus {
 			// Decode from base64
 			byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
 			// Decode from avro
-			LOG.info(config.avroSchema);
 			Schema avroSchema = new Schema.Parser().parse(new File(config.avroSchema));
 			DatumReader<GenericRecord> avroReader = new SpecificDatumReader<GenericRecord>(avroSchema);
 			Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
@@ -162,7 +193,30 @@ public class AmsStreamStatus {
 			String status = pr.get("status").toString();
 			String tsMon = pr.get("timestamp").toString();
 			String monHost = pr.get("monitoring_host").toString();
-
+			
+			// Check if this is the first time starting and generate initial events
+			if (sm.getFirstGen()){
+				ArrayList<String> eventsInit = sm.dumpStatus(tsMon);
+				sm.disableFirstGen();
+				for (String item : eventsInit)
+				{
+					out.collect(item);
+					LOG.info("initial event produced: " + item);
+				}
+				
+			}
+			
+			// Has Date Changed?
+			if (sm.hasDayChanged(sm.getTsLatest(), tsMon)){
+				ArrayList<String> eventsDaily = sm.dumpStatus(tsMon);
+				sm.setTsLatest(tsMon);
+				for (String item : eventsDaily)
+				{
+					out.collect(item);
+					LOG.info("daily event produced: " + item);
+				}
+			}
+			
 			ArrayList<String> events = sm.setStatus(service, hostname, metric, status, monHost, tsMon);
 
 			for (String item : events) {
@@ -173,7 +227,9 @@ public class AmsStreamStatus {
 
 	}
 
-	// Hbase output format
+	/**
+	 *  HbaseOutputFormat implements a custom output format for storing results in hbase 
+	 */
 	private static class HBaseOutputFormat implements OutputFormat<String> {
 
 		private String report = null;
@@ -188,11 +244,12 @@ public class AmsStreamStatus {
 
 		private static final long serialVersionUID = 1L;
 
+		
 		// Setters
 		public void setMasterPort(String masterPort) {
 			this.masterPort = masterPort;
 		}
-
+		
 		public void setMaster(String master) {
 			this.master = master;
 		}
@@ -222,6 +279,10 @@ public class AmsStreamStatus {
 
 		}
 
+	
+		/**
+		 * Structure initialization
+		 */
 		@Override
 		public void open(int taskNumber, int numTasks) throws IOException {
 			// Create hadoop based configuration for hclient to use
@@ -245,7 +306,10 @@ public class AmsStreamStatus {
 			}
 
 		}
-
+		
+		/**
+		 * Extract json representation as string to be used as a field value
+		 */
 		private String extractJson(String field, JsonObject root) {
 			JsonElement el = root.get(field);
 			if (el != null && !(el.isJsonNull())) {
@@ -256,6 +320,12 @@ public class AmsStreamStatus {
 			return "";
 		}
 
+
+		/**
+		 * Accepts status event as json string and stores it in hbase table
+		 * 
+		 * @parameter   record   A string with json represantation of a status event
+		 */
 		@Override
 		public void writeRecord(String record) throws IOException {
 
@@ -301,6 +371,9 @@ public class AmsStreamStatus {
 
 		}
 
+		/**
+		 * Closes hbase table and hbase connection  
+		 */
 		@Override
 		public void close() throws IOException {
 			ht.close();

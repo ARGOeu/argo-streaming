@@ -34,13 +34,12 @@ public class StatusConfig implements Serializable {
 	
 	public StatusConfig(ParameterTool pt){
 	    this.pt = pt;
-
 	   this.amsHost = pt.get("ams.host","localhost");
 	   this.amsPort = pt.get("ams.port","443");
 	   this.amsToken = pt.get("ams.token","metric");
 	   this.amsProject = pt.get("ams.project","TESTPROJECT");
 	   this.avroSchema = pt.get("avro.schema","metric_data.avsc");
-	   this.aps = pt.get("avro.aps","ap1.json");
+	   this.aps = pt.get("sync.aps","ap1.json");
 	   this.mps = pt.get("sync.mps","metric_data.avro");
 	   this.egp = pt.get("sync.egp","group_endpoints.avro");
 	   this.ops = pt.get("sync.ops","ops.json");
