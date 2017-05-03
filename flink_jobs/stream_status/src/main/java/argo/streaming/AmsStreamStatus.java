@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Date;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -21,8 +20,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09;
-import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
@@ -95,6 +92,7 @@ public class AmsStreamStatus {
 		hbf.setZkPort(parameterTool.getRequired("hbase.zk.port"));
 		hbf.setNamespace(parameterTool.getRequired("hbase.namespace"));
 		hbf.setTableName(parameterTool.getRequired("hbase.table"));
+		hbf.setReport(parameterTool.getRequired("report"));
 
 		DataStream<String> messageStream = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, sub));
 
@@ -164,7 +162,7 @@ public class AmsStreamStatus {
 			String hostname = pr.get("hostname").toString();
 			String metric = pr.get("metric").toString();
 			String status = pr.get("status").toString();
-			String tsMon = pr.get("ts_monitored").toString();
+			String tsMon = pr.get("timestamp").toString();
 			String monHost = pr.get("monitoring_host").toString();
 
 			ArrayList<String> events = sm.setStatus(service, hostname, metric, status, monHost, tsMon);
@@ -268,9 +266,9 @@ public class AmsStreamStatus {
 			JsonObject jRoot = jsonParser.parse(record).getAsJsonObject();
 			// Get fields
 
-			String rep = extractJson("report",jRoot);
+			String rep = this.report;
 			String tp = extractJson("type", jRoot);
-			String dt = extractJson("dt",jRoot);
+			String dt = extractJson("date",jRoot);
 			String eGroup = extractJson("endpoint_group", jRoot);
 			String service = extractJson("service", jRoot);
 			String hostname = extractJson("hostname", jRoot);
@@ -284,7 +282,7 @@ public class AmsStreamStatus {
 			// Compile key
 			// Key is constructed based on 
 			// report > metric_type > date(day) > endpoint group > service > hostname > metric
-			String key = rep + "|" + tp + "|" + dt + "|" + eGroup + "|" + service + "|" + hostname + "|" + metric;
+			String key = rep + "|" + tp + "|" + dt + "|" + eGroup + "|" + service + "|" + hostname + "|" + metric + "|" + tsm;
 
 			// Prepare columns
 			Put put = new Put(Bytes.toBytes(key));
@@ -295,8 +293,8 @@ public class AmsStreamStatus {
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("hostname"), Bytes.toBytes(hostname));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("metric"), Bytes.toBytes(metric));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("status"), Bytes.toBytes(status));
-			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_status"), Bytes.toBytes(tp));
-			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_ts"), Bytes.toBytes(tp));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_status"), Bytes.toBytes(prevStatus));
+			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_ts"), Bytes.toBytes(prevTs));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_monitored"), Bytes.toBytes(tsm));
 			put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_processed"), Bytes.toBytes(tsp));
 
