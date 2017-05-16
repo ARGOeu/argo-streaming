@@ -9,9 +9,14 @@ import com.mongodb.hadoop.mapred.MongoOutputFormat;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.util.MongoConfigUtil;
 
+import argo.avro.GroupEndpoint;
+import argo.avro.GroupGroup;
 import argo.avro.MetricData;
+import argo.avro.MetricProfile;
 
 import org.slf4j.Logger;
+
+import java.util.List;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
@@ -30,6 +35,9 @@ import org.apache.hadoop.mapred.JobConf;
  * Represents an ARGO Batch Job in flink
  * 
  * Submit job in flink cluster using the following parameters 
+ * --mps:   path to metric profile sync file (For hdfs use: hdfs://namenode:port/path/to/file)
+ * --egp:   path to endpoints group topology file (For hdfs use: hdfs://namenode:port/path/to/file)
+ * --ggp:   path to group of groups topology file  (For hdfs use: hdfs://namenode:port/path/to/file)
  * --mdata: path to metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --mongo.url: path to mongo destination (eg mongodb://localhost:27017/database.table
  */
@@ -47,6 +55,29 @@ public class ArgoStatusBatch {
 		// make parameters available in the web interface
 		env.getConfig().setGlobalJobParameters(params);
 
+		// sync data for input
+		Path ops = new Path(params.get("ops"));
+		Path mps = new Path(params.get("mps"));
+		Path egp = new Path(params.get("egp"));
+		Path ggp = new Path(params.get("ggp"));
+		
+		
+		// sync data input: metric profile in avro format
+		AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);
+		DataSet<MetricProfile> mpsDS = env.createInput(mpsAvro);
+		List<MetricProfile> mpsData = mpsDS.collect();
+		
+		// sync data input: endpoint group topology data in avro format
+		AvroInputFormat<GroupEndpoint> egpAvro = new AvroInputFormat<GroupEndpoint>(egp, GroupEndpoint.class);
+		DataSet<GroupEndpoint> egpDS = env.createInput(egpAvro);
+		List<GroupEndpoint> egpData = egpDS.collect();
+		
+		// sync data input: group of group topology data in avro format
+		AvroInputFormat<GroupGroup> ggpAvro = new AvroInputFormat<GroupGroup>(mps, GroupGroup.class);
+		DataSet<GroupGroup> ggpDS = env.createInput(ggpAvro);
+		List<GroupGroup> ggpData = ggpDS.collect();
+
+		
 		// input data
 		Path in = new Path(params.get("mdata"));
 		AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat<MetricData>(in, MetricData.class);
