@@ -13,18 +13,22 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import sync.EndpointGroupManager;
+import sync.MetricProfileManager;
 
 import org.slf4j.Logger;
 
 import java.util.List;
 
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
 import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.JobConf;
@@ -65,17 +69,17 @@ public class ArgoStatusBatch {
 		// sync data input: metric profile in avro format
 		AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);
 		DataSet<MetricProfile> mpsDS = env.createInput(mpsAvro);
-		List<MetricProfile> mpsData = mpsDS.collect();
+		
 		
 		// sync data input: endpoint group topology data in avro format
 		AvroInputFormat<GroupEndpoint> egpAvro = new AvroInputFormat<GroupEndpoint>(egp, GroupEndpoint.class);
 		DataSet<GroupEndpoint> egpDS = env.createInput(egpAvro);
-		List<GroupEndpoint> egpData = egpDS.collect();
+		
 		
 		// sync data input: group of group topology data in avro format
-		AvroInputFormat<GroupGroup> ggpAvro = new AvroInputFormat<GroupGroup>(mps, GroupGroup.class);
+		AvroInputFormat<GroupGroup> ggpAvro = new AvroInputFormat<GroupGroup>(ggp, GroupGroup.class);
 		DataSet<GroupGroup> ggpDS = env.createInput(ggpAvro);
-		List<GroupGroup> ggpData = ggpDS.collect();
+		
 
 		
 		// input data
@@ -90,13 +94,34 @@ public class ArgoStatusBatch {
 		 * ensures an empty key
 		 */
 		DataSet<Tuple2<NullWritable, BSONWritable>> statusMetricBSON = mdataDS
-				.map(new MapFunction<MetricData, Tuple2<NullWritable, BSONWritable>>() {
+				.map(new RichMapFunction<MetricData, Tuple2<NullWritable, BSONWritable>>() {
 
 					private static final long serialVersionUID = 1L;
 
+					private List<MetricProfile> mps;
+					private List<GroupEndpoint> egp;
+					private MetricProfileManager mpsMgr;
+					private EndpointGroupManager egpMgr;
+					
+					
+					@Override
+				    public void open(Configuration parameters) {
+						// Get data from broadcast variable
+				        this.mps = getRuntimeContext().getBroadcastVariable("mps");
+				        this.egp = getRuntimeContext().getBroadcastVariable("egp");
+				        // Initialize metric profile manager
+				        this.mpsMgr = new MetricProfileManager();
+				        this.mpsMgr.loadFromList(mps);
+				        // Initialize endpoint group manager
+				        this.egpMgr = new EndpointGroupManager();
+				        this.egpMgr.loadFromList(egp);
+				       
+				    }
+					
 					@Override
 					public Tuple2<NullWritable, BSONWritable> map(MetricData md) throws Exception {
 
+						
 						// Create a mongo database object with the needed fields
 						DBObject builder = BasicDBObjectBuilder.start().add("service", md.getService())
 								.add("hostname", md.getHostname()).add("metric", md.getMetric())
@@ -107,7 +132,7 @@ public class ArgoStatusBatch {
 
 						return new Tuple2<NullWritable, BSONWritable>(NullWritable.get(), w);
 					}
-				});
+				}).withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp");
 
 		// Initialize a new hadoop conf object to add mongo connector related property
 		JobConf conf = new JobConf();
