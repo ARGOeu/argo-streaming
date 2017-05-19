@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichFilterFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
@@ -59,6 +60,8 @@ public class ArgoStatusBatch {
 
 		// set up the execution environment
 		final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+		
+		
 
 		// make parameters available in the web interface
 		env.getConfig().setGlobalJobParameters(params);
@@ -97,17 +100,16 @@ public class ArgoStatusBatch {
 		AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
 		DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 		
+		// Find the latest day 
+		pdataDS.groupBy("service","hostname","metric").sortGroup("timestamp", Order.DESCENDING).first(1);
+		
 		DataSet<MetricData> mdataTotalDS = mdataDS.union(pdataDS);
 		
-		DataSet<MetricData> mdataTrimDS = mdataTotalDS.filter(new PickEndpoints(params))
+		// Discard unused data and attach endpoint group as information
+		DataSet<StatusMetric> mdataTrimDS = mdataTotalDS.flatMap(new PickEndpoints(params))
 				.withBroadcastSet(mpsDS, "mps")
 				.withBroadcastSet(egpDS, "egp")
 				.withBroadcastSet(ggpDS, "ggp");
-		
-
-		mdataTotalDS.writeAsText("/home/kaggis/BatchData.txt");
-		mdataTrimDS.writeAsText("/home/kaggis/BatchDataTrim.txt");
-		
 		
 		
 		/**
@@ -166,7 +168,7 @@ public class ArgoStatusBatch {
 		// Initialize MongoOutputFormat
 		MongoOutputFormat<NullWritable, BSONWritable> mongoOutputFormat = new MongoOutputFormat<NullWritable, BSONWritable>();
 		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write results in mongo db
-		//statusMetricBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat, conf));
+		statusMetricBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat, conf));
 
 		env.execute("Flink Status Job");
 		

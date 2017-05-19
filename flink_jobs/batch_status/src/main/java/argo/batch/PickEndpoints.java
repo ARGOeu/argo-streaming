@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.flink.api.common.functions.RichFilterFunction;
+import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +20,7 @@ import sync.EndpointGroupManager;
 import sync.GroupGroupManager;
 import sync.MetricProfileManager;
 
-public class PickEndpoints extends RichFilterFunction<MetricData> {
+public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -60,8 +62,10 @@ public class PickEndpoints extends RichFilterFunction<MetricData> {
 		this.egroupType = params.get("egroup-type");
 	}
 
+	
+
 	@Override
-	public boolean filter(MetricData md) throws Exception {
+	public void flatMap(MetricData md, Collector<StatusMetric> out) throws Exception {
 
 		String prof = mpsMgr.getProfiles().get(0);
 		String hostname = md.getHostname();
@@ -69,19 +73,27 @@ public class PickEndpoints extends RichFilterFunction<MetricData> {
 		String metric = md.getMetric();
 
 		// Filter By metric profile
-		if (mpsMgr.checkProfileServiceMetric(prof, service, metric) == false)
-			return false;
+		if (mpsMgr.checkProfileServiceMetric(prof, service, metric) == false) return;
 
 		
 		// Filter By endpoint group if belongs to supergroup
 		ArrayList<String> groupnames = egpMgr.getGroup(egroupType, hostname, service);
 		
 		for (String groupname : groupnames) {
-			if (ggpMgr.checkSubGroup(groupname) == true)
-				return true;
+			if (ggpMgr.checkSubGroup(groupname) == true){
+				// Create a StatusMetric output
+				String timestamp = md.getTimestamp().split("Z")[0];
+				String[] ts = timestamp.split("T");
+				int dateInt = Integer.parseInt(ts[0].replace("-", ""));
+				int timeInt = Integer.parseInt(ts[1].replace(":",""));
+				
+				StatusMetric sm = new StatusMetric(groupname,md.getService(),md.getHostname(),md.getMetric(), md.getStatus(),md.getTimestamp(),dateInt,timeInt,"","");
+				
+				out.collect(sm);
+			}
+				
+				
 		}
-
-		return false;
-
+		
 	}
 }
