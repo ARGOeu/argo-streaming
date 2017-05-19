@@ -2,6 +2,7 @@ package argo.batch;
 
 import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.minlog.Log;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 
@@ -14,13 +15,16 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import sync.EndpointGroupManager;
+import sync.GroupGroupManager;
 import sync.MetricProfileManager;
 
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.RichFilterFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -60,16 +64,17 @@ public class ArgoStatusBatch {
 		env.getConfig().setGlobalJobParameters(params);
 
 		// sync data for input
-		Path ops = new Path(params.get("ops"));
-		Path mps = new Path(params.get("mps"));
-		Path egp = new Path(params.get("egp"));
-		Path ggp = new Path(params.get("ggp"));
+		Path ops = new Path(params.getRequired("ops"));
+		Path mps = new Path(params.getRequired("mps"));
+		Path egp = new Path(params.getRequired("egp"));
+		Path ggp = new Path(params.getRequired("ggp"));
+		
+		String egroupType = params.getRequired("egroup-type");
 		
 		
 		// sync data input: metric profile in avro format
 		AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);
 		DataSet<MetricProfile> mpsDS = env.createInput(mpsAvro);
-		
 		
 		// sync data input: endpoint group topology data in avro format
 		AvroInputFormat<GroupEndpoint> egpAvro = new AvroInputFormat<GroupEndpoint>(egp, GroupEndpoint.class);
@@ -80,13 +85,31 @@ public class ArgoStatusBatch {
 		AvroInputFormat<GroupGroup> ggpAvro = new AvroInputFormat<GroupGroup>(ggp, GroupGroup.class);
 		DataSet<GroupGroup> ggpDS = env.createInput(ggpAvro);
 		
-
 		
-		// input data
-		Path in = new Path(params.get("mdata"));
+		
+		// todays metric data
+		Path in = new Path(params.getRequired("mdata"));
 		AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat<MetricData>(in, MetricData.class);
 		DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
+		
+		// previous metric data
+		Path pin = new Path(params.getRequired("pdata"));
+		AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
+		DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
+		
+		DataSet<MetricData> mdataTotalDS = mdataDS.union(pdataDS);
+		
+		DataSet<MetricData> mdataTrimDS = mdataTotalDS.filter(new PickEndpoints(params))
+				.withBroadcastSet(mpsDS, "mps")
+				.withBroadcastSet(egpDS, "egp")
+				.withBroadcastSet(ggpDS, "ggp");
+		
 
+		mdataTotalDS.writeAsText("/home/kaggis/BatchData.txt");
+		mdataTrimDS.writeAsText("/home/kaggis/BatchDataTrim.txt");
+		
+		
+		
 		/**
 		 * Prepares the data in BSONWritable values for mongo storage Each tuple
 		 * is in the form <K,V> and the key here must be empty for mongo to
@@ -116,6 +139,8 @@ public class ArgoStatusBatch {
 				        this.egpMgr = new EndpointGroupManager();
 				        this.egpMgr.loadFromList(egp);
 				       
+				        
+				       
 				    }
 					
 					@Override
@@ -141,9 +166,11 @@ public class ArgoStatusBatch {
 		// Initialize MongoOutputFormat
 		MongoOutputFormat<NullWritable, BSONWritable> mongoOutputFormat = new MongoOutputFormat<NullWritable, BSONWritable>();
 		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write results in mongo db
-		statusMetricBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat, conf));
+		//statusMetricBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat, conf));
 
 		env.execute("Flink Status Job");
+		
+		
 
 	}
 

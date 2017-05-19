@@ -224,8 +224,13 @@ public class EndpointGroupManager {
 
 	}
 	
+	
+	public ArrayList<EndpointItem> getList(){
+		return this.list;
+	}
+	
 	/**
-	 * Loads metric profile information from a list of MetricProfile objects
+	 * Loads information from a list of EndpointGroup objects
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
@@ -249,6 +254,8 @@ public class EndpointGroupManager {
 			// Insert data to list
 			this.insert(type, group, service, hostname, tagMap);
 		}
+		
+		this.unfilter();
 		
 
 	}
