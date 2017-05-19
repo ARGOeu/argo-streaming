@@ -95,6 +95,18 @@
 		</dependency>
 
 
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>1.6</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.2.4</version>
+		</dependency>
+
+
 		<!-- https://mvnrepository.com/artifact/org.mongodb/mongo-hadoop-core -->
 		<dependency>
 			<groupId>org.mongodb</groupId>
@@ -163,6 +175,16 @@
 					<artifactId>log4j</artifactId>
 					<version>${log4j.version}</version>
 					<scope>provided</scope>
+				</dependency>
+				<dependency>
+					<groupId>joda-time</groupId>
+					<artifactId>joda-time</artifactId>
+					<version>1.6</version>
+				</dependency>
+				<dependency>
+					<groupId>com.google.code.gson</groupId>
+					<artifactId>gson</artifactId>
+					<version>2.2.4</version>
 				</dependency>
 
 				<!-- https://mvnrepository.com/artifact/org.mongodb/mongo-hadoop-core -->

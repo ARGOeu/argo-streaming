@@ -101,15 +101,27 @@ public class ArgoStatusBatch {
 		DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 		
 		// Find the latest day 
-		pdataDS.groupBy("service","hostname","metric").sortGroup("timestamp", Order.DESCENDING).first(1);
+		DataSet<MetricData>pdataMin = pdataDS.groupBy("service","hostname","metric").sortGroup("timestamp", Order.DESCENDING).first(1);
 		
-		DataSet<MetricData> mdataTotalDS = mdataDS.union(pdataDS);
+		DataSet<MetricData> mdataTotalDS = mdataDS.union(pdataMin);
 		
 		// Discard unused data and attach endpoint group as information
 		DataSet<StatusMetric> mdataTrimDS = mdataTotalDS.flatMap(new PickEndpoints(params))
 				.withBroadcastSet(mpsDS, "mps")
 				.withBroadcastSet(egpDS, "egp")
 				.withBroadcastSet(ggpDS, "ggp");
+		
+		
+		// Create status detail data set
+		DataSet<StatusMetric> stDetailDS = mdataTrimDS.groupBy("group","service","hostname","metric")
+				.sortGroup("timestamp", Order.ASCENDING)
+				.reduceGroup(new CalcPrevStatus(params))
+				.withBroadcastSet(mpsDS, "mps")
+				.withBroadcastSet(egpDS, "egp")
+				.withBroadcastSet(ggpDS, "ggp");
+	
+		
+	
 		
 		
 		/**

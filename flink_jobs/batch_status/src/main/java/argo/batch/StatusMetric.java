@@ -3,6 +3,31 @@ package argo.batch;
 
 public class StatusMetric {
 
+
+	private String group;
+	private String service;
+	private String hostname;
+	private String metric;
+	private String status;
+	private String timestamp;
+	
+	private int dateInt;
+	private int timeInt;
+	private String prevState;
+	private String prevTs;
+	
+	public StatusMetric(){
+		this.group = "";
+		this.service ="";
+		this.hostname = "";
+		this.status = "";
+		this.timestamp = "";
+		this.dateInt = 0;
+		this.timeInt =0;
+		this.prevState = "";
+		this.prevTs = "";
+	}
+	
 	public StatusMetric(String group, String service, String hostname, String metric, String status, String timestamp,
 			int dateInt, int timeInt, String prevState, String prevTs) {
 		
@@ -17,19 +42,6 @@ public class StatusMetric {
 		this.prevState = prevState;
 		this.prevTs = prevTs;
 	}
-	private String group;
-	private String service;
-	private String hostname;
-	private String metric;
-	private String status;
-	private String timestamp;
-	
-	private int dateInt;
-	private int timeInt;
-	private String prevState;
-	private String prevTs;
-	
-	
 
 	
 	public String getGroup() {
