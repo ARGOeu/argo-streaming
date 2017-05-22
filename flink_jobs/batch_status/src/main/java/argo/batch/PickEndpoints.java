@@ -1,5 +1,6 @@
 package argo.batch;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,10 +17,16 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import ops.OpsManager;
+import sync.AggregationProfileManager;
 import sync.EndpointGroupManager;
 import sync.GroupGroupManager;
 import sync.MetricProfileManager;
 
+/**
+ * Accepts a metric data entry and converts it to a status metric object by appending endpoint group information
+ * Filters out entries that do not appear in topology and metric profiles
+ */
 public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> {
 
 	private static final long serialVersionUID = 1L;
@@ -36,30 +43,32 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 	private List<MetricProfile> mps;
 	private List<GroupEndpoint> egp;
 	private List<GroupGroup> ggp;
+	private List<String> aps;
+	private List<String> ops;
 	private MetricProfileManager mpsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
+	
 	private String egroupType;
 
 	@Override
-	public void open(Configuration parameters) {
+	public void open(Configuration parameters) throws IOException {
 		// Get data from broadcast variable
 		this.mps = getRuntimeContext().getBroadcastVariable("mps");
 		this.egp = getRuntimeContext().getBroadcastVariable("egp");
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
+		
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
 		this.mpsMgr.loadFromList(mps);
 		// Initialize endpoint group manager
 		this.egpMgr = new EndpointGroupManager();
 		this.egpMgr.loadFromList(egp);
-
 		
-		// Initialize group group manager
 		this.ggpMgr = new GroupGroupManager();
 		this.ggpMgr.loadFromList(ggp);
 		// Initialize endpoint group type
-		this.egroupType = params.get("egroup-type");
+		this.egroupType = params.get("egroup.type");
 	}
 
 	

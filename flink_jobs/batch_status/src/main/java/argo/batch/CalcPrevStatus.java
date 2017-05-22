@@ -43,7 +43,7 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusM
 	@Override
 	public void open(Configuration parameters) {
 		// Get data from broadcast variable
-		this.runDate = params.getRequired("run-date");
+		this.runDate = params.getRequired("run.date");
 		
 		this.mps = getRuntimeContext().getBroadcastVariable("mps");
 		this.egp = getRuntimeContext().getBroadcastVariable("egp");
@@ -60,7 +60,7 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusM
 		this.ggpMgr = new GroupGroupManager();
 		this.ggpMgr.loadFromList(ggp);
 		// Initialize endpoint group type
-		this.egroupType = params.get("egroup-type");
+		this.egroupType = params.get("egroup.type");
 	}
 
 	@Override

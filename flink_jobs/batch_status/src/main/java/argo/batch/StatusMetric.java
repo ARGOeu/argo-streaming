@@ -3,7 +3,7 @@ package argo.batch;
 
 public class StatusMetric {
 
-
+	
 	private String group;
 	private String service;
 	private String hostname;
@@ -107,7 +107,7 @@ public class StatusMetric {
 	
 	@Override
 	public String toString() {
-		return "(" + this.group + "," + this.service + "," + this.metric + "," + this.status + "," + this.timestamp + "," + 
+		return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + "," + 
 				this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + ")";
 	}
 	
