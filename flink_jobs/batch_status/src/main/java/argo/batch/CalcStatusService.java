@@ -85,7 +85,11 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 		this.serviceAggr.clear();
 
 	
+<<<<<<< 20d1836affc7843354cae18f793d9800e0ec70a0
 		String prevHostname = "";
+=======
+		String prevMetricName = "";
+>>>>>>> ARGO-809 Implement Calculation of Service Status timelines
 		String aProfile = this.apsMgr.getAvProfiles().get(0);
 		String avGroup = "";
 		String service ="";
@@ -113,6 +117,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 			
 			
 
+<<<<<<< 20d1836affc7843354cae18f793d9800e0ec70a0
 			// Check if we are in the switch of a new hostname
 			if (prevHostname.equals(hostname) == false) {
 				LOG.debug("--another hostname-- " + endpointGroup+"|"+service+"|"+hostname+"|"+metric+"|"+status+"|"+ts);
@@ -123,6 +128,18 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 			LOG.debug("--same hostname-- " + endpointGroup+"|"+service+"|"+hostname+"|"+metric+"|"+status+"|"+ts);
 			this.serviceAggr.insert(metric, ts, this.opsMgr.getIntStatus(status));
 			prevHostname = hostname;
+=======
+			// Check if we are in the switch of a new metric name
+			if (prevMetricName.equals(metric) == false) {
+				LOG.debug("--another metric-- " + endpointGroup+"|"+service+"|"+hostname+"|"+metric+"|"+status+"|"+ts);
+				this.serviceAggr.setFirst(metric, ts, this.opsMgr.getIntStatus(prevStatus));
+				prevMetricName = metric;
+				continue;
+			}
+			LOG.debug("--same metric-- " + endpointGroup+"|"+service+"|"+hostname+"|"+metric+"|"+status+"|"+ts);
+			this.serviceAggr.insert(metric, ts, this.opsMgr.getIntStatus(status));
+			prevMetricName = metric;
+>>>>>>> ARGO-809 Implement Calculation of Service Status timelines
 
 		}
 
