@@ -1,44 +1,35 @@
 package argo.batch;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
-
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
-import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import argo.avro.GroupEndpoint;
-import argo.avro.GroupGroup;
-
-import argo.avro.MetricProfile;
 import ops.CAggregator;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
-import sync.GroupGroupManager;
-import sync.MetricProfileManager;
-
 
 /**
- * Accepts a list o status metrics grouped by the fields: endpoint group, service
- * Uses Continuous Timelines and Aggregators to calculate the status results of a service flavor
+ * Accepts a list o status metrics grouped by the fields: endpoint group
+ * Uses Continuous Timelines and Aggregators to calculate the status results of an endpoint group
  * Prepares the data in a form aligned with the datastore schema for status flavor collection
  */
-public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, StatusMetric> {
+public class CalcStatusEndGroup extends RichGroupReduceFunction<StatusMetric, StatusMetric> {
 
 	private static final long serialVersionUID = 1L;
 
 	final ParameterTool params;
 
-	public CalcStatusService(ParameterTool params) {
+	public CalcStatusEndGroup(ParameterTool params) {
 		this.params = params;
 	}
 
@@ -54,9 +45,9 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 	
 
 	private String runDate;
-	private CAggregator serviceAggr;
+	public HashMap<String, CAggregator> groupEndpointAggr;
 
-	private boolean getService;
+	private boolean getGroup;
 	
 	@Override
 	public void open(Configuration parameters) throws IOException {
@@ -75,61 +66,84 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 	
 		// Initialize endpoint group type
 		this.runDate = params.getRequired("run.date");
-		this.serviceAggr = new CAggregator(); // Create aggregator
+		// set the Structures
+		this.groupEndpointAggr = new HashMap<String, CAggregator>();
 
-		this.getService = true;
+		this.getGroup = true;
 	}
 
 	@Override
 	public void reduce(Iterable<StatusMetric> in, Collector<StatusMetric> out) throws Exception {
 
-		this.serviceAggr.clear();
+		this.groupEndpointAggr.clear();
 
+	
+		
 		String aProfile = this.apsMgr.getAvProfiles().get(0);
-		String avGroup = "";
 		String service ="";
 		String endpointGroup ="";
 		int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
 
 		
+		
 		for (StatusMetric item : in) {
-						
-			if (getService){
-				
-				service = item.getService();
-
-				// Get the availability Group in which this service belongs
-				avGroup = this.apsMgr.getGroupByService(aProfile, service);			
-				
-				getService =false;
-					
+			
+			if (getGroup){
+				endpointGroup = item.getGroup();
+				getGroup =false;
 			}
-	
 			
 			service = item.getService();
 			endpointGroup = item.getGroup();
-			String hostname = item.getHostname();
+		
 			String ts = item.getTimestamp();
 			String status = item.getStatus();
-			
 		
-			this.serviceAggr.insert(hostname, ts, this.opsMgr.getIntStatus(status));
 			
+			// Get the availability group
+			String group = apsMgr.getGroupByService(aProfile, service);
+			
+			// if group doesn't exist yet create it
+			if (this.groupEndpointAggr.containsKey(group) == false) {
+				this.groupEndpointAggr.put(group, new CAggregator());
+			}
+			
+			this.groupEndpointAggr.get(group).insert(service, ts, this.opsMgr.getIntStatus(status));
+
+			
+
 		}
 
+		// Aggregate each group
+		for (String group : this.groupEndpointAggr.keySet()) {
+			// Get group Operation
+
+			String gop = this.apsMgr.getProfileGroupOp(aProfile, group);
+
+			this.groupEndpointAggr.get(group).aggregate(this.opsMgr, gop);
+
+		}
 		
-		avGroup = this.apsMgr.getGroupByService(aProfile, service);
-		String avOp = this.apsMgr.getProfileGroupServiceOp(aProfile, avGroup, service);
-		
-		this.serviceAggr.aggregate(this.opsMgr, "OR");
+		// Aggregate all sites
+		CAggregator totalSite = new CAggregator();
+
+		// Aggregate each group
+		for (String group : this.groupEndpointAggr.keySet()) {
+			for (Entry<DateTime,Integer> item : this.groupEndpointAggr.get(group).getSamples()) {
+				String ts = item.getKey().toString(DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+				totalSite.insert(group,ts, item.getValue());
+			}
+
+		}
+
+		totalSite.aggregate( this.opsMgr,apsMgr.getTotalOp(aProfile));
 
 		// Append the timeline	
-		for (Entry<DateTime, Integer> item : this.serviceAggr.getSamples()) {
+		for (Entry<DateTime, Integer> item : totalSite.getSamples()) {
 			
 			StatusMetric cur = new StatusMetric();
 			cur.setDateInt(dateInt);
 			cur.setGroup(endpointGroup);
-			cur.setService(service);
 			
 			
 			cur.setTimestamp(item.getKey().toString(DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")));
@@ -138,5 +152,4 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 		}
 
 	}
-
 }

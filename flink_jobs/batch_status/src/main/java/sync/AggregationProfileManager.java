@@ -280,9 +280,6 @@ public class AggregationProfileManager {
 	
 	public void loadJsonString(List<String> apsJson) throws IOException {
 
-	
-		LOG.info("APS JSON MESSAGE $$$$$$$$$$$$$$$$$$$$$$$");
-		LOG.info(apsJson);
 		
 		try {
 

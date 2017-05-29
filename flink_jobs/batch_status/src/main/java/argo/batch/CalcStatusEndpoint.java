@@ -14,6 +14,7 @@ import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.minlog.Log;
 
 import argo.avro.GroupGroup;
 
@@ -132,12 +133,11 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 
 			// Check if we are in the switch of a new metric name
 			if (prevMetricName.equals(metric) == false) {
-				LOG.info("--another metric-- " + endpointGroup+"|"+service+"|"+hostname+"|"+metric+"|"+status+"|"+ts);
+				
 				this.endpointAggr.setFirst(metric, ts, this.opsMgr.getIntStatus(prevStatus));
-				prevMetricName = metric;
-				continue;
+				
 			}
-			LOG.info("--same metric-- " + endpointGroup+"|"+service+"|"+hostname+"|"+metric+"|"+status+"|"+ts);
+			
 			this.endpointAggr.insert(metric, ts, this.opsMgr.getIntStatus(status));
 			prevMetricName = metric;
 

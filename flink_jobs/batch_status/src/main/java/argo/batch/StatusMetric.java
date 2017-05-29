@@ -20,6 +20,7 @@ public class StatusMetric {
 		this.group = "";
 		this.service ="";
 		this.hostname = "";
+		this.metric="";
 		this.status = "";
 		this.timestamp = "";
 		this.dateInt = 0;

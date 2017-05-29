@@ -9,11 +9,19 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.esotericsoftware.minlog.Log;
+
+import argo.batch.ArgoStatusBatch;
 
 
 public class CTimeline {
 	
 	private LocalDate date;
+	
+	static Logger LOG = LoggerFactory.getLogger(CTimeline.class);
 	
 	private TreeMap<DateTime,Integer> samples;
 	
@@ -51,6 +59,10 @@ public class CTimeline {
 	}
 	
 	public int get(DateTime point) {
+		if (this.samples.floorEntry(point) == null){
+			
+			throw new RuntimeException("no item found in timeline, size of timeline:" + this.samples.size() + "," + point.toString());
+		}
 		return this.samples.floorEntry(point).getValue();
 	}
 	
