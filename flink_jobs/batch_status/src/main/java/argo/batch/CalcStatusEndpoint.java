@@ -1,7 +1,6 @@
 package argo.batch;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -15,7 +14,7 @@ import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import argo.avro.GroupEndpoint;
+
 import argo.avro.GroupGroup;
 
 import argo.avro.MetricProfile;
@@ -44,15 +43,11 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 	static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
 
 	private List<MetricProfile> mps;
-	private List<GroupEndpoint> egp;
-	private List<GroupGroup> ggp;
 	private List<String> aps;
 	private List<String> ops;
 	private MetricProfileManager mpsMgr;
 	private AggregationProfileManager apsMgr;
 	private OpsManager opsMgr;
-	private GroupGroupManager ggpMgr;
-	private String egroupType;
 	private String runDate;
 	private CAggregator endpointAggr;
 
@@ -60,12 +55,10 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 
 	@Override
 	public void open(Configuration parameters) throws IOException {
-		// Get data from broadcast variable
+		
 		this.runDate = params.getRequired("run.date");
-
+		// Get data from broadcast variables
 		this.mps = getRuntimeContext().getBroadcastVariable("mps");
-		this.egp = getRuntimeContext().getBroadcastVariable("egp");
-		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
 		this.aps = getRuntimeContext().getBroadcastVariable("aps");
 		this.ops = getRuntimeContext().getBroadcastVariable("ops");
 		// Initialize metric profile manager
@@ -78,13 +71,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 		// Initialize operations manager
 		this.opsMgr = new OpsManager();
 		this.opsMgr.loadJsonString(ops);
-		// Initialize group group manager
-
-		// Initialize group group manager
-		this.ggpMgr = new GroupGroupManager();
-		this.ggpMgr.loadFromList(ggp);
-		// Initialize endpoint group type
-		this.egroupType = params.getRequired("egroup.type");
+		
 		this.runDate = params.getRequired("run.date");
 		this.endpointAggr = new CAggregator(); // Create aggregator
 

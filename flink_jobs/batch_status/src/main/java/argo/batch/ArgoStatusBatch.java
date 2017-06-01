@@ -43,17 +43,17 @@ import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.JobConf;
 
-
-
 /**
  * Represents an ARGO Batch Job in flink
  * 
- * Submit job in flink cluster using the following parameters 
- * --mps:   path to metric profile sync file (For hdfs use: hdfs://namenode:port/path/to/file)
- * --egp:   path to endpoints group topology file (For hdfs use: hdfs://namenode:port/path/to/file)
- * --ggp:   path to group of groups topology file  (For hdfs use: hdfs://namenode:port/path/to/file)
- * --mdata: path to metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
- * --mongo.url: path to mongo destination (eg mongodb://localhost:27017/database.table
+ * Submit job in flink cluster using the following parameters --mps: path to
+ * metric profile sync file (For hdfs use: hdfs://namenode:port/path/to/file)
+ * --egp: path to endpoints group topology file (For hdfs use:
+ * hdfs://namenode:port/path/to/file) --ggp: path to group of groups topology
+ * file (For hdfs use: hdfs://namenode:port/path/to/file) --mdata: path to
+ * metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
+ * --mongo.url: path to mongo destination (eg
+ * mongodb://localhost:27017/database.table
  */
 public class ArgoStatusBatch {
 	// setup logger
@@ -140,6 +140,18 @@ public class ArgoStatusBatch {
 				.withBroadcastSet(opsDS, "ops")
 				.withBroadcastSet(apsDS, "aps");
 		
+		// Create status service data set
+				DataSet<StatusMetric> stServiceDS = stEndpointDS.groupBy("group","service")
+						.sortGroup("hostname", Order.ASCENDING)
+						.sortGroup("timestamp", Order.ASCENDING)
+						.reduceGroup(new CalcStatusEndpoint(params))
+						.withBroadcastSet(mpsDS, "mps")
+						.withBroadcastSet(egpDS, "egp")
+						.withBroadcastSet(ggpDS, "ggp")
+						.withBroadcastSet(opsDS, "ops")
+						.withBroadcastSet(apsDS, "aps");
+				
+		
 		
 		/**
 		 * Prepares the data in BSONWritable values for mongo storage Each tuple
@@ -153,28 +165,14 @@ public class ArgoStatusBatch {
 					private static final long serialVersionUID = 1L;
 
 					
-					private List<MetricProfile> mps;
-					private List<GroupEndpoint> egp;
-					private MetricProfileManager mpsMgr;
-					private EndpointGroupManager egpMgr;
-					
 					private String report;
 					
 					
 					@Override
 				    public void open(Configuration parameters) {
-						// Get data from broadcast variable
-				        this.mps = getRuntimeContext().getBroadcastVariable("mps");
-				        this.egp = getRuntimeContext().getBroadcastVariable("egp");
-				        // Initialize metric profile manager
-				        this.mpsMgr = new MetricProfileManager();
-				        this.mpsMgr.loadFromList(mps);
-				        // Initialize endpoint group manager
-				        this.egpMgr = new EndpointGroupManager();
-				        this.egpMgr.loadFromList(egp);
+						
 				        report = params.getRequired("report");
 				        
-				       
 				    }
 					
 					@Override
@@ -200,7 +198,7 @@ public class ArgoStatusBatch {
 
 						return new Tuple2<NullWritable, BSONWritable>(NullWritable.get(), w);
 					}
-				}).withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp");
+				});
 		
 		/**
 		 * Prepares the data in BSONWritable values for mongo storage Each tuple
@@ -214,25 +212,14 @@ public class ArgoStatusBatch {
 					private static final long serialVersionUID = 1L;
 
 					
-					private List<MetricProfile> mps;
-					private List<GroupEndpoint> egp;
-					private MetricProfileManager mpsMgr;
-					private EndpointGroupManager egpMgr;
+			
 					
 					private String report;
 					
 					
 					@Override
 				    public void open(Configuration parameters) {
-						// Get data from broadcast variable
-				        this.mps = getRuntimeContext().getBroadcastVariable("mps");
-				        this.egp = getRuntimeContext().getBroadcastVariable("egp");
-				        // Initialize metric profile manager
-				        this.mpsMgr = new MetricProfileManager();
-				        this.mpsMgr.loadFromList(mps);
-				        // Initialize endpoint group manager
-				        this.egpMgr = new EndpointGroupManager();
-				        this.egpMgr.loadFromList(egp);
+						
 				        report = params.getRequired("report");
 				        
 				       
@@ -257,7 +244,48 @@ public class ArgoStatusBatch {
 
 						return new Tuple2<NullWritable, BSONWritable>(NullWritable.get(), w);
 					}
-				}).withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp");
+				});
+		
+		/**
+		 * Prepares the data in BSONWritable values for mongo storage Each tuple
+		 * is in the form <K,V> and the key here must be empty for mongo to
+		 * assign an ObjectKey NullWriteable as the first object of the tuple
+		 * ensures an empty key
+		 */
+		DataSet<Tuple2<NullWritable, BSONWritable>> statusServiceBSON = stServiceDS
+				.map(new RichMapFunction<StatusMetric, Tuple2<NullWritable, BSONWritable>>() {
+
+					private static final long serialVersionUID = 1L;
+					
+					private String report;
+					
+					
+					@Override
+				    public void open(Configuration parameters) {
+						
+				        report = params.getRequired("report");
+				        
+				    }
+					
+					@Override
+					public Tuple2<NullWritable, BSONWritable> map(StatusMetric md) throws Exception {
+
+						
+						// Create a mongo database object with the needed fields
+						DBObject builder = BasicDBObjectBuilder.start()
+								.add("report", this.report)
+								.add("service", md.getService())
+								.add("status", md.getStatus())
+								.add("timestamp", md.getTimestamp())
+								.add("date_integer", md.getDateInt()).get();
+								
+
+						// Convert database object to BsonWriteable
+						BSONWritable w = new BSONWritable(builder);
+
+						return new Tuple2<NullWritable, BSONWritable>(NullWritable.get(), w);
+					}
+				});
 
 		// Initialize a new hadoop conf object to add mongo connector related property
 		JobConf conf = new JobConf();
@@ -276,6 +304,15 @@ public class ArgoStatusBatch {
 		MongoOutputFormat<NullWritable, BSONWritable> mongoOutputFormat2 = new MongoOutputFormat<NullWritable, BSONWritable>();
 		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write results in mongo db
 		statusEndpointBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat2, conf2));
+		
+		// Initialize a new hadoop conf object to add mongo connector related property
+		JobConf conf3 = new JobConf();
+		// Add mongo destination as given in parameters
+		conf.set("mongo.output.uri", params.get("mongo.uri")+".status_services");
+		// Initialize MongoOutputFormat
+		MongoOutputFormat<NullWritable, BSONWritable> mongoOutputFormat3 = new MongoOutputFormat<NullWritable, BSONWritable>();
+		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write results in mongo db
+		statusServiceBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat3, conf3));
 		
 		
 		env.execute("Flink Status Job");
