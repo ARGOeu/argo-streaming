@@ -141,3 +141,39 @@ Status events are generated as JSON messages that are defined by the following c
 ### Number of events produced for each metric data received
 A metric data message can produce zero, one or more status metric events. The system analyzes the new status introduced by the metric and then aggregates on top levels to see if any other status changes are produced.
 If a status of an item actually changes an appropriate status event is produced based on the item type (endpoint_group,service,endpoint,metric).
+
+## Batch Status
+
+Flink batch job that calculates status results for a specific date
+
+Prepare job to submit in flink:
+
+- `cd flink_jobs/batch-status
+- `mvn clean && mvn package`
+
+
+Run jar in flink:
+
+- `flink run batch-status-0.1.jar {list of cli parameters}
+
+Job required cli parameters:
+
+`--pdata`             : file location of previous day's metric data (local or hdfs)
+
+`--mdata`             : file location of target day's metric data (local or hdfs)
+
+`--egp`               : file location of endpoint group topology file (local or hdfs)
+
+`--ggp`               : file location of group of groups topology file (local or hdfs)
+
+`--mps`               : file location of metric profile (local or hdfs)
+
+`--aps`               : file location of aggregations profile (local or hdfs)
+
+`--ops`               : file location of operations profile (local or hdfs)
+
+`--report`            : report uuid
+
+`--run.date`          : target date in DD-MM-YYYY format
+
+`--dastore.uri`       : datastore uri for outputting the results
