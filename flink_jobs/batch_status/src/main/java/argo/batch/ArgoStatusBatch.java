@@ -10,6 +10,7 @@ import com.mongodb.hadoop.mapred.MongoOutputFormat;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.util.MongoConfigUtil;
 
+
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
@@ -56,6 +57,7 @@ import org.apache.hadoop.mapred.JobConf;
  * --aps: path to aggregations profile file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --run.date: target date of computation in DD-MM-YYYY format
  * --report: report uuid
+ * --egroup.type: specify the type of the engpoint groups used in the report (e.g. SITES)
  * --datastore.uri: path to datastore destination (eg mongodb://localhost:27017/database.table
  */
 public class ArgoStatusBatch {
@@ -127,10 +129,6 @@ public class ArgoStatusBatch {
 				.withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp").withBroadcastSet(opsDS, "ops")
 				.withBroadcastSet(apsDS, "aps");
 
-		// Create status service data set
-				DataSet<StatusMetric> stServiceDSM = stEndpointDS.groupBy("group", "service")
-						.sortGroup("hostname", Order.ASCENDING).sortGroup("timestamp", Order.ASCENDING)
-						.first(100);
 		
 		// Create status service data set
 		DataSet<StatusMetric> stServiceDS = stEndpointDS.groupBy("group", "service")
@@ -294,44 +292,50 @@ public class ArgoStatusBatch {
 					}
 				});
 
+		
+		
 		// Initialize a new hadoop conf object to add mongo connector related
 		// property
 		JobConf conf = new JobConf();
 		// Add mongo destination as given in parameters
-		conf.set("mongo.output.uri", params.get("datastore.uri") + ".status_metrics");
+		conf.set("mongo.output.uri", params.getRequired("datastore.uri") + ".status_metrics");
 		// Initialize MongoOutputFormat
 		MongoOutputFormat<NullWritable, BSONWritable> mongoOutputFormat = new MongoOutputFormat<NullWritable, BSONWritable>();
 		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write
 		// results in mongo db
 		statusMetricBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat, conf));
 
+		
+		
 		// Initialize a new hadoop conf object to add mongo connector related
 		// property
 		JobConf conf2 = new JobConf();
 		// Add mongo destination as given in parameters
-		conf2.set("mongo.output.uri", params.get("datastore.uri") + ".status_endpoints");
+		conf2.set("mongo.output.uri", params.getRequired("datastore.uri") + ".status_endpoints");
 		// Initialize MongoOutputFormat
 		MongoOutputFormat<NullWritable, BSONWritable> mongoOutputFormat2 = new MongoOutputFormat<NullWritable, BSONWritable>();
 		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write
 		// results in mongo db
 		statusEndpointBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat2, conf2));
 
+		
 		// Initialize a new hadoop conf object to add mongo connector related
 		// property
 		JobConf conf3 = new JobConf();
 		// Add mongo destination as given in parameters
-		conf3.set("mongo.output.uri", params.get("datastore.uri") + ".status_services");
+		conf3.set("mongo.output.uri", params.getRequired("datastore.uri") + ".status_services");
 		// Initialize MongoOutputFormat
 		MongoOutputFormat<NullWritable, BSONWritable> mongoOutputFormat3 = new MongoOutputFormat<NullWritable, BSONWritable>();
 		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write
 		// results in mongo db
 		statusServiceBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat3, conf3));
 
+		
 		// Initialize a new hadoop conf object to add mongo connector related
 		// property
 		JobConf conf4 = new JobConf();
 		// Add mongo destination as given in parameters
-		conf4.set("mongo.output.uri", params.get("datastore.uri") + ".status_endpoint_groups");
+		conf4.set("mongo.output.uri", params.getRequired("datastore.uri") + ".status_endpoint_groups");
 		// Initialize MongoOutputFormat
 		MongoOutputFormat<NullWritable, BSONWritable> mongoOutputFormat4 = new MongoOutputFormat<NullWritable, BSONWritable>();
 		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write
