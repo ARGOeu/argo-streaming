@@ -176,4 +176,6 @@ Job required cli parameters:
 
 `--run.date`          : target date in DD-MM-YYYY format
 
-`--dastore.uri`       : datastore uri for outputting the results
+`--egroup.type`       : endpoint group type used in report (for e.g. SITES)
+
+`--datastore.uri`     : datastore uri for outputting the results

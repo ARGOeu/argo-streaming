@@ -68,7 +68,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		this.ggpMgr = new GroupGroupManager();
 		this.ggpMgr.loadFromList(ggp);
 		// Initialize endpoint group type
-		this.egroupType = params.get("egroup.type");
+		this.egroupType = params.getRequired("egroup.type");
 	}
 
 	
