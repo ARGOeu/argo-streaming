@@ -20,15 +20,19 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 
+/**
+ * Argo Messaging Service Rest Client specific for subscription related requests
+ */
 public class ArgoMessagingClient {
 
 	static Logger LOG = LoggerFactory.getLogger(ArgoMessagingClient.class);
-	// Http Client for contanting AMS service
+	// Http Client for contacting AMS service
 	private CloseableHttpClient httpClient = null;
 	// AMS endpoint (hostname:port or hostname)
 	private String endpoint = null;
@@ -51,8 +55,11 @@ public class ArgoMessagingClient {
 		this.sub = "test_sub";
 	}
 
-	// Failover initializer to be called inside method (if client is not yet initialized)
-	private void buildHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException{
+
+	/**
+	 * Create an SSL context and build a generic http client to be used by ArgoMessagingClient
+	 */
+	private void buildHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 		// Create ssl context
 		SSLContextBuilder builder = new SSLContextBuilder();
 		builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
@@ -61,8 +68,16 @@ public class ArgoMessagingClient {
 
 		this.httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
 	}
-	
-	// Initialized using parameters
+
+	/**
+	 * Initialize a new ArgoMessagingClient
+	 * 
+	 * @param method   Use http or https method
+	 * @param token    Argo Messaging service authentication token
+	 * @param endpoint Argo Messaging service endpoint hostname
+	 * @param project  Argo Messaging service project to target
+	 * @param sub      Argo Messaging service subscription name to target
+	 */
 	public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub)
 			throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 
@@ -81,13 +96,123 @@ public class ArgoMessagingClient {
 		this.sub = sub;
 	}
 
-	// Based on parameters compose the request url
+	/**
+	 * Composes a subscription based path url based subscription-related methods (pull,offsets,modifyOffset etc)
+	 * 
+	 * @param method   Use http or https method
+	 * @return A complete url in string format
+	 */
 	public String composeURL(String method) {
 		return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method + "?key="
 				+ token;
 	}
 
-	// Do a pull request 
+	/**
+	 * Implements a modify offset request which modifies the offset of the current subscription 
+	 * 
+	 * @param offset String representation of an offset int64 number
+	 * @return String containing the response message
+	 */
+	public String doModOffset(String offset )
+			throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+
+		
+			// Create the http post to modify offset
+			HttpPost postModOff = new HttpPost(this.composeURL("modifyOffset"));
+			StringEntity postBody = new StringEntity("{\"offset\":" + offset + "}");
+			postBody.setContentType("application/json");
+			postModOff.setEntity(postBody);
+
+			CloseableHttpResponse response = httpClient.execute(postModOff);
+			String resMsg = "";
+			StringBuilder result = new StringBuilder();
+
+			HttpEntity entity = response.getEntity();
+			int status = response.getStatusLine().getStatusCode();
+
+			if (status != 200) {
+
+				InputStreamReader isRdr = new InputStreamReader(entity.getContent());
+				BufferedReader bRdr = new BufferedReader(isRdr);
+
+				String rLine;
+
+				while ((rLine = bRdr.readLine()) != null)
+					result.append(rLine);
+
+				resMsg = result.toString();
+
+			}
+
+			response.close();
+
+			// Return a resposeMessage
+			return resMsg;
+
+		
+
+	}
+
+	/**
+	 * Implements a request which retrieves the min,max and current offset of the target subscription
+	 * 
+	 * @return String[] A 3-item String array containing in the following order: min,max and offset values
+	 */
+	public String[] doGetOffset()
+			throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+
+		// Create the http post to pull
+		HttpGet getOffset = new HttpGet(this.composeURL("offsets"));
+
+		if (this.httpClient == null) {
+			buildHttpClient();
+		}
+
+		CloseableHttpResponse response = this.httpClient.execute(getOffset);
+		String minOffset = "";
+		String maxOffset = "";
+		String offset = "";
+		StringBuilder result = new StringBuilder();
+
+		HttpEntity entity = response.getEntity();
+
+		if (entity != null) {
+
+			InputStreamReader isRdr = new InputStreamReader(entity.getContent());
+			BufferedReader bRdr = new BufferedReader(isRdr);
+
+			String rLine;
+
+			while ((rLine = bRdr.readLine()) != null)
+				result.append(rLine);
+
+			// Gather message from json
+			JsonParser jsonParser = new JsonParser();
+			// parse the json root object
+			JsonObject jRoot = jsonParser.parse(result.toString()).getAsJsonObject();
+
+			JsonElement jMin = jRoot.get("min");
+			JsonElement jMax = jRoot.get("max");
+			JsonElement jOff = jRoot.get("offset");
+
+			minOffset = jMin.getAsString();
+			maxOffset = jMax.getAsString();
+			offset = jOff.getAsString();
+
+		}
+
+		response.close();
+
+		// Return a 3-element array with min, max and current offset
+		return new String[] { minOffset, maxOffset, offset };
+
+	}
+
+	/**
+	 * Implements a subscription pull request
+	 * 
+	 * @return String[] A 2-item String array containing in the following order: message and ack id
+	 */
 	public String[] doPull() throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
 
 		// Create the http post to pull
@@ -99,7 +224,7 @@ public class ArgoMessagingClient {
 		if (this.httpClient == null) {
 			buildHttpClient();
 		}
-		
+
 		CloseableHttpResponse response = this.httpClient.execute(postPull);
 		String msg = "";
 		String ackId = "";
@@ -121,7 +246,7 @@ public class ArgoMessagingClient {
 			JsonParser jsonParser = new JsonParser();
 			// parse the json root object
 			JsonElement jRoot = jsonParser.parse(result.toString());
-			
+
 			JsonArray jRec = jRoot.getAsJsonObject().get("receivedMessages").getAsJsonArray();
 
 			// if has elements
@@ -142,17 +267,20 @@ public class ArgoMessagingClient {
 
 	}
 
-	// Consume = Do a pull and an acknowledge request
+	/**
+	 * Implements a consume cycle which constists of a pull and ack operation in order
+	 * 
+	 * @return String Message received from AMS service
+	 */
 	public String consume() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
 		String msg = "";
 		// Try first to pull a message
 		try {
-			
-			
+
 			String msgAck[] = doPull();
 			String msg_pre = msgAck[0];
 			String ack = msgAck[1];
-			
+
 			if (ack != "") {
 				// Do an ack for the received message
 				String ackRes = doAck(ack);
@@ -160,13 +288,13 @@ public class ArgoMessagingClient {
 					// Acknowledge output final message
 					msg = msg_pre;
 					LOG.info("Message Acknowledged ackid:" + ack);
-					
+
 				} else {
 					LOG.info("No acknowledment");
-					LOG.info("Ack id"+ack);
+					LOG.info("Ack id" + ack);
 					LOG.info(ackRes);
 				}
-			} 
+			}
 
 		} catch (IOException e) {
 			LOG.error(e.getMessage());
@@ -176,7 +304,12 @@ public class ArgoMessagingClient {
 
 	}
 
-	// Do an acknowledge request based on a given ackId
+	/**
+	 * Implements a subscription acknowledge request
+	 * 
+	 * @param ackId A String representation of the ackID to be used for acknowledgement
+	 * @return String containing the response message
+	 */
 	public String doAck(String ackId) throws IOException {
 
 		// Create the http post to ack
@@ -212,8 +345,11 @@ public class ArgoMessagingClient {
 		return resMsg;
 
 	}
-	
-	public void close() throws IOException{
+
+	/**
+	 * Close connection to the AMS service
+	 */
+	public void close() throws IOException {
 		this.httpClient.close();
 	}
 }
