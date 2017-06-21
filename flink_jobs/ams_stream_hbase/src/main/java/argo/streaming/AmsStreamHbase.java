@@ -18,8 +18,10 @@ import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
-
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.connectors.fs.RollingSink;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
@@ -36,6 +38,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import argo.avro.MetricData;
+
 
 //Flink Job : Stream metric data from ARGO messaging to Hbase
 //job required cli parameters
@@ -50,6 +54,7 @@ import com.google.gson.JsonParser;
 //--hbase-zk-port     : port used by hbase zookeeper servers
 //--hbase-namespace   : table namespace used (usually tenant name)
 //--hbase-table       : table name (usually metric_data)
+//--hdfs              : hdfs destination to write the data
 public class AmsStreamHbase {
 	// setup logger
 	static Logger LOG = LoggerFactory.getLogger(AmsStreamHbase.class);
@@ -79,10 +84,14 @@ public class AmsStreamHbase {
 		hbf.setNamespace(parameterTool.getRequired("hbase-namespace"));
 		hbf.setTableName(parameterTool.getRequired("hbase-table"));
 
+		RollingSink<MetricData> rSink = new RollingSink<MetricData>(parameterTool.getRequired("hdfs"));
+	    rSink.setBatchSize(1024);
+	   
+		
 		// Intermediate Transformation
 		// Map function: json msg -> payload -> base64decode -> avrodecode ->
 		// hbase
-		messageStream.rebalance().map(new MapFunction<String, String>() {
+		SingleOutputStreamOperator<String> msgStream = messageStream.rebalance().map(new MapFunction<String, String>() {
 
 			private static final long serialVersionUID = 1L;
 
@@ -110,7 +119,10 @@ public class AmsStreamHbase {
 				}
 			}
 
-		}).writeUsingOutputFormat(hbf);
+		});
+		
+		msgStream.writeUsingOutputFormat(hbf);
+	
 
 		// Execute flink dataflow
 		see.execute();
