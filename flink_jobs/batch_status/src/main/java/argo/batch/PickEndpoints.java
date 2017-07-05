@@ -1,6 +1,7 @@
 package argo.batch;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,7 @@ import sync.AggregationProfileManager;
 import sync.EndpointGroupManager;
 import sync.GroupGroupManager;
 import sync.MetricProfileManager;
+import sync.RecomputationsManager;
 
 /**
  * Accepts a metric data entry and converts it to a status metric object by appending endpoint group information
@@ -43,20 +45,26 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 	private List<MetricProfile> mps;
 	private List<GroupEndpoint> egp;
 	private List<GroupGroup> ggp;
-	private List<String> aps;
-	private List<String> ops;
+	private List<String> rec;
 	private MetricProfileManager mpsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
+	private RecomputationsManager recMgr;
 	
 	private String egroupType;
 
 	@Override
-	public void open(Configuration parameters) throws IOException {
+	public void open(Configuration parameters) throws IOException, ParseException {
 		// Get data from broadcast variable
 		this.mps = getRuntimeContext().getBroadcastVariable("mps");
 		this.egp = getRuntimeContext().getBroadcastVariable("egp");
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
+		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
+		this.rec = getRuntimeContext().getBroadcastVariable("rec");
+		
+		// Initialize Recomputation manager
+		this.recMgr = new RecomputationsManager();
+		this.recMgr.loadJsonString(rec);
 		
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
@@ -80,7 +88,13 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		String hostname = md.getHostname();
 		String service = md.getService();
 		String metric = md.getMetric();
+		String monHost = md.getMonitoringHost();
+		String ts = md.getTimestamp();
 
+		// Filter By monitoring engine
+		if (recMgr.isMonExcluded(monHost, ts) == true) return;
+		
+		
 		// Filter By metric profile
 		if (mpsMgr.checkProfileServiceMetric(prof, service, metric) == false) return;
 
@@ -91,10 +105,10 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		for (String groupname : groupnames) {
 			if (ggpMgr.checkSubGroup(groupname) == true){
 				// Create a StatusMetric output
-				String timestamp = md.getTimestamp().split("Z")[0];
-				String[] ts = timestamp.split("T");
-				int dateInt = Integer.parseInt(ts[0].replace("-", ""));
-				int timeInt = Integer.parseInt(ts[1].replace(":",""));
+				String timestamp2 = md.getTimestamp().split("Z")[0];
+				String[] tsToken = timestamp2.split("T");
+				int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
+				int timeInt = Integer.parseInt(tsToken[1].replace(":",""));
 				
 				StatusMetric sm = new StatusMetric(groupname,md.getService(),md.getHostname(),md.getMetric(), md.getStatus(),md.getTimestamp(),dateInt,timeInt,"","");
 				
