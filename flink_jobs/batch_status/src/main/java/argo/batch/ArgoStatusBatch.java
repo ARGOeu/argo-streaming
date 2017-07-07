@@ -55,6 +55,7 @@ import org.apache.hadoop.mapred.JobConf;
  * --mdata: path to metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --ops: path to operations profile file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --aps: path to aggregations profile file (For hdfs use: hdfs://namenode:port/path/to/file)
+ * --rec: path to recomputations file
  * --run.date: target date of computation in DD-MM-YYYY format
  * --report: report uuid
  * --egroup.type: specify the type of the engpoint groups used in the report (e.g. SITES)
@@ -83,6 +84,8 @@ public class ArgoStatusBatch {
 
 		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
 		DataSource<String> apsDS = env.readTextFile(params.getRequired("aps"));
+		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
+
 
 		// sync data input: metric profile in avro format
 		AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);

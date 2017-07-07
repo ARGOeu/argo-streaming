@@ -230,7 +230,7 @@ public class OpsManager {
 
 	}
 	
-	public void loadJsonString(List<String> opsJson) throws IOException {
+	public void loadJsonString(List<String> opsJson) throws JsonParseException {
 		// Clear data
 		this.clear();
 
