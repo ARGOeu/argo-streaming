@@ -1,0 +1,11 @@
+{
+  "report":"c800846f-8478-4af8-85d1-a3f12fe4c18f",
+  "monitoring_host":"none",
+  "service": "SRMv2",
+  "hostname": "se01.afroditi.hellasgrid.gr",
+  "metric": "org.sam.SRM-Put",
+  "timestamp":"2015-01-01T00:00:00Z",
+  "status":"MISSING",
+  "summary":"missing",
+  "message":"missing"
+}
