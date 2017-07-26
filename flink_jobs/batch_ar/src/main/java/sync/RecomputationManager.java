@@ -22,15 +22,15 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class RecomputationsManager {
+public class RecomputationManager {
 
-	private static final Logger LOG = Logger.getLogger(RecomputationsManager.class.getName());
+	private static final Logger LOG = Logger.getLogger(RecomputationManager.class.getName());
 
 	public Map<String,ArrayList<Map<String,String>>> groups;
 	// Recomputations for filtering monitoring engine results
 	public Map<String,ArrayList<Map<String,Date>>> monEngines; 
 	
-	public RecomputationsManager() {
+	public RecomputationManager() {
 		this.groups = new HashMap<String,ArrayList<Map<String,String>>>();
 		this.monEngines = new HashMap<String,ArrayList<Map<String,Date>>>();
 	}
@@ -199,7 +199,14 @@ public class RecomputationsManager {
 			
 
 			JsonParser jsonParser = new JsonParser();
+			
+			if (recJson.get(0).equalsIgnoreCase("{}")) return;
+			
+			
 			JsonElement jRootElement = jsonParser.parse(recJson.get(0));
+			
+	
+			
 			JsonArray jRootObj = jRootElement.getAsJsonArray();
 
 			for (JsonElement item : jRootObj) {

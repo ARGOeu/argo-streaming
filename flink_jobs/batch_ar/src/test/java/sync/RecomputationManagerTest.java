@@ -31,7 +31,7 @@ public class RecomputationManagerTest {
 		URL resJsonFile = RecomputationManagerTest.class.getResource("/ops/recomp.json");
 		File jsonFile = new File(resJsonFile.toURI());
 
-		RecomputationsManager recMgr = new RecomputationsManager();
+		RecomputationManager recMgr = new RecomputationManager();
 		recMgr.loadJson(jsonFile);
 		
 
