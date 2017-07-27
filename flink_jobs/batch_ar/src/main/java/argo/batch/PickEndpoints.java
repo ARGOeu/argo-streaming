@@ -55,6 +55,15 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 	
 	private String egroupType;
 
+	/**
+	 * Initialization method of the RichFlatMapFunction operator
+	 * <p>
+	 * This runs at the initialization of the operator and receives a configuration
+	 * parameter object. It initializes all required structures used by this operator
+	 * such as profile managers, operations managers, topology managers etc.
+	 *
+	 * @param	parameters	A flink Configuration object
+	 */
 	@Override
 	public void open(Configuration parameters) throws IOException, ParseException {
 		// Get data from broadcast variable
@@ -87,7 +96,21 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 	}
 
 	
-
+	/**
+	 * The main operator business logic of filtering a collection of MetricData
+	 * <p>
+	 * This runs for a dataset of Metric data items and returns a collection of approoved MetricData items after filtering out the 
+	 * unwated ones. 
+	 * The filtering happens in 5 stages:
+	 * 1) Filter out by checking if monitoring engine is excluded (Recomputation Manager used)
+	 * 2) Filter out by checking if service belongs to aggregation profile (Aggregation Profile Manager used)
+	 * 3) Filter out by checking if service and metric belongs to metric profile used (Metric Profile Manager used)
+	 * 4) Filter out by checking if service endpoint belongs to group endpoint topology (Group Endpoint  Manager used
+	 * 5) Filter out by checking if group endpoint belongs to a valid upper group (Group of Groups Manager used)
+	 *
+	 * @param	in	An Iterable collection of MetricData objects
+	 * @param	out	A Collector list of valid MetricData objects after filtering
+	 */
 	@Override
 	public void flatMap(MetricData md, Collector<MetricData> out) throws Exception {
 
