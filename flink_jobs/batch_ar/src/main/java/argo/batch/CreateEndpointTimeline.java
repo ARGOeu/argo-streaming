@@ -1,7 +1,6 @@
 package argo.batch;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
@@ -9,14 +8,17 @@ import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
-import argo.avro.MetricData;
+
 import argo.avro.MetricProfile;
+import ops.DAggregator;
 import ops.DTimeline;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
@@ -25,16 +27,16 @@ import sync.GroupGroupManager;
 import sync.MetricProfileManager;
 
 /**
- * Accepts a list of metric data objects and produces a metric timeline
+ * Accepts a list of monitoring timelines and produces an endpoint timeline
  * The class is used as a RichGroupReduce Function in flink pipeline
  */
-public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, MonTimeline> {
+public class CreateEndpointTimeline extends RichGroupReduceFunction<MonTimeline, MonTimeline> {
 
 	private static final long serialVersionUID = 1L;
 
 	final ParameterTool params;
 
-	public CreateMetricTimeline(ParameterTool params) {
+	public CreateEndpointTimeline(ParameterTool params) {
 		this.params = params;
 	}
 
@@ -50,10 +52,6 @@ public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, Mo
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
 	private OpsManager opsMgr;
-	private String runDate;
-	private String egroupType;
-
-	private boolean fillMissing;
 
 	/**
 	 * Initialization method of the RichGroupReduceFunction operator
@@ -67,7 +65,6 @@ public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, Mo
 	@Override
 	public void open(Configuration parameters) throws IOException {
 
-		this.runDate = params.getRequired("run.date");
 		// Get data from broadcast variables
 		this.mps = getRuntimeContext().getBroadcastVariable("mps");
 		this.aps = getRuntimeContext().getBroadcastVariable("aps");
@@ -92,70 +89,54 @@ public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, Mo
 		this.ggpMgr = new GroupGroupManager();
 		this.ggpMgr.loadFromList(ggp);
 
-		this.runDate = params.getRequired("run.date");
-		this.egroupType = params.getRequired("egroup.type");
-
-		fillMissing = true;
 
 	}
 
 	/**
-	 * The main operator buisness logic of transforming a collection of MetricData to a metric timeline
+	 * The main operator business logic of transforming a collection of MetricTimelines to an aggregated endpoint timeline
 	 * <p>
-	 * This runs for each group item (endpointGroup,service,hostname,metric) and contains a list of metric data objects sorted
-	 * by the "timestamp" field. It uses a Discrete Timeline object to map individual status change points in time to an array of statuses.
-	 * The Discrete timeline automatically fills the gaps between the status changes to produce a full array of status points representing
-	 * the discrete timeline. Notice that status values are mapped from string representations to integer ids ("OK" => 0, "CRITICAL" => 4)
-	 * for more efficient processing during aggregation comparisons.
+	 * This runs for each group item (endpointGroup,service,hostname) and contains a list of metric timelines sorted
+	 * by the "metric" field. It uses a Discrete Aggregator to aggregate the metric timelines according to the operations
+	 * profile defined in the Operations Manager as to produce the final Endpoint Timeline. The type of metric aggregation is
+	 * defined in the aggregation profile managed by the AggregationManager
 	 *
-	 * @param	in	An Iterable collection of MetricData objects
-	 * @param	out	A Collector list of MonTimeline to acquire the produced metric timelines. 
+	 * @param	in	An Iterable collection of MonTimeline objects
+	 * @param	out	A Collector list of MonTimeline to acquire the produced endpoint timelines. 
 	 */
 	@Override
-	public void reduce(Iterable<MetricData> in, Collector<MonTimeline> out) throws Exception {
+	public void reduce(Iterable<MonTimeline> in, Collector<MonTimeline> out) throws Exception {
 
-		String service = "";
-		String endpointGroup = "";
-		String hostname = "";
-		String metric = "";
-
-		DTimeline dtl = new DTimeline();
-
-		for (MetricData item : in) {
+		// Initialize field values and aggregator
+		String service ="";
+		String endpointGroup ="";
+		String hostname ="";
+	
+		DAggregator dAgg = new DAggregator();
+		
+		
+		// For each metric timeline of the input group
+		for (MonTimeline item : in) {
+			
 
 			service = item.getService();
 			hostname = item.getHostname();
-			metric = item.getMetric();
-
-			// Filter By endpoint group if belongs to supergroup
-			ArrayList<String> groupnames = egpMgr.getGroup(egroupType, hostname, service);
-
-			for (String groupname : groupnames) {
-				if (ggpMgr.checkSubGroup(groupname) == true) {
-					endpointGroup = groupname;
-				}
-
-			}
-
-			String ts = item.getTimestamp();
-			String status = item.getStatus();
-			// insert monitoring point (ts,status) into the discrete timeline
-			
-			if (!(ts.substring(0, ts.indexOf("T")).equals(this.runDate))) {
-				dtl.setStartState(this.opsMgr.getIntStatus(status));
-				continue;
-			}
-			
-			dtl.insert(ts, opsMgr.getIntStatus(status));
+			endpointGroup = item.getGroup();
+			// Initialize a DTimelineObject
+			DTimeline dtl = new DTimeline();
+			dtl.samples = item.getTimeline();
+			dtl.setStartState(dtl.samples[0]);
+			// Push Discrete Timeline directly to the hashtable of the aggregator 
+			dAgg.timelines.put(item.getMetric(), dtl);
 
 		}
 		
-		dtl.settle(opsMgr.getDefaultMissingInt());
-		
-		// Create a new MonTimeline object
-		MonTimeline mtl = new MonTimeline(endpointGroup, service, hostname, metric);
-		// Add Discrete Timeline samples int array to the MonTimeline
-		mtl.setTimeline(dtl.samples);
+		// Grab metric operation type from aggregation profile
+		String avProf = apsMgr.getAvProfiles().get(0);
+		dAgg.aggregate(apsMgr.getMetricOp(avProf), opsMgr);
+		// Create a new MonTimeline object for endpoint
+		MonTimeline mtl = new MonTimeline(endpointGroup,service,hostname,"");
+		// Add Discrete Timeline samples int array to the MonTimeline 
+		mtl.setTimeline(dAgg.aggregation.samples);
 		// Output MonTimeline object
 		out.collect(mtl);
 
