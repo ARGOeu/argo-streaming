@@ -2,19 +2,12 @@ package argo.batch;
 
 import org.slf4j.LoggerFactory;
 
-
-
-
-
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 
 import org.slf4j.Logger;
-
-
-
 
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
@@ -27,7 +20,6 @@ import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.utils.ParameterTool;
 
 import org.apache.flink.core.fs.Path;
-
 
 /**
  * Represents an ARGO Batch Job in flink
@@ -90,21 +82,24 @@ public class ArgoArBatch {
 				.withBroadcastSet(recDS, "rec");
 
 		// Create a dataset of metric timelines
-		DataSet<MonTimeline> metricTimelinesDS = mdataTrimDS.groupBy("service", "hostname","metric")
-				.sortGroup("timestamp", Order.ASCENDING)
-				.reduceGroup(new CreateMetricTimeline(params)).withBroadcastSet(mpsDS, "mps")
-				.withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp").withBroadcastSet(opsDS, "ops")
-				.withBroadcastSet(aprDS, "aps");
-		
+		DataSet<MonTimeline> metricTimelinesDS = mdataTrimDS.groupBy("service", "hostname", "metric")
+				.sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CreateMetricTimeline(params))
+				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps");
+
 		// Create a dataset of endpoint timelines
-		DataSet<MonTimeline> endpointTimelinesDS = metricTimelinesDS.groupBy("group","service", "hostname")
-				.sortGroup("metric", Order.ASCENDING)
-				.reduceGroup(new CreateEndpointTimeline(params)).withBroadcastSet(mpsDS, "mps")
-				.withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp").withBroadcastSet(opsDS, "ops")
-				.withBroadcastSet(aprDS, "aps");
-		
-		endpointTimelinesDS.writeAsText("/tmp/batch-ar-output04");
-	 
+		DataSet<MonTimeline> endpointTimelinesDS = metricTimelinesDS.groupBy("group", "service", "hostname")
+				.sortGroup("metric", Order.ASCENDING).reduceGroup(new CreateEndpointTimeline(params))
+				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps");
+
+		// Create a dataset of service timelines
+		DataSet<MonTimeline> serviceTimelinesDS = metricTimelinesDS.groupBy("group", "service")
+				.sortGroup("hostname", Order.ASCENDING).reduceGroup(new CreateServiceTimeline(params))
+				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps");
+
+		serviceTimelinesDS.writeAsText("/tmp/batch-ar-output");
 
 		env.execute("Flink Ar Batch Job");
 
