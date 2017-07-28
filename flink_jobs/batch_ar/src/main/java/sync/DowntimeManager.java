@@ -175,7 +175,9 @@ public class DowntimeManager {
 	 */
 	@SuppressWarnings("unchecked")
 	public void loadFromList( List<Downtime> dnt)  {
-
+		// IF no downtimes collected return
+		if (dnt==null) return;
+		
 		// For each downtime object in list
 		for (Downtime item : dnt){
 			String hostname = item.getHostname();
