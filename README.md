@@ -225,4 +225,6 @@ Job required cli parameters:
 
 `--egroup.type`       : endpoint group type used in report (for e.g. SITES)
 
+`--ggroup.type`       : group of groups type used in report (for e.g. NGI)
+
 `--datastore.uri`     : datastore uri for outputting the results

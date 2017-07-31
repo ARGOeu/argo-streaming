@@ -7,6 +7,7 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import argo.avro.Weight;
 
 import org.slf4j.Logger;
 
@@ -44,7 +45,8 @@ public class ArgoArBatch {
 		Path mps = new Path(params.getRequired("mps"));
 		Path egp = new Path(params.getRequired("egp"));
 		Path ggp = new Path(params.getRequired("ggp"));
-		Path down = new Path(params.getRequired("down"));
+		Path down = new Path(params.getRequired("downtimes"));
+		Path weight = new Path(params.getRequired("weights"));
 
 		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
 		DataSource<String> aprDS = env.readTextFile(params.getRequired("apr"));
@@ -65,6 +67,10 @@ public class ArgoArBatch {
 		// sync data input: downtime data in avro format
 		AvroInputFormat<Downtime> downAvro = new AvroInputFormat<Downtime>(down, Downtime.class);
 		DataSet<Downtime> downDS = env.createInput(downAvro);
+
+		// sync data input: weight data in avro format
+		AvroInputFormat<Weight> weightAvro = new AvroInputFormat<Weight>(weight, Weight.class);
+		DataSet<Weight> weightDS = env.createInput(weightAvro);
 
 		// todays metric data
 		Path in = new Path(params.getRequired("mdata"));
@@ -111,12 +117,20 @@ public class ArgoArBatch {
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(recDS, "rec");
 
-		// Discard unused data and attach endpoint group as information
+		// Calculate service ar from service timelines
 		DataSet<ServiceAR> serviceResultDS = serviceTimelinesDS.flatMap(new CalcServiceAR(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
 
-		serviceResultDS.writeAsText("/tmp/batch-ar-output");
+		// Calculate endpoint group ar from endpoint group timelines
+		DataSet<EndpointGroupAR> groupResultDS = groupTimelinesDS.flatMap(new CalcEndpointGroupAR(params))
+				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops")
+				.withBroadcastSet(weightDS, "weight");
+		
+
+		serviceResultDS.writeAsText("/tmp/batch-service-ar");
+		groupResultDS.writeAsText("/tmp/batch-group-ar");
 
 		env.execute("Flink Ar Batch Job");
 
