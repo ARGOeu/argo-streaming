@@ -1,0 +1,70 @@
+{
+  
+  "states":
+  [
+    "OK",
+    "WARNING",
+    "UNKNOWN",
+    "MISSING",
+    "CRITICAL",
+    "DOWNTIME"
+  ],
+  
+  "default_down": "DOWNTIME",
+  "default_missing": "MISSING",
+  "default_unknown": "UNKNOWN",
+  
+  "operations":
+  {
+    "AND":
+    [
+      { "A":"OK",       "B":"OK",       "X":"OK"       },
+      { "A":"OK",       "B":"WARNING",  "X":"WARNING"  },
+      { "A":"OK",       "B":"UNKNOWN",  "X":"UNKNOWN"  },
+      { "A":"OK",       "B":"MISSING",  "X":"MISSING"  },
+      { "A":"OK",       "B":"CRITICAL", "X":"CRITICAL" },
+      { "A":"OK",       "B":"DOWNTIME", "X":"DOWNTIME" },
+      { "A":"WARNING",  "B":"WARNING",  "X":"WARNING"  },
+      { "A":"WARNING",  "B":"UNKNOWN",  "X":"UNKNOWN"  },
+      { "A":"WARNING",  "B":"MISSING",  "X":"MISSING"  },
+      { "A":"WARNING",  "B":"CRITICAL", "X":"CRITICAL" },
+      { "A":"WARNING",  "B":"DOWNTIME", "X":"DOWNTIME" },
+      { "A":"UNKNOWN",  "B":"UNKNOWN",  "X":"UNKNOWN"  },
+      { "A":"UNKNOWN",  "B":"MISSING",  "X":"MISSING"  },
+      { "A":"UNKNOWN",  "B":"CRITICAL", "X":"CRITICAL" },
+      { "A":"UNKNOWN",  "B":"DOWNTIME", "X":"DOWNTIME" },
+      { "A":"MISSING",  "B":"MISSING",  "X":"MISSING"  },
+      { "A":"MISSING",  "B":"CRITICAL", "X":"CRITICAL" },
+      { "A":"MISSING",  "B":"DOWNTIME", "X":"DOWNTIME" },
+      { "A":"CRITICAL", "B":"CRITICAL", "X":"CRITICAL" },
+      { "A":"CRITICAL", "B":"DOWNTIME", "X":"DOWNTIME" },
+      { "A":"DOWNTIME", "B":"DOWNTIME", "X":"DOWNTIME" }
+
+    ],
+    
+    "OR":
+    [
+      { "A":"OK",       "B":"OK",       "X":"OK"       },
+      { "A":"OK",       "B":"WARNING",  "X":"OK"       },
+      { "A":"OK",       "B":"UNKNOWN",  "X":"OK"       },
+      { "A":"OK",       "B":"MISSING",  "X":"OK"       },
+      { "A":"OK",       "B":"CRITICAL", "X":"OK"       },
+      { "A":"OK",       "B":"DOWNTIME", "X":"OK"       },
+      { "A":"WARNING",  "B":"WARNING",  "X":"WARNING"  },
+      { "A":"WARNING",  "B":"UNKNOWN",  "X":"WARNING"  },
+      { "A":"WARNING",  "B":"MISSING",  "X":"WARNING"  },
+      { "A":"WARNING",  "B":"CRITICAL", "X":"WARNING"  },
+      { "A":"WARNING",  "B":"DOWNTIME", "X":"WARNING"  },
+      { "A":"UNKNOWN",  "B":"UNKNOWN",  "X":"UNKNOWN"  },
+      { "A":"UNKNOWN",  "B":"MISSING",  "X":"UNKNOWN"  },
+      { "A":"UNKNOWN",  "B":"CRITICAL", "X":"CRITICAL" },
+      { "A":"UNKNOWN",  "B":"DOWNTIME", "X":"UNKNOWN"  },
+      { "A":"MISSING",  "B":"MISSING",  "X":"MISSING"  },
+      { "A":"MISSING",  "B":"CRITICAL", "X":"CRITICAL" },
+      { "A":"MISSING",  "B":"DOWNTIME", "X":"MISSING"  },
+      { "A":"CRITICAL", "B":"CRITICAL", "X":"CRITICAL" },
+      { "A":"CRITICAL", "B":"DOWNTIME", "X":"DOWNTIME" },
+      { "A":"DOWNTIME", "B":"DOWNTIME", "X":"DOWNTIME" }
+    ]
+  } 
+}

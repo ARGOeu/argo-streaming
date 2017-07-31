@@ -1,0 +1,10 @@
+# Set-up a python centric enviroment in order to easily choose py version:2.6
+# bonus: Java 7 and mvn also included
+language: python
+# Target py version 2.6
+python:
+  - "2.6"
+
+script:
+  - cd flink_jobs/ams_stream_hbase/ && mvn test
+  - cd ../stream_status && mvn test

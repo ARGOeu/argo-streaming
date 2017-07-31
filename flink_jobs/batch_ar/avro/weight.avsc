@@ -1,0 +1,9 @@
+{"namespace": "argo.avro",
+ "type": "record",
+ "name": "Weight",
+ "fields": [
+    {"name": "type", "type": "string"},
+    {"name": "site", "type": "string"},
+    {"name": "weight", "type": "string"}
+ ]
+}

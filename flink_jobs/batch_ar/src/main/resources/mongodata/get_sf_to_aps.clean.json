@@ -1,0 +1,19 @@
+{
+  "ch.cern.sam.ROC_CRITICAL": {
+    "ARC-CE": "test-ap1",
+    "GRAM5": "test-ap1",
+    "QCG.Computing": "test-ap1",
+    "SRMv2": "test-ap1",
+    "Site-BDII": "test-ap1",
+    "unicore6.TargetSystemFactory": "test-ap1",
+    "CREAM-CE": "test-ap1",
+    "SRM": "test-ap1"
+  },
+  "ch.cern.sam.CLOUD-MON": {
+    "eu.egi.cloud.vm-management.occi": "egi-fedcloud",
+    "eu.egi.cloud.storage-management.cdmi": "egi-fedcloud",
+    "eu.egi.cloud.information.bdii": "egi-fedcloud",
+    "eu.egi.cloud.accounting": "egi-fedcloud"
+  }
+}
+

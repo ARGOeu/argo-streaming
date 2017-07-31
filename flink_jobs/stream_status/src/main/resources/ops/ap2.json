@@ -1,0 +1,35 @@
+{
+  "name": "fedcloud",
+  "namespace": "egi",
+  "metric_profile": "ch.cern.sam.CLOUD-MON",
+  "metric_ops":"AND",
+  "group_type": "sites",
+  "operation":"AND",
+  "groups": {
+    "accounting": {
+      "services":{
+        "eu.egi.cloud.accounting":"OR"
+        },
+       "operation":"OR"
+    },
+    "information": {
+      "services":{
+        "eu.egi.cloud.information.bdii":"OR"
+        },
+       "operation":"OR"
+    },
+    "storage-management": {
+      "services":{
+        "eu.egi.cloud.storage-management.cdmi":"OR"
+        },
+       "operation":"OR"
+    },
+    "vm-management": {
+      "services":{
+        "eu.egi.cloud.vm-management.occi":"OR"
+        },
+       "operation":"OR"
+    }
+
+  }
+}

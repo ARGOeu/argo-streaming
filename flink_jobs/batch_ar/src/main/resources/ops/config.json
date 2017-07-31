@@ -1,0 +1,24 @@
+{
+  "tenant":"EGI",
+  "id":"c800846f-8478-4af8-85d1-a3f12fe4c18f",
+  "job":"Critical",
+  "egroup":"SITES",
+  "ggroup":"NGI",
+  "altg":"ops",
+  "weight":"hepspec",
+  "egroup_tags":{
+    "scope":"EGI",
+    "production":"1",
+    "monitored":"1"
+  },
+  "ggroup_tags":{
+    "scope":"EGI",
+    "infrastructure":"Production",
+    "certification":"Certified"
+  },
+  "mdata_tags":{
+    "vo":"ops",
+    "vo_fqan":"ops",
+    "roc":"any"
+  }
+}
