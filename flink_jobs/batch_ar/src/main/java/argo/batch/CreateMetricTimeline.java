@@ -53,7 +53,7 @@ public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, Mo
 	private String runDate;
 	private String egroupType;
 
-	private boolean fillMissing;
+	
 
 	/**
 	 * Initialization method of the RichGroupReduceFunction operator
@@ -95,7 +95,7 @@ public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, Mo
 		this.runDate = params.getRequired("run.date");
 		this.egroupType = params.getRequired("egroup.type");
 
-		fillMissing = true;
+	
 
 	}
 

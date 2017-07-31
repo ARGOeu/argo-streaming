@@ -197,8 +197,12 @@ public class RecomputationManager {
 		
 		try {
 			
+			// If no recomputations collected return
+			if (recJson == null) return;
 
 			JsonParser jsonParser = new JsonParser();
+			
+			
 			
 			if (recJson.get(0).equalsIgnoreCase("{}")) return;
 			
