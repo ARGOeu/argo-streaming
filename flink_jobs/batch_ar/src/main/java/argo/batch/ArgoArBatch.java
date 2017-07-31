@@ -111,7 +111,12 @@ public class ArgoArBatch {
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(recDS, "rec");
 
-		groupTimelinesDS.writeAsText("/tmp/batch-ar-output");
+		// Discard unused data and attach endpoint group as information
+		DataSet<ServiceAR> serviceResultDS = serviceTimelinesDS.flatMap(new CalcServiceAR(params))
+				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
+
+		serviceResultDS.writeAsText("/tmp/batch-ar-output");
 
 		env.execute("Flink Ar Batch Job");
 
