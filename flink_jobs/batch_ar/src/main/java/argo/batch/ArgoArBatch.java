@@ -2,6 +2,11 @@ package argo.batch;
 
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.BasicDBObjectBuilder;
+import com.mongodb.DBObject;
+import com.mongodb.hadoop.io.BSONWritable;
+import com.mongodb.hadoop.mapred.MongoOutputFormat;
+
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
@@ -10,18 +15,20 @@ import argo.avro.MetricProfile;
 import argo.avro.Weight;
 
 import org.slf4j.Logger;
-
+import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-
+import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
 import org.apache.flink.api.java.io.AvroInputFormat;
 
 import org.apache.flink.api.java.operators.DataSource;
-
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
-
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.mapred.JobConf;
 
 /**
  * Represents an ARGO Batch Job in flink
@@ -129,7 +136,59 @@ public class ArgoArBatch {
 				.withBroadcastSet(weightDS, "weight");
 		
 
-		serviceResultDS.writeAsText("/tmp/batch-service-ar");
+		
+		/**
+		 * Prepares the data in BSONWritable values for mongo storage Each tuple
+		 * is in the form <K,V> and the key here must be empty for mongo to
+		 * assign an ObjectKey NullWriteable as the first object of the tuple
+		 * ensures an empty key
+		 */
+		DataSet<Tuple2<NullWritable, BSONWritable>> serviceArBSON = serviceResultDS
+				.map(new RichMapFunction<ServiceAR, Tuple2<NullWritable, BSONWritable>>() {
+
+					private static final long serialVersionUID = 1L;
+
+					private String report;
+
+					@Override
+					public void open(Configuration parameters) {
+
+					}
+
+					@Override
+					public Tuple2<NullWritable, BSONWritable> map(ServiceAR item) throws Exception {
+
+						// Create a mongo database object with the needed fields
+						DBObject builder = BasicDBObjectBuilder.start()
+								.add("report", item.getReport())
+								.add("date", item.getDateInt())
+								.add("name", item.getName())
+								.add("supergroup", item.getGroup())
+								.add("availability", item.getA())
+								.add("reliability", item.getR())
+								.add("up", item.getUp())
+								.add("unknown", item.getUnknown())
+								.add("down", item.getDown()).get();
+
+						// Convert database object to BsonWriteable
+						BSONWritable w = new BSONWritable(builder);
+
+						return new Tuple2<NullWritable, BSONWritable>(NullWritable.get(), w);
+					}
+				});
+		
+		// Initialize a new hadoop conf object to add mongo connector related
+		// property
+		JobConf conf = new JobConf();
+		// Add mongo destination as given in parameters
+		conf.set("mongo.output.uri", params.getRequired("datastore.uri") + ".service_ar");
+		// Initialize MongoOutputFormat
+		MongoOutputFormat<NullWritable, BSONWritable> mongoOutputFormat = new MongoOutputFormat<NullWritable, BSONWritable>();
+		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write
+		// service ar results in mongo db
+		serviceArBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(mongoOutputFormat, conf));
+		
+		
 		groupResultDS.writeAsText("/tmp/batch-group-ar");
 
 		env.execute("Flink Ar Batch Job");
