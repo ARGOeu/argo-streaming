@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
-import java.util.ArrayList;import org.jets3t.service.impl.soap.axis._2006_03_01.Result;
+import java.util.ArrayList;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

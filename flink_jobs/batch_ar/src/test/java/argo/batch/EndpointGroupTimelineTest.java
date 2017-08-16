@@ -8,7 +8,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +19,7 @@ import ops.DAggregator;
 import ops.DTimeline;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
-import sync.AggregationProfileManagerTest;
+
 
 public class EndpointGroupTimelineTest {
 
@@ -122,7 +122,7 @@ public class EndpointGroupTimelineTest {
 		for (MonTimeline item : groupDS) {
 
 			String service = item.getService();
-			String endpointGroup = item.getGroup();
+			
 
 			// Get the aggregation group
 			String group = apsMgr.getGroupByService(avProf, service);
