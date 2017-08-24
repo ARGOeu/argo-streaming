@@ -15,8 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
-
-
+import ops.ConfigManager;
 import ops.DIntegrator;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
@@ -47,12 +46,14 @@ public class CalcServiceAR extends RichFlatMapFunction<MonTimeline, ServiceAR> {
 	private List<String> apr;
 	private List<String> rec;
 	private List<String> ops;
+	private List<String> conf;
 
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
 	private AggregationProfileManager aprMgr;
 	private RecomputationManager recMgr;
 	private OpsManager opsMgr;
+	private ConfigManager confMgr;
 
 
 	private String runDate;
@@ -78,6 +79,7 @@ public class CalcServiceAR extends RichFlatMapFunction<MonTimeline, ServiceAR> {
 		this.apr = getRuntimeContext().getBroadcastVariable("apr");
 		this.rec = getRuntimeContext().getBroadcastVariable("rec");
 		this.ops = getRuntimeContext().getBroadcastVariable("ops");
+		this.conf = getRuntimeContext().getBroadcastVariable("conf");
 
 		
 		// Initialize endpoint group manager
@@ -98,6 +100,10 @@ public class CalcServiceAR extends RichFlatMapFunction<MonTimeline, ServiceAR> {
 		// Initialize Operations Manager;
 		this.opsMgr = new OpsManager();
 		this.opsMgr.loadJsonString(ops);
+		
+		// Initialize Config Manager
+		this.confMgr = new ConfigManager();
+		this.confMgr.loadJsonString(conf);
 
 	
 
@@ -105,7 +111,7 @@ public class CalcServiceAR extends RichFlatMapFunction<MonTimeline, ServiceAR> {
 		this.runDate = params.getRequired("run.date");
 
 		// Initialize report
-		this.report = params.getRequired("report");
+		this.report = this.confMgr.report;
 	}
 
 	/**

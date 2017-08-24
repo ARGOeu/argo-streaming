@@ -18,6 +18,7 @@ import argo.avro.GroupGroup;
 
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import ops.ConfigManager;
 import ops.DIntegrator;
 
 import ops.OpsManager;
@@ -51,6 +52,7 @@ public class CalcEndpointGroupAR extends RichFlatMapFunction<MonTimeline, Endpoi
 	private List<String> apr;
 	private List<String> rec;
 	private List<String> ops;
+	private List<String> conf;
 	private MetricProfileManager mpsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
@@ -58,6 +60,7 @@ public class CalcEndpointGroupAR extends RichFlatMapFunction<MonTimeline, Endpoi
 	private RecomputationManager recMgr;
 	private OpsManager opsMgr;
 	private WeightManager weightMgr;
+	private ConfigManager confMgr;
 
 	private String ggroupType;
 	private String runDate;
@@ -84,6 +87,7 @@ public class CalcEndpointGroupAR extends RichFlatMapFunction<MonTimeline, Endpoi
 		this.rec = getRuntimeContext().getBroadcastVariable("rec");
 		this.ops = getRuntimeContext().getBroadcastVariable("ops");
 		this.weight = getRuntimeContext().getBroadcastVariable("weight");
+		this.conf = getRuntimeContext().getBroadcastVariable("conf");
 
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
@@ -110,14 +114,18 @@ public class CalcEndpointGroupAR extends RichFlatMapFunction<MonTimeline, Endpoi
 		this.opsMgr = new OpsManager();
 		this.opsMgr.loadJsonString(ops);
 
+		// Initialize Config Manager
+		this.confMgr = new ConfigManager();
+		this.confMgr.loadJsonString(conf);
+		
 		// Initialize rundate
 		this.runDate = params.getRequired("run.date");
 
 		// Initialize report
-		this.report = params.getRequired("report");
+		this.report = this.confMgr.report;
 
 		// Initialize endpoint group type
-		this.ggroupType = params.getRequired("ggroup.type");
+		this.ggroupType = this.confMgr.ggroup;
 	}
 
 	/**

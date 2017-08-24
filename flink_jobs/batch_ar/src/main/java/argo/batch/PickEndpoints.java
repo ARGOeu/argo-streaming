@@ -18,7 +18,7 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
-
+import ops.ConfigManager;
 import sync.AggregationProfileManager;
 import sync.EndpointGroupManager;
 import sync.GroupGroupManager;
@@ -47,11 +47,13 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 	private List<GroupGroup> ggp;
 	private List<String> apr;
 	private List<String> rec;
+	private List<String> conf;
 	private MetricProfileManager mpsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
 	private AggregationProfileManager aprMgr;
 	private RecomputationManager recMgr;
+	private ConfigManager confMgr;
 	
 	private String egroupType;
 
@@ -72,6 +74,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
 		this.apr = getRuntimeContext().getBroadcastVariable("apr");
 		this.rec = getRuntimeContext().getBroadcastVariable("rec");
+		this.conf = getRuntimeContext().getBroadcastVariable("conf");
 		
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
@@ -91,8 +94,12 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 		this.recMgr = new RecomputationManager();
 		this.recMgr.loadJsonString(rec);
 		
+		// Initialize Configurations Manager;
+		this.confMgr = new ConfigManager();
+		this.confMgr.loadJsonString(conf);
+		
 		// Initialize endpoint group type
-		this.egroupType = params.getRequired("egroup.type");
+		this.egroupType = this.confMgr.egroup;
 	}
 
 	

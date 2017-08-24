@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
-import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
@@ -19,6 +18,7 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import ops.ConfigManager;
 import ops.DTimeline;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
@@ -46,11 +46,13 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, MetricData>
 	private List<String> ops;
 	private List<GroupEndpoint> egp;
 	private List<GroupGroup> ggp;
+	private List<String> conf;
 	private MetricProfileManager mpsMgr;
 	private AggregationProfileManager apsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
 	private OpsManager opsMgr;
+	private ConfigManager confMgr;
 	private String runDate;
 	private String egroupType;
 	private Set<Tuple4<String, String, String, String>> expected;
@@ -76,6 +78,8 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, MetricData>
 		this.ops = getRuntimeContext().getBroadcastVariable("ops");
 		this.egp = getRuntimeContext().getBroadcastVariable("egp");
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
+		this.conf = getRuntimeContext().getBroadcastVariable("conf");
+		
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
 		this.mpsMgr.loadFromList(mps);
@@ -93,9 +97,12 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, MetricData>
 
 		this.ggpMgr = new GroupGroupManager();
 		this.ggpMgr.loadFromList(ggp);
+		
+		this.confMgr = new ConfigManager();
+		this.confMgr.loadJsonString(conf);
 
 		this.runDate = params.getRequired("run.date");
-		this.egroupType = params.getRequired("egroup.type");
+		this.egroupType = this.confMgr.egroup;
 		
 		
 
