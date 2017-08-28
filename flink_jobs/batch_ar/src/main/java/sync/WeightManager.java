@@ -2,7 +2,6 @@ package sync;
 
 import org.apache.log4j.Logger;
 
-import argo.avro.MetricProfile;
 import argo.avro.Weight;
 
 import java.io.File;
@@ -12,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
+
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -42,12 +41,6 @@ public class WeightManager {
 		String group; // name of the group
 		String weight; // weight value
 
-		public WeightItem() {
-			// Initializations
-			this.group = "";
-			this.weight = "";
-
-		}
 
 		public WeightItem(String group, String weight) {
 			this.group = group;
@@ -169,7 +162,7 @@ public class WeightManager {
 	 * Loads Weight information from a list of Weight objects
 	 * 
 	 */
-	@SuppressWarnings("unchecked")
+
 	public void loadFromList( List<Weight> wg)  {
 
 		// For each weight in list

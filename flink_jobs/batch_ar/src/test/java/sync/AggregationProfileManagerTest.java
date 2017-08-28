@@ -3,14 +3,11 @@ package sync;
 import static org.junit.Assert.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-
-import ops.OpsManager;
-
 
 import org.junit.BeforeClass;
 import org.junit.Test;

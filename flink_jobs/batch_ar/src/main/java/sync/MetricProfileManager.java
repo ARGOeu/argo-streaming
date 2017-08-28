@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
+
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -24,39 +24,19 @@ public class MetricProfileManager {
 
 	private static final Logger LOG = Logger.getLogger(MetricProfileManager.class.getName());
 
-	private ArrayList<ProfileItem> list;
+	
 	private Map<String, HashMap<String, ArrayList<String>>> index;
 
-	private class ProfileItem {
-		String profile; // Name of the profile
-		String service; // Name of the service type
-		String metric; // Name of the metric
-		HashMap<String, String> tags; // Tag list
-
-		public ProfileItem() {
-			// Initializations
-			this.profile = "";
-			this.service = "";
-			this.metric = "";
-			this.tags = new HashMap<String, String>();
-		}
-
-		public ProfileItem(String profile, String service, String metric, HashMap<String, String> tags) {
-			this.profile = profile;
-			this.service = service;
-			this.metric = metric;
-			this.tags = tags;
-		}
-	}
+	
 
 	public MetricProfileManager() {
-		this.list = new ArrayList<ProfileItem>();
+		
 		this.index = new HashMap<String, HashMap<String, ArrayList<String>>>();
 	}
 
 	// Clear all profile data (both list and indexes)
 	public void clear() {
-		this.list = new ArrayList<ProfileItem>();
+		
 		this.index = new HashMap<String, HashMap<String, ArrayList<String>>>();
 	}
 
@@ -70,8 +50,7 @@ public class MetricProfileManager {
 	}
 
 	public void insert(String profile, String service, String metric, HashMap<String, String> tags) {
-		ProfileItem tmpProfile = new ProfileItem(profile, service, metric, tags);
-		this.list.add(tmpProfile);
+		
 		this.indexInsertMetric(profile, service, metric);
 	}
 
@@ -237,7 +216,6 @@ public class MetricProfileManager {
 	 * Loads metric profile information from a list of MetricProfile objects
 	 * 
 	 */
-	@SuppressWarnings("unchecked")
 	public void loadFromList( List<MetricProfile> mps)  {
 
 		// For each metric profile object in list

@@ -3,7 +3,7 @@ package sync;
 import org.apache.log4j.Logger;
 
 import argo.avro.Downtime;
-import argo.avro.Weight;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
+
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -42,13 +42,7 @@ public class DowntimeManager {
 		String startTime; // declare start time of downtime
 		String endTime; // declare end time of downtime
 
-		public DowntimeItem() {
-			// Initializations
-			this.hostname = "";
-			this.service = "";
-			this.startTime = "";
-			this.endTime = "";
-		}
+		
 
 		public DowntimeItem(String hostname, String service, String startTime, String endTime) {
 			this.hostname = hostname;
@@ -173,7 +167,7 @@ public class DowntimeManager {
 	 * Loads downtime information from a list of downtime objects
 	 * 
 	 */
-	@SuppressWarnings("unchecked")
+	
 	public void loadFromList( List<Downtime> dnt)  {
 		// IF no downtimes collected return
 		if (dnt==null) return;
