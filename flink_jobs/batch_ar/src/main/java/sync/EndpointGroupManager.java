@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
+
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -21,7 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import argo.avro.GroupEndpoint;
-import argo.avro.MetricProfile;
+
 
 public class EndpointGroupManager {
 
@@ -37,14 +37,7 @@ public class EndpointGroupManager {
 		String hostname; // name of host
 		HashMap<String, String> tags; // Tag list
 
-		public EndpointItem() {
-			// Initializations
-			this.type = "";
-			this.group = "";
-			this.service = "";
-			this.hostname = "";
-			this.tags = new HashMap<String, String>();
-		}
+		
 
 		public EndpointItem(String type, String group, String service, String hostname, HashMap<String, String> tags) {
 			this.type = type;
@@ -233,7 +226,6 @@ public class EndpointGroupManager {
 	 * Loads information from a list of EndpointGroup objects
 	 * 
 	 */
-	@SuppressWarnings("unchecked")
 	public void loadFromList( List<GroupEndpoint> egp)  {
 
 		// For each endpoint group record

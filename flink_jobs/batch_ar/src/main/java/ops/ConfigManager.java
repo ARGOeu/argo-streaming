@@ -85,7 +85,7 @@ public class ConfigManager {
 			JsonObject jEgroupTags = jObj.getAsJsonObject("egroup_tags");
 			JsonObject jGgroupTags = jObj.getAsJsonObject("ggroup_tags");
 			JsonObject jMdataTags = jObj.getAsJsonObject("mdata_tags");
-			JsonObject jDataMap = jObj.getAsJsonObject("datastore_maps");
+			
 			// Iterate fields
 			for (Entry<String, JsonElement> item : jEgroupTags.entrySet()) {
 

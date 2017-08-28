@@ -2,7 +2,7 @@ package argo.batch;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
+
 import java.util.List;
 
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
@@ -15,15 +15,14 @@ import org.slf4j.LoggerFactory;
 
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
-import argo.avro.MetricData;
-import argo.avro.MetricProfile;
+
+
 import ops.DIntegrator;
-import ops.DTimeline;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
 import sync.EndpointGroupManager;
 import sync.GroupGroupManager;
-import sync.MetricProfileManager;
+
 import sync.RecomputationManager;
 
 /**
@@ -42,20 +41,20 @@ public class CalcServiceAR extends RichFlatMapFunction<MonTimeline, ServiceAR> {
 
 	static Logger LOG = LoggerFactory.getLogger(ArgoArBatch.class);
 
-	private List<MetricProfile> mps;
+	
 	private List<GroupEndpoint> egp;
 	private List<GroupGroup> ggp;
 	private List<String> apr;
 	private List<String> rec;
 	private List<String> ops;
-	private MetricProfileManager mpsMgr;
+
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
 	private AggregationProfileManager aprMgr;
 	private RecomputationManager recMgr;
 	private OpsManager opsMgr;
 
-	private String egroupType;
+
 	private String runDate;
 	private String report;
 
@@ -73,16 +72,14 @@ public class CalcServiceAR extends RichFlatMapFunction<MonTimeline, ServiceAR> {
 	@Override
 	public void open(Configuration parameters) throws IOException, ParseException {
 		// Get data from broadcast variable
-		this.mps = getRuntimeContext().getBroadcastVariable("mps");
+		
 		this.egp = getRuntimeContext().getBroadcastVariable("egp");
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
 		this.apr = getRuntimeContext().getBroadcastVariable("apr");
 		this.rec = getRuntimeContext().getBroadcastVariable("rec");
 		this.ops = getRuntimeContext().getBroadcastVariable("ops");
 
-		// Initialize metric profile manager
-		this.mpsMgr = new MetricProfileManager();
-		this.mpsMgr.loadFromList(mps);
+		
 		// Initialize endpoint group manager
 		this.egpMgr = new EndpointGroupManager();
 		this.egpMgr.loadFromList(egp);
@@ -102,8 +99,7 @@ public class CalcServiceAR extends RichFlatMapFunction<MonTimeline, ServiceAR> {
 		this.opsMgr = new OpsManager();
 		this.opsMgr.loadJsonString(ops);
 
-		// Initialize endpoint group type
-		this.egroupType = params.getRequired("egroup.type");
+	
 
 		// Initialize rundate
 		this.runDate = params.getRequired("run.date");

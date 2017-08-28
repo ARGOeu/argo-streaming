@@ -9,16 +9,17 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
+
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
+import org.apache.avro.util.Utf8;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import argo.avro.GroupEndpoint;
+
 import argo.avro.GroupGroup;
 
 public class GroupGroupManager {
@@ -34,13 +35,7 @@ public class GroupGroupManager {
 		String subgroup; // name of sub-group
 		HashMap<String, String> tags; // Tag list
 
-		public GroupItem() {
-			// Initializations
-			this.type = "";
-			this.group = "";
-			this.subgroup = "";
-			this.tags = new HashMap<String, String>();
-		}
+		
 
 		public GroupItem(String type, String group, String subgroup, HashMap<String, String> tags) {
 			this.type = type;
@@ -146,6 +141,7 @@ public class GroupGroupManager {
 	 * @throws IOException
 	 *             if there is an error during opening of the avro file
 	 */
+	@SuppressWarnings("unchecked")
 	public void loadAvro(File avroFile) throws IOException {
 
 		// Prepare Avro File Readers
@@ -167,7 +163,7 @@ public class GroupGroupManager {
 				HashMap<String, String> tagMap = new HashMap<String, String>();
 
 				// Generate 2nd level generic record reader (tags)
-				HashMap tags = (HashMap) avroRow.get("tags");
+				HashMap<Utf8, Utf8> tags = (HashMap<Utf8, Utf8>) avroRow.get("tags");
 				if (tags != null) {
 					for (Object item : tags.keySet()) {
 						tagMap.put(item.toString(), tags.get(item).toString());
@@ -203,7 +199,6 @@ public class GroupGroupManager {
 	 * Loads group of group information from a list of GroupGroup objects
 	 * 
 	 */
-	@SuppressWarnings("unchecked")
 	public void loadFromList( List<GroupGroup> ggp)  {
 
 		// For each group of groups record
