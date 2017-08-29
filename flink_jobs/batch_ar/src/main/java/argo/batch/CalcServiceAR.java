@@ -110,8 +110,8 @@ public class CalcServiceAR extends RichFlatMapFunction<MonTimeline, ServiceAR> {
 		// Initialize rundate
 		this.runDate = params.getRequired("run.date");
 
-		// Initialize report
-		this.report = this.confMgr.report;
+		// Initialize report id
+		this.report = this.confMgr.id;
 	}
 
 	/**
