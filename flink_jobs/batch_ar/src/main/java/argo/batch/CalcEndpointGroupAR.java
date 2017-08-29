@@ -121,8 +121,8 @@ public class CalcEndpointGroupAR extends RichFlatMapFunction<MonTimeline, Endpoi
 		// Initialize rundate
 		this.runDate = params.getRequired("run.date");
 
-		// Initialize report
-		this.report = this.confMgr.report;
+		// Initialize report id
+		this.report = this.confMgr.id;
 
 		// Initialize endpoint group type
 		this.ggroupType = this.confMgr.ggroup;
