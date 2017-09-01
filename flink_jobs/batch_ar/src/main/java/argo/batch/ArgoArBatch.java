@@ -121,21 +121,21 @@ public class ArgoArBatch {
 		DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
 
 		// Generate Full Missing dataset for the given topology
-		DataSet<MetricData> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
+		DataSet<MonData> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(confDS, "conf");
 
 		// Discard unused data and attach endpoint group as information
-		DataSet<MetricData> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
+		DataSet<MonData> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(confDS, "conf");
 
 		// Combine prev and todays metric data with the generated missing metric
 		// data
-		DataSet<MetricData> mdataTotalDS = mdataPrevTotalDS.union(fillMissDS);
+		DataSet<MonData> mdataTotalDS = mdataTrimDS.union(fillMissDS);
 
 		// Create a dataset of metric timelines
-		DataSet<MonTimeline> metricTimelinesDS = mdataTrimDS.groupBy("service", "hostname", "metric")
+		DataSet<MonTimeline> metricTimelinesDS = mdataTrimDS.groupBy("group","service", "hostname", "metric")
 				.sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CreateMetricTimeline(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(confDS, "conf");
