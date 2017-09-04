@@ -27,9 +27,9 @@ import sync.GroupGroupManager;
 import sync.MetricProfileManager;
 
 /**
- * Accepts a list of metric data objects and produces a list of missing metric data objects
+ * Accepts a list of metric data objects and produces a list of missing mon data objects
  */
-public class FillMissing extends RichGroupReduceFunction<MetricData, MetricData> {
+public class FillMissing extends RichGroupReduceFunction<MetricData, MonData> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -142,10 +142,10 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, MetricData>
 	 * @param in
 	 *            An Iterable collection of MetricData objects
 	 * @param out
-	 *            A Collector list of Missing MetricData objects
+	 *            A Collector list of Missing MonData objects
 	 */
 	@Override
-	public void reduce(Iterable<MetricData> in, Collector<MetricData> out) throws Exception {
+	public void reduce(Iterable<MetricData> in, Collector<MonData> out) throws Exception {
 		
 		initExpected();
 
@@ -193,16 +193,17 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, MetricData>
 		
 		// For each item in missing create a missing metric data entry
 		for (Tuple4<String, String, String, String> item:missing){
-			MetricData md = new MetricData();
-			md.setService(item.f1);
-			md.setHostname(item.f2);
-			md.setMetric(item.f3);
-			md.setStatus(state);
-			md.setMessage("");
-			md.setSummary("");
-			md.setTimestamp(timestamp);
+			MonData mn = new MonData();
+			mn.setGroup(item.f0);
+			mn.setService(item.f1);
+			mn.setHostname(item.f2);
+			mn.setMetric(item.f3);
+			mn.setStatus(state);
+			mn.setMessage("");
+			mn.setSummary("");
+			mn.setTimestamp(timestamp);
 			
-			out.collect(md);
+			out.collect(mn);
 			
 			
 		}
