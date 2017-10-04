@@ -1,9 +1,13 @@
 package argo.streaming;
 
 import java.io.File;
+
+
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Properties;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -18,8 +22,11 @@ import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
-
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09;
+import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
@@ -97,6 +104,12 @@ public class AmsStreamStatus {
 		
 		String report = parameterTool.getRequired("report");
 		
+		// Initialize kafka parameters
+		String kafkaServers = parameterTool.getRequired("kafka.servers");
+		String kafkaTopic = parameterTool.getRequired("kafka.topic");
+		Properties kafkaProps = new Properties();
+		kafkaProps.setProperty("bootstrap.servers", kafkaServers);
+		FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic,new SimpleStringSchema(), kafkaProps );
 		// Initialize Output : Hbase Output Format
 		HBaseOutputFormat hbf = new HBaseOutputFormat();
 		hbf.setMaster(parameterTool.getRequired("hbase.master"));
@@ -109,11 +122,12 @@ public class AmsStreamStatus {
 
 		DataStream<String> messageStream = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, sub));
 
-		// Intermediate Transformation
-		// Map function: json msg -> payload -> base64decode -> avrodecode ->
-		// kafka
-		messageStream.flatMap(new StatusMap(conf)).writeUsingOutputFormat(hbf);
-
+		// Write to both kafka and hbase
+		SingleOutputStreamOperator<String> events = messageStream.flatMap(new StatusMap(conf));
+		events.addSink(kSink);
+		events.writeUsingOutputFormat(hbf);
+		
+		
 		// Execute flink dataflow
 		see.execute();
 	}

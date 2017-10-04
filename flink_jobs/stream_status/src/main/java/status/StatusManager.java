@@ -147,6 +147,10 @@ public class StatusManager {
 	 *  @param tsNew Newest timestamp
 	 */
 	public boolean hasDayChanged(String tsOld, String tsNew){
+		if (tsOld == null) return false;
+		
+		LOG.info("########" + tsOld);
+	
 		String dtOld = tsOld.split("T")[0];
 		String dtNew= tsNew.split("T")[0];
 		
