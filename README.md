@@ -119,7 +119,11 @@ Job required cli parameters:
 
 `--sync.aps`          : Aggregation profile used
 
-`--sync.ops`           :Operations profile used
+`--sync.ops`          : Operations profile used
+
+`--kafka.servers`     : Kafka server list to connect to
+
+`--kafka.topic`       : Kafka topic to send status events to     
 
 ### Status events schema
 
