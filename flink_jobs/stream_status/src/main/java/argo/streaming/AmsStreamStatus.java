@@ -21,10 +21,11 @@ import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
@@ -79,9 +80,35 @@ public class AmsStreamStatus {
 		return env;
 	}
 
+
+	public static boolean hasKafkaArgs(ParameterTool paramTool){
+		String kafkaArgs[] = {"kafka.servers","kafka.topic"};
+		return hasArgs(kafkaArgs,paramTool);
+	}
+	
+	public static boolean hasHbaseArgs(ParameterTool paramTool){
+		String hbaseArgs[] = {"hbase.master","hbase.master.port","hbase.zk.quorum","hbase.namespace","hbase.table"};
+		return hasArgs(hbaseArgs,paramTool);
+	}
+	
+	public static boolean hasFsOutArgs(ParameterTool paramTool){
+		String fsOutArgs[] = {"fs.output"};
+		return hasArgs(fsOutArgs,paramTool);
+	}
+	
+	public static boolean hasArgs(String[] reqArgs, ParameterTool paramTool){
+		
+		for (String reqArg : reqArgs){
+			if (!paramTool.has(reqArg)) return false;
+		}
+		
+		return true;
+	}
+	
 	/**
 	 *  Main dataflow of flink job     
 	 */
+	
 	public static void main(String[] args) throws Exception {
 
 	
@@ -90,8 +117,11 @@ public class AmsStreamStatus {
 		final ParameterTool parameterTool = ParameterTool.fromArgs(args);
 
 		final StatusConfig conf = new StatusConfig(parameterTool);
+		
 
 		StreamExecutionEnvironment see = setupEnvironment(conf);
+		
+		
 
 		
 		see.setParallelism(1);
@@ -104,28 +134,53 @@ public class AmsStreamStatus {
 		
 		String report = parameterTool.getRequired("report");
 		
-		// Initialize kafka parameters
-		String kafkaServers = parameterTool.getRequired("kafka.servers");
-		String kafkaTopic = parameterTool.getRequired("kafka.topic");
-		Properties kafkaProps = new Properties();
-		kafkaProps.setProperty("bootstrap.servers", kafkaServers);
-		FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic,new SimpleStringSchema(), kafkaProps );
-		// Initialize Output : Hbase Output Format
-		HBaseOutputFormat hbf = new HBaseOutputFormat();
-		hbf.setMaster(parameterTool.getRequired("hbase.master"));
-		hbf.setMasterPort(parameterTool.getRequired("hbase.master.port"));
-		hbf.setZkQuorum(parameterTool.getRequired("hbase.zk.quorum"));
-		hbf.setZkPort(parameterTool.getRequired("hbase.zk.port"));
-		hbf.setNamespace(parameterTool.getRequired("hbase.namespace"));
-		hbf.setTableName(parameterTool.getRequired("hbase.table"));
-		hbf.setReport(parameterTool.getRequired("report"));
+		
+		DataStreamSource<String> opsDS = see.readTextFile(parameterTool.getRequired("ops"));
+		DataStreamSource<String> apsDS = see.readTextFile(parameterTool.getRequired("aps"));
+		
+		
+		//Get sync data paths
+		Path mps = new Path(parameterTool.getRequired("mps"));
+		Path egp = new Path(parameterTool.getRequired("egp"));
+		
+		
+		
 
 		DataStream<String> messageStream = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, sub));
 
-		// Write to both kafka and hbase
+		// Write to both kafka and hbase if available
 		SingleOutputStreamOperator<String> events = messageStream.flatMap(new StatusMap(conf));
-		events.addSink(kSink);
-		events.writeUsingOutputFormat(hbf);
+		
+		if (hasKafkaArgs(parameterTool)){
+			// Initialize kafka parameters
+			String kafkaServers = parameterTool.get("kafka.servers");
+			String kafkaTopic = parameterTool.get("kafka.topic");
+			Properties kafkaProps = new Properties();
+			kafkaProps.setProperty("bootstrap.servers", kafkaServers);
+			FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic,new SimpleStringSchema(), kafkaProps );
+			events.addSink(kSink);
+		}
+		
+
+		if (hasHbaseArgs(parameterTool)){
+			// Initialize Output : Hbase Output Format
+			HBaseOutputFormat hbf = new HBaseOutputFormat();
+			hbf.setMaster(parameterTool.get("hbase.master"));
+			hbf.setMasterPort(parameterTool.get("hbase.master.port"));
+			hbf.setZkQuorum(parameterTool.get("hbase.zk.quorum"));
+			hbf.setZkPort(parameterTool.get("hbase.zk.port"));
+			hbf.setNamespace(parameterTool.get("hbase.namespace"));
+			hbf.setTableName(parameterTool.get("hbase.table"));
+			hbf.setReport(parameterTool.get("report"));
+			events.writeUsingOutputFormat(hbf);
+		}
+		
+		if (hasFsOutArgs(parameterTool)){
+			events.writeAsText(parameterTool.get("fs.output"));
+		}
+		
+		
+		
 		
 		
 		// Execute flink dataflow
