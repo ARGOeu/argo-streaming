@@ -75,7 +75,7 @@ Each hbase table has a column family named 'data' and the following columns:
 
 Flink job that connects as a subscriber to an ARGO Messaging Service, pulls messages from a specific project/subscription.
 For each metric data message the job calculates status changes in the whole topology and produces status Events.
-The status events are then forwarded to a specific kafka topic
+The status events are then forwarded to a specific kafka topic (and/or) hbase table (and/or) filesystem
 
 Prepare job to submit in flink:
 
@@ -85,9 +85,9 @@ Prepare job to submit in flink:
 
 Run jar in flink:
 
-- `flink run streaming-status-0.1.jar --ams-endpoint {...} --ams-port {...} --ams-token {...} -ams-project {...} --ams-sub {...} --avro-schema {...} --hbase-master {...} --hbase-zk-quorum {...} --hbase-zk-port {...} --hbase-namespace {...} --hbase-table {...} --hbase-master-port {...} --sync-mps {...} --sync-egp {...} --sync-aps {...} --sync-ops {...}`
+- `flink run streaming-status-0.1.jar --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --avro.schema {...}  --sync.mps {...} --sync.egp {...} --sync.aps {...} --sync.ops {...} --hbase.master {...} --hbase.zk.quorum {...} --hbase.zk.port {...} --hbase.namespace {...} --hbase.table {...} --hbase.master.port {...} --kafka.servers {...} --kafka.topic {...} --fs.output {...}`
 
-Job required cli parameters:
+Job required cli input parameters:
 
 `--ams.endpoint`      : ARGO messaging api endoint to connect to msg.example.com
 
@@ -101,18 +101,6 @@ Job required cli parameters:
 
 `--avro.schema`       : Schema used for the decoding of metric data payload
 
-`--hbase-master`      : hbase endpoint
-
-`--hbase-master-port` : hbase master port
-
-`--hbase-zk-quorum`   : comma separated list of hbase zookeeper servers
-
-`--hbase-zk-port`     : port used by hbase zookeeper servers
-
-`--hbase-namespace`   : table namespace used (usually tenant name)
-
-`--hbase-table`       : table name (usually metric_data)
-
 `--sync.mps`          : Metric profile file used
 
 `--sync.egp`          : Endpoint group topology file used
@@ -121,9 +109,31 @@ Job required cli parameters:
 
 `--sync.ops`          : Operations profile used
 
+Job optional cli parameters for hbase output:
+
+`--hbase.master`      : hbase endpoint
+
+`--hbase.master.port` : hbase master port
+
+`--hbase.zk.quorum`   : comma separated list of hbase zookeeper servers
+
+`--hbase.zk.port`     : port used by hbase zookeeper servers
+
+`--hbase.namespace`   : table namespace used (usually tenant name)
+
+`--hbase.table`       : table name (usually metric_data)
+
+Job optional cli parameters for kafka output:
+
 `--kafka.servers`     : Kafka server list to connect to
 
-`--kafka.topic`       : Kafka topic to send status events to     
+`--kafka.topic`       : Kafka topic to send status events to
+
+Job optional cli parameters for filesystem output (local/hdfs):
+
+`--fs.output`         : filesystem path for output (prefix with "hfds://" for hdfs usage)
+
+
 
 ### Status events schema
 
