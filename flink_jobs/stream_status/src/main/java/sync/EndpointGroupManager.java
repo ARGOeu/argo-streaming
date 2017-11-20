@@ -21,9 +21,12 @@ import org.apache.avro.util.Utf8;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-public class EndpointGroups {
+import argo.avro.GroupEndpoint;
+import argo.avro.MetricProfile;
 
-	private static final Logger LOG = Logger.getLogger(EndpointGroups.class.getName());
+public class EndpointGroupManager {
+
+	private static final Logger LOG = Logger.getLogger(EndpointGroupManager.class.getName());
 
 	private ArrayList<EndpointItem> list;
 	private ArrayList<EndpointItem> fList;
@@ -59,17 +62,17 @@ public class EndpointGroups {
 		public String getHostname() { return hostname; }
 
 	}
+	
+	public Iterator<EndpointItem> getIterator() {
+		return this.list.iterator();
+	}
 
-	public EndpointGroups() {
+	public EndpointGroupManager() {
 		this.list = new ArrayList<EndpointItem>();
 		this.fList = new ArrayList<EndpointItem>();
 
 	}
 
-	public Iterator<EndpointItem> getIterator() {
-		return this.list.iterator();
-	}
-	
 	public int insert(String type, String group, String service, String hostname, HashMap<String, String> tags) {
 		EndpointItem new_item = new EndpointItem(type, group, service, hostname, tags);
 		this.list.add(new_item);
@@ -228,6 +231,42 @@ public class EndpointGroups {
 			// Close quietly without exceptions the buffered reader
 			IOUtils.closeQuietly(dataFileReader);
 		}
+
+	}
+	
+	
+	public ArrayList<EndpointItem> getList(){
+		return this.list;
+	}
+	
+	/**
+	 * Loads information from a list of EndpointGroup objects
+	 * 
+	 */
+	@SuppressWarnings("unchecked")
+	public void loadFromList( List<GroupEndpoint> egp)  {
+
+		// For each endpoint group record
+		for (GroupEndpoint item : egp){
+			String type = item.getType();
+			String group = item.getGroup();
+			String service = item.getService();
+			String hostname = item.getHostname();
+			HashMap<String, String> tagMap = new HashMap<String, String>();
+			HashMap<String, String> tags = (HashMap<String, String>) item.getTags();
+			
+			if (tags != null) {
+				for (String key : tags.keySet()) {
+					tagMap.put(key, tags.get(key));
+				}
+			}
+			
+			// Insert data to list
+			this.insert(type, group, service, hostname, tagMap);
+		}
+		
+		this.unfilter();
+		
 
 	}
 

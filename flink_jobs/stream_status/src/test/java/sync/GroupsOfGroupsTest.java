@@ -27,7 +27,7 @@ public class GroupsOfGroupsTest {
 		URL resAvroFile = GroupsOfGroupsTest.class.getResource("/avro/group_groups_v2.avro");
 		File avroFile = new File(resAvroFile.toURI());
 		// Instatiate class
-		GroupsOfGroups gg = new GroupsOfGroups();
+		GroupGroupManager gg = new GroupGroupManager();
 		// Test loading file
 		gg.loadAvro(avroFile);
 		assertNotNull("File Loaded", gg);

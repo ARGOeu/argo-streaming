@@ -16,14 +16,18 @@ import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
 import java.util.TimeZone;
 
-import sync.*;
-import sync.EndpointGroups.EndpointItem;
+import sync.AggregationProfileManager;
+import sync.EndpointGroupManagerV2;
+import sync.EndpointGroupManagerV2.EndpointItem;
+import sync.MetricProfileManager;
 import ops.OpsManager;
 
 import com.google.gson.Gson;
+
+import argo.avro.GroupEndpoint;
+import argo.avro.MetricProfile;
 
 /**
  * Status Manager implements a live structure containing a topology of entities
@@ -38,9 +42,9 @@ public class StatusManager {
 	String report;
 
 	// Sync file structures necessary for status computation
-	EndpointGroups egp = new EndpointGroups();
-	MetricProfiles mps = new MetricProfiles();
-	AvailabilityProfiles aps = new AvailabilityProfiles();
+	public EndpointGroupManagerV2 egp = new EndpointGroupManagerV2();
+	public MetricProfileManager mps = new MetricProfileManager();
+	AggregationProfileManager aps = new AggregationProfileManager();
 	OpsManager ops = new OpsManager();
 
 	// Names of valid profiles and services used
@@ -128,6 +132,13 @@ public class StatusManager {
 
 	}
 
+	/**
+	 * Checks if this status manager handles the specific endpoint group
+	 */
+	public boolean hasGroup(String group){
+		return this.groups.containsKey(group);
+	}
+	
 	/**
 	 * Set the latest processed timestamp value
 	 */
@@ -217,7 +228,46 @@ public class StatusManager {
 	}
 
 	/**
-	 * Load all initial Profiles
+	 * Load all initial Profiles from object lists
+	 * 
+	 * @param egpAvro
+	 *            endpoint group object list
+	 * @param mpsAvro
+	 *            metric profile object list
+	 * @param apsJson
+	 *            aggregation profile contents
+	 * @param opsJson
+	 *            operation profile contents
+	 */
+	public void loadAll(ArrayList<GroupEndpoint> egpList, ArrayList<MetricProfile> mpsList, String apsJson, String opsJson) throws IOException {
+		aps.loadJsonString(apsJson);
+		ops.loadJsonString(opsJson);
+		mps.loadFromList(mpsList);
+		setValidProfileServices();
+		// Trim endpoint group list based on metric profile information (remove unwanted services)
+		
+		ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
+		
+		
+		
+		for (GroupEndpoint egpItem : egpList) {
+			if (validServices.contains(egpItem.getService())){
+				egpTrim.add(egpItem);
+			}
+		}
+		
+		egp.loadFromList(egpTrim);
+		
+		
+		
+		
+
+		
+	}
+	
+
+	/**
+	 * Load all initial Profiles directly from files
 	 * 
 	 * @param egpAvro
 	 *            endpoint group topology location
@@ -228,15 +278,17 @@ public class StatusManager {
 	 * @param opsJson
 	 *            operation profile location
 	 */
-	public void loadAll(File egpAvro, File mpsAvro, File apsJson, File opsJson) throws IOException {
+	public void loadAllFiles(File egpAvro, File mpsAvro, File apsJson, File opsJson ) throws IOException{
 		egp.loadAvro(egpAvro);
 		mps.loadAvro(mpsAvro);
 		aps.loadJson(apsJson);
 		ops.loadJson(opsJson);
-
+		
 		setValidProfileServices();
 	}
-
+	
+	
+	
 	/**
 	 * Construct status topology with initial status value and timestamp
 	 * 
@@ -245,14 +297,13 @@ public class StatusManager {
 	 * @param defTs
 	 *            Initial timestamp to be used
 	 */
-	public void construct(int defStatus, Date defTs) {
-		// Get all the available hosts
-		Iterator<EndpointItem> hostIter = egp.getIterator();
-		// for each host entry iterate
+	public void addNewGroup(String group, int defStatus, Date defTs) {
+		// Get all the available group's hosts
+		Iterator<EndpointItem> hostIter = egp.getGroupIter(group);
+		// for each host in specific group iterate
 		while (hostIter.hasNext()) {
 			EndpointItem host = hostIter.next();
 			String service = host.getService();
-			String group = host.getGroup();
 			String hostname = host.getHostname();
 
 			if (this.validServices.contains(service)) {
@@ -483,7 +534,7 @@ public class StatusManager {
 		Date ts = fromZulu(tsStr);
 
 		// Get group from hostname,service
-		ArrayList<String> groups = egp.getGroup("SITES", hostname, service);
+		ArrayList<String> groups = egp.getGroup(hostname, service);
 		if (groups.size() == 0)
 			return results;
 		String group = groups.get(0);

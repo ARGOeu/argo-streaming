@@ -14,7 +14,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 
-import sync.EndpointGroups.EndpointItem;
+
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -48,14 +48,14 @@ public class StatusManagerTest {
 
 		StatusManager sm = new StatusManager();
 		sm.report="Critical";
-		sm.loadAll(avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
+		sm.loadAllFiles(avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
 
 		Date ts1 = sm.fromZulu("2017-03-03T00:00:00Z");
 		Date ts2 = sm.fromZulu("2017-03-03T05:00:00Z");
 		Date ts3 = sm.fromZulu("2017-03-03T09:00:00Z");
 		Date ts4 = sm.fromZulu("2017-03-03T15:00:00Z");
 
-		sm.construct(sm.ops.getIntStatus("OK"), ts1);
+		sm.addNewGroup("GR-01-AUTH",sm.ops.getIntStatus("OK"), ts1);
 		ArrayList<String> list = sm.setStatus("CREAM-CE", "cream01.grid.auth.gr", "emi.cream.CREAMCE-JobCancel",
 				"CRITICAL", "mon01.argo.eu", "2017-03-03T00:00:00Z");
 		ArrayList<String> list2 = sm.setStatus("CREAM-CE", "cream01.grid.auth.gr", "eu.egi.CREAM-IGTF", "WARNING",

@@ -85,7 +85,7 @@ Prepare job to submit in flink:
 
 Run jar in flink:
 
-- `flink run streaming-status-0.1.jar --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --avro.schema {...}  --sync.mps {...} --sync.egp {...} --sync.aps {...} --sync.ops {...} --hbase.master {...} --hbase.zk.quorum {...} --hbase.zk.port {...} --hbase.namespace {...} --hbase.table {...} --hbase.master.port {...} --kafka.servers {...} --kafka.topic {...} --fs.output {...}`
+- `flink run streaming-status-0.1.jar --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub.metric {...} --ams.sub.sync {...}  --sync.mps {...} --sync.egp {...} --sync.aps {...} --sync.ops {...} --hbase.master {...} --hbase.zk.quorum {...} --hbase.zk.port {...} --hbase.namespace {...} --hbase.table {...} --hbase.master.port {...} --kafka.servers {...} --kafka.topic {...} --fs.output {...}`
 
 Job required cli input parameters:
 
@@ -97,9 +97,9 @@ Job required cli input parameters:
 
 `--ams.project`       : ARGO messaging api project to connect to
 
-`--ams.sub`           : ARGO messaging subscription to pull from
+`--ams.sub.metric`    : ARGO messaging subscription to pull metric data from
 
-`--avro.schema`       : Schema used for the decoding of metric data payload
+`--ams.sub.sync`      : ARGO messaging subscription to pull sync data from
 
 `--sync.mps`          : Metric profile file used
 

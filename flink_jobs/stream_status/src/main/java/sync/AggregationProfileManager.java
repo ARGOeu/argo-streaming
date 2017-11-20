@@ -1,5 +1,7 @@
 package sync;
 
+
+
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
@@ -11,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 
 import com.google.gson.JsonElement;
@@ -18,12 +21,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-public class AvailabilityProfiles {
+public class AggregationProfileManager {
 
 	private HashMap<String, AvProfileItem> list;
-	private static final Logger LOG = Logger.getLogger(AvailabilityProfiles.class.getName());
+	private static final Logger LOG = Logger.getLogger(AggregationProfileManager.class.getName());
 
-	public AvailabilityProfiles() {
+	public AggregationProfileManager() {
 
 		this.list = new HashMap<String, AvProfileItem>();
 
@@ -274,5 +277,58 @@ public class AvailabilityProfiles {
 		}
 
 	}
+	
+	public void loadJsonString(String apsJson) throws IOException {
+
+		
+		try {
+
+			
+
+			JsonParser jsonParser = new JsonParser();
+			JsonElement jRootElement = jsonParser.parse(apsJson);
+			JsonObject jRootObj = jRootElement.getAsJsonObject();
+
+			JsonObject apGroups = jRootObj.getAsJsonObject("groups");
+
+			// Create new entry for this availability profile
+			AvProfileItem tmpAvp = new AvProfileItem();
+
+			tmpAvp.name = jRootObj.get("name").getAsString();
+			tmpAvp.namespace = jRootObj.get("namespace").getAsString();
+			tmpAvp.metricProfile = jRootObj.get("metric_profile").getAsString();
+			tmpAvp.metricOp = jRootObj.get("metric_ops").getAsString();
+			tmpAvp.groupType = jRootObj.get("group_type").getAsString();
+			tmpAvp.op = jRootObj.get("operation").getAsString();
+
+			for (Entry<String, JsonElement> item : apGroups.entrySet()) {
+				// service name
+				String itemName = item.getKey();
+				JsonObject itemObj = item.getValue().getAsJsonObject();
+				String itemOp = itemObj.get("operation").getAsString();
+				JsonObject itemServices = itemObj.get("services").getAsJsonObject();
+				tmpAvp.insertGroup(itemName, itemOp);
+
+				for (Entry<String, JsonElement> subItem : itemServices.entrySet()) {
+					tmpAvp.insertService(itemName, subItem.getKey(), subItem.getValue().getAsString());
+				}
+
+			}
+
+			// Add profile to the list
+			this.list.put(tmpAvp.name, tmpAvp);
+
+		 
+
+		} catch (JsonParseException ex) {
+			LOG.error("Contents are not valid json");
+			throw ex;
+		} 
+
+	}
+	
+	
+	
 
 }
+

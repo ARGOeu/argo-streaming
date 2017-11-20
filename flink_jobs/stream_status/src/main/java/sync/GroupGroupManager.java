@@ -18,9 +18,12 @@ import org.apache.avro.io.DatumReader;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-public class GroupsOfGroups {
+import argo.avro.GroupEndpoint;
+import argo.avro.GroupGroup;
 
-	static Logger log = Logger.getLogger(GroupsOfGroups.class.getName());
+public class GroupGroupManager {
+
+	static Logger log = Logger.getLogger(GroupGroupManager.class.getName());
 
 	private ArrayList<GroupItem> list;
 	private ArrayList<GroupItem> fList;
@@ -49,7 +52,7 @@ public class GroupsOfGroups {
 
 	}
 
-	public GroupsOfGroups() {
+	public GroupGroupManager() {
 		this.list = new ArrayList<GroupItem>();
 		this.fList = new ArrayList<GroupItem>();
 	}
@@ -192,6 +195,37 @@ public class GroupsOfGroups {
 			// Close quietly without exceptions the buffered reader
 			IOUtils.closeQuietly(dataFileReader);
 		}
+
+	}
+	
+
+	/**
+	 * Loads group of group information from a list of GroupGroup objects
+	 * 
+	 */
+	@SuppressWarnings("unchecked")
+	public void loadFromList( List<GroupGroup> ggp)  {
+
+		// For each group of groups record
+		for (GroupGroup item : ggp){
+			String type = item.getType();
+			String group = item.getGroup();
+			String subgroup = item.getSubgroup();
+			
+			HashMap<String, String> tagMap = new HashMap<String, String>();
+			HashMap<String, String> tags = (HashMap<String, String>) item.getTags();
+			
+			if (tags != null) {
+				for (String key : tags.keySet()) {
+					tagMap.put(key, tags.get(key));
+				}
+			}
+			
+			// Insert data to list
+			this.insert(type, group, subgroup, tagMap);
+		}
+		
+		this.unfilter();
 
 	}
 

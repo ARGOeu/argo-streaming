@@ -28,6 +28,7 @@ public class StatusConfig implements Serializable {
 	public String mps;
 	public String egp;
 	public String ops;
+	public String defStatus = "MISSING";
 	
 	// Raw parameters
 	public final ParameterTool pt;

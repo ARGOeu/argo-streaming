@@ -29,7 +29,7 @@ public class AvailabilityProfilesTest {
 		URL resJsonFile = OpsManagerTest.class.getResource("/ops/ap1.json");
 		File jsonFile = new File(resJsonFile.toURI());
 		// Instatiate class
-		AvailabilityProfiles avp = new AvailabilityProfiles();
+		AggregationProfileManager avp = new AggregationProfileManager();
 		avp.clearProfiles();
 		avp.loadJson(jsonFile);
 
