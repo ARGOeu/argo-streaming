@@ -268,7 +268,7 @@ public class ArgoMessagingClient {
 	}
 
 	/**
-	 * Implements a consume cycle which constists of a pull and ack operation in order
+	 * Implements a consume cycle which consists of a pull and ack operation in order
 	 * 
 	 * @return String Message received from AMS service
 	 */

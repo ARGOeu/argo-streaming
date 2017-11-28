@@ -18,9 +18,11 @@ import org.apache.avro.util.Utf8;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-public class MetricProfiles {
+import argo.avro.MetricProfile;
 
-	private static final Logger LOG = Logger.getLogger(MetricProfiles.class.getName());
+public class MetricProfileManager {
+
+	private static final Logger LOG = Logger.getLogger(MetricProfileManager.class.getName());
 
 	private ArrayList<ProfileItem> list;
 	private Map<String, HashMap<String, ArrayList<String>>> index;
@@ -47,7 +49,7 @@ public class MetricProfiles {
 		}
 	}
 
-	public MetricProfiles() {
+	public MetricProfileManager() {
 		this.list = new ArrayList<ProfileItem>();
 		this.index = new HashMap<String, HashMap<String, ArrayList<String>>>();
 	}
@@ -230,5 +232,34 @@ public class MetricProfiles {
 		}
 
 	}
+	
+	/**
+	 * Loads metric profile information from a list of MetricProfile objects
+	 * 
+	 */
+	@SuppressWarnings("unchecked")
+	public void loadFromList( List<MetricProfile> mps)  {
+
+		// For each metric profile object in list
+		for (MetricProfile item : mps){
+			String profile = item.getProfile();
+			String service = item.getService();
+			String metric = item.getMetric();
+			HashMap<String, String> tagMap = new HashMap<String, String>();
+			HashMap<String, String> tags = (HashMap<String, String>) item.getTags();
+			
+			if (tags != null) {
+				for (String key : tags.keySet()) {
+					tagMap.put(key, tags.get(key));
+				}
+			}
+			
+			// Insert data to list
+			this.insert(profile, service, metric, tagMap);
+		}
+		
+
+	}
+
 
 }

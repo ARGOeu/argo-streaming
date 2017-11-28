@@ -5,14 +5,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
+
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import sync.AvailabilityProfiles;
+
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
