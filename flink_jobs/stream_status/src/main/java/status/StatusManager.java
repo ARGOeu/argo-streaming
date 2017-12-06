@@ -417,6 +417,13 @@ public class StatusManager {
 	 */
 	public void addMetrics(StatusNode endpointNode, String service, String hostname, int defStatus, Date defTs) {
 		ArrayList<String> metrics = this.mps.getProfileServiceMetrics(this.validMetricProfile, service);
+		
+		// Check if metrics = null
+		if (metrics==null) { 
+			String msg = endpointNode + "/" + service + "/" + hostname + " " + this.validMetricProfile; 
+			throw new RuntimeException(msg);
+		}
+		
 		// For all available metrics create leaf metric nodes
 		for (String metric : metrics) {
 			StatusNode metricNode = new StatusNode("metric", defStatus, defTs, endpointNode);
