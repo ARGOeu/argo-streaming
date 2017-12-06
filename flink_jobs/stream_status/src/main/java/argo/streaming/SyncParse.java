@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 
 import com.google.gson.JsonElement;
@@ -30,7 +31,7 @@ public class SyncParse {
 		
 		ArrayList<GroupEndpoint> result = new ArrayList<GroupEndpoint>();
 		
-		DatumReader<GroupEndpoint> avroReader = new SpecificDatumReader<GroupEndpoint>(GroupEndpoint.getClassSchema());
+		DatumReader<GroupEndpoint> avroReader = new SpecificDatumReader<GroupEndpoint>(GroupEndpoint.getClassSchema(),GroupEndpoint.getClassSchema(),new SpecificData());
 		BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(avroBytes, null);
 		
 		while (!decoder.isEnd()){
@@ -48,7 +49,7 @@ public class SyncParse {
 		
 		ArrayList<MetricProfile> result = new ArrayList<MetricProfile>();
 		
-		DatumReader<MetricProfile> avroReader = new SpecificDatumReader<MetricProfile>(MetricProfile.getClassSchema());
+		DatumReader<MetricProfile> avroReader = new SpecificDatumReader<MetricProfile>(MetricProfile.getClassSchema(),MetricProfile.getClassSchema(),new SpecificData());
 		BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(avroBytes, null);
 		
 		while (!decoder.isEnd()){

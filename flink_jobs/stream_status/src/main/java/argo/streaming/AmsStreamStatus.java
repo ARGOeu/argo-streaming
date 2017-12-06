@@ -16,6 +16,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 
@@ -272,7 +273,7 @@ public class AmsStreamStatus {
 			// Decode from base64
 			byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
 			// Decode from avro
-			DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema());
+			DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),MetricData.getClassSchema(),new SpecificData());
 			Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
 			MetricData item;
 			item = avroReader.read(null, decoder);
