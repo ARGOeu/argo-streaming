@@ -71,6 +71,81 @@ Each hbase table has a column family named 'data' and the following columns:
 
 `tags`              : json list of tags used to add metadata to the metric event
 
+
+### AMS ingest connector (sync) data to HDFS
+
+Flink job that connects as a subscriber to an ARGO Messaging Service, pulls messages that contain connector (sync) data (metric profiles, topology, weight etc.) from a specific project/subscription and stores them to an hdfs destination. Each message should have the following attributes:
+- report: name of the report that the connector data belong to
+- type: type of the connector data (metric_profile, group_endpoints, group_groups, weights, downtimes)
+- partition_date: YYYY-MM-DD format of date that the current connector data relates to.
+
+Prepare job to submit in flink:
+
+- `cd flink_jobs/stream_sync`
+- `mvn clean && mvn package`
+
+
+Run jar in flink:
+
+- `flink run  AmsSyncHDFS-0.0.1- --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --base.path {...}
+
+Job required cli parameters:
+
+`--ams.endpoint`      : ARGO messaging api endoint to connect to msg.example.com
+
+`--ams.port`          : ARGO messaging api port
+
+`--ams.token`         : ARGO messaging api token
+
+`--ams.project`       : ARGO messaging api project to connect to
+
+`--ams.sub`           : ARGO messaging subscription to pull from
+
+`--base.path`         : Base hdfs path to store connector data to (e.g. hdfs://localhost:9000/user/foo/path/to/tenant)
+
+`--hbase-master`      : hbase endpoint
+
+`--hbase-master-port` : hbase master port
+
+`--hbase-zk-quorum`   : comma separated list of hbase zookeeper servers
+
+`--hbase-zk-port`     : port used by hbase zookeeper servers
+
+`--hbase-namespace`   : table namespace used (usually tenant name)
+
+`--hbase-table`       : table name (usually metric_data)
+
+### Metric data hbase schema
+
+Metric data are stored in hbase tables using different namespaces for different tenants (e.g. hbase table name = '{TENANT_name}:metric_data')
+
+Each table has the following row key (composed by a unique combination of fields):
+
+`rowkey`= `{hostname}` + `|` + `{service_name}` + `|` + `{metric_name}` + `|` + `{monitoring_engine_name}` + `|` + `{timestamp}`
+
+#### Hbase columns
+
+Each hbase table has a column family named 'data' and the following columns:
+
+`timestamp`         : Timestamp of the metric event
+
+`host`              : hostname of the endpoint that the metric check was run to
+
+`service`           : name of the service related to the metric data
+
+`metric`            : name of the metric check
+
+`monitoring_host`   : name of the monitoring host running the check
+
+`status`            : status of the metric check
+
+`summary`           : summary of the metric result
+
+`message`           : details of the metric result
+
+`tags`              : json list of tags used to add metadata to the metric event
+
+
 ### Stream Status
 
 Flink job that connects as a subscriber to an ARGO Messaging Service, pulls messages from a specific project/subscription.

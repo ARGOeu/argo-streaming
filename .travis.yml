@@ -7,4 +7,7 @@ python:
 
 script:
   - cd flink_jobs/ams_stream_hbase/ && mvn test
+  - cd ../batch_ar && mvn test
+  - cd ../batch_status && mvn test
   - cd ../stream_status && mvn test
+  - cd ../stream_sync && mvn test
