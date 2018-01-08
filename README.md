@@ -3,43 +3,51 @@
 
 ## Flink Jobs
 
-### AMS stream to Hbase
+### AMS ingest metric data (and store them to HDFS and/or Hbase)
 
-Flink job that connects as a subscriber to an ARGO Messaging Service, pulls messages from a specific project/subscription and stores them to a remote hbase cluster.
+Flink job that connects as a subscriber to an ARGO Messaging Service, pulls messages from a specific project/subscription and stores them to a remote hdfs and/or hbase cluster.
 
 Prepare job to submit in flink:
 
-- `cd flink_jobs/ams_stream_hbase`
+- `cd flink_jobs/ams_ingest_metric`
 - `mvn clean && mvn package`
 
 
 Run jar in flink:
 
-- `flink run ams-stream-hbase-0.1.jar --ams-endpoint {...} --ams-port {...} --ams-token {...} -ams-project {...} --ams-sub {...} --avro-schema {...} --hbase-master {...} --hbase-zk-quorum {...} --hbase-zk-port {...} --hbase-namespace {...} --hbase-table {...} --hbase-master-port {...}`
+- `flink run ams-ingest-metric-0.1.jar --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --avro.schema {...} --hbase.master {...} --hbase.zk.quorum {...} --hbase.zk.port {...} --hbase.namespace {...} --hbase.table {...} --hbase.master.port {...} --hdfs.path {...} --check.path {...} --check.interval`
 
 Job required cli parameters:
 
-`--ams-endpoint`      : ARGO messaging api endoint to connect to msg.example.com
+`--ams.endpoint`      : ARGO messaging api endoint to connect to msg.example.com
 
-`--ams-port`          : ARGO messaging api port
+`--ams.port`          : ARGO messaging api port
 
-`--ams-token`         : ARGO messaging api token
+`--ams.token`         : ARGO messaging api token
 
-`--ams-project`       : ARGO messaging api project to connect to
+`--ams.project`       : ARGO messaging api project to connect to
 
-`--ams-sub`           : ARGO messaging subscription to pull from
+`--ams.sub`           : ARGO messaging subscription to pull from
 
-`--hbase-master`      : hbase endpoint
+Job optional cli parameters:
 
-`--hbase-master-port` : hbase master port
+`--hbase.master`      : hbase endpoint
 
-`--hbase-zk-quorum`   : comma separated list of hbase zookeeper servers
+`--hbase.master.port` : hbase master port
 
-`--hbase-zk-port`     : port used by hbase zookeeper servers
+`--hbase.zk.quorum`   : comma separated list of hbase zookeeper servers
 
-`--hbase-namespace`   : table namespace used (usually tenant name)
+`--hbase.zk.port`     : port used by hbase zookeeper servers
 
-`--hbase-table`       : table name (usually metric_data)
+`--hbase.namespace`   : table namespace used (usually tenant name)
+
+`--hbase.table`       : table name (usually metric_data)
+
+`--hdfs.path`         : base path for storing metric data on hdfs
+
+`--check.path`        : path to store flink checkpoints
+
+`--check.interval`    : interval for checkpointing (in ms)
 
 ### Metric data hbase schema
 
