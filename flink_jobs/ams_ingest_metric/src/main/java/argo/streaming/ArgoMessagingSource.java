@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 // Uses ArgoMessaging client
 public class ArgoMessagingSource extends RichSourceFunction<String> {
 
+	private static final long serialVersionUID = 1L;
+
 	// setup logger
 	static Logger LOG = LoggerFactory.getLogger(ArgoMessagingSource.class);
 	

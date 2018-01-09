@@ -6,7 +6,7 @@ python:
   - "2.6"
 
 script:
-  - cd flink_jobs/ams_stream_hbase/ && mvn test
+  - cd flink_jobs/ams_ingest_metric/ && mvn test
   - cd ../batch_ar && mvn test
   - cd ../batch_status && mvn test
   - cd ../stream_status && mvn test
