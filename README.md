@@ -280,9 +280,9 @@ Job required cli parameters:
 `--datastore.uri`     : datastore uri for outputting the results
 
 
-## Batch Status
+## Batch AR
 
-Flink batch job that calculates status results for a specific date
+Flink batch job that calculates a/r results for a specific date
 
 Prepare job to submit in flink:
 
@@ -320,4 +320,6 @@ Job required cli parameters:
 
 `--run.date`          : target date in DD-MM-YYYY format
 
-`--datastore.uri`     : datastore uri for outputting the results
+`--mongo.uri`         : MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
+
+`--mongo.method`      : MongoDB method to be used when storing the results ~ either: `insert` or `upsert`
