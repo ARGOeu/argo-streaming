@@ -277,7 +277,9 @@ Job required cli parameters:
 
 `--egroup.type`       : endpoint group type used in report (for e.g. SITES)
 
-`--datastore.uri`     : datastore uri for outputting the results
+`--mongo.uri`         : MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
+
+`--mongo.method`      : MongoDB method to be used when storing the results ~ either: `insert` or `upsert`
 
 
 ## Batch AR
