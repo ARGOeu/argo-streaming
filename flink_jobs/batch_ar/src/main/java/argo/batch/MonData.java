@@ -1,6 +1,5 @@
 package argo.batch;
 
-import java.util.Arrays;
 
 /* Extends the metric data information by adding the extra group field
  * 
@@ -18,7 +17,7 @@ public class MonData {
 	private String message;
 
 	
-	MonData(){
+	public MonData(){
 		this.group="";
 		this.service="";
 		this.hostname="";

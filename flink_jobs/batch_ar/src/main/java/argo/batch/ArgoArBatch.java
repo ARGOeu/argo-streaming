@@ -2,11 +2,6 @@ package argo.batch;
 
 import org.slf4j.LoggerFactory;
 
-import com.mongodb.BasicDBObjectBuilder;
-import com.mongodb.DBObject;
-import com.mongodb.hadoop.io.BSONWritable;
-import com.mongodb.hadoop.mapred.MongoOutputFormat;
-
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
@@ -15,20 +10,15 @@ import argo.avro.MetricProfile;
 import argo.avro.Weight;
 
 import org.slf4j.Logger;
-import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
 import org.apache.flink.api.java.io.AvroInputFormat;
 
 import org.apache.flink.api.java.operators.DataSource;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.mapred.JobConf;
+
 
 /**
  * Represents an ARGO A/R Batch Job in flink
@@ -54,7 +44,8 @@ import org.apache.hadoop.mapred.JobConf;
  * <li>--conf : file location of report configuration json file (local or
  * hdfs)</li>
  * <li>--run.date : target date in DD-MM-YYYY format</li>
- * <li>--datastore.uri : datastore uri for outputting the results</li>
+ * <li>--mongo.uri : mongo uri for outputting the results</li>
+ * <li>--mongo.method : mongo method for storing the results</li>
  * <ul>
  */
 public class ArgoArBatch {
@@ -170,109 +161,24 @@ public class ArgoArBatch {
 				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops")
 				.withBroadcastSet(weightDS, "weight").withBroadcastSet(confDS, "conf");
 
-		// Convert service ar results into mongo friendly format
-		DataSet<Tuple2<NullWritable, BSONWritable>> serviceArBSON = serviceResultDS.map(new ConvertServiceArToBson());
+		
+		String dbURI = params.getRequired("mongo.uri");
+		String dbMethod = params.getRequired("mongo.method");
 
-		// Convert endpoint group ar results into mongo friendly format
-		DataSet<Tuple2<NullWritable, BSONWritable>> endpointGroupArBSON = groupResultDS
-				.map(new ConvertEndpointGroupArToBson());
-
-		// Initialize a new hadoop conf object to add mongo connector related
-		// property
-		JobConf serviceArConf = new JobConf();
-		// Add mongo destination as given in parameters
-		serviceArConf.set("mongo.output.uri", params.getRequired("datastore.uri") + ".service_ar");
-		// Initialize MongoOutputFormat
-		MongoOutputFormat<NullWritable, BSONWritable> serviceArMongoOF = new MongoOutputFormat<NullWritable, BSONWritable>();
-		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write
-		// service ar results in mongo db
-		serviceArBSON.output(new HadoopOutputFormat<NullWritable, BSONWritable>(serviceArMongoOF, serviceArConf));
-
-		// Initialize a new hadoop conf object to add mongo connector related
-		// property
-		JobConf endpointGroupArConf = new JobConf();
-		// Add mongo destination as given in parameters
-		endpointGroupArConf.set("mongo.output.uri", params.getRequired("datastore.uri") + ".endpoint_group_ar");
-		// Initialize MongoOutputFormat
-		MongoOutputFormat<NullWritable, BSONWritable> endpointGroupArMongoOF = new MongoOutputFormat<NullWritable, BSONWritable>();
-		// Use HadoopOutputFormat as a wrapper around MongoOutputFormat to write
-		// service ar results in mongo db
-		endpointGroupArBSON.output(
-				new HadoopOutputFormat<NullWritable, BSONWritable>(endpointGroupArMongoOF, endpointGroupArConf));
-
+	    // Initialize two mongodb outputs
+		MongoServiceArOutput serviceMongoOut = new MongoServiceArOutput(dbURI,"service_ar",dbMethod);
+		 // Initialize two mongodb outputs
+		MongoEndGroupArOutput egroupMongoOut = new MongoEndGroupArOutput(dbURI,"endpoint_group_ar",dbMethod);
+		
+		serviceResultDS.output(serviceMongoOut);
+		groupResultDS.output(egroupMongoOut);
+		
 		env.execute("Flink Ar Batch Job");
 
 	}
 
-	/**
-	 * RichMap operator that converts a ServiceAR result object to BSONWritable
-	 * for proper storage in mongodb
-	 */
-	static class ConvertServiceArToBson extends RichMapFunction<ServiceAR, Tuple2<NullWritable, BSONWritable>> {
+	
 
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public void open(Configuration parameters) {
-
-		}
-
-		/**
-		 * Prepares the data in BSONWritable values for mongo storage Each tuple
-		 * is in the form <K,V> and the key here must be empty for mongo to
-		 * assign an ObjectKey NullWriteable as the first object of the tuple
-		 * ensures an empty key
-		 */
-		@Override
-		public Tuple2<NullWritable, BSONWritable> map(ServiceAR item) throws Exception {
-
-			// Create a mongo database object with the needed fields
-			DBObject builder = BasicDBObjectBuilder.start().add("report", item.getReport())
-					.add("date", item.getDateInt()).add("name", item.getName()).add("supergroup", item.getGroup())
-					.add("availability", item.getA()).add("reliability", item.getR()).add("up", item.getUp())
-					.add("unknown", item.getUnknown()).add("down", item.getDown()).get();
-
-			// Convert database object to BsonWriteable
-			BSONWritable w = new BSONWritable(builder);
-
-			return new Tuple2<NullWritable, BSONWritable>(NullWritable.get(), w);
-		}
-	}
-
-	/**
-	 * Rich map operator that converts an EndpointGroupAR result object to
-	 * BSONWritable for proper storage in mongodb
-	 */
-	static class ConvertEndpointGroupArToBson
-			extends RichMapFunction<EndpointGroupAR, Tuple2<NullWritable, BSONWritable>> {
-
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public void open(Configuration parameters) {
-
-		}
-
-		@Override
-		/**
-		 * Prepares the data in BSONWritable values for mongo storage Each tuple
-		 * is in the form <K,V> and the key here must be empty for mongo to
-		 * assign an ObjectKey NullWriteable as the first object of the tuple
-		 * ensures an empty key
-		 */
-		public Tuple2<NullWritable, BSONWritable> map(EndpointGroupAR item) throws Exception {
-
-			// Create a mongo database object with the needed fields
-			DBObject builder = BasicDBObjectBuilder.start().add("report", item.getReport())
-					.add("date", item.getDateInt()).add("name", item.getName()).add("supergroup", item.getGroup())
-					.add("weight", item.getWeight()).add("availability", item.getA()).add("reliability", item.getR())
-					.add("up", item.getUp()).add("unknown", item.getUnknown()).add("down", item.getDown()).get();
-
-			// Convert database object to BsonWriteable
-			BSONWritable w = new BSONWritable(builder);
-
-			return new Tuple2<NullWritable, BSONWritable>(NullWritable.get(), w);
-		}
-	}
+	
 
 }
