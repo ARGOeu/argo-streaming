@@ -1,18 +1,15 @@
 package argo.streaming;
 
-import java.io.File;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericRecord;
+
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
@@ -20,15 +17,11 @@ import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09;
@@ -51,29 +44,27 @@ import com.google.gson.JsonParser;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
-import ops.OpsManager;
 import status.StatusManager;
-import sync.AggregationProfileManager;
-import sync.EndpointGroupManager;
 import sync.EndpointGroupManagerV2;
 import sync.MetricProfileManager;
 
-//Flink Job : Stream metric data from ARGO messaging to Hbase
-//job required cli parameters
-//--ams.endpoint      : ARGO messaging api endoint to connect to msg.example.com
-//--ams.port          : ARGO messaging api port 
-//--ams.token         : ARGO messaging api token
-//--ams.project       : ARGO messaging api project to connect to
-//--ams.sub.metric    : ARGO messaging subscription to pull metric data from
-//--ams.sub.sync      : ARGO messaging subscription to pull sync data from
-//--avro.schema       : avro-schema used for decoding payloads
-//--sync.mps          : metric-profile file used 
-//--sync.egp          : endpoint-group file used for topology
-//--sync.aps          : availability profile used 
-//--sync.ops          : operations profile used 
 
 /**
- * Represents an ARGO AMS Streaming job in flink
+ * Flink Job : Stream metric data from ARGO messaging to Hbase
+ * job required cli parameters
+ * --ams.endpoint      : ARGO messaging api endoint to connect to msg.example.com
+ * --ams.port          : ARGO messaging api port 
+ * --ams.token         : ARGO messaging api token
+ * --ams.project       : ARGO messaging api project to connect to
+ * --ams.sub.metric    : ARGO messaging subscription to pull metric data from
+ * --ams.sub.sync      : ARGO messaging subscription to pull sync data from
+ * --avro.schema       : avro-schema used for decoding payloads
+ * --sync.mps          : metric-profile file used 
+ * --sync.egp          : endpoint-group file used for topology
+ * --sync.aps          : availability profile used 
+ * --sync.ops          : operations profile used
+ * --ams.batch         : num of messages to be retrieved per request to AMS service
+ * --ams.interval      : interval (in ms) between AMS service requestss
  */
 public class AmsStreamStatus {
 	// setup logger
@@ -83,8 +74,8 @@ public class AmsStreamStatus {
 	 * Sets configuration parameters to streaming enviroment
 	 * 
 	 * @param config
-	 *            A StatusConfig object that holds configuration parameters for
-	 *            this job
+	 *            A StatusConfig object that holds configuration parameters for this
+	 *            job
 	 * @return Stream execution enviroment
 	 */
 	private static StreamExecutionEnvironment setupEnvironment(StatusConfig config) {
@@ -92,6 +83,14 @@ public class AmsStreamStatus {
 		env.getConfig().setGlobalJobParameters(config.getParameters());
 
 		return env;
+	}
+
+	/**
+	 * Check if flink job has been called with ams rate params
+	 */
+	public static boolean hasAmsRateArgs(ParameterTool paramTool) {
+		String args[] = { "ams.batch", "ams.interval" };
+		return hasArgs(args, paramTool);
 	}
 
 	public static boolean hasKafkaArgs(ParameterTool paramTool) {
@@ -142,12 +141,21 @@ public class AmsStreamStatus {
 		String subMetric = parameterTool.getRequired("ams.sub.metric");
 		String subSync = parameterTool.getRequired("ams.sub.sync");
 
+		// set ams client batch and interval to default values
+		int batch = 1;
+		long interval = 100L;
+
+		if (hasAmsRateArgs(parameterTool)) {
+			batch = parameterTool.getInt("ams.batch");
+			interval = parameterTool.getLong("ams.interval");
+		}
+
 		// Establish the metric data AMS stream
-		DataStream<String> metricAMS = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, subMetric))
+		DataStream<String> metricAMS = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, subMetric,batch, interval))
 				.setParallelism(1);
 
 		// Establish the sync data AMS stream
-		DataStream<String> syncAMS = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, subSync))
+		DataStream<String> syncAMS = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, subSync,batch, interval))
 				.setParallelism(1);
 
 		// Forward syncAMS data to two paths
@@ -157,51 +165,48 @@ public class AmsStreamStatus {
 		DataStream<String> syncA = syncAMS.forward();
 		DataStream<String> syncB = syncAMS.broadcast();
 
-		DataStream<Tuple2<String, MetricData>> groupMdata = metricAMS.connect(syncA).flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
-		
+		DataStream<Tuple2<String, MetricData>> groupMdata = metricAMS.connect(syncA)
+				.flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
+
 		DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf));
-			
 
 		events.print();
 
-		 if (hasKafkaArgs(parameterTool)){
-		 //Initialize kafka parameters
-		 String kafkaServers = parameterTool.get("kafka.servers");
-		 String kafkaTopic = parameterTool.get("kafka.topic");
-		 Properties kafkaProps = new Properties();
-		 kafkaProps.setProperty("bootstrap.servers", kafkaServers);
-		 FlinkKafkaProducer09<String> kSink = new
-		 FlinkKafkaProducer09<String>(kafkaTopic,new SimpleStringSchema(),
-		 kafkaProps );
-		 events.addSink(kSink);
-		 }
-		
-		
-		 if (hasHbaseArgs(parameterTool)){
-		 // Initialize Output : Hbase Output Format
-		 HBaseOutputFormat hbf = new HBaseOutputFormat();
-		 hbf.setMaster(parameterTool.get("hbase.master"));
-		 hbf.setMasterPort(parameterTool.get("hbase.master.port"));
-		 hbf.setZkQuorum(parameterTool.get("hbase.zk.quorum"));
-		 hbf.setZkPort(parameterTool.get("hbase.zk.port"));
-		 hbf.setNamespace(parameterTool.get("hbase.namespace"));
-		 hbf.setTableName(parameterTool.get("hbase.table"));
-		 hbf.setReport(parameterTool.get("report"));
-		 events.writeUsingOutputFormat(hbf);
-		 }
-		
-		 if (hasFsOutArgs(parameterTool)){
-		 events.writeAsText(parameterTool.get("fs.output"));
-		 }
-		
+		if (hasKafkaArgs(parameterTool)) {
+			// Initialize kafka parameters
+			String kafkaServers = parameterTool.get("kafka.servers");
+			String kafkaTopic = parameterTool.get("kafka.topic");
+			Properties kafkaProps = new Properties();
+			kafkaProps.setProperty("bootstrap.servers", kafkaServers);
+			FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic, new SimpleStringSchema(),
+					kafkaProps);
+			events.addSink(kSink);
+		}
+
+		if (hasHbaseArgs(parameterTool)) {
+			// Initialize Output : Hbase Output Format
+			HBaseOutputFormat hbf = new HBaseOutputFormat();
+			hbf.setMaster(parameterTool.get("hbase.master"));
+			hbf.setMasterPort(parameterTool.get("hbase.master.port"));
+			hbf.setZkQuorum(parameterTool.get("hbase.zk.quorum"));
+			hbf.setZkPort(parameterTool.get("hbase.zk.port"));
+			hbf.setNamespace(parameterTool.get("hbase.namespace"));
+			hbf.setTableName(parameterTool.get("hbase.table"));
+			hbf.setReport(parameterTool.get("report"));
+			events.writeUsingOutputFormat(hbf);
+		}
+
+		if (hasFsOutArgs(parameterTool)) {
+			events.writeAsText(parameterTool.get("fs.output"));
+		}
 
 		// Execute flink dataflow
 		see.execute();
 	}
 
 	/**
-	 * MetricDataWithGroup implements a map function that adds group information
-	 * to the metric data message
+	 * MetricDataWithGroup implements a map function that adds group information to
+	 * the metric data message
 	 */
 	private static class MetricDataWithGroup extends RichCoFlatMapFunction<String, String, Tuple2<String, MetricData>> {
 
@@ -251,12 +256,11 @@ public class AmsStreamStatus {
 		}
 
 		/**
-		 * The main flat map function that accepts metric data and generates
-		 * metric data with group information
+		 * The main flat map function that accepts metric data and generates metric data
+		 * with group information
 		 * 
 		 * @param value
-		 *            Input metric data in base64 encoded format from AMS
-		 *            service
+		 *            Input metric data in base64 encoded format from AMS service
 		 * @param out
 		 *            Collection of generated Tuple2<MetricData,String> objects
 		 */
@@ -273,7 +277,8 @@ public class AmsStreamStatus {
 			// Decode from base64
 			byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
 			// Decode from avro
-			DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),MetricData.getClassSchema(),new SpecificData());
+			DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),
+					MetricData.getClassSchema(), new SpecificData());
 			Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
 			MetricData item;
 			item = avroReader.read(null, decoder);
@@ -341,9 +346,9 @@ public class AmsStreamStatus {
 	}
 
 	/**
-	 * StatusMap implements a rich flat map function which holds status
-	 * information for all entities in topology and for each received metric
-	 * generates the appropriate status events
+	 * StatusMap implements a rich flat map function which holds status information
+	 * for all entities in topology and for each received metric generates the
+	 * appropriate status events
 	 */
 	private static class StatusMap extends RichCoFlatMapFunction<Tuple2<String, MetricData>, String, String> {
 
@@ -392,12 +397,11 @@ public class AmsStreamStatus {
 		}
 
 		/**
-		 * The main flat map function that accepts metric data and generates
-		 * status events
+		 * The main flat map function that accepts metric data and generates status
+		 * events
 		 * 
 		 * @param value
-		 *            Input metric data in base64 encoded format from AMS
-		 *            service
+		 *            Input metric data in base64 encoded format from AMS service
 		 * @param out
 		 *            Collection of generated status events as json strings
 		 */
@@ -486,8 +490,8 @@ public class AmsStreamStatus {
 	}
 
 	/**
-	 * HbaseOutputFormat implements a custom output format for storing results
-	 * in hbase
+	 * HbaseOutputFormat implements a custom output format for storing results in
+	 * hbase
 	 */
 	private static class HBaseOutputFormat implements OutputFormat<String> {
 
