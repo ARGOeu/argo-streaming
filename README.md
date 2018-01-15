@@ -15,7 +15,7 @@ Prepare job to submit in flink:
 
 Run jar in flink:
 
-- `flink run ams-ingest-metric-0.1.jar --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --avro.schema {...} --hbase.master {...} --hbase.zk.quorum {...} --hbase.zk.port {...} --hbase.namespace {...} --hbase.table {...} --hbase.master.port {...} --hdfs.path {...} --check.path {...} --check.interval`
+- `flink run ams-ingest-metric-0.1.jar --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --avro.schema {...} --hbase.master {...} --hbase.zk.quorum {...} --hbase.zk.port {...} --hbase.namespace {...} --hbase.table {...} --hbase.master.port {...} --hdfs.path {...} --check.path {...} --check.interval  --ams.batch {...} --ams.interval {...}`
 
 Job required cli parameters:
 
@@ -48,6 +48,10 @@ Job optional cli parameters:
 `--check.path`        : path to store flink checkpoints
 
 `--check.interval`    : interval for checkpointing (in ms)
+
+`--ams.batch`         : num of messages to be retrieved per request to AMS service
+
+`--ams.interval`      : interval (in ms) between AMS service requests
 
 ### Metric data hbase schema
 
@@ -95,7 +99,7 @@ Prepare job to submit in flink:
 
 Run jar in flink:
 
-- `flink run  AmsSyncHDFS-0.0.1- --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --base.path {...}
+- `flink run  AmsSyncHDFS-0.0.1- --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --hdfs.path {...} --ams.batch {...} --ams.interval {...}
 
 Job required cli parameters:
 
@@ -109,19 +113,13 @@ Job required cli parameters:
 
 `--ams.sub`           : ARGO messaging subscription to pull from
 
-`--base.path`         : Base hdfs path to store connector data to (e.g. hdfs://localhost:9000/user/foo/path/to/tenant)
+`--hdfs.path`         : Base hdfs path to store connector data to (e.g. hdfs://localhost:9000/user/foo/path/to/tenant)
 
-`--hbase-master`      : hbase endpoint
+`--ams.batch`         : num of messages to be retrieved per request to AMS service
 
-`--hbase-master-port` : hbase master port
+`--ams.interval`      : interval (in ms) between AMS service requests
 
-`--hbase-zk-quorum`   : comma separated list of hbase zookeeper servers
-
-`--hbase-zk-port`     : port used by hbase zookeeper servers
-
-`--hbase-namespace`   : table namespace used (usually tenant name)
-
-`--hbase-table`       : table name (usually metric_data)
+Job
 
 ### Metric data hbase schema
 
@@ -168,7 +166,7 @@ Prepare job to submit in flink:
 
 Run jar in flink:
 
-- `flink run streaming-status-0.1.jar --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub.metric {...} --ams.sub.sync {...}  --sync.mps {...} --sync.egp {...} --sync.aps {...} --sync.ops {...} --hbase.master {...} --hbase.zk.quorum {...} --hbase.zk.port {...} --hbase.namespace {...} --hbase.table {...} --hbase.master.port {...} --kafka.servers {...} --kafka.topic {...} --fs.output {...}`
+- `flink run streaming-status-0.1.jar --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub.metric {...} --ams.sub.sync {...}  --sync.mps {...} --sync.egp {...} --sync.aps {...} --sync.ops {...} --hbase.master {...} --hbase.zk.quorum {...} --hbase.zk.port {...} --hbase.namespace {...} --hbase.table {...} --hbase.master.port {...} --kafka.servers {...} --kafka.topic {...} --fs.output {...} --ams.batch {...} --ams.interval {...}`
 
 Job required cli input parameters:
 
@@ -215,6 +213,12 @@ Job optional cli parameters for kafka output:
 Job optional cli parameters for filesystem output (local/hdfs):
 
 `--fs.output`         : filesystem path for output (prefix with "hfds://" for hdfs usage)
+
+Job Optional cli parameters for ams ingestion related
+
+`--ams.batch`         : num of messages to be retrieved per request to AMS service
+
+`--ams.interval`      : interval (in ms) between AMS service requests
 
 
 

@@ -50,11 +50,22 @@ import argo.avro.MetricData;
  * --check.path        : checkpoint path
  * --check.interval    : checkpoint interval
  * --hdfs.path         : hdfs destination to write the data
+ * --ams.batch         : num of messages to be retrieved per request to AMS service
+ * --ams.interval      : interval (in ms) between AMS service requests
  */
 public class AmsIngestMetric {
 	// setup logger
 	static Logger LOG = LoggerFactory.getLogger(AmsIngestMetric.class);
 
+	/**
+	 * Check if flink job has been called with ams rate params
+	 */
+	public static boolean hasAmsRateArgs(ParameterTool paramTool) {
+		String args[] = { "ams.batch", "ams.interval" };
+		return hasArgs(args, paramTool);
+	}
+
+	
 	/**
 	 * Check if flink job has been called with checkpoint cli arguments
 	 */
@@ -101,6 +112,16 @@ public class AmsIngestMetric {
 
 		// Initialize cli parameter tool
 		final ParameterTool parameterTool = ParameterTool.fromArgs(args);
+		
+		// set ams client batch and interval to default values
+		int batch = 1;
+		long interval = 100L;
+		
+		if (hasAmsRateArgs(parameterTool)) {
+			batch = parameterTool.getInt("ams.batch");
+			interval = parameterTool.getLong("ams.interval");
+		}
+		
 
 		// Initialize Input Source : ARGO Messaging Source
 		String endpoint = parameterTool.getRequired("ams.endpoint");
@@ -122,7 +143,7 @@ public class AmsIngestMetric {
 		}
 
 		// Ingest sync avro encoded data from AMS endpoint
-		DataStream<String> metricDataJSON = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, sub));
+		DataStream<String> metricDataJSON = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval));
 		DataStream<MetricData> metricDataPOJO = metricDataJSON.flatMap(new FlatMapFunction<String, MetricData>() {
 
 			/**

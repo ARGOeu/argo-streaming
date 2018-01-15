@@ -17,64 +17,68 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 
 	// setup logger
 	static Logger LOG = LoggerFactory.getLogger(ArgoMessagingSource.class);
-	
+
 	private String endpoint = null;
 	private String port = null;
 	private String token = null;
 	private String project = null;
 	private String sub = null;
-	private transient Object rateLck; //lock for waiting to establish rate 
+	private int batch = 1;
+	private long interval = 100L;
+	private transient Object rateLck; // lock for waiting to establish rate
 
 	private volatile boolean isRunning = true;
 
 	private ArgoMessagingClient client = null;
+
+	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub, int batch, Long interval) {
+		this.endpoint = endpoint;
+		this.port = port;
+		this.token = token;
+		this.project = project;
+		this.sub = sub;
+		this.interval = interval;
+		this.batch = batch;
+
+	}
 
 	@Override
 	public void cancel() {
 		isRunning = false;
 
 	}
-	
-	
+
 	@Override
-	public void run(SourceContext<String> ctx)
-			throws Exception {
+	public void run(SourceContext<String> ctx) throws Exception {
 		// This is the main run logic
-		while (isRunning){
-			String res = this.client.consume();
-			if (res != ""){
-					ctx.collect(res);
+		while (isRunning) {
+			String[] res = this.client.consume();
+			if (res.length > 0) {
+				for (String msg : res) {
+					ctx.collect(msg);
+				}
+
 			}
 			synchronized (rateLck) {
-				rateLck.wait(100L);
+				rateLck.wait(this.interval);
 			}
-			
+
 		}
 
 	}
 
-	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub) {
-		this.endpoint = endpoint;
-		this.port = port;
-		this.token = token;
-		this.project = project;
-		this.sub = sub;
-
-	}
-
-	
-	// Initializes 
+	// Initializes
 	@Override
 	public void open(Configuration parameters) throws Exception {
 		// init rate lock
 		rateLck = new Object();
 		// init client
-		String fendpoint=this.endpoint;
-		if (this.port!=null && !this.port.isEmpty()){
-			fendpoint = this.endpoint + ":" + port; 
+		String fendpoint = this.endpoint;
+		if (this.port != null && !this.port.isEmpty()) {
+			fendpoint = this.endpoint + ":" + port;
 		}
 		try {
-			client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.sub);
+			client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.sub, this.batch);
 		} catch (KeyManagementException e) {
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {

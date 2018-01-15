@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -22,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 
@@ -41,6 +41,9 @@ public class ArgoMessagingClient {
 	private String sub = null;
 	// protocol (https,http)
 	private String proto = null;
+	// numer of message to be pulled;
+	private int batch = 100;
+	private String maxMessages = "";
 
 	// Initialize with default values
 	public ArgoMessagingClient() {
@@ -50,22 +53,12 @@ public class ArgoMessagingClient {
 		this.endpoint = "localhost";
 		this.project = "test_project";
 		this.sub = "test_sub";
+		this.batch = 100;
+		this.maxMessages = "100";
 	}
 
-	// Failover initializer to be called inside method (if client is not yet initialized)
-	private void buildHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException{
-		// Create ssl context
-		SSLContextBuilder builder = new SSLContextBuilder();
-		builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build(),
-				SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-
-		this.httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-	}
-	
 	// Initialized using parameters
-	public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub)
-			throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+	public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub, int batch) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 
 		// Create ssl context
 		SSLContextBuilder builder = new SSLContextBuilder();
@@ -80,6 +73,39 @@ public class ArgoMessagingClient {
 		this.endpoint = endpoint;
 		this.project = project;
 		this.sub = sub;
+		this.batch = batch;
+		this.maxMessages = String.valueOf(batch);
+	}
+
+	private class MsgAck {
+		String[] msgs;
+		String[] ackIds;
+
+		private MsgAck(String[] msgs, String[] ackIds) {
+			this.msgs = msgs;
+			this.ackIds = ackIds;
+		}
+
+		private String[] getMsgs() {
+			return this.msgs;
+		}
+
+		private String[] getAckIds() {
+			return this.ackIds;
+		}
+
+	}
+
+	// Failover initializer to be called inside method (if client is not yet
+	// initialized)
+	private void buildHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+		// Create ssl context
+		SSLContextBuilder builder = new SSLContextBuilder();
+		builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build(),
+				SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+
+		this.httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
 	}
 
 	// Based on parameters compose the request url
@@ -88,19 +114,23 @@ public class ArgoMessagingClient {
 				+ token;
 	}
 
-	// Do a pull request 
-	public String[] doPull() throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+	// Do a pull request
+	public MsgAck doPull() throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+
+		ArrayList<String> msgList = new ArrayList<String>();
+		ArrayList<String> ackIdList = new ArrayList<String>();
 
 		// Create the http post to pull
 		HttpPost postPull = new HttpPost(this.composeURL("pull"));
-		StringEntity postBody = new StringEntity("{\"maxMessages\":\"1\",\"returnImmediately\":\"true\"}");
+		StringEntity postBody = new StringEntity(
+				"{\"maxMessages\":\"" + this.maxMessages + "\",\"returnImmediately\":\"true\"}");
 		postBody.setContentType("application/json");
 		postPull.setEntity(postBody);
 
 		if (this.httpClient == null) {
 			buildHttpClient();
 		}
-		
+
 		CloseableHttpResponse response = this.httpClient.execute(postPull);
 		String msg = "";
 		String ackId = "";
@@ -121,59 +151,66 @@ public class ArgoMessagingClient {
 			// Gather message from json
 			JsonParser jsonParser = new JsonParser();
 			// parse the json root object
-			JsonElement jRoot = jsonParser.parse(result.toString());
 			
+			JsonElement jRoot = jsonParser.parse(result.toString());
+
 			JsonArray jRec = jRoot.getAsJsonObject().get("receivedMessages").getAsJsonArray();
 
+			
+			
 			// if has elements
-			if (jRec.size() > 0) {
-				JsonElement jMsgItem = jRec.get(0);
+			for (JsonElement jMsgItem : jRec) {
 				JsonElement jMsg = jMsgItem.getAsJsonObject().get("message");
 				JsonElement jAckId = jMsgItem.getAsJsonObject().get("ackId");
 				msg = jMsg.toString();
 				ackId = jAckId.toString();
+				msgList.add(msg);
+				ackIdList.add(ackId);
 			}
 
 		}
 
 		response.close();
 
-		// Return a 2-element array with message and ack
-		return new String[] { msg, ackId };
+		String[] msgArr = msgList.toArray(new String[0]);
+		String[] ackIdArr = ackIdList.toArray(new String[0]);
+
+		
+		
+		// Return a Message array
+		return new MsgAck(msgArr, ackIdArr);
 
 	}
 
 	// Consume = Do a pull and an acknowledge request
-	public String consume() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
-		String msg = "";
+	public String[] consume() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+		String[] msgs = new String[0];
 		// Try first to pull a message
 		try {
-			
-			
-			String msgAck[] = doPull();
-			String msg_pre = msgAck[0];
-			String ack = msgAck[1];
-			
-			if (ack != "") {
-				// Do an ack for the received message
-				String ackRes = doAck(ack);
-				if (ackRes == "") {
-					// Acknowledge output final message
-					msg = msg_pre;
-					Log.info("Message Acknowledged ackid:" + ack);
-					
-				} else {
-					Log.info("No acknowledment");
-					Log.info("Ack id"+ack);
-					Log.info(ackRes);
-				}
-			} 
 
+			MsgAck msgAck = doPull();
+			// get last ackid
+			String ackId = "";
+			if (msgAck.ackIds.length > 0) {
+				ackId = msgAck.ackIds[msgAck.ackIds.length - 1];
+			}
+
+			if (ackId != "") {
+				// Do an ack for the received message
+				String ackRes = doAck(ackId);
+				if (ackRes == "") {
+					Log.info("Message Acknowledged ackid:" + ackId);
+					msgs = msgAck.msgs;
+
+				} else {
+					Log.warn("No acknowledment for ackid:" + ackId + "-" + ackRes);
+				}
+			}
 		} catch (IOException e) {
 			LOG.error(e.getMessage());
 		}
 
-		return msg;
+		return msgs;
 
 	}
 
@@ -213,8 +250,8 @@ public class ArgoMessagingClient {
 		return resMsg;
 
 	}
-	
-	public void close() throws IOException{
+
+	public void close() throws IOException {
 		this.httpClient.close();
 	}
 }
