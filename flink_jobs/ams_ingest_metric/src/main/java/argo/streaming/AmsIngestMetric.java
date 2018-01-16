@@ -116,6 +116,7 @@ public class AmsIngestMetric {
 		// set ams client batch and interval to default values
 		int batch = 1;
 		long interval = 100L;
+		long inactivityThresh = 1800000L; // default inactivity threshold value ~ 30mins
 		
 		if (hasAmsRateArgs(parameterTool)) {
 			batch = parameterTool.getInt("ams.batch");
@@ -182,6 +183,7 @@ public class AmsIngestMetric {
 			// timestamp parts (YYYY-MM-DD)
 			// in different daily files
 			BucketingSink<MetricData> bs = new BucketingSink<MetricData>(basePath);
+			bs.setInactiveBucketThreshold(inactivityThresh);
 			Bucketer<MetricData> tsBuck = new TSBucketer();
 			bs.setBucketer(tsBuck);
 			bs.setPartPrefix("mdata");
