@@ -215,13 +215,13 @@ public class AmsIngestMetric {
 		
 		// Create a job title message to discern job in flink dashboard/cli
 		StringBuilder jobTitleSB = new StringBuilder();
-		jobTitleSB.append("Ingesting data from ");
+		jobTitleSB.append("Ingesting  metric data from ");
 		jobTitleSB.append(endpoint);
 		jobTitleSB.append(":");
 		jobTitleSB.append(port);
 		jobTitleSB.append("/v1/projects/");
 		jobTitleSB.append(project);
-		jobTitleSB.append("/suscriptions/");
+		jobTitleSB.append("/subscriptions/");
 		jobTitleSB.append(sub);
 		
 		see.execute(jobTitleSB.toString());

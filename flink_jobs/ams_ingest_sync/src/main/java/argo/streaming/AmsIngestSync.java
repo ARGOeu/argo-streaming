@@ -19,10 +19,10 @@ import org.slf4j.LoggerFactory;
  * --ams.batch         : num of messages to be retrieved per request to AMS service
  * --ams.interval      : interval (in ms) between AMS service requests
  */
-public class AmsSyncHDFS {
+public class AmsIngestSync {
 
 	// setup logger
-	static Logger LOG = LoggerFactory.getLogger(AmsSyncHDFS.class);
+	static Logger LOG = LoggerFactory.getLogger(AmsIngestSync.class);
 
 	/**
 	 * Check if a list of expected cli arguments have been provided to this flink job
@@ -79,8 +79,19 @@ public class AmsSyncHDFS {
 		hdfsOut.setBasePath(basePath);
 
 		syncDataStream.writeUsingOutputFormat(hdfsOut);
+		
+		// Create a job title message to discern job in flink dashboard/cli
+		StringBuilder jobTitleSB = new StringBuilder();
+		jobTitleSB.append("Ingesting sync data from ");
+		jobTitleSB.append(endpoint);
+		jobTitleSB.append(":");
+		jobTitleSB.append(port);
+		jobTitleSB.append("/v1/projects/");
+		jobTitleSB.append(project);
+		jobTitleSB.append("/subscriptions/");
+		jobTitleSB.append(sub);
 
-		see.execute();
+		see.execute(jobTitleSB.toString());
 
 	}
 

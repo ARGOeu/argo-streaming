@@ -68,7 +68,7 @@ class SyncHDFSOutputFormat implements OutputFormat<String> {
 		// create hdfs configuration
 		hadoopConf = new org.apache.hadoop.conf.Configuration();
 		hadoopConf.set("fs.defaultFS", basePath.getScheme() + "://" + basePath.getHost() + ":" + basePath.getPort());
-		hdfs = FileSystem.get(hadoopConf);
+		hdfs = FileSystem.newInstance(hadoopConf);
 
 	}
 

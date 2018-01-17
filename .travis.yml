@@ -10,4 +10,4 @@ script:
   - cd ../batch_ar && mvn test
   - cd ../batch_status && mvn test
   - cd ../stream_status && mvn test
-  - cd ../stream_sync && mvn test
+  - cd ../ams_ingest_sync && mvn test
