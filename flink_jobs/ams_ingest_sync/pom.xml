@@ -14,9 +14,8 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>argo.streaming</groupId>
-	<artifactId>AmsSyncHDFS</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>AmsSyncHDFS</name>
+	<name>ams-ingest-sync</name>
 	<description>Stream sync data from AMS to HDFS</description>
 
 	<properties>
@@ -355,4 +354,5 @@
 			<action> <ignore/> </action> </pluginExecution> </pluginExecutions> </lifecycleMappingMetadata> 
 			</configuration> </plugin> </plugins> </pluginManagement> -->
 	</build>
+	<artifactId>ams-ingest-sync</artifactId>
 </project>

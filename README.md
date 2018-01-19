@@ -93,13 +93,13 @@ Flink job that connects as a subscriber to an ARGO Messaging Service, pulls mess
 
 Prepare job to submit in flink:
 
-- `cd flink_jobs/stream_sync`
+- `cd flink_jobs/ams_ingest_sync`
 - `mvn clean && mvn package`
 
 
 Run jar in flink:
 
-- `flink run  AmsSyncHDFS-0.0.1- --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --hdfs.path {...} --ams.batch {...} --ams.interval {...}
+- `flink run  ams-ingest-sync-0.1.jar- --ams.endpoint {...} --ams.port {...} --ams.token {...} -ams.project {...} --ams.sub {...} --hdfs.path {...} --ams.batch {...} --ams.interval {...}
 
 Job required cli parameters:
 
@@ -118,38 +118,6 @@ Job required cli parameters:
 `--ams.batch`         : num of messages to be retrieved per request to AMS service
 
 `--ams.interval`      : interval (in ms) between AMS service requests
-
-Job
-
-### Metric data hbase schema
-
-Metric data are stored in hbase tables using different namespaces for different tenants (e.g. hbase table name = '{TENANT_name}:metric_data')
-
-Each table has the following row key (composed by a unique combination of fields):
-
-`rowkey`= `{hostname}` + `|` + `{service_name}` + `|` + `{metric_name}` + `|` + `{monitoring_engine_name}` + `|` + `{timestamp}`
-
-#### Hbase columns
-
-Each hbase table has a column family named 'data' and the following columns:
-
-`timestamp`         : Timestamp of the metric event
-
-`host`              : hostname of the endpoint that the metric check was run to
-
-`service`           : name of the service related to the metric data
-
-`metric`            : name of the metric check
-
-`monitoring_host`   : name of the monitoring host running the check
-
-`status`            : status of the metric check
-
-`summary`           : summary of the metric result
-
-`message`           : details of the metric result
-
-`tags`              : json list of tags used to add metadata to the metric event
 
 
 ### Stream Status
