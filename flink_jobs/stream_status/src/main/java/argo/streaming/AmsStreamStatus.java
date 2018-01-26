@@ -131,7 +131,7 @@ public class AmsStreamStatus {
 		final StatusConfig conf = new StatusConfig(parameterTool);
 
 		StreamExecutionEnvironment see = setupEnvironment(conf);
-		see.setParallelism(6);
+		
 
 		// Initialize Input Source : ARGO Messaging Source
 		String endpoint = parameterTool.getRequired("ams.endpoint");
