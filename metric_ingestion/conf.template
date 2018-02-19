@@ -1,0 +1,23 @@
+[FLINK]
+path: /opt/flink-1.3.2/bin/flink
+
+[CLASSES]
+ams-ingest-metric:
+
+[JARS]
+ams-ingest-metric: 
+
+[AMS]
+endpoint: 
+port: 
+token: 
+sub: ingest-metric
+interval: 
+batch: 
+
+[HDFS]
+path: hdfs://hdfs1.flink.argo.grnet.gr:9000/user/flink/argo/tenants/{{tenant}}/mdata
+
+[CHECKPOINTS]
+path:
+interval: 
