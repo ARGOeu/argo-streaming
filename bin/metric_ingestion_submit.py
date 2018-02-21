@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import subprocess
 import argparse
 import requests
@@ -8,7 +9,7 @@ import json
 import ConfigParser
 from subprocess import check_call
 import logging
-import logging.handlers
+from argo_log import ArgoLogger
 
 
 def cmd_toString(cmd):
@@ -23,26 +24,20 @@ def cmd_toString(cmd):
     return " ".join(x for x in cmd)
 
 
-def main(args=None):
-
-    # set up the config parser
-    config = ConfigParser.ConfigParser()
-    config.read("../conf/conf.cfg")
-
-    # set up the logger
-    log = logging.getLogger(__name__)
-    log.setLevel(logging.INFO)
-    sys_log = logging.handlers.SysLogHandler(config.get("LOGS", "handler_path"))
-    sys_format = logging.Formatter('%(name)s[%(process)d]: %(levelname)s %(message)s')
-    sys_log.setFormatter(sys_format)
-
-    log.addHandler(sys_log)
+def compose_command(config, args, sudo, logger=None):
 
     # job_namespace
     job_namespace = config.get("JOB-NAMESPACE", "ingest-metric-namespace")
 
     # job sumbission command
-    cmd_command = ["sudo"]
+    cmd_command = []
+
+    if sudo is True:
+        cmd_command.append("sudo")
+
+    # create a simple stream_handler whenever tetsing
+    if logger is None:
+        logger = ArgoLogger()
 
     # check if configuration for the given tenant exists
     try:
@@ -50,10 +45,9 @@ def main(args=None):
         tenant = "TENANTS:"+args.Tenant.upper()
         tenant_job = tenant+":ingest-metric"
         config.get(tenant, "ams_project")
-        log.info("Starting building the submit command for tenant: " + args.Tenant.upper())
+        logger.print_and_log(logging.INFO, "Starting building the submit command for tenant: " + args.Tenant.upper())
     except ConfigParser.NoSectionError as e:
-        log.critical(str(e))
-        sys.exit(str(e))
+        logger.print_and_log(logging.CRITICAL, str(e), 1)
 
     # flink executable
     cmd_command.append(config.get("FLINK", "path"))
@@ -77,6 +71,10 @@ def main(args=None):
     cmd_command.append("--ams.port")
     cmd_command.append(config.get("AMS", "ams_port"))
     job_namespace = job_namespace.replace("{{ams_port}}", config.get("AMS", "ams_port"))
+
+    # tenant token
+    cmd_command.append("--ams.token")
+    cmd_command.append(config.get(tenant, "ams_token"))
 
     # project/tenant
     cmd_command.append("--ams.project")
@@ -113,29 +111,48 @@ def main(args=None):
     cmd_command.append("--ams.interval")
     cmd_command.append(config.get(tenant_job, "ams_interval"))
 
-    print("Getting ready to submit job...\n")
-    log.info("Getting ready to submit job")
-    log.info(cmd_toString(cmd_command))
-    print(cmd_toString(cmd_command))
+    return cmd_command, job_namespace
 
-    # if the job's already running then exit, else sumbit the command
+
+def main(args=None):
+
+    # set up the config parser
+    config = ConfigParser.ConfigParser()
+
+    # check if config file has been given as cli argument else
+    # check if config file resides in /etc/argo-streaming/ folder else
+    # check if config file resides in local folder
+    if args.ConfigPath is None:
+        if os.path.isfile("/etc/argo-streaming/conf/conf.cfg"):
+            config.read("/etc/argo-streaming/conf/conf.cfg")
+        else:
+            config.read("../conf/conf.cfg")
+    else:
+        config.read(args.ConfigPath)
+
+    # set up the logger
+    logger = ArgoLogger(log_name="ingest-metric", config=config)
+
+    cmd_command, job_namespace = compose_command(config, args, args.Sudo, logger)
+
+    logger.print_and_log(logging.INFO, "Getting ready to submit job")
+    logger.print_and_log(logging.INFO, cmd_toString(cmd_command)+"\n")
+
     # check if flink is up and running
     try:
-        flink_response = requests.get("http://localhost:8081/joboverview/running")
+        flink_response = requests.get(config.get("FLINK", "job_manager")+"/joboverview/running")
+        # if the job's already running then exit, else sumbit the command
         for job in json.loads(flink_response.text)["jobs"]:
             if job["name"] == job_namespace:
-                log.critical("\nJob: "+"'"+job_namespace+"' is already running")
-                sys.exit("\nJob: "+"'"+job_namespace+"' is already running")
+                logger.print_and_log(logging.CRITICAL, "\nJob: "+"'"+job_namespace+"' is already running", 1)
             else:
-                log.info("Everything is ok")
+                logger.print_and_log(logging.INFO, "Everything is ok")
                 try:
                     check_call(cmd_command)
                 except subprocess.CalledProcessError as esp:
-                    log.critical("Job was not submited. Error exit code: "+str(esp.returncode))
-                    sys.exit("Job was not submited. Error exit code: "+str(esp.returncode))
+                    logger.print_and_log(logging.CRITICAL, "Job was not submited. Error exit code: "+str(esp.returncode), 1)
     except requests.exceptions.ConnectionError:
-        log.critical("Flink is not currently running")
-        sys.exit("Flink is not currently running")
+        logger.print_and_log(logging.CRITICAL, "Flink is not currently running. Tried to communicate with job manager at: " + config.get("FLINK", "job_manager"), 1)
 
 
 if __name__ == "__main__":
@@ -143,4 +160,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AMS Metric Ingestion submition script")
     parser.add_argument(
         "-t", "--Tenant", type=str, help="Name of the tenant", required=True)
+    parser.add_argument(
+        "-c", "--ConfigPath", type=str, help="Path for the config file")
+    parser.add_argument(
+        "-u", "--Sudo", help="Run the submition as superuser",  action="store_true")
     sys.exit(main(parser.parse_args()))
