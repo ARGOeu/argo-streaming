@@ -126,7 +126,7 @@ public class ArgoArBatch {
 		DataSet<MonData> mdataTotalDS = mdataTrimDS.union(fillMissDS);
 
 		// Create a dataset of metric timelines
-		DataSet<MonTimeline> metricTimelinesDS = mdataTrimDS.groupBy("group","service", "hostname", "metric")
+		DataSet<MonTimeline> metricTimelinesDS = mdataTotalDS.groupBy("group","service", "hostname", "metric")
 				.sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CreateMetricTimeline(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(confDS, "conf");
