@@ -2,6 +2,7 @@ package argo.batch;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
@@ -60,10 +61,10 @@ public class CreateEndpointTimeline extends RichGroupReduceFunction<MonTimeline,
 	/**
 	 * Initialization method of the RichGroupReduceFunction operator
 	 * <p>
-	 * This runs at the initialization of the operator and receives a
-	 * configuration parameter object. It initializes all required structures
-	 * used by this operator such as profile managers, operations managers,
-	 * topology managers etc.
+	 * This runs at the initialization of the operator and receives a configuration
+	 * parameter object. It initializes all required structures used by this
+	 * operator such as profile managers, operations managers, topology managers
+	 * etc.
 	 *
 	 * @param parameters
 	 *            A flink Configuration object
@@ -77,6 +78,7 @@ public class CreateEndpointTimeline extends RichGroupReduceFunction<MonTimeline,
 		this.ops = getRuntimeContext().getBroadcastVariable("ops");
 		this.egp = getRuntimeContext().getBroadcastVariable("egp");
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
+		this.downtime = getRuntimeContext().getBroadcastVariable("down");
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
 		this.mpsMgr.loadFromList(mps);
@@ -107,18 +109,18 @@ public class CreateEndpointTimeline extends RichGroupReduceFunction<MonTimeline,
 	 * The main operator business logic of transforming a collection of
 	 * MetricTimelines to an aggregated endpoint timeline
 	 * <p>
-	 * This runs for each group item (endpointGroup,service,hostname) and
-	 * contains a list of metric timelines sorted by the "metric" field. It uses
-	 * a Discrete Aggregator to aggregate the metric timelines according to the
-	 * operations profile defined in the Operations Manager as to produce the
-	 * final Endpoint Timeline. The type of metric aggregation is defined in the
-	 * aggregation profile managed by the AggregationManager
+	 * This runs for each group item (endpointGroup,service,hostname) and contains a
+	 * list of metric timelines sorted by the "metric" field. It uses a Discrete
+	 * Aggregator to aggregate the metric timelines according to the operations
+	 * profile defined in the Operations Manager as to produce the final Endpoint
+	 * Timeline. The type of metric aggregation is defined in the aggregation
+	 * profile managed by the AggregationManager
 	 *
 	 * @param in
 	 *            An Iterable collection of MonTimeline objects
 	 * @param out
-	 *            A Collector list of MonTimeline to acquire the produced
-	 *            endpoint timelines.
+	 *            A Collector list of MonTimeline to acquire the produced endpoint
+	 *            timelines.
 	 */
 	@Override
 	public void reduce(Iterable<MonTimeline> in, Collector<MonTimeline> out) throws Exception {
@@ -146,18 +148,17 @@ public class CreateEndpointTimeline extends RichGroupReduceFunction<MonTimeline,
 
 		}
 
-		// Apply Downtimes if hostname is on downtime list
-		ArrayList<String> downPeriod = this.downtimeMgr.getPeriod(hostname, service);
-
-		if (downPeriod != null) {
-			// We have downtime declared
-			dAgg.aggregation.fill(this.opsMgr.getDefaultDownInt(), downPeriod.get(0), downPeriod.get(1),
-					this.runDate);
-		}
-
 		// Grab metric operation type from aggregation profile
 		String avProf = apsMgr.getAvProfiles().get(0);
 		dAgg.aggregate(apsMgr.getMetricOp(avProf), opsMgr);
+
+		// Apply Downtimes if hostname is on downtime list
+		ArrayList<String> downPeriod = this.downtimeMgr.getPeriod(hostname, service);
+		if (downPeriod != null) {
+			// We have downtime declared
+			dAgg.aggregation.fill(this.opsMgr.getDefaultDownInt(), downPeriod.get(0), downPeriod.get(1), this.runDate);
+		}
+
 		// Create a new MonTimeline object for endpoint
 		MonTimeline mtl = new MonTimeline(endpointGroup, service, hostname, "");
 		// Add Discrete Timeline samples int array to the MonTimeline
