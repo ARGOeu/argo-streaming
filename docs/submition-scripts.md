@@ -3,6 +3,7 @@
 | Script | Description | Shortcut |
 |--------|-------------|---------- |
 | metric_ingestion_submit.py | Python wrapper over flink sumbit metric ingestion job.| [Details](#ingest-metric) |
+| sync_ingestion_submit.py | Python wrapper over flink submit sync ingestion job.| [Details](#ingest-synbc) |
 
 <a id="ingest-metric"></a>
 ## Metric Ingestion Submit Script
@@ -10,6 +11,19 @@ Python wrapper over flink sumbit metric ingestion job.
 Metric Ingestion job receives metric data from an AMS endpoint subscription and stores them to a proper hdfs destination.
 
 `metric_ingestion_submit.py -t <Tenant> -c <ConfigPath> -u<Sudoless>`
+
+`-t : Specify the tenant the job will run for`
+
+`-c : Check if config path has been given as a cli argument, else check /etc/argo-streaming/conf/conf.cfg else check conf folder inside the repo`
+
+`-u : If specified the flink command will run without sudo`
+
+<a id="ingest-sync"></a>
+## Sync Ingestion Submit Script
+Same as Metric Ingestion but for connector data
+This job connects to AMS and stores connector data (by report) in an hdfs destination
+
+`sync_ingestion_submit.py -t <Tenant> -c <ConfigPath> -u<Sudoless>`
 
 `-t : Specify the tenant the job will run for`
 
