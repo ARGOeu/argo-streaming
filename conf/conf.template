@@ -5,9 +5,10 @@ hdfs_host: hdfs_test_host
 hdfs_port: hdfs_test_port
 # hdfs user 
 hdfs_user: hdfs_test_user
-
 # hdfs path for metric data
 hdfs_metric: hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/mdata
+# hdfs path for sync data
+hdfs_sync: hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/sync
 
 [LOGS]
 # log handlers to support 
@@ -34,14 +35,18 @@ job_manager:
 [JOB-NAMESPACE]
 # Template to check if a metric job with similar name already runs
 ingest-metric-namespace: Ingesting data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/{{ams_sub}}
+# Template to check if a sync job with similar name already runs
+ingest-sync-namespace: Ingesting sync data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/{{ams_sub}}
 
 [CLASSES]
 # Specify class to run during job submit 
 ams-ingest-metric: test_class
+ams-ingest-sync: test_class
 
 [JARS]
 # Specify jar to run during job submit 
 ams-ingest-metric: test.jar
+ams-ingest-sync: test.jar
 
 [AMS]
 
@@ -69,3 +74,8 @@ ams_batch: 100
 checkpoint_path:test_path
 # Interval between flink checkpoints
 checkpoint_interval: 30000
+[TENANTS:TENANTA:ingest-sync]
+ams_sub: job_name
+ams_interval: 3000
+ams_batch: 100
+
