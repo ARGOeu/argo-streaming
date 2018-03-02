@@ -13,12 +13,12 @@ from argo_log import ArgoLogger
 
 
 def cmd_toString(cmd):
-    """ Take as input a list containing the job sumbission command
+    """ Take as input a list containing the job submission command
         and return a string representation
     Attributes:
-              cmd(list): list containing the submition command
+              cmd(list): list containing the submission command
     Returns:
-           (str): String representation of the submition command
+           (str): String representation of the submission command
     """
 
     return " ".join(x for x in cmd)
@@ -145,19 +145,19 @@ def main(args=None):
         for job in json.loads(flink_response.text)["jobs"]:
             if job["name"] == job_namespace:
                 logger.print_and_log(logging.CRITICAL, "\nJob: "+"'"+job_namespace+"' is already running", 1)
-            else:
-                logger.print_and_log(logging.INFO, "Everything is ok")
-                try:
-                    check_call(cmd_command)
-                except subprocess.CalledProcessError as esp:
-                    logger.print_and_log(logging.CRITICAL, "Job was not submited. Error exit code: "+str(esp.returncode), 1)
+
+        logger.print_and_log(logging.INFO, "Everything is ok")
+        try:
+            check_call(cmd_command)
+        except subprocess.CalledProcessError as esp:
+            logger.print_and_log(logging.CRITICAL, "Job was not submitted. Error exit code: "+str(esp.returncode), 1)
     except requests.exceptions.ConnectionError:
         logger.print_and_log(logging.CRITICAL, "Flink is not currently running. Tried to communicate with job manager at: " + config.get("FLINK", "job_manager"), 1)
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="AMS Metric Ingestion submition script")
+    parser = argparse.ArgumentParser(description="AMS Metric Ingestion submission script")
     parser.add_argument(
         "-t", "--Tenant", type=str, help="Name of the tenant", required=True)
     parser.add_argument(
