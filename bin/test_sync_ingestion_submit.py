@@ -1,6 +1,6 @@
 import unittest
 from sync_ingestion_submit import compose_command
-from sync_ingestion_submit import cmd_toString
+from utils.common import cmd_toString
 import ConfigParser
 import argparse
 

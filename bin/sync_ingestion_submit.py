@@ -9,20 +9,8 @@ import json
 import ConfigParser
 from subprocess import check_call
 import logging
-from argo_log import ArgoLogger
-
-
-def cmd_toString(cmd):
-    """ Take as input a list containing the job submission command
-        and return a string representation
-    Attributes:
-              cmd(list): list containing the submission command
-    Returns:
-           (str): String representation of the submission command
-    """
-
-    return " ".join(x for x in cmd)
-
+from utils.argo_log import ArgoLogger
+from utils.common import cmd_toString
 
 def compose_command(config, args, sudo, logger=None):
 
@@ -123,7 +111,7 @@ def main(args=None):
         config.read(args.ConfigPath)
 
     # set up the logger
-    logger = ArgoLogger(log_name="ingest-metric", config=config)
+    logger = ArgoLogger(log_name="ingest-sync", config=config)
 
     cmd_command, job_namespace = compose_command(config, args, args.Sudo, logger)
 

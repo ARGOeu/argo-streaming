@@ -5,6 +5,8 @@ hdfs_host: hdfs_test_host
 hdfs_port: hdfs_test_port
 # hdfs user 
 hdfs_user: hdfs_test_user
+# hdfs rollback days:
+rollback_days: 3
 # hdfs path for metric data
 hdfs_metric: hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/mdata
 # hdfs path for sync data
@@ -42,14 +44,15 @@ ingest-sync-namespace: Ingesting sync data from {{ams_endpoint}}:{{ams_port}}/v1
 # Specify class to run during job submit 
 ams-ingest-metric: test_class
 ams-ingest-sync: test_class
+batch-ar: test_class
 
 [JARS]
 # Specify jar to run during job submit 
 ams-ingest-metric: test.jar
 ams-ingest-sync: test.jar
+batch-ar: test.jar
 
 [AMS]
-
 # AMS service port 
 ams_port: test_port
 # Ams service endpoint
@@ -61,6 +64,20 @@ ams_endpoint: test_endpoint
 ams_project:test_project
 # Tenant's AMS token
 ams_token:test_token
+
+# report names per tenant
+[TENANTS:TENANTA:REPORTS]
+# report UUID
+report_name : report_uuid
+
+# tenant specific mongo configuration
+[TENANTS:TENANTA:MONGO]
+# mongo host
+mongo_host: mongo_test_host
+# mongo port
+mongo_port: mongo_test_port
+# mongo uri for batch ar
+mongo_uri: mongodb://{{mongo_host}}:{{mongo_port}}/argo_TENANTA
 
 # Tenant-job specific configuration
 [TENANTS:TENANTA:ingest-metric]
