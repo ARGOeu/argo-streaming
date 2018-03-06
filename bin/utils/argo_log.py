@@ -58,11 +58,12 @@ class ArgoLogger(logging.Logger):
             sys.exit(exit_code)
 
     def config_str_validator(self, config, section, option):
-        """ A method to check whether or not a config string option is not only present, but has a value aswell"""
-        if config.has_option(section, option):
-            if len(config.get(section, option)) != 0:
-                return True
-        return False
+        """ A method to check whether or not a config string option is not only present, but has a value aswell. It also checks the existance of the section"""
+        if config.has_section(section):
+            if config.has_option(section, option):
+                if len(config.get(section, option)) != 0:
+                    return True
+        self.print_and_log(logging.CRITICAL, "Section: "+section+" with option: "+option+" was not found in the conf file", 1)
 
     def add_stream_handler(self, **kwargs):
         """Method that takes care setting up a StreamHandler properly"""
