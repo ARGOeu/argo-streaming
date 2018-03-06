@@ -45,12 +45,14 @@ ingest-sync-namespace: Ingesting sync data from {{ams_endpoint}}:{{ams_port}}/v1
 ams-ingest-metric: test_class
 ams-ingest-sync: test_class
 batch-ar: test_class
+batch-status: test_class
 
 [JARS]
 # Specify jar to run during job submit 
 ams-ingest-metric: test.jar
 ams-ingest-sync: test.jar
 batch-ar: test.jar
+batch-status: test.jar
 
 [AMS]
 # AMS service port 
