@@ -37,7 +37,6 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusM
 	private MetricProfileManager mpsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
-	private String egroupType;
 	private String runDate;
 
 	@Override
@@ -59,8 +58,7 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusM
 		// Initialize group group manager
 		this.ggpMgr = new GroupGroupManager();
 		this.ggpMgr.loadFromList(ggp);
-		// Initialize endpoint group type
-		this.egroupType = params.get("egroup.type");
+		
 	}
 
 	@Override

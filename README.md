@@ -243,11 +243,9 @@ Job required cli parameters:
 
 `--rec`               : file location of recomputations file (local or hdfs)
 
-`--report`            : report uuid
+`--conf`              : file location of report configuration json file (local or hdfs)
 
 `--run.date`          : target date in DD-MM-YYYY format
-
-`--egroup.type`       : endpoint group type used in report (for e.g. SITES)
 
 `--mongo.uri`         : MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
 
