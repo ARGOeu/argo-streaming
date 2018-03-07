@@ -50,21 +50,29 @@ import sync.MetricProfileManager;
 
 
 /**
- * Flink Job : Stream metric data from ARGO messaging to Hbase
+ * Flink Job : Streaming status computation with multiple destinations (hbase, kafka, fs)
  * job required cli parameters
- * --ams.endpoint      : ARGO messaging api endoint to connect to msg.example.com
+ * --ams.endpoint      : ARGO messaging api endpoint to connect to msg.example.com
  * --ams.port          : ARGO messaging api port 
  * --ams.token         : ARGO messaging api token
  * --ams.project       : ARGO messaging api project to connect to
  * --ams.sub.metric    : ARGO messaging subscription to pull metric data from
  * --ams.sub.sync      : ARGO messaging subscription to pull sync data from
- * --avro.schema       : avro-schema used for decoding payloads
  * --sync.mps          : metric-profile file used 
  * --sync.egp          : endpoint-group file used for topology
  * --sync.aps          : availability profile used 
  * --sync.ops          : operations profile used
+ * Job optional cli parameters:
  * --ams.batch         : num of messages to be retrieved per request to AMS service
- * --ams.interval      : interval (in ms) between AMS service requestss
+ * --ams.interval      : interval (in ms) between AMS service requests
+ * --kafka.servers     : list of kafka servers to connect to
+ * --kafka.topic       : kafka topic name to publish events
+ * --hbase.master      : hbase master hostname
+ * --hbase.port        : hbase master.port
+ * --hbase.zk.quorum   : hbase zookeeper quorum
+ * --hbase.namespace   : hbase namespace
+ * --hbase.table       : hbase table name
+ * --fs.ouput          : filesystem output path (local or hdfs) mostly for debugging
  */
 public class AmsStreamStatus {
 	// setup logger
@@ -200,6 +208,21 @@ public class AmsStreamStatus {
 			events.writeAsText(parameterTool.get("fs.output"));
 		}
 
+		
+		// Create a job title message to discern job in flink dashboard/cli
+		StringBuilder jobTitleSB = new StringBuilder();
+		jobTitleSB.append("Streaming status using data from ");
+		jobTitleSB.append(endpoint);
+		jobTitleSB.append(":");
+		jobTitleSB.append(port);
+		jobTitleSB.append("/v1/projects/");
+		jobTitleSB.append(project);
+		jobTitleSB.append("/subscriptions/[");
+		jobTitleSB.append(subMetric);
+		jobTitleSB.append(",");
+		jobTitleSB.append(subSync);
+		jobTitleSB.append("]");
+		
 		// Execute flink dataflow
 		see.execute();
 	}

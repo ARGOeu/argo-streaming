@@ -8,6 +8,7 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import ops.ConfigManager;
 
 import org.slf4j.Logger;
 import org.apache.flink.api.common.operators.Order;
@@ -74,6 +75,9 @@ public class ArgoArBatch {
 		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
 		DataSource<String> aprDS = env.readTextFile(params.getRequired("apr"));
 		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
+		
+		ConfigManager confMgr = new ConfigManager();
+		confMgr.loadJsonString(confDS.collect());
 
 		// sync data input: metric profile in avro format
 		AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);
@@ -173,7 +177,20 @@ public class ArgoArBatch {
 		serviceResultDS.output(serviceMongoOut);
 		groupResultDS.output(egroupMongoOut);
 		
-		env.execute("Flink Ar Batch Job");
+		
+		String runDate = params.getRequired("run.date");
+		
+		// Create a job title message to discern job in flink dashboard/cli
+		StringBuilder jobTitleSB = new StringBuilder();
+		jobTitleSB.append("Ar Batch job for tenant:");
+		jobTitleSB.append(confMgr.getTenant());
+		jobTitleSB.append("on day:");
+		jobTitleSB.append(runDate);
+		jobTitleSB.append("using report:");
+		jobTitleSB.append(confMgr.getReport());
+			
+		env.execute(jobTitleSB.toString());
+	
 
 	}
 

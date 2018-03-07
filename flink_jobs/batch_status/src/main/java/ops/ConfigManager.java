@@ -61,8 +61,20 @@ public class ConfigManager {
 		
 	}
 
+	public String getReportID() {
+		return id;
+	}
+	
 	public String getReport() {
 		return report;
+	}
+	
+	public String getTenant() {
+		return tenant;
+	}
+	
+	public String getEgroup() {
+		return egroup;
 	}
 	
 

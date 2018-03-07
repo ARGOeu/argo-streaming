@@ -58,12 +58,15 @@ public class ArgoStatusBatch {
 		Path mps = new Path(params.getRequired("mps"));
 		Path egp = new Path(params.getRequired("egp"));
 		Path ggp = new Path(params.getRequired("ggp"));
-		Path cfg = new Path(params.getRequired("conf"));
+		
 
-		DataSource<String> cfgDS = env.readTextFile(params.getRequired("cfg"));
+		DataSource<String> cfgDS = env.readTextFile(params.getRequired("conf"));
 		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
-		DataSource<String> apsDS = env.readTextFile(params.getRequired("aps"));
+		DataSource<String> apsDS = env.readTextFile(params.getRequired("apr"));
 		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
+		
+		ConfigManager confMgr = new ConfigManager();
+		confMgr.loadJsonString(cfgDS.collect());
 
 		// Get conf data 
 		List<String> confData = cfgDS.collect();
@@ -100,7 +103,7 @@ public class ArgoStatusBatch {
 		// Discard unused data and attach endpoint group as information
 		DataSet<StatusMetric> mdataTrimDS = mdataTotalDS.flatMap(new PickEndpoints(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(recDS, "rec");
+				.withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf");
 
 		// Create status detail data set
 		DataSet<StatusMetric> stDetailDS = mdataTrimDS.groupBy("group", "service", "hostname", "metric")
@@ -134,12 +137,12 @@ public class ArgoStatusBatch {
 		String dbURI = params.getRequired("mongo.uri");
 		String dbMethod = params.getRequired("mongo.method");
 		
-		String report = cfgMgr.getReport();
+		String reportID = cfgMgr.getReportID();
 		 // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
-		MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI,"status_metrics",dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, report);
-		MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI,"status_endpoints",dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, report);
-		MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI,"status_services",dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, report);
-		MongoStatusOutput endGroupMongoOut = new MongoStatusOutput(dbURI,"status_endpoint_groups",dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT_GROUP, report);
+		MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI,"status_metrics",dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
+		MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI,"status_endpoints",dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
+		MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI,"status_services",dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
+		MongoStatusOutput endGroupMongoOut = new MongoStatusOutput(dbURI,"status_endpoint_groups",dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT_GROUP, reportID);
 		
 		// Store datasets to the designated outputs prepared above
 		stDetailDS.output(metricMongoOut);
@@ -147,7 +150,18 @@ public class ArgoStatusBatch {
 		stServiceDS.output(serviceMongoOut);
 		stEndGroupDS.output(endGroupMongoOut);
 
-		env.execute("Flink Status Batch Job");
+		String runDate = params.getRequired("run.date");
+		
+		// Create a job title message to discern job in flink dashboard/cli
+		StringBuilder jobTitleSB = new StringBuilder();
+		jobTitleSB.append("Status Batch job for tenant:");
+		jobTitleSB.append(confMgr.getTenant());
+		jobTitleSB.append(" on day:");
+		jobTitleSB.append(runDate);
+		jobTitleSB.append(" using report:");
+		jobTitleSB.append(confMgr.getReport());					
+		
+		env.execute(jobTitleSB.toString());
 
 	}
 
