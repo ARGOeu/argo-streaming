@@ -5,6 +5,7 @@
 | metric_ingestion_submit.py | Python wrapper over flink sumbit metric ingestion job.| [Details](#ingest-metric) |
 | sync_ingestion_submit.py | Python wrapper over flink submit sync ingestion job.| [Details](#ingest-synbc) |
 | ar_job_submit.py | Python wrapper over the flink batch AR job. | [Details](#batch-ar) |
+| status_job_submit.py | Python wrapper over the flink batch Status jon. | [Details](#batch-status) |
 
 <a id="ingest-metric"></a>
 ## Metric Ingestion Submit Script
@@ -50,10 +51,31 @@ A/R job submission is a batch job that will run and finish on the cluster
 
 `-m : How mongoDB will handle the generated results. Either insert or upsert`
 
+<a id="batch-status"></a>
+## Status Batch Job
+Status job submission is a batch job that will run and finish on the cluster
+
+`status_job_submit.py -t <Tenant> -c <ConfigPath> -u<Sudoless> -r<Report> -d<Date> -m<Method>`
+
+`-t : Specify the tenant the job will run for`
+
+`-c : Check if config path has been given as a cli argument, else check /etc/argo-streaming/conf/conf.cfg else check conf folder inside the repo`
+
+`-u : If specified the flink command will run without sudo`
+
+`-r : The type of report, e.g. Critical`
+
+`-d : The date we want the job to run for. Format should be YYYY-MM-DD`
+
+`-m : How mongoDB will handle the generated results. Either insert or upsert`
+
+
 ### Important
 
-Sometimes connector data (metric profiles,endpoint,group endpoints,weights) appear delayed (in comparison with the metric data) or might be missing. We have a check mechanism that looks back (up to three days) for connector data that might be missing and uses that.
-Flink job receives a parameter of insert or upsert when storing results. Give the ability to honor that parameter and when insert is used, call a clean mongo script for removing (if present) any mongo a/r report data for that very day
+- Sometimes connector data (metric profiles,endpoint,group endpoints,weights) appear delayed (in comparison with the metric data) or might be missing. We have a check mechanism that looks back (up to three days) for connector data that might be missing and uses that.
+
+
+- Flink job receives a parameter of insert or upsert when storing results. Give the ability to honor that parameter and when insert is used, call a clean mongo script for removing (if present) any mongo a/r report data for that very day
 
 ## Configuration file
 ```
@@ -74,6 +96,13 @@ AMS port to connect to and endpoint where you find the service
 
 [TENANTS:]
 Token for each tenant to access the service
+
+[TENANTS:TENANTA:REPORTS]
+the reports' UUIDs for the respective tenant
+
+[TENANTS:TENANTA:MONGO]
+Mongo information, specific to each respective tenant
+
 [TENANTS:TENANTA:JOB]
 Specific parameters needed for each job to run
 ams_batch : num of messages to be retrieved per request to AMS service

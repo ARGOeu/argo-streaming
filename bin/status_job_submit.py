@@ -40,10 +40,10 @@ def compose_hdfs_commands(year, month, day, args, config, logger):
 
     # file location of target day's metric data (local or hdfs)
     hdfs_commands["--mdata"] = hdfs_metric+"/"+args.Date
-    
+
     # file location of report configuration json file (local or hdfs)
     hdfs_commands["--conf"] = hdfs_sync+"/"+args.Tenant+"_"+args.Report+"_cfg.json"
-
+    
     # file location of metric profile (local or hdfs)
     hdfs_commands["--mps"] = date_rollback(hdfs_sync+"/"+args.Report+"/"+"metric_profile_"+"{{date}}"+".avro", year, month, day, config, logger, client)
 
@@ -58,12 +58,6 @@ def compose_hdfs_commands(year, month, day, args, config, logger):
 
     # file location of group of groups topology file (local or hdfs)
     hdfs_commands["-ggp"] = date_rollback(hdfs_sync+"/"+args.Report+"/"+"group_groups_"+"{{date}}"+".avro", year, month, day, config, logger, client)
-
-    # file location of weights file (local or hdfs)
-    hdfs_commands["--weights"] = date_rollback(hdfs_sync+"/"+args.Report+"/weights_"+"{{date}}"+".avro", year, month, day, config, logger, client)
-
-    # file location of downtimes file (local or hdfs)
-    hdfs_commands["--downtimes"] = hdfs_sync+"/"+args.Report+"/downtimes_"+str(datetime.date(year, month, day))+".avro"
 
     # file location of recomputations file (local or hdfs)
     hdfs_commands["--rec"] = hdfs_sync+"/recomp.json"
@@ -90,10 +84,10 @@ def compose_command(config, args,  hdfs_commands, logger=None):
     cmd_command.append("-c")
 
     # Job's class inside the jar
-    cmd_command.append(config.get("CLASSES", "batch-ar"))
+    cmd_command.append(config.get("CLASSES", "batch-status"))
 
     # jar to be sumbitted to flink
-    cmd_command.append(config.get("JARS", "batch-ar"))
+    cmd_command.append(config.get("JARS", "batch-status"))
 
     # date the report will run for
     cmd_command.append("--run.date")
@@ -108,20 +102,21 @@ def compose_command(config, args,  hdfs_commands, logger=None):
     cmd_command.append(mongo_uri)
 
     if args.Method == "insert":
-        argo_mongo_client = ArgoMongoClient(args, config, logger, ["service_ar","endpoint_group_ar"])
-        argo_mongo_client.mongo_clean_ar(mongo_uri)
+        argo_mongo_client = ArgoMongoClient(args, config, logger, ["status_metrics","status_endpoints","status_services","status_endpoint_groups"])
+        argo_mongo_client.mongo_clean_status(mongo_uri)
                                             
     
     # MongoDB method to be used when storing the results, either insert or upsert
     cmd_command.append("--mongo.method")
     cmd_command.append(args.Method)
-
+    
     # add the hdfs commands
     for command in hdfs_commands:
         cmd_command.append(command)
         cmd_command.append(hdfs_commands[command])
 
     return cmd_command
+
 
 def main(args=None):
 
@@ -147,7 +142,7 @@ def main(args=None):
         config.read(args.ConfigPath)
 
     # set up the logger
-    logger = ArgoLogger(log_name="batch-ar", config=config)
+    logger = ArgoLogger(log_name="batch-status", config=config)
 
     # check if configuration for the given tenant exists
     if not config.has_section("TENANTS:"+args.Tenant):
@@ -167,10 +162,9 @@ def main(args=None):
     except subprocess.CalledProcessError as esp:
         logger.print_and_log(logging.CRITICAL, "Job was not submited. Error exit code: "+str(esp.returncode), 1)
 
-
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Batch A/R Job submit script")
+    parser = argparse.ArgumentParser(description="Batch Status Job submit script")
     parser.add_argument(
         "-t", "--Tenant", type=str, help="Name of the tenant", required=True)
     parser.add_argument(
@@ -186,4 +180,3 @@ if __name__ == "__main__":
 
     # Pass the arguments to main method
     sys.exit(main(parser.parse_args()))
-
