@@ -2,8 +2,11 @@ import unittest
 import argparse
 import ConfigParser
 import datetime
+import os
 from ar_job_submit import compose_command
 from utils.common import cmd_toString
+
+CONF_TEMPLATE = os.path.join(os.path.dirname(__file__), '../conf/conf.template') 
 
 class TestClass(unittest.TestCase):
 
@@ -11,7 +14,7 @@ class TestClass(unittest.TestCase):
         
         # set up the config parser
         config = ConfigParser.ConfigParser()
-        config.read("../conf/conf.template")
+        config.read(CONF_TEMPLATE)
 
         parser = argparse.ArgumentParser()
         parser.add_argument('--Tenant')
