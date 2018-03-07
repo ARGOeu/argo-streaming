@@ -6,8 +6,11 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import ops.ConfigManager;
 
 import org.slf4j.Logger;
+
+import java.util.List;
 
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
@@ -27,14 +30,13 @@ import org.apache.flink.core.fs.Path;
  * --mps: path tometric profile sync file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --egp: path to endpoints group topology file (For hdfs use: hdfs://namenode:port/path/to/file) 
  * --ggp: path to group of groups topology file (For hdfs use: hdfs://namenode:port/path/to/file) 
- * --mdata: path to previous day's metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
+ * --pdata: path to previous day's metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --mdata: path to metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --ops: path to operations profile file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --aps: path to aggregations profile file (For hdfs use: hdfs://namenode:port/path/to/file)
+ * --cfg: path to report's configuration file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --rec: path to recomputations file
  * --run.date: target date of computation in DD-MM-YYYY format
- * --report: report uuid
- * --egroup.type: specify the type of the engpoint groups used in the report (e.g. SITES)
  * --mongo.uri: path to MongoDB destination (eg mongodb://localhost:27017/database.table
  * --mongo.method: Method for storing results to Mongo (insert,upsert)
  */
@@ -56,11 +58,17 @@ public class ArgoStatusBatch {
 		Path mps = new Path(params.getRequired("mps"));
 		Path egp = new Path(params.getRequired("egp"));
 		Path ggp = new Path(params.getRequired("ggp"));
+		Path cfg = new Path(params.getRequired("conf"));
 
+		DataSource<String> cfgDS = env.readTextFile(params.getRequired("cfg"));
 		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
 		DataSource<String> apsDS = env.readTextFile(params.getRequired("aps"));
 		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
 
+		// Get conf data 
+		List<String> confData = cfgDS.collect();
+		ConfigManager cfgMgr = new ConfigManager();
+		cfgMgr.loadJsonString(confData);
 		// sync data input: metric profile in avro format
 		AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);
 		DataSet<MetricProfile> mpsDS = env.createInput(mpsAvro);
@@ -125,8 +133,8 @@ public class ArgoStatusBatch {
 
 		String dbURI = params.getRequired("mongo.uri");
 		String dbMethod = params.getRequired("mongo.method");
-		String report = params.getRequired("report");
 		
+		String report = cfgMgr.getReport();
 		 // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
 		MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI,"status_metrics",dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, report);
 		MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI,"status_endpoints",dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, report);

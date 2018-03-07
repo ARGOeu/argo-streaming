@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Map.Entry;
+import java.util.List;
 import java.util.TreeMap;
 
 import org.apache.commons.io.IOUtils;
@@ -60,6 +61,9 @@ public class ConfigManager {
 		
 	}
 
+	public String getReport() {
+		return report;
+	}
 	
 
 	public void loadJson(File jsonFile) throws IOException {
@@ -112,6 +116,54 @@ public class ConfigManager {
 			// Close quietly without exceptions the buffered reader
 			IOUtils.closeQuietly(br);
 		}
+
+	}
+	
+	/**
+	 * Loads Report config information from a config json string
+	 * 
+	 */
+	public void loadJsonString(List<String> confJson) throws JsonParseException {
+		// Clear data
+		this.clear();
+
+		try {
+
+			JsonParser jsonParser = new JsonParser();
+			// Grab the first - and only line of json from ops data
+			JsonElement jElement = jsonParser.parse(confJson.get(0));
+			JsonObject jObj = jElement.getAsJsonObject();
+			// Get the simple fields
+			this.id = jObj.getAsJsonPrimitive("id").getAsString();
+			this.tenant = jObj.getAsJsonPrimitive("tenant").getAsString();
+			this.report = jObj.getAsJsonPrimitive("job").getAsString();
+			this.egroup = jObj.getAsJsonPrimitive("egroup").getAsString();
+			this.ggroup = jObj.getAsJsonPrimitive("ggroup").getAsString();
+			this.weight = jObj.getAsJsonPrimitive("weight").getAsString();
+			this.agroup = jObj.getAsJsonPrimitive("altg").getAsString();
+			// Get compound fields
+			JsonObject jEgroupTags = jObj.getAsJsonObject("egroup_tags");
+			JsonObject jGgroupTags = jObj.getAsJsonObject("ggroup_tags");
+			JsonObject jMdataTags = jObj.getAsJsonObject("mdata_tags");
+
+			// Iterate fields
+			for (Entry<String, JsonElement> item : jEgroupTags.entrySet()) {
+
+				this.egroupTags.put(item.getKey(), item.getValue().getAsString());
+			}
+			for (Entry<String, JsonElement> item : jGgroupTags.entrySet()) {
+
+				this.ggroupTags.put(item.getKey(), item.getValue().getAsString());
+			}
+			for (Entry<String, JsonElement> item : jMdataTags.entrySet()) {
+
+				this.mdataTags.put(item.getKey(), item.getValue().getAsString());
+			}
+
+		} catch (JsonParseException ex) {
+			LOG.error("Not valid json contents");
+			throw ex;
+		} 
 
 	}
 
