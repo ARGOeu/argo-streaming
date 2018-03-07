@@ -6,6 +6,7 @@
 | sync_ingestion_submit.py | Python wrapper over flink submit sync ingestion job.| [Details](#ingest-synbc) |
 | ar_job_submit.py | Python wrapper over the flink batch AR job. | [Details](#batch-ar) |
 | status_job_submit.py | Python wrapper over the flink batch Status jon. | [Details](#batch-status) |
+| stream_status_job_submit.py | Python wrapper over flink sumbit status streaming job. | [Details](#stream-status) |
 
 <a id="ingest-metric"></a>
 ## Metric Ingestion Submit Script
@@ -69,6 +70,21 @@ Status job submission is a batch job that will run and finish on the cluster
 
 `-m : How mongoDB will handle the generated results. Either insert or upsert`
 
+<a id = "stream-status"></a>
+## Status Stream Job
+Status streaming job receives metric and sync data from AMS calculates and generates status events which are forwarded to kafka
+
+`stream_status_job_submit.py -t <Tenant> -c <ConfigPath> -u<Sudoless> -r<Report> -d<Date>`
+
+`-t : Specify the tenant the job will run for`
+
+`-c : Check if config path has been given as a cli argument, else check /etc/argo-streaming/conf/conf.cfg else check conf folder inside the repo`
+
+`-u : If specified the flink command will run without sudo`
+
+`-r : The type of report, e.g. Critical`
+
+`-d : The date we want the job to run for. Format should be YYYY-MM-DDT:HH:MM:SSZ`
 
 ### Important
 
@@ -109,4 +125,10 @@ ams_batch : num of messages to be retrieved per request to AMS service
 ams_interval : interval (in ms) between AMS service requests
 check_interval : interval for checkpointing (in ms)
 check_path : path to store flink checkpoints
+flink_parallelism: execution environment level
+---Specific for stream-status job---
+outputs: the possible output dstination sepaarted by comma. For each destination, its respective  information should also be specififed.
+FOR the hbase output we need, the hbase endpoint, the hbase endpoint port, the zookeeper servers(comma separated list), the port used by the servers and the table namespace.
+FOR the kafka output we need the the kafka servers(comma separated list), and the topic.
+FOR the fs output, we need a path, that should be prefixed with "hdfs://" if we want an hdfs location.
 ```

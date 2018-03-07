@@ -6,10 +6,7 @@ python:
   - "2.7"
 
 script:
-  - pip install requests==2.18.4
-  - pip install pytest==3.4.0
-  - pip install snakebite==2.11.0
-  - pip install pymongo==3.6.1
+  - pip install -r ./bin/requirements.txt
   - pytest
   - cd flink_jobs/ams_ingest_metric/ && mvn test
   - cd ../batch_ar && mvn test

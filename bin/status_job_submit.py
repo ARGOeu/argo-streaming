@@ -6,17 +6,16 @@ import datetime
 from snakebite.client import Client
 import ConfigParser
 import logging
-import subprocess
-from subprocess import check_call
+from urlparse import urlparse
 from utils.argo_log import ArgoLogger
-from utils.common import cmd_toString
 from utils.argo_mongo import ArgoMongoClient
-from utils.common import date_rollback
+from utils.common import cmd_toString, date_rollback, flink_job_submit, hdfs_check_path
+
 
 def compose_hdfs_commands(year, month, day, args, config, logger):
 
     # set up the hdfs client to be used in order to check the files
-    client = Client(config.get("HDFS","hdfs_host"), config.getint("HDFS","hdfs_port"), use_trash=False)
+    client = Client(config.get("HDFS", "hdfs_host"), config.getint("HDFS", "hdfs_port"), use_trash=False)
     
     # hdfs sync  path for the tenant
     hdfs_sync = config.get("HDFS", "hdfs_sync")
@@ -36,22 +35,22 @@ def compose_hdfs_commands(year, month, day, args, config, logger):
     hdfs_commands = {}
 
     # file location of previous day's metric data (local or hdfs)
-    hdfs_commands["--pdata"] = hdfs_metric+"/"+str(datetime.date(year, month, day) - datetime.timedelta(1))
+    hdfs_commands["--pdata"] = hdfs_check_path(hdfs_metric+"/"+str(datetime.date(year, month, day) - datetime.timedelta(1)), logger, client)
 
     # file location of target day's metric data (local or hdfs)
-    hdfs_commands["--mdata"] = hdfs_metric+"/"+args.Date
+    hdfs_commands["--mdata"] = hdfs_check_path(hdfs_metric+"/"+args.Date, logger, client)
 
     # file location of report configuration json file (local or hdfs)
-    hdfs_commands["--conf"] = hdfs_sync+"/"+args.Tenant+"_"+args.Report+"_cfg.json"
+    hdfs_commands["--conf"] = hdfs_check_path(hdfs_sync+"/"+args.Tenant+"_"+args.Report+"_cfg.json", logger, client)
     
     # file location of metric profile (local or hdfs)
     hdfs_commands["--mps"] = date_rollback(hdfs_sync+"/"+args.Report+"/"+"metric_profile_"+"{{date}}"+".avro", year, month, day, config, logger, client)
 
     # file location of operations profile (local or hdfs)
-    hdfs_commands["--ops"] = hdfs_sync+"/"+args.Tenant+"_ops.json"
+    hdfs_commands["--ops"] = hdfs_check_path(hdfs_sync+"/"+args.Tenant+"_ops.json", logger, client)
 
     # file location of aggregations profile (local or hdfs)
-    hdfs_commands["--apr"] = hdfs_sync+"/"+args.Tenant+"_"+args.Report+"_ap.json"
+    hdfs_commands["--apr"] = hdfs_check_path(hdfs_sync+"/"+args.Tenant+"_"+args.Report+"_ap.json", logger, client)
 
     #  file location of endpoint group topology file (local or hdfs)
     hdfs_commands["-egp"] = date_rollback(hdfs_sync+"/"+args.Report+"/"+"group_endpoints_"+"{{date}}"+".avro", year, month, day, config, logger, client)
@@ -60,9 +59,16 @@ def compose_hdfs_commands(year, month, day, args, config, logger):
     hdfs_commands["-ggp"] = date_rollback(hdfs_sync+"/"+args.Report+"/"+"group_groups_"+"{{date}}"+".avro", year, month, day, config, logger, client)
 
     # file location of recomputations file (local or hdfs)
-    hdfs_commands["--rec"] = hdfs_sync+"/recomp.json"
+    # first check if there is a recomputations file for the given date
+    if client.test(urlparse(hdfs_sync+"/recomp_"+args.Date+".json").path, exists=True):
+        hdfs_commands["--rec"] = hdfs_sync+"/recomp_"+args.Date+".json"
+        logger.print_and_log(logging.INFO, "Using recomputations file for the given date")
+    else:
+        hdfs_commands["--rec"] = hdfs_check_path(hdfs_sync+"/recomp.json", logger, client)
+        logger.print_and_log(logging.INFO, "Recomputations file for the given date was not found. Using default.")
 
     return hdfs_commands
+
 
 def compose_command(config, args,  hdfs_commands, logger=None):
     
@@ -102,9 +108,8 @@ def compose_command(config, args,  hdfs_commands, logger=None):
     cmd_command.append(mongo_uri)
 
     if args.Method == "insert":
-        argo_mongo_client = ArgoMongoClient(args, config, logger, ["status_metrics","status_endpoints","status_services","status_endpoint_groups"])
+        argo_mongo_client = ArgoMongoClient(args, config, logger, ["status_metrics", "status_endpoints", "status_services", "status_endpoint_groups"])
         argo_mongo_client.mongo_clean_status(mongo_uri)
-                                            
     
     # MongoDB method to be used when storing the results, either insert or upsert
     cmd_command.append("--mongo.method")
@@ -125,7 +130,7 @@ def main(args=None):
     args.Tenant = args.Tenant.upper()
     args.Method = args.Method.lower()
 
-    year, month, day =[int(x) for x in  args.Date.split("-")]
+    year, month, day = [int(x) for x in args.Date.split("-")]
 
     # set up the config parser
     config = ConfigParser.ConfigParser()
@@ -157,11 +162,9 @@ def main(args=None):
     logger.print_and_log(logging.INFO, cmd_toString(cmd_command)+"\n")
 
     # submit the script's command
-    try:
-        check_call(cmd_command)
-    except subprocess.CalledProcessError as esp:
-        logger.print_and_log(logging.CRITICAL, "Job was not submited. Error exit code: "+str(esp.returncode), 1)
+    flink_job_submit(config, logger, cmd_command)
 
+    
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Batch Status Job submit script")

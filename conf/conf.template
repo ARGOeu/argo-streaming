@@ -39,6 +39,8 @@ job_manager:
 ingest-metric-namespace: Ingesting data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/{{ams_sub}}
 # Template to check if a sync job with similar name already runs
 ingest-sync-namespace: Ingesting sync data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/{{ams_sub}}
+#Template to check if a stream status job with similar name already runs
+stream-status-namespace: Streaming status using data {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/[{{ams_sub_metric}}, {{ams_sub_sync}}]
 
 [CLASSES]
 # Specify class to run during job submit 
@@ -46,6 +48,7 @@ ams-ingest-metric: test_class
 ams-ingest-sync: test_class
 batch-ar: test_class
 batch-status: test_class
+stream-status: test_class
 
 [JARS]
 # Specify jar to run during job submit 
@@ -53,6 +56,8 @@ ams-ingest-metric: test.jar
 ams-ingest-sync: test.jar
 batch-ar: test.jar
 batch-status: test.jar
+stream-status: test.jar
+
 
 [AMS]
 # AMS service port 
@@ -97,4 +102,32 @@ checkpoint_interval: 30000
 ams_sub: job_name
 ams_interval: 3000
 ams_batch: 100
-
+[TENANTS:TENANTA:stream-status]
+ams_batch:
+ams_interval:
+# ARGO messaging subscription to pull metric data from
+ams.sub.metric: metric_status
+# ARGO messaging subscription to pull sync data from
+ams.sub.sync: sync_status
+#hbase endpoint
+hbase.master: hbase.devel
+# hbase master port
+hbase.master.port: test_hbase_port
+# comma separated list of hbase zookeeper servers
+hbase.zk.quorum: test_zk_servers
+# port used by hbase zookeeper servers
+hbase.zk.port: test_zk_port
+# table namespace used (usually tenant name)
+hbase.namespace: test_hbase_namespace
+# table name (usually metric_data)
+hbase.table: metric_data
+# Kafka server list to connect to
+kafka.servers: test_kafka_servers
+# Kafka topic to send status events to
+kafka.topic: test_kafka_topic
+# filesystem path for output (prefix with "hfds://" for hdfs usage)
+fs.output: test_fs_output
+# flink parallelism for specific tenant and job(execution environment level)
+flink_parallelism: 1
+# different output destinations for the results
+outputs: hbase,kafka,fs
