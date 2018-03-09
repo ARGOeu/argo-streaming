@@ -295,3 +295,19 @@ Job required cli parameters:
 `--mongo.uri`         : MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
 
 `--mongo.method`      : MongoDB method to be used when storing the results ~ either: `insert` or `upsert`
+
+
+## Flink job names
+Running flink jobs can be listed either in flink dashboard by visiting `http://{{flink.webui.host}}:{{flink.webui.port}}`
+or by quering jobmanager api at `http://{{flink.webui.host}:{{flink.webui.port}}/joboverview/running
+
+Each job submitted has a discerning job name based on a specific template. Job names are used also by submission wrapper scripts (`/bin` folder) to check if a identical job runs (to avoid duplicate submission)
+
+Job Name schemes:
+Job Type| Job Name scheme
+--------|----------------
+Ingest Metric | Ingesting metric data from `{{ams-endpoint}}`/v1/projects/`{{project}}`/subscriptions/`{{subscription}}`
+Ingest Sync | Ingesting sync data from `{{ams-endpoint}}`/v1/projects/`{{project}}`/subscriptions/`{{subscription}}`
+Batch AR | Ar Batch job for tenant:`{{tenant}}` on day:`{{day}}` using report:`{{report}}`
+Batch Status | Status Batch job for tenant:`{{tenant}}` on day:`{{day}}` using report:`{{report}}`
+Streaming Status | Streaming status using data from `{{ams-endpoint}}`/v1/projects/`{{project}}`/subscriptions/`[`{{metric_subscription}}`,`{{sync_subscription}}`]
