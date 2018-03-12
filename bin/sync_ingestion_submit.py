@@ -2,15 +2,11 @@
 
 import sys
 import os
-import subprocess
 import argparse
-import requests
-import json
 import ConfigParser
-from subprocess import check_call
 import logging
 from utils.argo_log import ArgoLogger
-from utils.common import cmd_toString
+from utils.common import cmd_toString, flink_job_submit
 
 def compose_command(config, args, sudo, logger=None):
 
@@ -118,22 +114,8 @@ def main(args=None):
     logger.print_and_log(logging.INFO, "Getting ready to submit job")
     logger.print_and_log(logging.INFO, cmd_toString(cmd_command)+"\n")
 
-    # check if flink is up and running
-    try:
-        flink_response = requests.get(config.get("FLINK", "job_manager")+"/joboverview/running")
-        # if the job's already running then exit, else sumbit the command
-        for job in json.loads(flink_response.text)["jobs"]:
-            if job["name"] == job_namespace:
-                logger.print_and_log(logging.CRITICAL, "\nJob: "+"'"+job_namespace+"' is already running", 1)
-
-        logger.print_and_log(logging.INFO, "Everything is ok")
-        try:
-            check_call(cmd_command)
-        except subprocess.CalledProcessError as esp:
-            logger.print_and_log(logging.CRITICAL, "Job was not submitted. Error exit code: "+str(esp.returncode), 1)
-    except requests.exceptions.ConnectionError:
-        logger.print_and_log(logging.CRITICAL, "Flink is not currently running. Tried to communicate with job manager at: " + config.get("FLINK", "job_manager"), 1)
-
+    # submit the job
+    flink_job_submit(config, logger, cmd_command, job_namespace)
 
 if __name__ == "__main__":
 

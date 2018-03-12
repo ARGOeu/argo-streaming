@@ -63,7 +63,7 @@ class ArgoLogger(logging.Logger):
             if config.has_option(section, option):
                 if len(config.get(section, option)) != 0:
                     return True
-        self.print_and_log(logging.CRITICAL, "Section: "+section+" with option: "+option+" was not found in the conf file", 1)
+        self.print_and_log(logging.CRITICAL, "Section: "+section+" with option: "+option+" was not found in the conf file, or had no value.", 1)
 
     def add_stream_handler(self, **kwargs):
         """Method that takes care setting up a StreamHandler properly"""

@@ -4,8 +4,11 @@ import os
 import logging
 import argparse
 import ConfigParser
+import pymongo
 from pymongo import MongoClient
 from argo_log import ArgoLogger
+from urlparse import urlsplit
+
 
 class ArgoMongoClient(object):
 
@@ -18,16 +21,26 @@ class ArgoMongoClient(object):
 
     def mongo_clean_ar(self, uri):
 
-        # Create a date integer for use in the database queries
-        date_int = int(self.args.Date.replace("-", ""))
-        # set up the mongo client
-        client = MongoClient(uri)
-        # specify the db we will be using. e.g argo_TENANTA
-        db = client["argo_"+self.args.Tenant]
         # whenever a report is specified, check if the tenant supports such report, else the programm will exist from the str_validator method
         if self.args.Report and self.logger.config_str_validator(self.config, "TENANTS:"+self.args.Tenant+":REPORTS", self.args.Report):
             tenant_report = self.config.get("TENANTS:"+self.args.Tenant+":REPORTS", self.args.Report)
-            
+
+        # Create a date integer for use in the database queries
+        date_int = int(self.args.Date.replace("-", ""))
+         
+        # set up the mongo client
+        try:
+            self.logger.print_and_log(logging.INFO, "Trying to connect to: "+uri)
+            client = MongoClient(uri)
+            # force a connection to test the client
+            client.server_info()
+        except pymongo.errors.ServerSelectionTimeoutError as pse:
+            self.logger.print_and_log(logging.CRITICAL,str(pse)+ ". Make sure mongo daemon is up and running.  Programm will now exit ...", 1) 
+
+        # specify the db we will be using. e.g argo_TENANTA
+        # from the uri, take the path, which reprents the db, and ignore the / in the begging
+        db = client[urlsplit(uri).path[1:]]
+       
         # iterate over the specified collections
         for col in self.cols:
             if self.args.Report:
@@ -35,7 +48,6 @@ class ArgoMongoClient(object):
                 self.logger.print_and_log(logging.WARNING, "Collection: "+col+" -> Found " +str(num_of_rows)+" entries for date: "+self.args.Date+" and report: " +self.args.Report)
             else:
                 num_of_rows = db[col].find({"date": date_int}).count()
-                self.logger.print_and_log(logging.WARNING,"Found %s entries for date %s")
                 self.logger.print_and_log(logging.WARNING, "Collection: "+col+" -> Found " +str(num_of_rows)+" entries for date: "+self.args.Date+". No report specified!")
 
             if num_of_rows > 0:
@@ -52,18 +64,31 @@ class ArgoMongoClient(object):
             else:
                 self.logger.print_and_log(logging.INFO, "Zero entries found. Nothing to remove.")
                 
+        # close the connection with mongo
+        client.close()
+                
     def mongo_clean_status(self, uri):
-
-        # Create a date integer for use in the database queries
-        date_int = int(self.args.Date.replace("-", ""))
-        # set up the mongo client
-        client = MongoClient(uri)
-        # specify the db we will be using. e.g argo_TENANTA
-        db = client["argo_"+self.args.Tenant]
+        
         # whenever a report is specified, check if the tenant supports such report, else the programm will exist from the str_validator method
         if self.args.Report and self.logger.config_str_validator(self.config, "TENANTS:"+self.args.Tenant+":REPORTS", self.args.Report):
             tenant_report = self.config.get("TENANTS:"+self.args.Tenant+":REPORTS", self.args.Report)
-            
+
+        # Create a date integer for use in the database queries
+        date_int = int(self.args.Date.replace("-", ""))
+         
+        # set up the mongo client
+        try:
+            self.logger.print_and_log(logging.INFO, "Trying to connect to: "+uri)
+            client = MongoClient(uri)
+            # force a connection to test the client
+            client.server_info()
+        except pymongo.errors.ServerSelectionTimeoutError as pse:
+            self.logger.print_and_log(logging.CRITICAL,str(pse)+ ". Make sure mongo daemon is up and running.  Programm will now exit ...", 1) 
+
+        # specify the db we will be using. e.g argo_TENANTA
+        # from the uri, retrieve the path section, which reprents the db, and ignore the / in the begging
+        db = client[urlsplit(uri).path[1:]]
+        
         # iterate over the specified collections
         for col in self.cols:
             if self.args.Report:
@@ -71,7 +96,6 @@ class ArgoMongoClient(object):
                 self.logger.print_and_log(logging.WARNING, "Collection: "+col+" -> Found " +str(num_of_rows)+" entries for date: "+self.args.Date+" and report: " +self.args.Report)
             else:
                 num_of_rows = db[col].find({"date_integer": date_int}).count()
-                self.logger.print_and_log(logging.WARNING,"Found %s entries for date %s")
                 self.logger.print_and_log(logging.WARNING, "Collection: "+col+" -> Found " +str(num_of_rows)+" entries for date: "+self.args.Date+". No report specified!")
 
             if num_of_rows > 0:
@@ -88,7 +112,9 @@ class ArgoMongoClient(object):
             else:
                 self.logger.print_and_log(logging.INFO, "Zero entries found. Nothing to remove.")
 
-    
+        # close the connection with mongo
+        client.close()
+        
 def main_clean_ar(args=None):
     # stand alone method to be used whenever we want to call the mongo_clean_ar method independently
 
