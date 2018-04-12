@@ -73,6 +73,8 @@ import sync.MetricProfileManager;
  * --hbase.namespace   : hbase namespace
  * --hbase.table       : hbase table name
  * --fs.ouput          : filesystem output path (local or hdfs) mostly for debugging
+ * --ams.proxy		   : http proxy url
+ * --ams.verify        : optional turn on/off ssl verify
  */
 public class AmsStreamStatus {
 	// setup logger
@@ -159,12 +161,26 @@ public class AmsStreamStatus {
 		}
 
 		// Establish the metric data AMS stream
-		DataStream<String> metricAMS = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, subMetric,batch, interval))
-				.setParallelism(1);
+		// Ingest sync avro encoded data from AMS endpoint
+		ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval);
+		ArgoMessagingSource amsSync = new ArgoMessagingSource(endpoint, port, token, project, subSync, batch, interval);
+		
+		if (parameterTool.has("ams.verify")) {
+			boolean verify = parameterTool.getBoolean("ams.verify");
+			amsMetric.setVerify(verify);
+			amsMetric.setVerify(verify);
+		}
+		
+		if (parameterTool.has("ams.proxy")) {
+			String proxyURL = parameterTool.get("ams.proxy");
+			amsMetric.setProxy(proxyURL);
+			amsSync.setProxy(proxyURL);
+		}
+		
+		DataStream<String> metricAMS = see.addSource(amsMetric).setParallelism(1);
 
 		// Establish the sync data AMS stream
-		DataStream<String> syncAMS = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, subSync,batch, interval))
-				.setParallelism(1);
+		DataStream<String> syncAMS = see.addSource(amsSync).setParallelism(1);
 
 		// Forward syncAMS data to two paths
 		// - one with parallelism 1 to connect in the first processing step and

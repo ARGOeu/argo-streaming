@@ -52,6 +52,8 @@ import argo.avro.MetricData;
  * --hdfs.path         : hdfs destination to write the data
  * --ams.batch         : num of messages to be retrieved per request to AMS service
  * --ams.interval      : interval (in ms) between AMS service requests
+ * --ams.proxy         : optional http proxy url
+ * --ams.verify        : optional turn on/off ssl verify
  */
 public class AmsIngestMetric {
 	// setup logger
@@ -144,7 +146,17 @@ public class AmsIngestMetric {
 		}
 
 		// Ingest sync avro encoded data from AMS endpoint
-		DataStream<String> metricDataJSON = see.addSource(new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval));
+		ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval);
+		
+		if (parameterTool.has("ams.verify")) {
+			ams.setVerify(parameterTool.getBoolean("ams.verify"));
+		}
+		
+		if (parameterTool.has("ams.proxy")) {
+			ams.setProxy(parameterTool.get("ams.proxy"));
+		}
+		
+		DataStream<String> metricDataJSON = see.addSource(ams);
 		DataStream<MetricData> metricDataPOJO = metricDataJSON.flatMap(new FlatMapFunction<String, MetricData>() {
 
 			/**

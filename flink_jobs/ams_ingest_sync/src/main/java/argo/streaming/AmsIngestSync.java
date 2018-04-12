@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
  * --hdfs.path         : Hdfs destination path to store the data
  * --ams.batch         : num of messages to be retrieved per request to AMS service
  * --ams.interval      : interval (in ms) between AMS service requests
+ * --ams.proxy         : optional http proxy url
+ * --ams.verify        : optional turn on/off ssl verify
  */
 public class AmsIngestSync {
 
@@ -71,9 +73,19 @@ public class AmsIngestSync {
 			interval = parameterTool.getLong("ams.interval");
 		}
 
-		// Ingest sync avro encoded data from AMS endpoint
+		
+		//Ingest sync avro encoded data from AMS endpoint
+		ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval);
+		
+		if (parameterTool.has("ams.verify")){
+			ams.setVerify(parameterTool.getBoolean("ams.verify"));
+		}
+		
+		if (parameterTool.has("ams.proxy")) {
+			ams.setProxy(parameterTool.get("ams.proxy"));
+		}
 		DataStream<String> syncDataStream = see
-				.addSource(new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval));
+				.addSource(ams);
 
 		SyncHDFSOutputFormat hdfsOut = new SyncHDFSOutputFormat();
 		hdfsOut.setBasePath(basePath);

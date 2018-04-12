@@ -53,6 +53,10 @@ Job optional cli parameters:
 
 `--ams.interval`      : interval (in ms) between AMS service requests
 
+`--ams.proxy`         : optional http proxy url to be used for AMS requests
+
+`--ams.verify`        : optional turn on/off ssl verify
+
 ### Metric data hbase schema
 
 Metric data are stored in hbase tables using different namespaces for different tenants (e.g. hbase table name = '{TENANT_name}:metric_data')
@@ -118,6 +122,10 @@ Job required cli parameters:
 `--ams.batch`         : num of messages to be retrieved per request to AMS service
 
 `--ams.interval`      : interval (in ms) between AMS service requests
+
+`--ams.proxy`         : optional http proxy url to be used for AMS requests
+
+`--ams.verify`        : optional turn on/off ssl verify
 
 
 ### Stream Status
@@ -187,6 +195,10 @@ Job Optional cli parameters for ams ingestion related
 `--ams.batch`         : num of messages to be retrieved per request to AMS service
 
 `--ams.interval`      : interval (in ms) between AMS service requests
+
+`--ams.proxy`         : optional http proxy url to be used for AMS requests
+
+`--ams.verify`        : optional turn on/off ssl verify
 
 
 
