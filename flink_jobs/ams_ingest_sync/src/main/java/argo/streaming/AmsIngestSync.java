@@ -76,11 +76,11 @@ public class AmsIngestSync {
 		
 		//Ingest sync avro encoded data from AMS endpoint
 		ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval);
-		
+
 		if (parameterTool.has("ams.verify")){
 			ams.setVerify(parameterTool.getBoolean("ams.verify"));
 		}
-		
+
 		if (parameterTool.has("ams.proxy")) {
 			ams.setProxy(parameterTool.get("ams.proxy"));
 		}
