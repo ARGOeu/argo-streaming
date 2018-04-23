@@ -3,12 +3,15 @@ package argo.streaming;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -24,8 +27,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
+/**
+ * Simple http client for pulling and acknowledging messages from AMS service http API
+ */
 public class ArgoMessagingClient {
 
 	static Logger LOG = LoggerFactory.getLogger(ArgoMessagingClient.class);
@@ -42,41 +49,13 @@ public class ArgoMessagingClient {
 	// protocol (https,http)
 	private String proto = null;
 	// numer of message to be pulled;
-	private int batch = 100;
 	private String maxMessages = "";
-
-	// Initialize with default values
-	public ArgoMessagingClient() {
-		this.httpClient = HttpClients.createDefault();
-		this.proto = "https";
-		this.token = "token";
-		this.endpoint = "localhost";
-		this.project = "test_project";
-		this.sub = "test_sub";
-		this.batch = 100;
-		this.maxMessages = "100";
-	}
-
-	// Initialized using parameters
-	public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub, int batch) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-
-		// Create ssl context
-		SSLContextBuilder builder = new SSLContextBuilder();
-		builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build(),
-				SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-
-		this.httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-
-		this.proto = method;
-		this.token = token;
-		this.endpoint = endpoint;
-		this.project = project;
-		this.sub = sub;
-		this.batch = batch;
-		this.maxMessages = String.valueOf(batch);
-	}
-
+	// ssl verify or not
+	private boolean verify = true;
+	// proxy 
+	private URI proxy = null;
+	
+	// Utility inner class for holding list of messages and acknowledgements
 	private class MsgAck {
 		String[] msgs;
 		String[] ackIds;
@@ -86,35 +65,94 @@ public class ArgoMessagingClient {
 			this.ackIds = ackIds;
 		}
 
-		private String[] getMsgs() {
-			return this.msgs;
-		}
-
-		private String[] getAckIds() {
-			return this.ackIds;
-		}
-
 	}
 
-	// Failover initializer to be called inside method (if client is not yet
-	// initialized)
+	public ArgoMessagingClient() {
+		this.httpClient = HttpClients.createDefault();
+		this.proto = "https";
+		this.token = "token";
+		this.endpoint = "localhost";
+		this.project = "test_project";
+		this.sub = "test_sub";
+		this.maxMessages = "100";
+		this.proxy = null;
+	}
+	
+	public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub, int batch, boolean verify) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+
+		this.proto = method;
+		this.token = token;
+		this.endpoint = endpoint;
+		this.project = project;
+		this.sub = sub;
+		this.maxMessages = String.valueOf(batch);
+		this.verify = verify;
+		
+		if (this.verify) {
+			this.httpClient = HttpClients.createDefault();
+		} else {
+			this.httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
+		}
+		
+	}
+	
+	/**
+	 * Set AMS http client to use http proxy
+	 */
+	public void setProxy(String proxyURL) throws URISyntaxException {
+		// parse proxy url
+		this.proxy = URI.create(proxyURL);
+	}
+	
+	/**
+	 * Set AMS http client to NOT use an http proxy
+	 */
+	public void unsetProxy() {
+		this.proxy=null;
+	}
+
+	
+	/**
+	 * Create an SSL Connection Socket Factory with a strategy to trust self signed certificates
+	 */
+	private SSLConnectionSocketFactory selfSignedSSLF() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+		SSLContextBuilder sslBuild = new SSLContextBuilder();
+	    sslBuild.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+	    return new SSLConnectionSocketFactory(sslBuild.build());
+	}
+	
+	/**
+	 * Create a configuration for using http proxy on each request
+	 */
+	private RequestConfig createProxyCfg() {
+		HttpHost proxy = new HttpHost(this.proxy.getHost(),this.proxy.getPort(),this.proxy.getScheme());
+		RequestConfig config = RequestConfig.custom().setProxy(proxy).build();
+		return config;
+	}
+
+	/**
+	 * Initializes Http Client (if not initialized during constructor)
+	 */
 	private void buildHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-		// Create ssl context
-		SSLContextBuilder builder = new SSLContextBuilder();
-		builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build(),
-				SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-
-		this.httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+		if (this.verify) {
+			this.httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
+		} else {
+			this.httpClient = HttpClients.createDefault();
+		}
+		
 	}
 
-	// Based on parameters compose the request url
+	/**
+	 * Properly compose url for each AMS request
+	 */
 	public String composeURL(String method) {
 		return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method + "?key="
 				+ token;
 	}
 
-	// Do a pull request
+	/**
+	 * Executes a pull request against AMS api
+	 */
 	public MsgAck doPull() throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
 
 		ArrayList<String> msgList = new ArrayList<String>();
@@ -131,6 +169,11 @@ public class ArgoMessagingClient {
 			buildHttpClient();
 		}
 
+		// check for proxy 
+		if (this.proxy != null) {
+			postPull.setConfig(createProxyCfg());
+		}
+		
 		CloseableHttpResponse response = this.httpClient.execute(postPull);
 		String msg = "";
 		String ackId = "";
@@ -167,6 +210,8 @@ public class ArgoMessagingClient {
 				msgList.add(msg);
 				ackIdList.add(ackId);
 			}
+			
+			isRdr.close();
 
 		}
 
@@ -182,7 +227,9 @@ public class ArgoMessagingClient {
 
 	}
 
-	// Consume = Do a pull and an acknowledge request
+	/**
+	 * Executes a combination of Pull & Ack requests against AMS api
+	 */
 	public String[] consume() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
 		String[] msgs = new String[0];
 		// Try first to pull a message
@@ -214,7 +261,9 @@ public class ArgoMessagingClient {
 
 	}
 
-	// Do an acknowledge request based on a given ackId
+	/**
+	 * Executes an Acknowledge request against AMS api
+	 */
 	public String doAck(String ackId) throws IOException {
 
 		// Create the http post to ack
@@ -222,6 +271,11 @@ public class ArgoMessagingClient {
 		StringEntity postBody = new StringEntity("{\"ackIds\":[" + ackId + "]}");
 		postBody.setContentType("application/json");
 		postAck.setEntity(postBody);
+		
+		// check for proxy 
+		if (this.proxy != null) {
+			postAck.setConfig(createProxyCfg());
+		}
 
 		CloseableHttpResponse response = httpClient.execute(postAck);
 		String resMsg = "";
@@ -241,6 +295,7 @@ public class ArgoMessagingClient {
 				result.append(rLine);
 
 			resMsg = result.toString();
+			isRdr.close();
 
 		}
 
@@ -251,6 +306,9 @@ public class ArgoMessagingClient {
 
 	}
 
+	/**
+	 * Close AMS http client
+	 */
 	public void close() throws IOException {
 		this.httpClient.close();
 	}
