@@ -151,7 +151,7 @@ public class AmsIngestMetric {
 		if (parameterTool.has("ams.verify")) {
 			ams.setVerify(parameterTool.getBoolean("ams.verify"));
 		}
-		
+
 		if (parameterTool.has("ams.proxy")) {
 			ams.setProxy(parameterTool.get("ams.proxy"));
 		}

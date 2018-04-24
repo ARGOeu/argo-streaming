@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.StringEntity;
@@ -88,13 +89,31 @@ public class ArgoMessagingClient {
 		this.maxMessages = String.valueOf(batch);
 		this.verify = verify;
 		
-		if (this.verify) {
-			this.httpClient = HttpClients.createDefault();
-		} else {
-			this.httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
-		}
+		this.httpClient = buildHttpClient();
 		
 	}
+	
+	/**
+	 * Initializes Http Client (if not initialized during constructor)
+	 * @return 
+	 */
+	private  CloseableHttpClient buildHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+		if (this.verify) {
+			return this.httpClient = HttpClients.createDefault();
+		} else {
+			return this.httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
+		}
+	}
+	
+	/**
+	 * Create an SSL Connection Socket Factory with a strategy to trust self signed certificates
+	 */
+	private SSLConnectionSocketFactory selfSignedSSLF() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+		SSLContextBuilder sslBuild = new SSLContextBuilder();
+	    sslBuild.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+	    return new SSLConnectionSocketFactory(sslBuild.build(),NoopHostnameVerifier.INSTANCE);
+	}
+	
 	
 	/**
 	 * Set AMS http client to use http proxy
@@ -112,14 +131,6 @@ public class ArgoMessagingClient {
 	}
 
 	
-	/**
-	 * Create an SSL Connection Socket Factory with a strategy to trust self signed certificates
-	 */
-	private SSLConnectionSocketFactory selfSignedSSLF() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-		SSLContextBuilder sslBuild = new SSLContextBuilder();
-	    sslBuild.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-	    return new SSLConnectionSocketFactory(sslBuild.build());
-	}
 	
 	/**
 	 * Create a configuration for using http proxy on each request
@@ -130,17 +141,7 @@ public class ArgoMessagingClient {
 		return config;
 	}
 
-	/**
-	 * Initializes Http Client (if not initialized during constructor)
-	 */
-	private void buildHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-		if (this.verify) {
-			this.httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
-		} else {
-			this.httpClient = HttpClients.createDefault();
-		}
-		
-	}
+
 
 	/**
 	 * Properly compose url for each AMS request
@@ -166,7 +167,7 @@ public class ArgoMessagingClient {
 		postPull.setEntity(postBody);
 
 		if (this.httpClient == null) {
-			buildHttpClient();
+			this.httpClient = buildHttpClient();
 		}
 
 		// check for proxy 

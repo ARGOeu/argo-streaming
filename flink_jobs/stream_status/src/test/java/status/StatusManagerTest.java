@@ -57,13 +57,13 @@ public class StatusManagerTest {
 
 		sm.addNewGroup("GR-01-AUTH",sm.ops.getIntStatus("OK"), ts1);
 		ArrayList<String> list = sm.setStatus("CREAM-CE", "cream01.grid.auth.gr", "emi.cream.CREAMCE-JobCancel",
-				"CRITICAL", "mon01.argo.eu", "2017-03-03T00:00:00Z");
+				"CRITICAL", "mon01.argo.eu", "2017-03-03T00:00:00Z","","");
 		ArrayList<String> list2 = sm.setStatus("CREAM-CE", "cream01.grid.auth.gr", "eu.egi.CREAM-IGTF", "WARNING",
-				"mon01.argo.eu", "2017-03-03T05:00:00Z");
+				"mon01.argo.eu", "2017-03-03T05:00:00Z","","");
 		ArrayList<String> list3 = sm.setStatus("CREAM-CE", "cream01.grid.auth.gr", "emi.cream.CREAMCE-JobCancel", "OK",
-				"mon01.argo.eu", "2017-03-03T09:00:00Z");
+				"mon01.argo.eu", "2017-03-03T09:00:00Z","","");
 		ArrayList<String> list4 = sm.setStatus("CREAM-CE", "cream01.grid.auth.gr", "eu.egi.CREAM-IGTF", "OK",
-				"mon01.argo.eu", "2017-03-03T15:00:00Z");
+				"mon01.argo.eu", "2017-03-03T15:00:00Z","","");
 
 		
 		Gson gson = new Gson();
@@ -75,7 +75,7 @@ public class StatusManagerTest {
 
 		String jproc = jRoot.getAsJsonObject().get("ts_processed").getAsString();
 		StatusEvent evnt = new StatusEvent("Critical","metric","20170303","GR-01-AUTH", "CREAM-CE", "cream01.grid.auth.gr",
-				"eu.egi.CREAM-IGTF", "OK", "mon01.argo.eu", "2017-03-03T15:00:00Z", jproc,"WARNING","2017-03-03T05:00:00Z");
+				"eu.egi.CREAM-IGTF", "OK", "mon01.argo.eu", "2017-03-03T15:00:00Z", jproc,"WARNING","2017-03-03T05:00:00Z", "false","","");
 		
 		assertTrue(gson.toJson(evnt).equals(list4.get(0)));
 

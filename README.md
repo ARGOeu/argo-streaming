@@ -190,11 +190,21 @@ Job optional cli parameters for filesystem output (local/hdfs):
 
 `--fs.output`         : filesystem path for output (prefix with "hfds://" for hdfs usage)
 
+Job optional cli parameters for mongo output:
+
+`--mongo.uri`         : Mongo uri to store status events to
+
+`--mongo.method`      : Mongo store method used (insert/upsert)
+
 Job Optional cli parameters for ams ingestion related
 
 `--ams.batch`         : num of messages to be retrieved per request to AMS service
 
 `--ams.interval`      : interval (in ms) between AMS service requests
+Other optional cli parameters
+`--daily`             : true/false - controls daily regeneration of events (not used in notifications)
+
+`--timeout`           : long(ms) - controls default timeout for event regeneration (used in notifications)
 
 `--ams.proxy`         : optional http proxy url to be used for AMS requests
 

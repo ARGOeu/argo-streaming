@@ -19,7 +19,6 @@ public class StatusConfig implements Serializable {
 	public String amsProject;
 	public String amsSub;
 	
-	
 	// Avro schema
 	public String avroSchema;
 	
@@ -28,6 +27,10 @@ public class StatusConfig implements Serializable {
 	public String mps;
 	public String egp;
 	public String ops;
+	// Parameter used in alert timeouts for notifications
+	public long timeout;
+	// Parameter used for daily event generation (not used in notifications)
+	public boolean daily;
 	public String defStatus = "MISSING";
 	
 	// Raw parameters
@@ -35,16 +38,25 @@ public class StatusConfig implements Serializable {
 	
 	public StatusConfig(ParameterTool pt){
 	    this.pt = pt;
-	   this.amsHost = pt.get("ams.host","localhost");
-	   this.amsPort = pt.get("ams.port","443");
-	   this.amsToken = pt.get("ams.token","metric");
-	   this.amsProject = pt.get("ams.project","TESTPROJECT");
-	   this.avroSchema = pt.get("avro.schema","metric_data.avsc");
-	   this.aps = pt.get("sync.aps","ap1.json");
-	   this.mps = pt.get("sync.mps","metric_data.avro");
-	   this.egp = pt.get("sync.egp","group_endpoints.avro");
-	   this.ops = pt.get("sync.ops","ops.json");
-	   this.runDate = pt.get("run.date","");
+	   this.amsHost = pt.getRequired("ams.endpoint");
+	   this.amsPort = pt.getRequired("ams.port");
+	   this.amsToken = pt.getRequired("ams.token");
+	   this.amsProject = pt.getRequired("ams.project");
+	   
+	   this.aps = pt.getRequired("sync.apr");
+	   this.mps = pt.getRequired("sync.mps");
+	   this.egp = pt.getRequired("sync.egp");
+	   this.ops = pt.getRequired("sync.ops");
+	   this.runDate = pt.getRequired("run.date");
+	   // Optional timeout parameter
+	   if (pt.has("timeout")){
+		   this.timeout = pt.getLong("timeout");
+	   } else {
+		   this.timeout = 86400000L;
+	   }
+	   
+	   // Optional set daily parameter
+	   this.daily = pt.getBoolean("daily",false);
 	   
 	  }
 	
