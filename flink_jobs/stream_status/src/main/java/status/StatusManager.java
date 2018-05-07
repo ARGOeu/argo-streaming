@@ -6,7 +6,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -63,6 +62,7 @@ public class StatusManager {
 	// Timestamp of the latest processed event used as a daily event generation
 	// trigger
 	String tsLatest;
+	
 	
 	public void setTimeout(Long timeout) {
 		this.timeout = timeout;
@@ -548,152 +548,146 @@ public class StatusManager {
 	 *            Timestamp value in string format
 	 * @return List of generated events in string json format
 	 */
-	public ArrayList<String> setStatus(String service, String hostname, String metric, String statusStr, String monHost,
+	public ArrayList<String> setStatus(String group, String service, String hostname, String metric, String statusStr, String monHost,
 			String tsStr, String summary, String message) throws ParseException {
 		ArrayList<String> results = new ArrayList<String>();
 
 		int status = ops.getIntStatus(statusStr);
 		Date ts = fromZulu(tsStr);
 
-		// Get group from hostname,service
-		ArrayList<String> groups = egp.getGroup(hostname, service);
-		
-		if (groups.size() == 0)
-			return results;
-		// Specific change for hosts that belong to multiple groups
-		for (String group : groups) {
+			
 
 			
-			// Set StatusNodes
-			StatusNode groupNode = null;
-			StatusNode serviceNode = null;
-			StatusNode endpointNode = null;
-			StatusNode metricNode = null;
+		// Set StatusNodes
+		StatusNode groupNode = null;
+		StatusNode serviceNode = null;
+		StatusNode endpointNode = null;
+		StatusNode metricNode = null;
 
-			boolean updMetric = false;
-			boolean updEndpoint = false;
-			boolean updService = false;
-			boolean updGroup = false;
+		boolean updMetric = false;
+		boolean updEndpoint = false;
+		boolean updService = false;
+	
 
-			Date oldGroup;
-			Date oldService;
-			Date oldEndpoint;
-			Date oldMetric;
+		Date oldGroup;
+		Date oldService;
+		Date oldEndpoint;
+		Date oldMetric;
 
-			// Open groups
-			groupNode = this.groups.get(group);
-			if (groupNode != null) {
+		// Open groups
+		groupNode = this.groups.get(group);
+		if (groupNode != null) {
+			// check if ts is behind groupNode ts
+			if (groupNode.item.timestamp.compareTo(ts) > 0)
+				return results;
+			// update ts
+			oldGroup = groupNode.item.timestamp;
+			groupNode.item.timestamp = ts;
+
+			// Open services
+			serviceNode = groupNode.children.get(service);
+
+			if (serviceNode != null) {
 				// check if ts is behind groupNode ts
-				if (groupNode.item.timestamp.compareTo(ts) > 0)
+				if (serviceNode.item.timestamp.compareTo(ts) > 0)
 					return results;
 				// update ts
-				oldGroup = groupNode.item.timestamp;
-				groupNode.item.timestamp = ts;
+				oldService = serviceNode.item.timestamp;
+				serviceNode.item.timestamp = ts;
 
-				// Open services
-				serviceNode = groupNode.children.get(service);
+				// Open endpoints
+				endpointNode = serviceNode.children.get(hostname);
 
-				if (serviceNode != null) {
+				if (endpointNode != null) {
 					// check if ts is behind groupNode ts
-					if (serviceNode.item.timestamp.compareTo(ts) > 86400000)
+					if (endpointNode.item.timestamp.compareTo(ts) > 0)
 						return results;
 					// update ts
-					oldService = serviceNode.item.timestamp;
-					serviceNode.item.timestamp = ts;
+					oldEndpoint = endpointNode.item.timestamp;
+					endpointNode.item.timestamp = ts;
 
-					// Open endpoints
-					endpointNode = serviceNode.children.get(hostname);
+					// Open metrics
+					metricNode = endpointNode.children.get(metric);
 
-					if (endpointNode != null) {
-						// check if ts is behind groupNode ts
-						if (endpointNode.item.timestamp.compareTo(ts) > 86400000)
-							return results;
-						// update ts
-						oldEndpoint = endpointNode.item.timestamp;
-						endpointNode.item.timestamp = ts;
+					if (metricNode != null) {
 
-						// Open metrics
-						metricNode = endpointNode.children.get(metric);
-
-						if (metricNode != null) {
-
-							// check if ts is after previous timestamp
-							if (endpointNode.item.timestamp.compareTo(ts) <= 0) {
-								// update status
-								boolean repeat = hasTimeDiff(ts,metricNode.item.genTs,this.timeout);
-								oldMetric = metricNode.item.timestamp;
-								if (metricNode.item.status != status || repeat ) {
-									// generate event
-									results.add(
-											genEvent("metric", group, service, hostname, metric, ops.getStrStatus(status),
-													monHost, ts, ops.getStrStatus(metricNode.item.status), oldMetric, repeat, message, summary));
-									metricNode.item.status = status;
-									metricNode.item.timestamp = ts;
-									metricNode.item.genTs = ts;
-								}
-
-								updMetric = true;
-							}
-
-						}
-						// If metric indeed updated -> aggregate endpoint
-						if (updMetric) {
-							// calculate endpoint new status
-							int endpNewStatus = aggregate("", endpointNode, ts);
-							// check if status changed
-							boolean repeat = hasTimeDiff(ts,endpointNode.item.genTs,this.timeout);
-							if (endpointNode.item.status != endpNewStatus || repeat ) {
-
+						// check if ts is after previous timestamp
+						if (endpointNode.item.timestamp.compareTo(ts) <= 0) {
+							// update status
+							boolean repeat = hasTimeDiff(ts,metricNode.item.genTs,this.timeout);
+							oldMetric = metricNode.item.timestamp;
+							if (metricNode.item.status != status || repeat ) {
 								// generate event
-								results.add(genEvent("endpoint", group, service, hostname, "",
-										ops.getStrStatus(endpNewStatus), monHost, ts,
-										ops.getStrStatus(endpointNode.item.status), oldEndpoint,repeat,"",""));
-								endpointNode.item.status = endpNewStatus;
-								
-								endpointNode.item.genTs = ts;
-								updEndpoint = true;
+								results.add(
+										genEvent("metric", group, service, hostname, metric, ops.getStrStatus(status),
+												monHost, ts, ops.getStrStatus(metricNode.item.status), oldMetric, repeat, message, summary));
+								metricNode.item.status = status;
+								metricNode.item.timestamp = ts;
+								metricNode.item.genTs = ts;
 							}
 
+							updMetric = true;
 						}
+
 					}
-					// if endpoint indeed updated -> aggregate service
-					if (updEndpoint) {
-						// calculate service new status
-						int servNewStatus = aggregate(service, serviceNode, ts);
+					// If metric indeed updated -> aggregate endpoint
+					if (updMetric) {
+						// calculate endpoint new status
+						int endpNewStatus = aggregate("", endpointNode, ts);
 						// check if status changed
-						boolean repeat = hasTimeDiff(ts,groupNode.item.genTs,this.timeout);
-						if (serviceNode.item.status != servNewStatus || repeat) {
+						boolean repeat = hasTimeDiff(ts,endpointNode.item.genTs,this.timeout);
+						if (endpointNode.item.status != endpNewStatus || repeat ) {
 
 							// generate event
-							results.add(genEvent("service", group, service, "", "", ops.getStrStatus(servNewStatus),
-									monHost, ts, ops.getStrStatus(serviceNode.item.status), oldService,repeat,"",""));
-							serviceNode.item.status = servNewStatus;
-							serviceNode.item.genTs=ts;
-							updService = true;
-
+							results.add(genEvent("endpoint", group, service, hostname, "",
+									ops.getStrStatus(endpNewStatus), monHost, ts,
+									ops.getStrStatus(endpointNode.item.status), oldEndpoint,repeat,"",""));
+							endpointNode.item.status = endpNewStatus;
+							
+							endpointNode.item.genTs = ts;
+							updEndpoint = true;
 						}
 
 					}
 				}
-				// if service indeed updated -> aggregate group
-				if (updService) {
-					// calculate group new status
-					int groupNewStatus = aggregate(group, groupNode, ts);
+				// if endpoint indeed updated -> aggregate service
+				if (updEndpoint) {
+					// calculate service new status
+					int servNewStatus = aggregate(service, serviceNode, ts);
 					// check if status changed
 					boolean repeat = hasTimeDiff(ts,groupNode.item.genTs,this.timeout);
-					if (groupNode.item.status != groupNewStatus || repeat ){
-						
+					if (serviceNode.item.status != servNewStatus || repeat) {
+
 						// generate event
-						results.add(genEvent("endpoint_group", group, "", "", "", ops.getStrStatus(groupNewStatus),
-								monHost, ts, ops.getStrStatus(groupNode.item.status), oldGroup,repeat,"",""));
-						groupNode.item.status = groupNewStatus;
-						groupNode.item.genTs = ts;
-						updGroup = true;
+						results.add(genEvent("service", group, service, "", "", ops.getStrStatus(servNewStatus),
+								monHost, ts, ops.getStrStatus(serviceNode.item.status), oldService,repeat,"",""));
+						serviceNode.item.status = servNewStatus;
+						serviceNode.item.genTs=ts;
+						updService = true;
+
 					}
+
 				}
 			}
-
+			// if service indeed updated -> aggregate group
+			if (updService) {
+				// calculate group new status
+				int groupNewStatus = aggregate(group, groupNode, ts);
+				// check if status changed
+				boolean repeat = hasTimeDiff(ts,groupNode.item.genTs,this.timeout);
+				if (groupNode.item.status != groupNewStatus || repeat ){
+					
+					// generate event
+					results.add(genEvent("endpoint_group", group, "", "", "", ops.getStrStatus(groupNewStatus),
+							monHost, ts, ops.getStrStatus(groupNode.item.status), oldGroup,repeat,"",""));
+					groupNode.item.status = groupNewStatus;
+					groupNode.item.genTs = ts;
+					
+				}
+			}
 		}
+
+		
 
 		return results;
 	}
@@ -746,8 +740,10 @@ public class StatusManager {
 
 		// get aggregation profile used (1st one in the list)
 		String aggProfile = aps.getAvProfiles().get(0);
-
-		int sOp = ops.getIntOperation("AND");
+		
+		
+		
+	
 
 		// Iterate on children nodes
 		Iterator<Entry<String, StatusNode>> valIter = node.children.entrySet().iterator();
@@ -756,6 +752,7 @@ public class StatusManager {
 		StatusNode b = null;
 		int res = a.item.status;
 
+		
 		if (node.type.equals("group")) {
 
 			// Create a hashmap for the aggregation groups
@@ -784,6 +781,7 @@ public class StatusManager {
 					res = aGroups.get(groupName).intValue();
 					// calculate the new value
 					res = ops.opInt(gOp, res, b.item.status);
+					aGroups.put(groupName, res);
 
 				}
 			}
@@ -801,7 +799,11 @@ public class StatusManager {
 			}
 
 		} else {
+			
 
+			
+			
+			
 			// aggregate according to rest of the types
 			while (valIter.hasNext()) {
 				b = valIter.next().getValue();
@@ -809,12 +811,12 @@ public class StatusManager {
 					int mOp = ops.getIntOperation(aps.getMetricOp(aggProfile));
 					res = ops.opInt(mOp, res, b.item.status);
 				} else if (node.type.equals("service")) {
-
+					
 					String groupName = aps.getGroupByService(aggProfile, itemName);
 					int eOp = ops.getIntOperation(aps.getProfileGroupServiceOp(aggProfile, groupName, itemName));
 					res = ops.opInt(eOp, res, b.item.status);
 				} else if (node.type.equals("group")) {
-					res = ops.opInt(sOp, res, b.item.status);
+					//res = ops.opInt(sOp, res, b.item.status);
 				}
 			}
 		}

@@ -37,7 +37,7 @@ public class StatusConfig implements Serializable {
 	public final ParameterTool pt;
 	
 	public StatusConfig(ParameterTool pt){
-	    this.pt = pt;
+	   this.pt = pt;
 	   this.amsHost = pt.getRequired("ams.endpoint");
 	   this.amsPort = pt.getRequired("ams.port");
 	   this.amsToken = pt.getRequired("ams.token");
