@@ -258,7 +258,7 @@ public class AmsStreamStatus {
 		jobTitleSB.append("]");
 		
 		// Execute flink dataflow
-		see.execute();
+		see.execute(jobTitleSB.toString());
 	}
 
 	/**
@@ -481,7 +481,7 @@ public class AmsStreamStatus {
 			String monHost = item.getMonitoringHost();
 			String message = item.getMessage();
 			String summary = item.getSummary();
-
+			
 			// if daily generation is enable check if has day changed?
 			if (config.daily && sm.hasDayChanged(sm.getTsLatest(), tsMon)) {
 				ArrayList<String> eventsDaily = sm.dumpStatus(tsMon);
@@ -497,11 +497,13 @@ public class AmsStreamStatus {
 			if (!sm.hasGroup(group)) {
 				// Get start of the day to create new entries
 				Date dateTS = sm.setDate(tsMon);
-				sm.addGroup(group, service, hostname, defStatus, dateTS);
+				sm.addNewGroup(group, defStatus, dateTS);
 			}
 
-			ArrayList<String> events = sm.setStatus(service, hostname, metric, status, monHost, tsMon, message, summary);
+			ArrayList<String> events = sm.setStatus(group, service, hostname, metric, status, monHost, tsMon, message, summary);
 
+			
+			
 			for (String event : events) {
 				out.collect(event);
 				LOG.info("sm-" + pID + ": event produced: " + item);
