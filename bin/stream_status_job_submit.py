@@ -161,6 +161,43 @@ def compose_command(config, args,  hdfs_commands, logger=None):
                     cmd_command.append("--fs.output")
                     cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "fs.output"))
 
+    if config.getboolean("TENANTS:"+args.Tenant+":stream-status", "use_mongo"):
+        #  MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
+        cmd_command.append("--mongo.uri")
+        mongo_tenant = "TENANTS:"+args.Tenant+":MONGO"
+        mongo_uri = config.get(mongo_tenant, "mongo_uri")
+        mongo_uri = mongo_uri.replace("{{mongo_host}}", config.get(mongo_tenant, "mongo_host"))
+        mongo_uri = mongo_uri.replace("{{mongo_port}}", config.get(mongo_tenant, "mongo_port"))
+        cmd_command.append(mongo_uri)
+
+        # mongo method
+        cmd_command.append("--mongo.method")
+        cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "mongo_method"))
+
+    # num of messages to be retrieved from AMS per request
+    cmd_command.append("--ams.batch")
+    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "ams_batch"))
+
+    # interval in ms betweeb AMS service requests
+    cmd_command.append("--ams.interval")
+    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "ams_interval"))
+
+    # ams proxy
+    if config.getboolean("AMS", "proxy_enabled"):
+        cmd_command.append("--ams.proxy")
+        cmd_command.append(config.get("AMS", "ams_proxy"))
+
+    # ssl verify
+    cmd_command.append("--ams.verify")
+    if config.getboolean("AMS", "ssl_enabled"):
+        cmd_command.append("true")
+    else:
+        cmd_command.append("false")
+
+    if args.Timeout is not None:
+        cmd_command.append("--timeout")
+        cmd_command.append(args.Timeout)
+
     return cmd_command, job_namespace
 
 
@@ -218,6 +255,8 @@ if __name__ == "__main__":
         "-c", "--ConfigPath", type=str, help="Path for the config file")
     parser.add_argument(
         "-u", "--Sudo", help="Run the submition as superuser",  action="store_true")
+    parser.add_argument(
+        "-timeout", "--Timeout", type=str, help="Controls default timeout for event regeneration (used in notifications)")
 
     # Pass the arguments to main method
     sys.exit(main(parser.parse_args()))

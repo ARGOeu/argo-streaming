@@ -64,6 +64,11 @@ stream-status: test.jar
 ams_port: test_port
 # Ams service endpoint
 ams_endpoint: test_endpoint
+# Ams proxy
+proxy_enabled: true
+ams_proxy:test_proxy
+# Verify ssl
+ssl_enabled: true
 
 # Tenant General Configuration
 [TENANTS:TENANTA]
@@ -103,8 +108,11 @@ ams_sub: job_name
 ams_interval: 3000
 ams_batch: 100
 [TENANTS:TENANTA:stream-status]
-ams_batch:
-ams_interval:
+# whether or not it should also include mongo information(it will access the section TENANTS:TENANTA:MONGO)
+use_mongo:true
+mongo_method:upsert
+ams_batch: test_batch
+ams_interval: test_interval
 # ARGO messaging subscription to pull metric data from
 ams.sub.metric: metric_status
 # ARGO messaging subscription to pull sync data from

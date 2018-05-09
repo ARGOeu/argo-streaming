@@ -7,6 +7,7 @@ import os
 
 CONF_TEMPLATE = os.path.join(os.path.dirname(__file__), '../conf/conf.template')
 
+
 class TestClass(unittest.TestCase):
 
     def test_compose_command(self):
@@ -15,7 +16,7 @@ class TestClass(unittest.TestCase):
         config = ConfigParser.ConfigParser()
         config.read(CONF_TEMPLATE)
 
-        test_cmd = "sudo flink_path run -c test_class test.jar --ams.endpoint test_endpoint --ams.port test_port --ams.token test_token --ams.project test_project --ams.sub job_name --hdfs.path hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync --ams.batch 100 --ams.interval 3000"
+        test_cmd = "sudo flink_path run -c test_class test.jar --ams.endpoint test_endpoint --ams.port test_port --ams.token test_token --ams.project test_project --ams.sub job_name --hdfs.path hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync --ams.batch 100 --ams.interval 3000 --ams.proxy test_proxy --ams.verify true"
 
         parser = argparse.ArgumentParser()
         parser.add_argument('--Tenant')

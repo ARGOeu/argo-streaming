@@ -8,6 +8,7 @@ import logging
 from utils.argo_log import ArgoLogger
 from utils.common import cmd_toString, flink_job_submit
 
+
 def compose_command(config, args, sudo, logger=None):
 
     # job_namespace
@@ -95,6 +96,18 @@ def compose_command(config, args, sudo, logger=None):
     cmd_command.append("--ams.interval")
     cmd_command.append(config.get(tenant_job, "ams_interval"))
 
+    # ams proxy
+    if config.getboolean("AMS", "proxy_enabled"):
+        cmd_command.append("--ams.proxy")
+        cmd_command.append(config.get("AMS", "ams_proxy"))
+
+    # ssl verify
+    cmd_command.append("--ams.verify")
+    if config.getboolean("AMS", "ssl_enabled"):
+        cmd_command.append("true")
+    else:
+        cmd_command.append("false")
+
     return cmd_command, job_namespace
 
 
@@ -124,6 +137,7 @@ def main(args=None):
 
     # submit script's command
     flink_job_submit(config, logger, cmd_command, job_namespace)
+
 
 if __name__ == "__main__":
 

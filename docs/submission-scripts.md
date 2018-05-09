@@ -86,6 +86,8 @@ Status streaming job receives metric and sync data from AMS calculates and gener
 
 `-d : The date we want the job to run for. Format should be YYYY-MM-DDT:HH:MM:SSZ`
 
+`-t : long(ms) - controls default timeout for event regeneration (used in notifications)`
+
 ### Important
 
 - Sometimes connector data (metric profiles,endpoint,group endpoints,weights) appear delayed (in comparison with the metric data) or might be missing. We have a check mechanism that looks back (up to three days) for connector data that might be missing and uses that.
@@ -108,7 +110,7 @@ Specify where to find the flink executable and the job manager.
 The classes and jars needed for each job.
 
 [AMS]
-AMS port to connect to and endpoint where you find the service
+AMS port to connect to and endpoint where you find the service.Also whether or not a proxy should be used and ssl verification should happen.
 
 [TENANTS:]
 Token for each tenant to access the service
@@ -127,6 +129,7 @@ check_interval : interval for checkpointing (in ms)
 check_path : path to store flink checkpoints
 flink_parallelism: execution environment level
 ---Specific for stream-status job---
+use_mongo: Whether or not it should include mongo information
 outputs: the possible output dstination sepaarted by comma. For each destination, its respective  information should also be specififed.
 FOR the hbase output we need, the hbase endpoint, the hbase endpoint port, the zookeeper servers(comma separated list), the port used by the servers and the table namespace.
 FOR the kafka output we need the the kafka servers(comma separated list), and the topic.
