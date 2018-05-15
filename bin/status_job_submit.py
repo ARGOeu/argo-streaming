@@ -16,7 +16,7 @@ def compose_hdfs_commands(year, month, day, args, config, logger):
 
     # set up the hdfs client to be used in order to check the files
     client = Client(config.get("HDFS", "hdfs_host"), config.getint("HDFS", "hdfs_port"), use_trash=False)
-    
+
     # hdfs sync  path for the tenant
     hdfs_sync = config.get("HDFS", "hdfs_sync")
     hdfs_sync = hdfs_sync.replace("{{hdfs_host}}", config.get("HDFS", "hdfs_host"))
@@ -42,7 +42,7 @@ def compose_hdfs_commands(year, month, day, args, config, logger):
 
     # file location of report configuration json file (local or hdfs)
     hdfs_commands["--conf"] = hdfs_check_path(hdfs_sync+"/"+args.Tenant+"_"+args.Report+"_cfg.json", logger, client)
-    
+
     # file location of metric profile (local or hdfs)
     hdfs_commands["--mps"] = date_rollback(hdfs_sync+"/"+args.Report+"/"+"metric_profile_"+"{{date}}"+".avro", year, month, day, config, logger, client)
 
@@ -71,7 +71,7 @@ def compose_hdfs_commands(year, month, day, args, config, logger):
 
 
 def compose_command(config, args,  hdfs_commands, logger=None):
-    
+
     # job sumbission command
     cmd_command = []
 
@@ -110,15 +110,27 @@ def compose_command(config, args,  hdfs_commands, logger=None):
     if args.Method == "insert":
         argo_mongo_client = ArgoMongoClient(args, config, logger, ["status_metrics", "status_endpoints", "status_services", "status_endpoint_groups"])
         argo_mongo_client.mongo_clean_status(mongo_uri)
-    
+
     # MongoDB method to be used when storing the results, either insert or upsert
     cmd_command.append("--mongo.method")
     cmd_command.append(args.Method)
-    
+
     # add the hdfs commands
     for command in hdfs_commands:
         cmd_command.append(command)
         cmd_command.append(hdfs_commands[command])
+
+    # ams proxy
+    if config.getboolean("AMS", "proxy_enabled"):
+        cmd_command.append("--ams.proxy")
+        cmd_command.append(config.get("AMS", "ams_proxy"))
+
+    # ssl verify
+    cmd_command.append("--ams.verify")
+    if config.getboolean("AMS", "ssl_enabled"):
+        cmd_command.append("true")
+    else:
+        cmd_command.append("false")
 
     return cmd_command
 
@@ -155,7 +167,7 @@ def main(args=None):
 
     # dictionary containing the argument's name and the command assosciated with each name
     hdfs_commands = compose_hdfs_commands(year, month, day, args, config, logger)
-    
+
     cmd_command = compose_command(config, args, hdfs_commands, logger)
 
     logger.print_and_log(logging.INFO, "Getting ready to submit job")
@@ -164,7 +176,7 @@ def main(args=None):
     # submit the script's command
     flink_job_submit(config, logger, cmd_command)
 
-    
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Batch Status Job submit script")
