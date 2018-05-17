@@ -27,6 +27,7 @@ public class StatusConfig implements Serializable {
 	public String mps;
 	public String egp;
 	public String ops;
+	public String downtime;
 	// Parameter used in alert timeouts for notifications
 	public long timeout;
 	// Parameter used for daily event generation (not used in notifications)
@@ -48,6 +49,7 @@ public class StatusConfig implements Serializable {
 	   this.egp = pt.getRequired("sync.egp");
 	   this.ops = pt.getRequired("sync.ops");
 	   this.runDate = pt.getRequired("run.date");
+	   this.downtime = pt.getRequired("sync.downtime");
 	   // Optional timeout parameter
 	   if (pt.has("timeout")){
 		   this.timeout = pt.getLong("timeout");
