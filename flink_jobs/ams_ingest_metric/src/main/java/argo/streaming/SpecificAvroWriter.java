@@ -37,6 +37,7 @@ public class SpecificAvroWriter<T> extends StreamWriterBase<T> {
 	public void close() throws IOException {
 		if(outputWriter != null) {
 		      outputWriter.sync();
+		      outputWriter.close();
 		    }
 		    outputWriter = null;
 		    outputStream = null;
