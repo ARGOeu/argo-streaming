@@ -13,12 +13,15 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.hdfs.tools.DFSAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.TimeZone;
 
 import sync.AggregationProfileManager;
+import sync.DowntimeCache;
+import sync.DowntimeManager;
 import sync.EndpointGroupManagerV2;
 import sync.EndpointGroupManagerV2.EndpointItem;
 import sync.MetricProfileManager;
@@ -26,6 +29,7 @@ import ops.OpsManager;
 
 import com.google.gson.Gson;
 
+import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricProfile;
 
@@ -47,6 +51,9 @@ public class StatusManager {
 	AggregationProfileManager aps = new AggregationProfileManager();
 	OpsManager ops = new OpsManager();
 	private Long timeout = 86400000L;
+	
+	// Add downtime manager cache - 5 slots are enough for status manager case
+	private DowntimeCache dc = new DowntimeCache(5);
 
 	// Names of valid profiles and services used
 	String validMetricProfile;
@@ -85,6 +92,11 @@ public class StatusManager {
 		int status;
 		Date timestamp;
 		Date genTs;
+	}
+	
+	
+	public void addDowntimeSet(String dayStamp, ArrayList<Downtime> downList) {
+		this.dc.addFeed(dayStamp, downList);
 	}
 
 	/**
@@ -249,11 +261,16 @@ public class StatusManager {
 	 * @param opsJson
 	 *            operation profile contents
 	 */
-	public void loadAll(ArrayList<GroupEndpoint> egpList, ArrayList<MetricProfile> mpsList, String apsJson,
+	public void loadAll(String runDate, ArrayList<Downtime> downList, ArrayList<GroupEndpoint> egpList, ArrayList<MetricProfile> mpsList, String apsJson,
 			String opsJson) throws IOException {
 		aps.loadJsonString(apsJson);
 		ops.loadJsonString(opsJson);
 		mps.loadFromList(mpsList);
+		
+		// First downtime loaded in cache 
+		dc.addFeed(runDate, downList);
+		
+		
 		setValidProfileServices();
 		// Trim endpoint group list based on metric profile information (remove unwanted
 		// services)
@@ -282,7 +299,8 @@ public class StatusManager {
 	 * @param opsJson
 	 *            operation profile location
 	 */
-	public void loadAllFiles(File egpAvro, File mpsAvro, File apsJson, File opsJson) throws IOException {
+	public void loadAllFiles(String dayStamp, File downAvro, File egpAvro, File mpsAvro, File apsJson, File opsJson) throws IOException {
+		dc.addFileFeed(dayStamp, downAvro);
 		egp.loadAvro(egpAvro);
 		mps.loadAvro(mpsAvro);
 		aps.loadJson(apsJson);
@@ -528,6 +546,21 @@ public class StatusManager {
 		return false;
 		
 	}
+	
+	public boolean hasDowntime(String timestamp, String hostname, String service ) {
+		String dayStamp = timestamp.split("T")[0];
+		ArrayList<String> period = this.dc.getDowntimePeriod(dayStamp, hostname, service);
+		// if no period was found return immediately fals
+		if (period == null) return false;
+		
+		// else check if ts lower than period's start time (first element in array list)
+		if (timestamp.compareTo(period.get(0)) <0 ) return false;
+		// else check if ts higher than period's end time (second element in array list)
+		if (timestamp.compareTo(period.get(1)) > 0) return false;
+		
+		// else everything is ok and timestamp belongs inside element's downtime period
+		return true;
+	}
 
 	/**
 	 * setStatus accepts an incoming metric event and checks which entities are
@@ -573,6 +606,8 @@ public class StatusManager {
 		Date oldService;
 		Date oldEndpoint;
 		Date oldMetric;
+		
+		
 
 		// Open groups
 		groupNode = this.groups.get(group);
@@ -686,11 +721,14 @@ public class StatusManager {
 				}
 			}
 		}
-
-		
-
+		// If service host combination has downtime clear result set
+		if (hasDowntime(tsStr,hostname,service)){
+			LOG.info("Downtime encountered for group:{},service:{},host:{} - events will be discarded",group,service,hostname);
+			results.clear();
+		}
 		return results;
 	}
+
 
 	/**
 	 * Generates a status event

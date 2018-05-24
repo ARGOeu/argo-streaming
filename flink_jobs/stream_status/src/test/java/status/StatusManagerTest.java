@@ -6,13 +6,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.Iterator;
 
 
 
@@ -29,7 +25,6 @@ public class StatusManagerTest {
 	
 	public JsonObject getJSON (String jsonSTR) {
 		
-		Gson gson = new Gson();
 
 		// Gather message from json
 		JsonParser jsonParser = new JsonParser();
@@ -58,16 +53,16 @@ public class StatusManagerTest {
 
 		URL resMPSAvroFile = StatusManagerTest.class.getResource("/avro/poem_sync_2017_03_02.avro");
 		File avroMPSFile = new File(resMPSAvroFile.toURI());
+		
+		URL resDownAvroFile = StatusManagerTest.class.getResource("/avro/downtimes_03.avro");
+		File avroDownFile = new File(resDownAvroFile.toURI());
 
 		StatusManager sm = new StatusManager();
 		sm.report="Critical";
-		sm.loadAllFiles(avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
+		sm.loadAllFiles("2017-03-03", avroDownFile, avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
 
 		Date ts1 = sm.fromZulu("2017-03-03T00:00:00Z");
-		Date ts2 = sm.fromZulu("2017-03-03T05:00:00Z");
-		Date ts3 = sm.fromZulu("2017-03-03T09:00:00Z");
-		Date ts4 = sm.fromZulu("2017-03-03T15:00:00Z");
-
+		
 		sm.addNewGroup("GR-01-AUTH",sm.ops.getIntStatus("OK"), ts1);
 		ArrayList<String> list = sm.setStatus("GR-01-AUTH", "CREAM-CE", "cream01.grid.auth.gr", "emi.cream.CREAMCE-JobCancel",
 				"CRITICAL", "mon01.argo.eu", "2017-03-03T00:00:00Z","","");
@@ -241,15 +236,13 @@ public class StatusManagerTest {
 		ArrayList<String> elist07 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod05.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
 				"OK", "mon01.argo.eu", "2017-03-03T22:30:00Z","","");
 		
-		System.out.println(elist07.size());
-		System.out.println(sm);
+	
 		
 		assertTrue(elist07.size()==4);
 		j01 = getJSON(elist07.get(0));
 		j02 = getJSON(elist07.get(1));
 		j03 = getJSON(elist07.get(2));
 		j04 = getJSON(elist07.get(3));
-		
 		
 		
 		assertTrue(j01.get("type").getAsString().equals("metric"));
@@ -273,6 +266,20 @@ public class StatusManagerTest {
 		assertTrue(j03.get("status").getAsString().equals("OK"));
 		assertTrue(j03.get("status").getAsString().equals("OK"));
 
+		// downtime affected should not create events
+		sm.addNewGroup("GR-07-UOI-HEPLAB",sm.ops.getIntStatus("OK"), ts1);
+		ArrayList<String> elist08 = sm.setStatus("GR-07-UOI-HEPLAB", "CREAM-CE", "grid01.physics.uoi.gr", "emi.cream.CREAMCE-JobCancel", "CRITICAL", "mon01.argo.eu", "2017-03-03T22:45:00Z", "", "");
+		assertEquals(0,elist08.size());
+		
+		// downtime affected should not create events
+		sm.addNewGroup("ru-Moscow-FIAN-LCG2",sm.ops.getIntStatus("OK"), ts1);
+		ArrayList<String> elist09 = sm.setStatus("ru-Moscow-FIAN-LCG2", "Site-BDII", "ce1.grid.lebedev.ru", "org.bdii.Freshness", "CRITICAL", "mon01.argo.eu", "2017-03-03T22:55:00Z", "", "");
+		assertEquals(0,elist09.size());
+		
+		// not affected site-bdii should generate events
+		sm.addNewGroup("WUT",sm.ops.getIntStatus("OK"), ts1);
+		ArrayList<String> elist10 = sm.setStatus("WUT", "Site-BDII", "bdii.if.pw.edu.pl", "org.bdii.Freshness", "CRITICAL",  "mon01.argo.eu", "2017-03-03T23:00:00Z", "", "");
+		assertEquals(4,elist10.size());
 	}
 
 }

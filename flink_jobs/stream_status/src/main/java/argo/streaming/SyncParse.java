@@ -15,6 +15,7 @@ import org.apache.avro.specific.SpecificDatumReader;
 
 import com.google.gson.JsonElement;
 
+import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricProfile;
 
@@ -25,7 +26,7 @@ import argo.avro.MetricProfile;
 public class SyncParse {
 	
 	/**
-	 * Parses a byte arrray and decodes avro GroupEndpoint objects
+	 * Parses a byte array and decodes avro GroupEndpoint objects
 	 */
 	public static ArrayList<GroupEndpoint> parseGroupEndpoint(byte[] avroBytes) throws IOException{
 		
@@ -43,7 +44,7 @@ public class SyncParse {
 	}
 	
 	/**
-	 * Parses a byte arrray and decodes avro MetricProfile objects
+	 * Parses a byte array and decodes avro MetricProfile objects
 	 */
 	public static ArrayList<MetricProfile> parseMetricProfile(byte[] avroBytes) throws IOException{
 		
@@ -54,6 +55,24 @@ public class SyncParse {
 		
 		while (!decoder.isEnd()){
 			MetricProfile cur = avroReader.read(null, decoder);
+			result.add(cur);
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * Parses a byte array and decodes avro Downtime objects
+	 */
+	public static ArrayList<Downtime> parseDowntimes(byte[] avroBytes) throws IOException{
+		
+		ArrayList<Downtime> result = new ArrayList<Downtime>();
+		
+		DatumReader<Downtime> avroReader = new SpecificDatumReader<Downtime>(Downtime.getClassSchema(),Downtime.getClassSchema(),new SpecificData());
+		BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(avroBytes, null);
+		
+		while (!decoder.isEnd()){
+			Downtime cur = avroReader.read(null, decoder);
 			result.add(cur);
 		}
 		

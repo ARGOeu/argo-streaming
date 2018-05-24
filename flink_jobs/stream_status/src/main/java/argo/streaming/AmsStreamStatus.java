@@ -41,6 +41,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
@@ -62,6 +63,7 @@ import sync.MetricProfileManager;
  * --sync.egp          : endpoint-group file used for topology
  * --sync.aps          : availability profile used 
  * --sync.ops          : operations profile used
+ * --sync.downtimes    : initial downtime file (same for run date)
  * Job optional cli parameters:
  * --ams.batch         : num of messages to be retrieved per request to AMS service
  * --ams.interval      : interval (in ms) between AMS service requests
@@ -442,6 +444,7 @@ public class AmsStreamStatus {
 
 			String opsJSON = sd.readText(config.ops);
 			String apsJSON = sd.readText(config.aps);
+			ArrayList<Downtime> downList = sd.readDowntime(config.downtime);
 			ArrayList<MetricProfile> mpsList = sd.readMetricProfile(config.mps);
 			ArrayList<GroupEndpoint> egpListFull = sd.readGroupEndpoint(config.egp);
 
@@ -449,7 +452,7 @@ public class AmsStreamStatus {
 			sm = new StatusManager();
 			sm.setTimeout(config.timeout);
 			// load all the connector data
-			sm.loadAll(egpListFull, mpsList, apsJSON, opsJSON);
+			sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsJSON, opsJSON);
 
 			// Set the default status as integer
 			defStatus = sm.getOps().getIntStatus(config.defStatus);
@@ -530,7 +533,7 @@ public class AmsStreamStatus {
 					ArrayList<MetricProfile> mpsList = SyncParse.parseMetricProfile(decoded64);
 					sm.mps = new MetricProfileManager();
 					sm.mps.loadFromList(mpsList);
-				} else if (sType.equals("group_endpoint")) {
+				} else if (sType.equals("group_endpoints")) {
 					// Update egp
 					ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpoint(decoded64);
 
@@ -547,6 +550,11 @@ public class AmsStreamStatus {
 
 					sm.egp = new EndpointGroupManagerV2();
 					sm.egp.loadFromList(egpTrim);
+				} else if (sType.equals("downtimes") && attr.containsKey("partition_date")) {
+					String pDate = attr.get("partition_date");
+					ArrayList<Downtime> downList = SyncParse.parseDowntimes(decoded64);
+					// Update downtime cache in status manager
+					sm.addDowntimeSet(pDate, downList);
 				}
 			}
 
