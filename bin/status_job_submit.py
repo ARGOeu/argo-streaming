@@ -138,7 +138,6 @@ def compose_command(config, args,  hdfs_commands, logger=None):
 def main(args=None):
 
     # make sure the argument are in the correct form
-    args.Report = args.Report.capitalize()
     args.Tenant = args.Tenant.upper()
     args.Method = args.Method.lower()
 
