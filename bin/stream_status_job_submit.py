@@ -205,7 +205,7 @@ def main(args=None):
 
     # make sure the argument are in the correct form
     args.Tenant = args.Tenant.upper()
-    args.Report = args.Report.capitalize()
+    
 
     # set up the config parser
     config = ConfigParser.ConfigParser()
