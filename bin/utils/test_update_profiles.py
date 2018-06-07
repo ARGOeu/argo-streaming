@@ -61,7 +61,7 @@ class TestClass(unittest.TestCase):
              "expected": "https://foo.host/api/v2/aggregation_profiles"},
             {"resource": "aggregations", "item_uuid": "12",
              "expected": "https://foo.host/api/v2/aggregation_profiles/12"}
-        ]
+            ]
 
         for test_case in test_cases:
             actual = argo_api.get_url(test_case["resource"], test_case["item_uuid"])
