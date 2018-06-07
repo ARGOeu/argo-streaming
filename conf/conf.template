@@ -1,9 +1,9 @@
 [HDFS]
 # hdfs namenode host
 hdfs_host: hdfs_test_host
-# hdfs namenode port 
+# hdfs namenode port
 hdfs_port: hdfs_test_port
-# hdfs user 
+# hdfs user
 hdfs_user: hdfs_test_user
 # hdfs rollback days:
 rollback_days: 3
@@ -12,8 +12,19 @@ hdfs_metric: hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/
 # hdfs path for sync data
 hdfs_sync: hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/sync
 
+# hdfs writer executable
+writer_bin: /path/to/binary
+
+[API]
+host = api.foo
+tenants = TA,TB,TC
+TA_key = key1
+TB_key = key2
+TC_key = key3
+
+
 [LOGS]
-# log handlers to support 
+# log handlers to support
 log_modes: console,syslog,file
 # global log level
 log_level: info
@@ -23,7 +34,7 @@ syslog_level: critical
 file_level: warning
 # specific level for console handler
 console_level: info
-# socket for syslog handler 
+# socket for syslog handler
 syslog_socket: /dev/log
 # path for file handler
 file_path:
@@ -31,7 +42,7 @@ file_path:
 [FLINK]
 # path for flink executable
 path: flink_path
-# url for flink job manager 
+# url for flink job manager
 job_manager:
 
 [JOB-NAMESPACE]
@@ -43,7 +54,7 @@ ingest-sync-namespace: Ingesting sync data from {{ams_endpoint}}:{{ams_port}}/v1
 stream-status-namespace: Streaming status using data {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/[{{ams_sub_metric}}, {{ams_sub_sync}}]
 
 [CLASSES]
-# Specify class to run during job submit 
+# Specify class to run during job submit
 ams-ingest-metric: test_class
 ams-ingest-sync: test_class
 batch-ar: test_class
@@ -51,7 +62,7 @@ batch-status: test_class
 stream-status: test_class
 
 [JARS]
-# Specify jar to run during job submit 
+# Specify jar to run during job submit
 ams-ingest-metric: test.jar
 ams-ingest-sync: test.jar
 batch-ar: test.jar
@@ -60,7 +71,7 @@ stream-status: test.jar
 
 
 [AMS]
-# AMS service port 
+# AMS service port
 ams_port: test_port
 # Ams service endpoint
 ams_endpoint: test_endpoint

@@ -10,7 +10,7 @@ from urlparse import urlparse
 from utils.argo_log import ArgoLogger
 from utils.argo_mongo import ArgoMongoClient
 from utils.common import cmd_toString, date_rollback, flink_job_submit, hdfs_check_path
-
+from utils.update_profiles import ArgoProfileManager
 
 def compose_hdfs_commands(year, month, day, args, config, logger):
 
@@ -163,6 +163,10 @@ def main(args=None):
     # check if configuration for the given tenant exists
     if not config.has_section("TENANTS:"+args.Tenant):
         logger.print_and_log(logging.CRITICAL, "Tenant: "+args.Tenant+" doesn't exist.", 1)
+
+    # call update profiles
+    profile_mgr = ArgoProfileManager(args.ConfigPath)
+    profile_mgr.profile_update_check(args.Tenant, args.Report)
 
     # dictionary containing the argument's name and the command assosciated with each name
     hdfs_commands = compose_hdfs_commands(year, month, day, args, config, logger)
