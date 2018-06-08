@@ -36,7 +36,8 @@ class ArgoApiClient:
         self.tenant_keys = tenant_keys
         self.paths.update({
             'reports': '/api/v2/reports',
-            'operations': '/api/v2/operations_profiles'
+            'operations': '/api/v2/operations_profiles',
+            'aggregations': '/api/v2/aggregation_profiles'
         })
 
     def get_url(self, resource, item_uuid):
@@ -232,6 +233,7 @@ class HdfsReader:
 
         """
         path = self.gen_profile_path(tenant, report, profile_type)
+
         try:
             self.client.delete([path]).next()
             return True
@@ -314,6 +316,7 @@ class ArgoProfileManager:
             bool: if the operation was successful or not
 
         """
+
         # If file exists on hdfs should be removed first
         if exists:
             is_removed = self.hdfs.rem(tenant, report, profile_type)
@@ -438,7 +441,7 @@ def run_profile_update(args):
     argo = ArgoProfileManager(args.config)
 
     # check for the following profile types -- now just operations
-    profile_type_checklist = ["operations"]
+    profile_type_checklist = ["operations", "aggregations"]
     for profile_type in profile_type_checklist:
         argo.profile_update_check(args.tenant, args.report, profile_type)
 

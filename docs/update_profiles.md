@@ -5,12 +5,18 @@ These profiles are essential for computing a/r and status results during flink-j
 automatically by connectors. Profiles include:
 - operations_profile: `TENANT_ops.json` which includes truth tables about the fundamental aggregation operations applied
   on monitor status timelines (such as 'AND', 'OR' .etc between statuses of 'OK', 'WARNING', 'CRITICAL', 'MISSING' etc.)
+- aggergations_profile: `TENANT_REPORT_aps.json` which includes information on what operations ('AND','OR') and how are 
+  applied on different service levels
 
-Each report uses an operation profile. The operation profile is defined also in argo-web-api instance at the following url
+Each report uses an operations profile. The operation profile is defined also in argo-web-api instance at the following url
 `GET https://argo-web-api.host.example/api/v2/operations_profiles/{{profile_uuid}}`
 
-Providing a specific `tenant` and a specific `report`, script `update_profiles` checks corresponding hdfs ops profile against
-latest ops profile provided by argo-web-api. If they don't match it uploads the latest argo-web-api ops definition in hdfs
+Each report uses an aggregation profile. The aggregation profile is defined also in argo-web-api instance at the following url
+`GET https://argo-web-api.host.example/api/v2/aggregation_profiles/{{profile_uuid}}`
+
+
+Providing a specific `tenant` and a specific `report`, script `update_profiles` checks corresponding profiles on hdfs  against
+latest profiles provided by argo-web-api. If they don't match it uploads the latest argo-web-api profile definition in hdfs
 
 # Submission scripts automatic invoke
 Script logic is programmatically called in a/r and status job submission scripts
