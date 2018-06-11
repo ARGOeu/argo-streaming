@@ -278,6 +278,7 @@ class ArgoProfileManager:
         Args:
             tenant: str. Tenant name to check profiles from
             report: str. Report name to check profiles from
+            profile_type: str. Name of the profile type used (operations|aggregations|reports)
         """
 
         prof_api = self.api.get_profile(tenant, report, profile_type)
@@ -440,8 +441,8 @@ def run_profile_update(args):
     # Set a new profile manager to be used
     argo = ArgoProfileManager(args.config)
 
-    # check for the following profile types -- now just operations
-    profile_type_checklist = ["operations", "aggregations"]
+    # check for the following profile types
+    profile_type_checklist = ["operations", "aggregations", "reports"]
     for profile_type in profile_type_checklist:
         argo.profile_update_check(args.tenant, args.report, profile_type)
 
