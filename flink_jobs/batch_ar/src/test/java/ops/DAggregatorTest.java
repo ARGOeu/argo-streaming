@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
-
+import java.util.Arrays;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -126,7 +126,7 @@ public class DAggregatorTest {
 
 		dAgg.settleAll(opsMgr.getIntStatus("MISSING"));
 		dAgg.aggregate("AND", opsMgr);
-
+		System.out.println(Arrays.toString(dAgg.aggregation.samples));
 		assertArrayEquals("Aggregation test 3", expected, dAgg.aggregation.samples);
 
 	}
