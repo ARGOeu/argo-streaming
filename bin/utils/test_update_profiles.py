@@ -56,7 +56,11 @@ class TestClass(unittest.TestCase):
             {"resource": "operations", "item_uuid": None,
              "expected": "https://foo.host/api/v2/operations_profiles"},
             {"resource": "operations", "item_uuid": "12",
-             "expected": "https://foo.host/api/v2/operations_profiles/12"}
+             "expected": "https://foo.host/api/v2/operations_profiles/12"},
+            {"resource": "aggregations", "item_uuid": None,
+             "expected": "https://foo.host/api/v2/aggregation_profiles"},
+            {"resource": "aggregations", "item_uuid": "12",
+             "expected": "https://foo.host/api/v2/aggregation_profiles/12"}
         ]
 
         for test_case in test_cases:
