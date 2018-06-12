@@ -80,6 +80,7 @@ public class CreateEndpointGroupTimeline extends RichGroupReduceFunction<MonTime
 		this.ops = getRuntimeContext().getBroadcastVariable("ops");
 		this.egp = getRuntimeContext().getBroadcastVariable("egp");
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
+		this.rec = getRuntimeContext().getBroadcastVariable("rec");
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
 		this.mpsMgr.loadFromList(mps);
