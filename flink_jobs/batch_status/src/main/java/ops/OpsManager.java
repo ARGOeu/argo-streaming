@@ -161,11 +161,11 @@ public class OpsManager {
 			JsonParser json_parser = new JsonParser();
 			JsonElement j_element = json_parser.parse(br);
 			JsonObject j_obj = j_element.getAsJsonObject();
-			JsonArray j_states = j_obj.getAsJsonArray("states");
-			JsonObject j_ops = j_obj.getAsJsonObject("operations");
-			this.defaultMissingState = j_obj.getAsJsonPrimitive("default_missing").getAsString();
-			this.defaultDownState = j_obj.getAsJsonPrimitive("default_down").getAsString();
-			this.defaultUnknownState = j_obj.getAsJsonPrimitive("default_unknown").getAsString();
+			JsonArray j_states = j_obj.getAsJsonArray("available_states");
+			JsonArray j_ops = j_obj.getAsJsonArray("operations");
+			this.defaultMissingState = j_obj.getAsJsonObject("defaults").getAsJsonPrimitive("missing").getAsString();
+			this.defaultDownState = j_obj.getAsJsonObject("defaults").getAsJsonPrimitive("down").getAsString();
+			this.defaultUnknownState = j_obj.getAsJsonObject("defaults").getAsJsonPrimitive("unknown").getAsString();
 			// Collect the available states
 			for (int i = 0; i < j_states.size(); i++) {
 				this.states.put(j_states.get(i).getAsString(), i);
@@ -175,9 +175,10 @@ public class OpsManager {
 
 			// Collect the available operations
 			int i = 0;
-			for (Entry<String, JsonElement> item : j_ops.entrySet()) {
-				this.ops.put(item.getKey(), i);
-				this.revOps.add(item.getKey());
+			for (JsonElement item : j_ops) {
+				JsonObject jObjItem = item.getAsJsonObject();
+				this.ops.put(jObjItem.getAsJsonPrimitive("name").getAsString(), i);
+				this.revOps.add(jObjItem.getAsJsonPrimitive("name").getAsString());
 				i++;
 			}
 			// Initialize the truthtable
@@ -192,18 +193,19 @@ public class OpsManager {
 			}
 
 			// Fill the truth table
-			for (Entry<String, JsonElement> item : j_ops.entrySet()) {
-				String opname = item.getKey();
-				JsonArray tops = item.getValue().getAsJsonArray();
+			for (JsonElement item : j_ops) {
+				JsonObject jObjItem = item.getAsJsonObject();
+				String opname = jObjItem.getAsJsonPrimitive("name").getAsString();
+				JsonArray tops = jObjItem.getAsJsonArray("truth_table");
 				// System.out.println(tops);
 
 				for (int j = 0; j < tops.size(); j++) {
 					// System.out.println(opname);
 					JsonObject row = tops.get(j).getAsJsonObject();
 
-					int a_val = this.states.get(row.getAsJsonPrimitive("A").getAsString());
-					int b_val = this.states.get(row.getAsJsonPrimitive("B").getAsString());
-					int x_val = this.states.get(row.getAsJsonPrimitive("X").getAsString());
+					int a_val = this.states.get(row.getAsJsonPrimitive("a").getAsString());
+					int b_val = this.states.get(row.getAsJsonPrimitive("b").getAsString());
+					int x_val = this.states.get(row.getAsJsonPrimitive("x").getAsString());
 					int op_val = this.ops.get(opname);
 
 					// Fill in truth table
@@ -241,11 +243,11 @@ public class OpsManager {
 			// Grab the first - and only line of json from ops data
 			JsonElement j_element = json_parser.parse(opsJson.get(0));
 			JsonObject j_obj = j_element.getAsJsonObject();
-			JsonArray j_states = j_obj.getAsJsonArray("states");
-			JsonObject j_ops = j_obj.getAsJsonObject("operations");
-			this.defaultMissingState = j_obj.getAsJsonPrimitive("default_missing").getAsString();
-			this.defaultDownState = j_obj.getAsJsonPrimitive("default_down").getAsString();
-			this.defaultUnknownState = j_obj.getAsJsonPrimitive("default_unknown").getAsString();
+			JsonArray j_states = j_obj.getAsJsonArray("available_states");
+			JsonArray j_ops = j_obj.getAsJsonArray("operations");
+			this.defaultMissingState = j_obj.getAsJsonObject("defaults").getAsJsonPrimitive("missing").getAsString();
+			this.defaultDownState = j_obj.getAsJsonObject("defaults").getAsJsonPrimitive("down").getAsString();
+			this.defaultUnknownState = j_obj.getAsJsonObject("defaults").getAsJsonPrimitive("unknown").getAsString();
 			// Collect the available states
 			for (int i = 0; i < j_states.size(); i++) {
 				this.states.put(j_states.get(i).getAsString(), i);
@@ -255,9 +257,10 @@ public class OpsManager {
 
 			// Collect the available operations
 			int i = 0;
-			for (Entry<String, JsonElement> item : j_ops.entrySet()) {
-				this.ops.put(item.getKey(), i);
-				this.revOps.add(item.getKey());
+			for (JsonElement item : j_ops) {
+				JsonObject jObjItem = item.getAsJsonObject();
+				this.ops.put(jObjItem.getAsJsonPrimitive("name").getAsString(), i);
+				this.revOps.add(jObjItem.getAsJsonPrimitive("name").getAsString());
 				i++;
 			}
 			// Initialize the truthtable
@@ -272,18 +275,19 @@ public class OpsManager {
 			}
 
 			// Fill the truth table
-			for (Entry<String, JsonElement> item : j_ops.entrySet()) {
-				String opname = item.getKey();
-				JsonArray tops = item.getValue().getAsJsonArray();
+			for (JsonElement item : j_ops) {
+				JsonObject jObjItem = item.getAsJsonObject();
+				String opname = jObjItem.getAsJsonPrimitive("name").getAsString();
+				JsonArray tops = jObjItem.getAsJsonArray("truth_table");
 				// System.out.println(tops);
 
 				for (int j = 0; j < tops.size(); j++) {
 					// System.out.println(opname);
 					JsonObject row = tops.get(j).getAsJsonObject();
 
-					int a_val = this.states.get(row.getAsJsonPrimitive("A").getAsString());
-					int b_val = this.states.get(row.getAsJsonPrimitive("B").getAsString());
-					int x_val = this.states.get(row.getAsJsonPrimitive("X").getAsString());
+					int a_val = this.states.get(row.getAsJsonPrimitive("a").getAsString());
+					int b_val = this.states.get(row.getAsJsonPrimitive("b").getAsString());
+					int x_val = this.states.get(row.getAsJsonPrimitive("x").getAsString());
 					int op_val = this.ops.get(opname);
 
 					// Fill in truth table
