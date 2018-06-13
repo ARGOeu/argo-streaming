@@ -14,11 +14,13 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.minlog.Log;
+
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
-
+import ops.ConfigManager;
 import sync.AggregationProfileManager;
 import sync.EndpointGroupManager;
 import sync.GroupGroupManager;
@@ -29,7 +31,7 @@ import sync.RecomputationManager;
  * Accepts a metric data entry and converts it to a status metric object by appending endpoint group information
  * Filters out entries that do not appear in topology and metric profiles
  */
-public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
+public class PickEndpoints extends RichFlatMapFunction<MetricData,MonData> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -47,11 +49,13 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 	private List<GroupGroup> ggp;
 	private List<String> apr;
 	private List<String> rec;
+	private List<String> conf;
 	private MetricProfileManager mpsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
 	private AggregationProfileManager aprMgr;
 	private RecomputationManager recMgr;
+	private ConfigManager confMgr;
 	
 	private String egroupType;
 
@@ -72,6 +76,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
 		this.apr = getRuntimeContext().getBroadcastVariable("apr");
 		this.rec = getRuntimeContext().getBroadcastVariable("rec");
+		this.conf = getRuntimeContext().getBroadcastVariable("conf");
 		
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
@@ -91,16 +96,20 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 		this.recMgr = new RecomputationManager();
 		this.recMgr.loadJsonString(rec);
 		
+		// Initialize Configurations Manager;
+		this.confMgr = new ConfigManager();
+		this.confMgr.loadJsonString(conf);
+		
 		// Initialize endpoint group type
-		this.egroupType = params.getRequired("egroup.type");
+		this.egroupType = this.confMgr.egroup;
 	}
 
 	
 	/**
 	 * The main operator business logic of filtering a collection of MetricData
 	 * <p>
-	 * This runs for a dataset of Metric data items and returns a collection of approoved MetricData items after filtering out the 
-	 * unwated ones. 
+	 * This runs for a dataset of Metric data items and returns a collection of MonData items after filtering out the 
+	 * unwanted ones. 
 	 * The filtering happens in 5 stages:
 	 * 1) Filter out by checking if monitoring engine is excluded (Recomputation Manager used)
 	 * 2) Filter out by checking if service belongs to aggregation profile (Aggregation Profile Manager used)
@@ -109,10 +118,10 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 	 * 5) Filter out by checking if group endpoint belongs to a valid upper group (Group of Groups Manager used)
 	 *
 	 * @param	in	An Iterable collection of MetricData objects
-	 * @param	out	A Collector list of valid MetricData objects after filtering
+	 * @param	out	A Collector list of valid MonData objects after filtering
 	 */
 	@Override
-	public void flatMap(MetricData md, Collector<MetricData> out) throws Exception {
+	public void flatMap(MetricData md, Collector<MonData> out) throws Exception {
 
 		String prof = mpsMgr.getProfiles().get(0);
 		String aprof = aprMgr.getAvProfiles().get(0);
@@ -139,8 +148,21 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MetricData> {
 		ArrayList<String> groupnames = egpMgr.getGroup(egroupType, hostname, service);
 		
 		for (String groupname : groupnames) {
+			
 			if (ggpMgr.checkSubGroup(groupname) == true){
-				out.collect(md);
+				MonData mn = new MonData();
+				mn.setGroup(groupname);
+				mn.setHostname(hostname);
+				mn.setService(service);
+				mn.setMetric(metric);
+				mn.setMonHost(monHost);
+				mn.setStatus(md.getStatus());
+				mn.setTimestamp(ts);
+				mn.setMessage(md.getMessage());
+				mn.setSummary(md.getSummary());
+
+				
+				out.collect(mn);
 			}
 				
 				

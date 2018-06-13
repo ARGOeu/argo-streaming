@@ -27,7 +27,7 @@ public class EndpointGroupsTest {
 		URL resAvroFile = EndpointGroupsTest.class.getResource("/avro/group_endpoints_v2.avro");
 		File avroFile = new File(resAvroFile.toURI());
 		// Instatiate class
-		EndpointGroups ge = new EndpointGroups();
+		EndpointGroupManager ge = new EndpointGroupManager();
 		// Test loading file 2
 		ge.loadAvro(avroFile);
 		assertNotNull("File Loaded", ge);

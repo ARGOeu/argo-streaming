@@ -17,6 +17,7 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import ops.ConfigManager;
 import ops.DTimeline;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
@@ -25,10 +26,10 @@ import sync.GroupGroupManager;
 import sync.MetricProfileManager;
 
 /**
- * Accepts a list of metric data objects and produces a metric timeline
+ * Accepts a list of Mon Data objects and produces a metric timeline
  * The class is used as a RichGroupReduce Function in flink pipeline
  */
-public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, MonTimeline> {
+public class CreateMetricTimeline extends RichGroupReduceFunction<MonData, MonTimeline> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -45,11 +46,13 @@ public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, Mo
 	private List<String> ops;
 	private List<GroupEndpoint> egp;
 	private List<GroupGroup> ggp;
+	private List<String> conf;
 	private MetricProfileManager mpsMgr;
 	private AggregationProfileManager apsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
 	private OpsManager opsMgr;
+	private ConfigManager confMgr;
 	private String runDate;
 	private String egroupType;
 
@@ -74,6 +77,7 @@ public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, Mo
 		this.ops = getRuntimeContext().getBroadcastVariable("ops");
 		this.egp = getRuntimeContext().getBroadcastVariable("egp");
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
+		this.conf = getRuntimeContext().getBroadcastVariable("conf"); 
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
 		this.mpsMgr.loadFromList(mps);
@@ -91,28 +95,31 @@ public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, Mo
 
 		this.ggpMgr = new GroupGroupManager();
 		this.ggpMgr.loadFromList(ggp);
+		
+		this.confMgr = new ConfigManager();
+		this.confMgr.loadJsonString(conf);
 
 		this.runDate = params.getRequired("run.date");
-		this.egroupType = params.getRequired("egroup.type");
+		this.egroupType = confMgr.egroup;
 
 	
 
 	}
 
 	/**
-	 * The main operator buisness logic of transforming a collection of MetricData to a metric timeline
+	 * The main operator buisness logic of transforming a collection of MonData to a metric timeline
 	 * <p>
-	 * This runs for each group item (endpointGroup,service,hostname,metric) and contains a list of metric data objects sorted
+	 * This runs for each group item (endpointGroup,service,hostname,metric) and contains a list of MonData objects sorted
 	 * by the "timestamp" field. It uses a Discrete Timeline object to map individual status change points in time to an array of statuses.
 	 * The Discrete timeline automatically fills the gaps between the status changes to produce a full array of status points representing
 	 * the discrete timeline. Notice that status values are mapped from string representations to integer ids ("OK" => 0, "CRITICAL" => 4)
 	 * for more efficient processing during aggregation comparisons.
 	 *
-	 * @param	in	An Iterable collection of MetricData objects
+	 * @param	in	An Iterable collection of MonData objects
 	 * @param	out	A Collector list of MonTimeline to acquire the produced metric timelines. 
 	 */
 	@Override
-	public void reduce(Iterable<MetricData> in, Collector<MonTimeline> out) throws Exception {
+	public void reduce(Iterable<MonData> in, Collector<MonTimeline> out) throws Exception {
 
 		String service = "";
 		String endpointGroup = "";
@@ -121,21 +128,15 @@ public class CreateMetricTimeline extends RichGroupReduceFunction<MetricData, Mo
 
 		DTimeline dtl = new DTimeline();
 
-		for (MetricData item : in) {
+		for (MonData item : in) {
 
 			service = item.getService();
 			hostname = item.getHostname();
 			metric = item.getMetric();
 
-			// Filter By endpoint group if belongs to supergroup
-			ArrayList<String> groupnames = egpMgr.getGroup(egroupType, hostname, service);
+			
+			endpointGroup = item.getGroup();
 
-			for (String groupname : groupnames) {
-				if (ggpMgr.checkSubGroup(groupname) == true) {
-					endpointGroup = groupname;
-				}
-
-			}
 
 			String ts = item.getTimestamp();
 			String status = item.getStatus();

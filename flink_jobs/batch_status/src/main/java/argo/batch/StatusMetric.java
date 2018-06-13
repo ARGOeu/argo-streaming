@@ -10,9 +10,10 @@ public class StatusMetric {
 	private String metric;
 	private String status;
 	private String timestamp;
-	
 	private int dateInt;
 	private int timeInt;
+	private String summary;
+	private String message;
 	private String prevState;
 	private String prevTs;
 	
@@ -25,12 +26,14 @@ public class StatusMetric {
 		this.timestamp = "";
 		this.dateInt = 0;
 		this.timeInt =0;
+		this.summary = "";
+		this.message = "";
 		this.prevState = "";
 		this.prevTs = "";
 	}
 	
 	public StatusMetric(String group, String service, String hostname, String metric, String status, String timestamp,
-			int dateInt, int timeInt, String prevState, String prevTs) {
+			int dateInt, int timeInt, String summary, String message, String prevState, String prevTs) {
 		
 		this.group = group;
 		this.service = service;
@@ -40,6 +43,8 @@ public class StatusMetric {
 		this.timestamp = timestamp;
 		this.dateInt = dateInt;
 		this.timeInt = timeInt;
+		this.summary = summary;
+		this.message = message;
 		this.prevState = prevState;
 		this.prevTs = prevTs;
 	}
@@ -93,6 +98,23 @@ public class StatusMetric {
 	public void setTimeInt(int timeInt) {
 		this.timeInt = timeInt;
 	}
+	
+	public String getSummary() {
+		return summary;
+	}
+	
+	public void setSummary(String summary) {
+		this.summary = summary;
+	}
+	
+	public String getMessage() {
+		return message;
+	}
+	
+	public void setMessage(String message) {
+		this.message = message;
+	}
+	
 	public String getPrevState() {
 		return prevState;
 	}

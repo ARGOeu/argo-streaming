@@ -1,0 +1,152 @@
+[HDFS]
+# hdfs namenode host
+hdfs_host: hdfs_test_host
+# hdfs namenode port
+hdfs_port: hdfs_test_port
+# hdfs user
+hdfs_user: hdfs_test_user
+# hdfs rollback days:
+rollback_days: 3
+# hdfs path for metric data
+hdfs_metric: hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/mdata
+# hdfs path for sync data
+hdfs_sync: hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/sync
+
+# hdfs writer executable
+writer_bin: /path/to/binary
+
+[API]
+host = api.foo
+tenants = TA,TB,TC
+TA_key = key1
+TB_key = key2
+TC_key = key3
+
+
+[LOGS]
+# log handlers to support
+log_modes: console,syslog,file
+# global log level
+log_level: info
+# specific level for syslog handler
+syslog_level: critical
+# specific level for file handler
+file_level: warning
+# specific level for console handler
+console_level: info
+# socket for syslog handler
+syslog_socket: /dev/log
+# path for file handler
+file_path:
+
+[FLINK]
+# path for flink executable
+path: flink_path
+# url for flink job manager
+job_manager:
+
+[JOB-NAMESPACE]
+# Template to check if a metric job with similar name already runs
+ingest-metric-namespace: Ingesting data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/{{ams_sub}}
+# Template to check if a sync job with similar name already runs
+ingest-sync-namespace: Ingesting sync data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/{{ams_sub}}
+#Template to check if a stream status job with similar name already runs
+stream-status-namespace: Streaming status using data {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/[{{ams_sub_metric}}, {{ams_sub_sync}}]
+
+[CLASSES]
+# Specify class to run during job submit
+ams-ingest-metric: test_class
+ams-ingest-sync: test_class
+batch-ar: test_class
+batch-status: test_class
+stream-status: test_class
+
+[JARS]
+# Specify jar to run during job submit
+ams-ingest-metric: test.jar
+ams-ingest-sync: test.jar
+batch-ar: test.jar
+batch-status: test.jar
+stream-status: test.jar
+
+
+[AMS]
+# AMS service port
+ams_port: test_port
+# Ams service endpoint
+ams_endpoint: test_endpoint
+# Ams proxy
+proxy_enabled: true
+ams_proxy:test_proxy
+# Verify ssl
+ssl_enabled: true
+
+# Tenant General Configuration
+[TENANTS:TENANTA]
+# Map tenant to AMS project
+ams_project:test_project
+# Tenant's AMS token
+ams_token:test_token
+
+# report names per tenant
+[TENANTS:TENANTA:REPORTS]
+# report UUID
+report_name : report_uuid
+
+# tenant specific mongo configuration
+[TENANTS:TENANTA:MONGO]
+# mongo host
+mongo_host: mongo_test_host
+# mongo port
+mongo_port: mongo_test_port
+# mongo uri for batch ar
+mongo_uri: mongodb://{{mongo_host}}:{{mongo_port}}/argo_TENANTA
+
+# Tenant-job specific configuration
+[TENANTS:TENANTA:ingest-metric]
+# AMS subscription for ingesting data
+ams_sub: job_name
+# Interval between each ingestion request
+ams_interval: 300
+# Max number of messages to ingest each time
+ams_batch: 100
+# Path to save flink checkpoint
+checkpoint_path:test_path
+# Interval between flink checkpoints
+checkpoint_interval: 30000
+[TENANTS:TENANTA:ingest-sync]
+ams_sub: job_name
+ams_interval: 3000
+ams_batch: 100
+[TENANTS:TENANTA:stream-status]
+# whether or not it should also include mongo information(it will access the section TENANTS:TENANTA:MONGO)
+use_mongo:true
+mongo_method:upsert
+ams_batch: test_batch
+ams_interval: test_interval
+# ARGO messaging subscription to pull metric data from
+ams.sub.metric: metric_status
+# ARGO messaging subscription to pull sync data from
+ams.sub.sync: sync_status
+#hbase endpoint
+hbase.master: hbase.devel
+# hbase master port
+hbase.master.port: test_hbase_port
+# comma separated list of hbase zookeeper servers
+hbase.zk.quorum: test_zk_servers
+# port used by hbase zookeeper servers
+hbase.zk.port: test_zk_port
+# table namespace used (usually tenant name)
+hbase.namespace: test_hbase_namespace
+# table name (usually metric_data)
+hbase.table: metric_data
+# Kafka server list to connect to
+kafka.servers: test_kafka_servers
+# Kafka topic to send status events to
+kafka.topic: test_kafka_topic
+# filesystem path for output (prefix with "hfds://" for hdfs usage)
+fs.output: test_fs_output
+# flink parallelism for specific tenant and job(execution environment level)
+flink_parallelism: 1
+# different output destinations for the results
+outputs: hbase,kafka,fs

@@ -18,6 +18,7 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import ops.ConfigManager;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
 import sync.EndpointGroupManager;
@@ -46,10 +47,12 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 	private List<GroupEndpoint> egp;
 	private List<GroupGroup> ggp;
 	private List<String> rec;
+	private List<String> cfg;
 	private MetricProfileManager mpsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
 	private RecomputationsManager recMgr;
+	private ConfigManager cfgMgr;
 	
 	private String egroupType;
 
@@ -61,6 +64,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
 		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
 		this.rec = getRuntimeContext().getBroadcastVariable("rec");
+		this.cfg = getRuntimeContext().getBroadcastVariable("conf");
 		
 		// Initialize Recomputation manager
 		this.recMgr = new RecomputationsManager();
@@ -75,8 +79,12 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		
 		this.ggpMgr = new GroupGroupManager();
 		this.ggpMgr.loadFromList(ggp);
-		// Initialize endpoint group type
-		this.egroupType = params.getRequired("egroup.type");
+		
+		// Initialize report configuration manager
+		this.cfgMgr = new ConfigManager();
+		this.cfgMgr.loadJsonString(cfg);
+		
+		this.egroupType = cfgMgr.egroup;
 	}
 
 	
@@ -110,7 +118,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 				int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
 				int timeInt = Integer.parseInt(tsToken[1].replace(":",""));
 				
-				StatusMetric sm = new StatusMetric(groupname,md.getService(),md.getHostname(),md.getMetric(), md.getStatus(),md.getTimestamp(),dateInt,timeInt,"","");
+				StatusMetric sm = new StatusMetric(groupname,md.getService(),md.getHostname(),md.getMetric(), md.getStatus(),md.getTimestamp(),dateInt,timeInt,md.getSummary(),md.getMessage(),"","");
 				
 				out.collect(sm);
 			}

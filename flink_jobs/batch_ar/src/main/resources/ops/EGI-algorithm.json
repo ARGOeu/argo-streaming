@@ -1,7 +1,7 @@
 {
-  
-  "states":
-  [
+  "id": "1b0318f0-429d-44fc-8bba-07184354c73b",
+  "name": "egi_ops",
+  "available_states": [
     "OK",
     "WARNING",
     "UNKNOWN",
@@ -9,62 +9,231 @@
     "CRITICAL",
     "DOWNTIME"
   ],
-  
-  "default_down": "DOWNTIME",
-  "default_missing": "MISSING",
-  "default_unknown": "UNKNOWN",
-  
-  "operations":
-  {
-    "AND":
-    [
-      { "A":"OK",       "B":"OK",       "X":"OK"       },
-      { "A":"OK",       "B":"WARNING",  "X":"WARNING"  },
-      { "A":"OK",       "B":"UNKNOWN",  "X":"UNKNOWN"  },
-      { "A":"OK",       "B":"MISSING",  "X":"MISSING"  },
-      { "A":"OK",       "B":"CRITICAL", "X":"CRITICAL" },
-      { "A":"OK",       "B":"DOWNTIME", "X":"DOWNTIME" },
-      { "A":"WARNING",  "B":"WARNING",  "X":"WARNING"  },
-      { "A":"WARNING",  "B":"UNKNOWN",  "X":"UNKNOWN"  },
-      { "A":"WARNING",  "B":"MISSING",  "X":"MISSING"  },
-      { "A":"WARNING",  "B":"CRITICAL", "X":"CRITICAL" },
-      { "A":"WARNING",  "B":"DOWNTIME", "X":"DOWNTIME" },
-      { "A":"UNKNOWN",  "B":"UNKNOWN",  "X":"UNKNOWN"  },
-      { "A":"UNKNOWN",  "B":"MISSING",  "X":"MISSING"  },
-      { "A":"UNKNOWN",  "B":"CRITICAL", "X":"CRITICAL" },
-      { "A":"UNKNOWN",  "B":"DOWNTIME", "X":"DOWNTIME" },
-      { "A":"MISSING",  "B":"MISSING",  "X":"MISSING"  },
-      { "A":"MISSING",  "B":"CRITICAL", "X":"CRITICAL" },
-      { "A":"MISSING",  "B":"DOWNTIME", "X":"DOWNTIME" },
-      { "A":"CRITICAL", "B":"CRITICAL", "X":"CRITICAL" },
-      { "A":"CRITICAL", "B":"DOWNTIME", "X":"DOWNTIME" },
-      { "A":"DOWNTIME", "B":"DOWNTIME", "X":"DOWNTIME" }
-
-    ],
-    
-    "OR":
-    [
-      { "A":"OK",       "B":"OK",       "X":"OK"       },
-      { "A":"OK",       "B":"WARNING",  "X":"OK"       },
-      { "A":"OK",       "B":"UNKNOWN",  "X":"OK"       },
-      { "A":"OK",       "B":"MISSING",  "X":"OK"       },
-      { "A":"OK",       "B":"CRITICAL", "X":"OK"       },
-      { "A":"OK",       "B":"DOWNTIME", "X":"OK"       },
-      { "A":"WARNING",  "B":"WARNING",  "X":"WARNING"  },
-      { "A":"WARNING",  "B":"UNKNOWN",  "X":"WARNING"  },
-      { "A":"WARNING",  "B":"MISSING",  "X":"WARNING"  },
-      { "A":"WARNING",  "B":"CRITICAL", "X":"WARNING"  },
-      { "A":"WARNING",  "B":"DOWNTIME", "X":"WARNING"  },
-      { "A":"UNKNOWN",  "B":"UNKNOWN",  "X":"UNKNOWN"  },
-      { "A":"UNKNOWN",  "B":"MISSING",  "X":"UNKNOWN"  },
-      { "A":"UNKNOWN",  "B":"CRITICAL", "X":"CRITICAL" },
-      { "A":"UNKNOWN",  "B":"DOWNTIME", "X":"UNKNOWN"  },
-      { "A":"MISSING",  "B":"MISSING",  "X":"MISSING"  },
-      { "A":"MISSING",  "B":"CRITICAL", "X":"CRITICAL" },
-      { "A":"MISSING",  "B":"DOWNTIME", "X":"MISSING"  },
-      { "A":"CRITICAL", "B":"CRITICAL", "X":"CRITICAL" },
-      { "A":"CRITICAL", "B":"DOWNTIME", "X":"DOWNTIME" },
-      { "A":"DOWNTIME", "B":"DOWNTIME", "X":"DOWNTIME" }
-    ]
-  } 
+  "defaults": {
+    "down": "DOWNTIME",
+    "missing": "MISSING",
+    "unknown": "UNKNOWN"
+  },
+  "operations": [
+    {
+      "name": "AND",
+      "truth_table": [
+        {
+          "a": "OK",
+          "b": "OK",
+          "x": "OK"
+        },
+        {
+          "a": "OK",
+          "b": "WARNING",
+          "x": "WARNING"
+        },
+        {
+          "a": "OK",
+          "b": "UNKNOWN",
+          "x": "UNKNOWN"
+        },
+        {
+          "a": "OK",
+          "b": "MISSING",
+          "x": "MISSING"
+        },
+        {
+          "a": "OK",
+          "b": "CRITICAL",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "OK",
+          "b": "DOWNTIME",
+          "x": "DOWNTIME"
+        },
+        {
+          "a": "WARNING",
+          "b": "WARNING",
+          "x": "WARNING"
+        },
+        {
+          "a": "WARNING",
+          "b": "UNKNOWN",
+          "x": "UNKNOWN"
+        },
+        {
+          "a": "WARNING",
+          "b": "MISSING",
+          "x": "MISSING"
+        },
+        {
+          "a": "WARNING",
+          "b": "CRITICAL",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "WARNING",
+          "b": "DOWNTIME",
+          "x": "DOWNTIME"
+        },
+        {
+          "a": "UNKNOWN",
+          "b": "UNKNOWN",
+          "x": "UNKNOWN"
+        },
+        {
+          "a": "UNKNOWN",
+          "b": "MISSING",
+          "x": "MISSING"
+        },
+        {
+          "a": "UNKNOWN",
+          "b": "CRITICAL",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "UNKNOWN",
+          "b": "DOWNTIME",
+          "x": "DOWNTIME"
+        },
+        {
+          "a": "MISSING",
+          "b": "MISSING",
+          "x": "MISSING"
+        },
+        {
+          "a": "MISSING",
+          "b": "CRITICAL",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "MISSING",
+          "b": "DOWNTIME",
+          "x": "DOWNTIME"
+        },
+        {
+          "a": "CRITICAL",
+          "b": "CRITICAL",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "CRITICAL",
+          "b": "DOWNTIME",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "DOWNTIME",
+          "b": "DOWNTIME",
+          "x": "DOWNTIME"
+        }
+      ]
+    },
+    {
+      "name": "OR",
+      "truth_table": [
+        {
+          "a": "OK",
+          "b": "OK",
+          "x": "OK"
+        },
+        {
+          "a": "OK",
+          "b": "WARNING",
+          "x": "OK"
+        },
+        {
+          "a": "OK",
+          "b": "UNKNOWN",
+          "x": "OK"
+        },
+        {
+          "a": "OK",
+          "b": "MISSING",
+          "x": "OK"
+        },
+        {
+          "a": "OK",
+          "b": "CRITICAL",
+          "x": "OK"
+        },
+        {
+          "a": "OK",
+          "b": "DOWNTIME",
+          "x": "OK"
+        },
+        {
+          "a": "WARNING",
+          "b": "WARNING",
+          "x": "WARNING"
+        },
+        {
+          "a": "WARNING",
+          "b": "UNKNOWN",
+          "x": "WARNING"
+        },
+        {
+          "a": "WARNING",
+          "b": "MISSING",
+          "x": "WARNING"
+        },
+        {
+          "a": "WARNING",
+          "b": "CRITICAL",
+          "x": "WARNING"
+        },
+        {
+          "a": "WARNING",
+          "b": "DOWNTIME",
+          "x": "WARNING"
+        },
+        {
+          "a": "UNKNOWN",
+          "b": "UNKNOWN",
+          "x": "UNKNOWN"
+        },
+        {
+          "a": "UNKNOWN",
+          "b": "MISSING",
+          "x": "UNKNOWN"
+        },
+        {
+          "a": "UNKNOWN",
+          "b": "CRITICAL",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "UNKNOWN",
+          "b": "DOWNTIME",
+          "x": "UNKNOWN"
+        },
+        {
+          "a": "MISSING",
+          "b": "MISSING",
+          "x": "MISSING"
+        },
+        {
+          "a": "MISSING",
+          "b": "CRITICAL",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "MISSING",
+          "b": "DOWNTIME",
+          "x": "DOWNTIME"
+        },
+        {
+          "a": "CRITICAL",
+          "b": "CRITICAL",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "CRITICAL",
+          "b": "DOWNTIME",
+          "x": "CRITICAL"
+        },
+        {
+          "a": "DOWNTIME",
+          "b": "DOWNTIME",
+          "x": "DOWNTIME"
+        }
+      ]
+    }
+  ]
 }

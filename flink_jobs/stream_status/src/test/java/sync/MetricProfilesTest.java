@@ -27,7 +27,7 @@ public class MetricProfilesTest {
 		URL resAvroFile = MetricProfilesTest.class.getResource("/avro/poem_sync_v2.avro");
 		File avroFile = new File(resAvroFile.toURI());
 		// Instatiate class
-		MetricProfiles mp = new MetricProfiles();
+		MetricProfileManager mp = new MetricProfileManager();
 		// Test loading file
 		mp.loadAvro(avroFile);
 		assertNotNull("File Loaded", mp);

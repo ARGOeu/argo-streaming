@@ -3,7 +3,7 @@ package ops;
 import static org.junit.Assert.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -12,9 +12,6 @@ import java.util.ArrayList;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import sync.EndpointGroups;
-import sync.EndpointGroupsTest;
-import sync.MetricProfilesTest;
 
 public class OpsManagerTest {
 
