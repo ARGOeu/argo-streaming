@@ -182,7 +182,7 @@ public class ArgoMessagingClient {
 
 		HttpEntity entity = response.getEntity();
 
-		if (entity != null) {
+		if (entity != null && response.getStatusLine().getStatusCode() == 200) {
 
 			InputStreamReader isRdr = new InputStreamReader(entity.getContent());
 			BufferedReader bRdr = new BufferedReader(isRdr);
@@ -195,9 +195,9 @@ public class ArgoMessagingClient {
 			// Gather message from json
 			JsonParser jsonParser = new JsonParser();
 			// parse the json root object
-			
+			Log.info("response: {}",result.toString());
 			JsonElement jRoot = jsonParser.parse(result.toString());
-
+			
 			JsonArray jRec = jRoot.getAsJsonObject().get("receivedMessages").getAsJsonArray();
 
 			

@@ -16,6 +16,7 @@ import org.apache.avro.specific.SpecificDatumReader;
 import com.google.gson.JsonElement;
 
 import argo.avro.MetricData;
+import argo.avro.MetricDataOld;
 
 
 
@@ -31,7 +32,7 @@ public class MetricParse {
 		
 		ArrayList<MetricData> result = new ArrayList<MetricData>();
 		
-		DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),MetricData.getClassSchema(),new SpecificData());
+		DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricDataOld.getClassSchema(),MetricData.getClassSchema(),new SpecificData());
 		BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(avroBytes, null);
 		
 		while (!decoder.isEnd()){

@@ -1,6 +1,9 @@
 package argo.streaming;
 
 
+import java.util.Arrays;
+
+import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
@@ -8,7 +11,7 @@ import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-
+import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
@@ -30,6 +33,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import argo.avro.MetricData;
+import argo.avro.MetricDataOld;
 
 
 /**
@@ -176,14 +180,26 @@ public class AmsIngestMetric {
 				// Decode from base64
 				byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
 				// Decode from avro
-				DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),
-						MetricData.getClassSchema(), new SpecificData());
+				
+				DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema());
 				Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
+				
+				
 				MetricData item;
+				try {
 				item = avroReader.read(null, decoder);
-				if (item != null) {
-					out.collect(item);
+				} catch (java.io.EOFException ex)
+				{
+					//convert from old to new
+					avroReader = new SpecificDatumReader<MetricData>(MetricDataOld.getClassSchema(),MetricData.getClassSchema());
+					decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
+					item = avroReader.read(null, decoder);
 				}
+				if (item != null) {
+					LOG.info("Captured data -- {}", item.toString());
+					out.collect(item);
+				} 
+				
 
 			}
 		});
