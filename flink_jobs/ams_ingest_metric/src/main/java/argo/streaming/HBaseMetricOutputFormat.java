@@ -13,6 +13,7 @@ import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import argo.avro.MetricData;
+import argo.avro.MetricDataOld;
 
 /**
  * Hbase Output Format for storing Metric Data to an hbase destination
