@@ -118,7 +118,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 				int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
 				int timeInt = Integer.parseInt(tsToken[1].replace(":",""));
 				
-				StatusMetric sm = new StatusMetric(groupname,md.getService(),md.getHostname(),md.getMetric(), md.getStatus(),md.getTimestamp(),dateInt,timeInt,md.getSummary(),md.getMessage(),"","");
+				StatusMetric sm = new StatusMetric(groupname,md.getService(),md.getHostname(),md.getMetric(), md.getStatus(),md.getTimestamp(),dateInt,timeInt,md.getSummary(),md.getMessage(),"","",md.getActualData());
 				
 				out.collect(sm);
 			}

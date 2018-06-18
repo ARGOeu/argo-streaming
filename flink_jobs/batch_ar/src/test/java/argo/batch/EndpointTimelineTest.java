@@ -49,31 +49,31 @@ public class EndpointTimelineTest {
 		ArrayList<MetricData> mdata2 = new ArrayList<MetricData>();
 		ArrayList<MetricData> mdata3 = new ArrayList<MetricData>();
 		mdata1.add(new MetricData("2017-07-01T23:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata1.add(new MetricData("2017-07-02T05:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "WARNING",
-				"mon01.foo", "summary", "ok", null));
+				"mon01.foo", "summary", "ok", null, null));
 		mdata1.add(new MetricData("2017-07-02T00:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata1.add(new MetricData("2017-07-02T12:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "CRITICAL",
-				"mon01.foo", "summary", "ok", null));
+				"mon01.foo", "summary", "ok", null, null));
 		mdata1.add(new MetricData("2017-07-02T14:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata2.add(new MetricData("2017-07-01T23:00:00Z", "CREAM-CE", "cream01.foo", "job_cancel", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata2.add(new MetricData("2017-07-02T16:00:00Z", "CREAM-CE", "cream01.foo", "job_cancel", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata2.add(new MetricData("2017-07-02T19:00:00Z", "CREAM-CE", "cream01.foo", "job_cancel", "CRITICAL",
-				"mon01.foo", "summary", "ok", null));
+				"mon01.foo", "summary", "ok", null, null));
 		mdata2.add(new MetricData("2017-07-02T20:00:00Z", "CREAM-CE", "cream01.foo", "job_cancel", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata3.add(new MetricData("2017-07-01T21:00:00Z", "CREAM-CE", "cream01.foo", "cert", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata3.add(new MetricData("2017-07-02T21:00:00Z", "CREAM-CE", "cream01.foo", "cert", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata3.add(new MetricData("2017-07-02T22:00:00Z", "CREAM-CE", "cream01.foo", "cert", "WARNING", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata3.add(new MetricData("2017-07-02T23:00:00Z", "CREAM-CE", "cream01.foo", "cert", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 
 		// Create Frist Metric Timeline
 		DTimeline dtl1 = new DTimeline();

@@ -121,7 +121,9 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 			.append("summary", record.getSummary())
 			.append("time_integer",record.getTimeInt()) 
 			.append("previous_state",record.getPrevState())
-			.append("previous_ts", record.getPrevTs());
+			.append("previous_ts", record.getPrevTs())
+			// append the actual data to status metric record in datastore
+			.append("actual_data", record.getActualData());
 		}
 		
 		

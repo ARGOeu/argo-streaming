@@ -128,7 +128,7 @@ public class ArgoArBatch {
 		// Combine prev and todays metric data with the generated missing metric
 		// data
 		DataSet<MonData> mdataTotalDS = mdataTrimDS.union(fillMissDS);
-
+		mdataTotalDS.writeAsText("/home/kaggis/flink-test-mdata-ar");
 		// Create a dataset of metric timelines
 		DataSet<MonTimeline> metricTimelinesDS = mdataTotalDS.groupBy("group","service", "hostname", "metric")
 				.sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CreateMetricTimeline(params))
