@@ -16,6 +16,7 @@ public class StatusMetric {
 	private String message;
 	private String prevState;
 	private String prevTs;
+	private String actualData;
 	
 	public StatusMetric(){
 		this.group = "";
@@ -30,10 +31,11 @@ public class StatusMetric {
 		this.message = "";
 		this.prevState = "";
 		this.prevTs = "";
+		this.actualData = "";
 	}
 	
 	public StatusMetric(String group, String service, String hostname, String metric, String status, String timestamp,
-			int dateInt, int timeInt, String summary, String message, String prevState, String prevTs) {
+			int dateInt, int timeInt, String summary, String message, String prevState, String prevTs, String actualData) {
 		
 		this.group = group;
 		this.service = service;
@@ -47,6 +49,7 @@ public class StatusMetric {
 		this.message = message;
 		this.prevState = prevState;
 		this.prevTs = prevTs;
+		this.actualData = actualData;
 	}
 
 	
@@ -128,10 +131,17 @@ public class StatusMetric {
 		this.prevTs = prevTs;
 	}
 	
+	public String getActualData() {
+		return actualData;
+	}
+	public void setActualData(String actualData) {
+		this.actualData = actualData;
+	}
+	
 	@Override
 	public String toString() {
 		return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + "," + 
-				this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + ")";
+				this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData +  ")";
 	}
 	
 }

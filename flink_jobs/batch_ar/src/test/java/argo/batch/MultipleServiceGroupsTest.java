@@ -53,12 +53,14 @@ public class MultipleServiceGroupsTest {
 			monList.add(mn);
 		}
 
-		String expOut = "[(SH,service.typeA,hostA,,,,,,), " + "(SH_N,service.typeA,hostA,,,,,,), "
-				+ "(PROV,service.typeA,hostA,,,,,,), " + "(D,service.typeA,hostA,,,,,,), "
-				+ "(SC,service.typeA,hostA,,,,,,), " + "(PR,service.typeA,hostA,,,,,,), "
-				+ "(SH_R,service.typeA,hostA,,,,,,), " + "(OP,service.typeA,hostA,,,,,,), "
-				+ "(SH_L,service.typeA,hostA,,,,,,), " + "(GT,service.typeA,hostA,,,,,,), "
-				+ "(ORG_C,service.typeA,hostA,,,,,,)]";
+		String expOut = "[(SH,service.typeA,hostA,,,,,,,), " + "(SH_N,service.typeA,hostA,,,,,,,), "
+				+ "(PROV,service.typeA,hostA,,,,,,,), " + "(D,service.typeA,hostA,,,,,,,), "
+				+ "(SC,service.typeA,hostA,,,,,,,), " + "(PR,service.typeA,hostA,,,,,,,), "
+				+ "(SH_R,service.typeA,hostA,,,,,,,), " + "(OP,service.typeA,hostA,,,,,,,), "
+				+ "(SH_L,service.typeA,hostA,,,,,,,), " + "(GT,service.typeA,hostA,,,,,,,), "
+				+ "(ORG_C,service.typeA,hostA,,,,,,,)]";
+		
+	
 
 		assertEquals("multiple group test",expOut,Arrays.toString(monList.toArray()));
 

@@ -160,7 +160,8 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MonData> {
 				mn.setTimestamp(ts);
 				mn.setMessage(md.getMessage());
 				mn.setSummary(md.getSummary());
-
+				// transfer the actual data to the enriched monitoring data object
+				mn.setActualData(md.getActualData());
 				
 				out.collect(mn);
 			}
