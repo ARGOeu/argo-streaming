@@ -70,11 +70,22 @@ public class ArgoArBatch {
 		Path ggp = new Path(params.getRequired("ggp"));
 		Path down = new Path(params.getRequired("downtimes"));
 		Path weight = new Path(params.getRequired("weights"));
+		
 
 		DataSource<String> confDS = env.readTextFile(params.getRequired("conf"));
 		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
 		DataSource<String> aprDS = env.readTextFile(params.getRequired("apr"));
 		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
+		
+		// begin with empty threshold datasource
+		DataSource<String> thrDS = env.fromElements("");
+		// if threshold filepath has been defined in cli parameters
+		if (params.has("thr")){
+			// read file and update threshold datasource
+			thrDS = env.readTextFile(params.getRequired("thr"));
+		}
+		
+		
 		
 		ConfigManager confMgr = new ConfigManager();
 		confMgr.loadJsonString(confDS.collect());
@@ -123,12 +134,13 @@ public class ArgoArBatch {
 		// Discard unused data and attach endpoint group as information
 		DataSet<MonData> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(confDS, "conf");
+				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(confDS, "conf")
+				.withBroadcastSet(opsDS, "ops").withBroadcastSet(thrDS, "thr");
 
 		// Combine prev and todays metric data with the generated missing metric
 		// data
 		DataSet<MonData> mdataTotalDS = mdataTrimDS.union(fillMissDS);
-		mdataTotalDS.writeAsText("/home/kaggis/flink-test-mdata-ar");
+		
 		// Create a dataset of metric timelines
 		DataSet<MonTimeline> metricTimelinesDS = mdataTotalDS.groupBy("group","service", "hostname", "metric")
 				.sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CreateMetricTimeline(params))

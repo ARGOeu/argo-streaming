@@ -65,6 +65,14 @@ public class ArgoStatusBatch {
 		DataSource<String> apsDS = env.readTextFile(params.getRequired("apr"));
 		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
 		
+		// begin with empty threshold datasource
+		DataSource<String> thrDS = env.fromElements("");
+		// if threshold filepath has been defined in cli parameters
+		if (params.has("thr")){
+			// read file and update threshold datasource
+			thrDS = env.readTextFile(params.getRequired("thr"));
+		}
+		
 		ConfigManager confMgr = new ConfigManager();
 		confMgr.loadJsonString(cfgDS.collect());
 
@@ -103,7 +111,8 @@ public class ArgoStatusBatch {
 		// Discard unused data and attach endpoint group as information
 		DataSet<StatusMetric> mdataTrimDS = mdataTotalDS.flatMap(new PickEndpoints(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf");
+				.withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
+				.withBroadcastSet(opsDS, "ops");
 
 		// Create status detail data set
 		DataSet<StatusMetric> stDetailDS = mdataTrimDS.groupBy("group", "service", "hostname", "metric")

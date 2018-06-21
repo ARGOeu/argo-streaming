@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Map;
 
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 
@@ -21,6 +21,8 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import ops.ConfigManager;
+import ops.OpsManager;
+import ops.ThresholdManager;
 import sync.AggregationProfileManager;
 import sync.EndpointGroupManager;
 import sync.GroupGroupManager;
@@ -50,12 +52,16 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MonData> {
 	private List<String> apr;
 	private List<String> rec;
 	private List<String> conf;
+	private List<String> thr;
+	private List<String> ops;
 	private MetricProfileManager mpsMgr;
 	private EndpointGroupManager egpMgr;
 	private GroupGroupManager ggpMgr;
 	private AggregationProfileManager aprMgr;
 	private RecomputationManager recMgr;
 	private ConfigManager confMgr;
+	private OpsManager opsMgr;
+	private ThresholdManager thrMgr;
 	
 	private String egroupType;
 
@@ -77,6 +83,8 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MonData> {
 		this.apr = getRuntimeContext().getBroadcastVariable("apr");
 		this.rec = getRuntimeContext().getBroadcastVariable("rec");
 		this.conf = getRuntimeContext().getBroadcastVariable("conf");
+		this.ops = getRuntimeContext().getBroadcastVariable("ops");
+		this.thr = getRuntimeContext().getBroadcastVariable("thr");
 		
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
@@ -102,6 +110,17 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MonData> {
 		
 		// Initialize endpoint group type
 		this.egroupType = this.confMgr.egroup;
+		
+		// Initialize Ops Manager
+		this.opsMgr = new OpsManager();
+		this.opsMgr.loadJsonString(ops);
+		
+		// Initialize Threshold manager
+		this.thrMgr = new ThresholdManager();
+		if (!this.thr.get(0).isEmpty()){
+			this.thrMgr.parseJSON(this.thr.get(0));
+		}
+		
 	}
 
 	
@@ -150,18 +169,41 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,MonData> {
 		for (String groupname : groupnames) {
 			
 			if (ggpMgr.checkSubGroup(groupname) == true){
+				
+				String status = md.getStatus();
+				String actualData = md.getActualData();
+				
+				if (actualData != null) {
+					// Check for relevant rule
+					String rule = thrMgr.getMostRelevantRule(groupname, md.getHostname(), md.getMetric());
+					// if rule is indeed found 
+					if (rule != ""){
+						// get the retrieved values from the actual data
+						Map<String, Float> values = thrMgr.getThresholdValues(actualData);
+						// calculate 
+						String[] statusNext = thrMgr.getStatusByRuleAndValues(rule, this.opsMgr, "AND", values);
+						if (statusNext[0] == "") statusNext[0] = status;
+						LOG.info("{},{},{} data:({}) {} --> {}",groupname,md.getHostname(),md.getMetric(),values,status,statusNext[0]);
+						if (status != statusNext[0]) {
+							status = statusNext[0];
+						}
+					}
+					
+					
+				}
+				
 				MonData mn = new MonData();
 				mn.setGroup(groupname);
 				mn.setHostname(hostname);
 				mn.setService(service);
 				mn.setMetric(metric);
 				mn.setMonHost(monHost);
-				mn.setStatus(md.getStatus());
+				mn.setStatus(status);
 				mn.setTimestamp(ts);
 				mn.setMessage(md.getMessage());
 				mn.setSummary(md.getSummary());
 				// transfer the actual data to the enriched monitoring data object
-				mn.setActualData(md.getActualData());
+				mn.setActualData(actualData);
 				
 				out.collect(mn);
 			}
