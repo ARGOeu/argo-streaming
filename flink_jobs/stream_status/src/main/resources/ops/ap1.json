@@ -1,35 +1,64 @@
 {
-  
-  "name": "ap1",
-  "namespace": "test",
-  "metric_profile": "ch.cern.sam.ROC_CRITICAL",
-  "metric_ops":"AND",
-  "group_type": "sites",
-  "operation":"AND",
-  "groups": {
-    "compute": {
-      "services":{
-        "CREAM-CE":"OR",
-        "ARC-CE":"OR",
-        "GRAM5":"OR",
-        "unicore6.TargetSystemFactory":"OR",
-        "QCG.Computing":"OR"
-        },
-       "operation":"OR"
-    },
-    "storage": {
-      "services":{
-        "SRM":"OR",
-        "SRMv2":"OR"
-        },
-       "operation":"OR"
-    },
-    "information": {
-      "services":{
-        "Site-BDII":"OR"
-        },
-       "operation":"OR"
-    }
-    
-  } 
-}
+            "id": "297c368a-524f-4144-9eb6-924fae5f08fa",
+            "name": "ap1",
+            "namespace": "test",
+            "endpoint_group": "sites",
+            "metric_operation": "AND",
+            "profile_operation": "AND",
+            "metric_profile": {
+                "name": "CH.CERN.SAM.ARGO_MON_CRITICAL",
+                "id": "c81fdb7b-d8f8-4ff9-96c5-6a0c336e2b25"
+            },
+            "groups": [
+                {
+                    "name": "compute",
+                    "operation": "OR",
+                    "services": [
+                        {
+                            "name": "CREAM-CE",
+                            "operation": "OR"
+                        },
+                        {
+                            "name": "ARC-CE",
+                            "operation": "OR"
+                        },
+                        {
+                            "name": "GRAM5",
+                            "operation": "OR"
+                        },
+                        {
+                            "name": "unicore6.TargetSystemFactory",
+                            "operation": "OR"
+                        },
+                        {
+                            "name": "QCG.Computing",
+                            "operation": "OR"
+                        }
+                    ]
+                },
+                {
+                    "name": "storage",
+                    "operation": "OR",
+                    "services": [
+                        {
+                            "name": "SRMv2",
+                            "operation": "OR"
+                        },
+                        {
+                            "name": "SRM",
+                            "operation": "OR"
+                        }
+                    ]
+                },
+                {
+                    "name": "information",
+                    "operation": "OR",
+                    "services": [
+                        {
+                            "name": "Site-BDII",
+                            "operation": "OR"
+                        }
+                    ]
+                }
+            ]
+        }
