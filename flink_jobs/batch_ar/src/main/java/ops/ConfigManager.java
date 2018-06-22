@@ -5,8 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Map.Entry;
-import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -19,27 +17,25 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import argo.avro.Weight;
 
 public class ConfigManager {
 
 	private static final Logger LOG = Logger.getLogger(ConfigManager.class.getName());
 
 	public String id; // report uuid reference
-	public String tenant;
 	public String report;
+	public String tenant;
 	public String egroup; // endpoint group
 	public String ggroup; // group of groups
-	public String agroup; // alternative group
 	public String weight; // weight factor type
 	public TreeMap<String, String> egroupTags;
 	public TreeMap<String, String> ggroupTags;
 	public TreeMap<String, String> mdataTags;
 
 	public ConfigManager() {
-		this.tenant = null;
 		this.report = null;
 		this.id = null;
+		this.tenant = null;
 		this.egroup = null;
 		this.ggroup = null;
 		this.weight = null;
@@ -51,8 +47,8 @@ public class ConfigManager {
 
 	public void clear() {
 		this.id = null;
-		this.tenant = null;
 		this.report = null;
+		this.tenant = null;
 		this.egroup = null;
 		this.ggroup = null;
 		this.weight = null;
@@ -74,6 +70,7 @@ public class ConfigManager {
 		return tenant;
 	}
 	
+	
 	public String getEgroup() {
 		return egroup;
 	}
@@ -90,31 +87,37 @@ public class ConfigManager {
 			JsonElement jElement = jsonParser.parse(br);
 			JsonObject jObj = jElement.getAsJsonObject();
 			// Get the simple fields
-			this.id = jObj.getAsJsonPrimitive("id").getAsString();
-			this.tenant = jObj.getAsJsonPrimitive("tenant").getAsString();
-			this.report = jObj.getAsJsonPrimitive("job").getAsString();
-			this.egroup = jObj.getAsJsonPrimitive("egroup").getAsString();
-			this.ggroup = jObj.getAsJsonPrimitive("ggroup").getAsString();
-			this.weight = jObj.getAsJsonPrimitive("weight").getAsString();
-			this.agroup = jObj.getAsJsonPrimitive("altg").getAsString();
+			this.id = jObj.get("id").getAsString();
+			this.tenant = jObj.get("tenant").getAsString();
+			this.report = jObj.get("info").getAsJsonObject().get("name").getAsString();
+			
+			// get topology schema names
+			JsonObject topoGroup = jObj.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
+			this.ggroup = topoGroup.get("type").getAsString();
+			this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
+			
+			this.weight = jObj.get("weight").getAsString();
 			// Get compound fields
-			JsonObject jEgroupTags = jObj.getAsJsonObject("egroup_tags");
-			JsonObject jGgroupTags = jObj.getAsJsonObject("ggroup_tags");
-			JsonObject jMdataTags = jObj.getAsJsonObject("mdata_tags");
-
-			// Iterate fields
-			for (Entry<String, JsonElement> item : jEgroupTags.entrySet()) {
-
-				this.egroupTags.put(item.getKey(), item.getValue().getAsString());
+			JsonArray jTags = jObj.getAsJsonArray("filter_tags");
+			
+			// Iterate tags
+			if (jTags != null) {
+				for (JsonElement tag : jTags) {
+					JsonObject jTag = tag.getAsJsonObject();
+					String name = jTag.get("name").getAsString();
+					String value = jTag.get("value").getAsString();
+					String ctx = jTag.get("context").getAsString();
+					if (ctx.equalsIgnoreCase("group_of_groups")){
+						this.ggroupTags.put(name, value);
+					} else if (ctx.equalsIgnoreCase("endpoint_groups")){
+						this.egroupTags.put(name, value);
+					} else if (ctx.equalsIgnoreCase("metric_data")) {
+						this.mdataTags.put(name, value);
+					}
+					
+				}
 			}
-			for (Entry<String, JsonElement> item : jGgroupTags.entrySet()) {
-
-				this.ggroupTags.put(item.getKey(), item.getValue().getAsString());
-			}
-			for (Entry<String, JsonElement> item : jMdataTags.entrySet()) {
-
-				this.mdataTags.put(item.getKey(), item.getValue().getAsString());
-			}
+			
 
 		} catch (FileNotFoundException ex) {
 			LOG.error("Could not open file:" + jsonFile.getName());
@@ -146,30 +149,33 @@ public class ConfigManager {
 			JsonElement jElement = jsonParser.parse(confJson.get(0));
 			JsonObject jObj = jElement.getAsJsonObject();
 			// Get the simple fields
-			this.id = jObj.getAsJsonPrimitive("id").getAsString();
-			this.tenant = jObj.getAsJsonPrimitive("tenant").getAsString();
-			this.report = jObj.getAsJsonPrimitive("job").getAsString();
-			this.egroup = jObj.getAsJsonPrimitive("egroup").getAsString();
-			this.ggroup = jObj.getAsJsonPrimitive("ggroup").getAsString();
-			this.weight = jObj.getAsJsonPrimitive("weight").getAsString();
-			this.agroup = jObj.getAsJsonPrimitive("altg").getAsString();
+			this.id = jObj.get("id").getAsString();
+			this.tenant = jObj.get("tenant").getAsString();
+			this.report = jObj.get("info").getAsJsonObject().get("name").getAsString();
+			// get topology schema names
+			JsonObject topoGroup = jObj.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
+			this.ggroup = topoGroup.get("type").getAsString();
+			this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
+			this.weight = jObj.get("weight").getAsString();
 			// Get compound fields
-			JsonObject jEgroupTags = jObj.getAsJsonObject("egroup_tags");
-			JsonObject jGgroupTags = jObj.getAsJsonObject("ggroup_tags");
-			JsonObject jMdataTags = jObj.getAsJsonObject("mdata_tags");
-
-			// Iterate fields
-			for (Entry<String, JsonElement> item : jEgroupTags.entrySet()) {
-
-				this.egroupTags.put(item.getKey(), item.getValue().getAsString());
-			}
-			for (Entry<String, JsonElement> item : jGgroupTags.entrySet()) {
-
-				this.ggroupTags.put(item.getKey(), item.getValue().getAsString());
-			}
-			for (Entry<String, JsonElement> item : jMdataTags.entrySet()) {
-
-				this.mdataTags.put(item.getKey(), item.getValue().getAsString());
+			JsonArray jTags = jObj.getAsJsonArray("tags");
+			
+			// Iterate tags
+			if (jTags != null) {
+				for (JsonElement tag : jTags) {
+					JsonObject jTag = tag.getAsJsonObject();
+					String name = jTag.get("name").getAsString();
+					String value = jTag.get("value").getAsString();
+					String ctx = jTag.get("context").getAsString();
+					if (ctx.equalsIgnoreCase("group_of_groups")){
+						this.ggroupTags.put(name, value);
+					} else if (ctx.equalsIgnoreCase("endpoint_groups")){
+						this.egroupTags.put(name, value);
+					} else if (ctx.equalsIgnoreCase("metric_data")) {
+						this.mdataTags.put(name, value);
+					}
+					
+				}
 			}
 
 		} catch (JsonParseException ex) {

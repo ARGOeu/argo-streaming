@@ -30,7 +30,7 @@ public class ConfigManagerTest {
 		cfgMgr.loadJson(jsonFile);
 
 		// Assert that the simple fields are loaded correctly
-		assertEquals("EGI", cfgMgr.tenant);
+		assertEquals("EGI",cfgMgr.getTenant());
 		assertEquals("Critical", cfgMgr.report);
 		assertEquals("SITES", cfgMgr.egroup);
 		assertEquals("NGI", cfgMgr.ggroup);
