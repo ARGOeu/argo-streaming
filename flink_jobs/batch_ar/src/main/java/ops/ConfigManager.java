@@ -96,7 +96,11 @@ public class ConfigManager {
 			this.ggroup = topoGroup.get("type").getAsString();
 			this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
 			
-			this.weight = jObj.get("weight").getAsString();
+			// optional weight filtering
+			this.weight = "";
+			if (jObj.has("weight")){
+				this.weight = jObj.get("weight").getAsString();
+			}
 			// Get compound fields
 			JsonArray jTags = jObj.getAsJsonArray("filter_tags");
 			
@@ -156,7 +160,11 @@ public class ConfigManager {
 			JsonObject topoGroup = jObj.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
 			this.ggroup = topoGroup.get("type").getAsString();
 			this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
-			this.weight = jObj.get("weight").getAsString();
+			// optional weight filtering
+			this.weight = "";
+			if (jObj.has("weight")){
+				this.weight = jObj.get("weight").getAsString();
+			}
 			// Get compound fields
 			JsonArray jTags = jObj.getAsJsonArray("tags");
 			
