@@ -1,24 +1,83 @@
 {
-  "tenant":"EGI",
-  "id":"c800846f-8478-4af8-85d1-a3f12fe4c18f",
-  "job":"Critical",
-  "egroup":"SITES",
-  "ggroup":"NGI",
-  "altg":"ops",
-  "weight":"hepspec",
-  "egroup_tags":{
-    "scope":"EGI",
-    "production":"1",
-    "monitored":"1"
-  },
-  "ggroup_tags":{
-    "scope":"EGI",
-    "infrastructure":"Production",
-    "certification":"Certified"
-  },
-  "mdata_tags":{
-    "vo":"ops",
-    "vo_fqan":"ops",
-    "roc":"any"
+    "id": "c800846f-8478-4af8-85d1-a3f12fe4c18f",
+    "info": {
+      "name": "Critical",
+      "description": "EGI report for Roc critical",
+      "created": "2015-10-19 10:35:49",
+      "updated": "2015-10-19 10:35:49"
+    },
+    "tenant": "EGI",
+    "topology_schema": {
+      "group": {
+        "type": "NGI",
+        "group": {
+          "type": "SITES"
+        }
+      }
+    },
+    "weight": "hepspec",
+    "profiles": [
+      {
+        "id": "433beb2c-45cc-49d4-a8e0-b132bb30327e",
+        "name": "ch.cern.sam.ROC_CRITICAL",
+        "type": "metric"
+      },
+      {
+        "id": "17d1462f-8f91-4728-a253-1a6e8e2e848d",
+        "name": "ops1",
+        "type": "operations"
+      },
+      {
+        "id": "1ef8c0c9-f9ef-4ca1-9ee7-bb8b36332036",
+        "name": "critical",
+        "type": "aggregation"
+      }
+    ],
+    "filter_tags": [
+      {
+        "name": "production",
+        "value": "1",
+        "context": "endpoint_groups"
+      },
+      {
+        "name": "monitored",
+        "value": "1",
+        "context": "endpoint_groups"
+      },
+      {
+        "name": "scope",
+        "value": "EGI",
+        "context": "endpoint_groups"
+      },
+      {
+        "name": "scope",
+        "value": "EGI",
+        "context": "group_of_groups"
+      },
+      {
+        "name": "infrastructure",
+        "value": "Production",
+        "context": "group_of_groups"
+      },
+      {
+        "name": "certification",
+        "value": "Certified",
+        "context": "group_of_groups"
+      },
+      {
+        "name": "vo",
+        "value": "ops",
+        "context": "metric_data"
+      },
+      {
+        "name": "vo_fqan",
+        "value": "ops",
+        "context": "metric_data"
+      },
+      {
+        "name": "roc",
+        "value": "any",
+        "context": "metric_data"
+      }
+    ]
   }
-}
