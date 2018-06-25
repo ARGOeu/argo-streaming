@@ -1,35 +1,54 @@
 {
+  "id": "337c368a-524f-4144-9eb6-924fae5f08fa",
   "name": "fedcloud",
   "namespace": "egi",
-  "metric_profile": "ch.cern.sam.CLOUD-MON",
-  "metric_ops":"AND",
-  "group_type": "sites",
-  "operation":"AND",
-  "groups": {
-    "accounting": {
-      "services":{
-        "eu.egi.cloud.accounting":"OR"
-        },
-       "operation":"OR"
+  "endpoint_group": "sites",
+  "metric_operation": "AND",
+  "profile_operation": "AND",
+  "metric_profile": {
+    "name": "ch.cern.sam.CLOUD-MON",
+    "id": "c88fdb7b-d8f8-4ff9-96c5-6a0c336e2b25"
+  },
+  "groups": [
+    {
+      "name": "accounting",
+      "operation": "OR",
+      "services": [
+        {
+          "name": "eu.egi.cloud.accounting",
+          "operation": "OR"
+        }
+      ]
     },
-    "information": {
-      "services":{
-        "eu.egi.cloud.information.bdii":"OR"
-        },
-       "operation":"OR"
+    {
+      "name": "information",
+      "operation": "OR",
+      "services": [
+        {
+          "name": "eu.egi.cloud.information.bdii",
+          "operation": "OR"
+        }
+      ]
     },
-    "storage-management": {
-      "services":{
-        "eu.egi.cloud.storage-management.cdmi":"OR"
-        },
-       "operation":"OR"
+    {
+      "name": "storage-management",
+      "operation": "OR",
+      "services": [
+        {
+          "name": "eu.egi.cloud.storage-management.cdmi",
+          "operation": "OR"
+        }
+      ]
     },
-    "vm-management": {
-      "services":{
-        "eu.egi.cloud.vm-management.occi":"OR"
-        },
-       "operation":"OR"
+    {
+      "name": "vm-management",
+      "operation": "OR",
+      "services": [
+        {
+          "name": "eu.egi.cloud.vm-management.occi",
+          "operation": "OR"
+        }
+      ]
     }
-
-  }
+  ]
 }
