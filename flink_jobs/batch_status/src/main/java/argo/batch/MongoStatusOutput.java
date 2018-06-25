@@ -123,7 +123,11 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 			.append("previous_state",record.getPrevState())
 			.append("previous_ts", record.getPrevTs())
 			// append the actual data to status metric record in datastore
-			.append("actual_data", record.getActualData());
+			.append("actual_data", record.getActualData())
+			// append original status and threshold rule applied
+			.append("original_status", record.getOgStatus())
+			.append("threshold_rule_applied", record.getRuleApplied());
+			
 		}
 		
 		

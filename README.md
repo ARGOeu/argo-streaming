@@ -233,6 +233,25 @@ Status events are generated as JSON messages that are defined by the following c
 A metric data message can produce zero, one or more status metric events. The system analyzes the new status introduced by the metric and then aggregates on top levels to see if any other status changes are produced.
 If a status of an item actually changes an appropriate status event is produced based on the item type (endpoint_group,service,endpoint,metric).
 
+## Threshold rule files 
+Each report can be accompanied by a threshold rules file which includes rules on low level metric data which may accompany a monitoring message with the field 'actual_data'.
+The rule file is in JSON format and has the following schema:
+```
+{
+  "rules": [
+    { 
+      "group" : "site-101",
+      "host" : "host.foo",
+      "metric": "org.namespace.metric",
+      "thresholds": "firstlabel=10s;30;50:60;0;100 secondlabel=5;0:10;20:30;50;30"
+    }
+   ]
+}
+```
+Each rule has multiple thresholds separated by whitespace. Each threshold has the following format:
+`firstlabel=10s;30;50:60;0;100` which corresponds to `{{label}}={{value}}{{uom}};{{warning-range}};{{critical-range}};{{min}};{{max}}`. Each range is in the form of`{{floor}}:{{ceiling}}` but some shortcuts can be taken in declarations.
+
+
 ## Batch Status
 
 Flink batch job that calculates status results for a specific date
@@ -272,6 +291,8 @@ Job required cli parameters:
 `--mongo.uri`         : MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
 
 `--mongo.method`      : MongoDB method to be used when storing the results ~ either: `insert` or `upsert`
+
+`--thr`               : (optional) file location of threshold rules 
 
 
 ## Batch AR
@@ -317,6 +338,8 @@ Job required cli parameters:
 `--mongo.uri`         : MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
 
 `--mongo.method`      : MongoDB method to be used when storing the results ~ either: `insert` or `upsert`
+
+`--thr`               : (optional) file location of threshold rules 
 
 
 ## Flink job names
