@@ -52,6 +52,10 @@ A/R job submission is a batch job that will run and finish on the cluster
 
 `-m : How mongoDB will handle the generated results. Either insert or upsert`
 
+`--profile-check: (optional) Check if profiles used in computation are out of date and update them`
+
+`--thresholds: (optional) Check if threshold rules are defined and use them during computations`
+
 <a id="batch-status"></a>
 ## Status Batch Job
 Status job submission is a batch job that will run and finish on the cluster
@@ -69,6 +73,10 @@ Status job submission is a batch job that will run and finish on the cluster
 `-d : The date we want the job to run for. Format should be YYYY-MM-DD`
 
 `-m : How mongoDB will handle the generated results. Either insert or upsert`
+
+`--profile-check: (optional) Check if profiles used in computation are out of date and update them`
+
+`--thresholds: (optional) Check if threshold rules are defined and use them during computations`
 
 <a id = "stream-status"></a>
 ## Status Stream Job

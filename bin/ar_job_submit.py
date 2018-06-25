@@ -53,6 +53,10 @@ def compose_hdfs_commands(year, month, day, args, config, logger):
     # file location of aggregations profile (local or hdfs)
     hdfs_commands["--apr"] = hdfs_check_path(hdfs_sync+"/"+args.Tenant+"_"+args.Report+"_ap.json", logger, client)
 
+    if args.thresholds:
+        # file location of thresholds rules file (local or hdfs)
+        hdfs_commands["--thr"] = hdfs_check_path(os.path.join(hdfs_sync,"".join([args.Tenant,"_",args.Report, "_thresholds.json"])), logger, client)
+
     #  file location of endpoint group topology file (local or hdfs)
     hdfs_commands["-egp"] = date_rollback(hdfs_sync+"/"+args.Report+"/"+"group_endpoints_"+"{{date}}"+".avro", year, month, day, config, logger, client)
 
@@ -169,10 +173,12 @@ def main(args=None):
     if not config.has_section("TENANTS:"+args.Tenant):
         logger.print_and_log(logging.CRITICAL, "Tenant: "+args.Tenant+" doesn't exist.", 1)
 
-    # call update profiles
-    profile_mgr = ArgoProfileManager(args.ConfigPath)
-    profile_mgr.profile_update_check(args.Tenant, args.Report)
-
+    # optional call to update profiles
+    if args.profile_check:
+        profile_mgr = ArgoProfileManager(args.ConfigPath)
+        profile_type_checklist = ["operations", "aggregations", "reports"]
+        for profile_type in profile_type_checklist:
+            profile_mgr.profile_update_check(args.Tenant, args.Report, profile_type)
 
     # dictionary containing the argument's name and the command assosciated with each name
     hdfs_commands = compose_hdfs_commands(year, month, day, args, config, logger)
@@ -201,6 +207,9 @@ if __name__ == "__main__":
         "-c", "--ConfigPath", type=str, help="Path for the config file")
     parser.add_argument(
         "-u", "--Sudo", help="Run the submition as superuser",  action="store_true")
+    parser.add_argument("--profile-check", help="check if profiles are up to date before running job", dest= "profile_check", action="store_true")
+    parser.add_argument("--thresholds", help="check and use threshold rule file if exists",
+                        dest="thresholds", action="store_true")
 
     # Pass the arguments to main method
     sys.exit(main(parser.parse_args()))
