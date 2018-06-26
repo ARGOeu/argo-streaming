@@ -9,6 +9,8 @@ automatically by connectors. Profiles include:
   applied on different service levels
 - report configuration profile: `TENANT_REPORT_cfg.json` which includes information on the report it self, what profiles
 it uses and how filters data
+- threhsolds_profile (optional): `TENANT_REPORT_thresholds.json` which includes thresholds rules to be applied during computation
+
 
 Each report uses an operations profile. The operation profile is defined also in argo-web-api instance at the following url
 `GET https://argo-web-api.host.example/api/v2/operations_profiles/{{profile_uuid}}`
@@ -16,8 +18,12 @@ Each report uses an operations profile. The operation profile is defined also in
 Each report uses an aggregation profile. The aggregation profile is defined also in argo-web-api instance at the following url
 `GET https://argo-web-api.host.example/api/v2/aggregation_profiles/{{profile_uuid}}`
 
+Each report optionally contains a thresholds profile. The thresholds profile is defined also in argo-web-api instance at the following url
+`GET https://argo-web-api.host.example/api/v2/thresholds_profiles/{{profile_uuid}}`
+
 Each report contains a configuration profile. The report is defined also in argo-web-api instance at the following url
 `GET https://argo-web-api.host.example/api/v2/reports/{{report_uuid}}`
+
 
 
 Providing a specific `tenant` and a specific `report`, script `update_profiles` checks corresponding profiles on hdfs  against

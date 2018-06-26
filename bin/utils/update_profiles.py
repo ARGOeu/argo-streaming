@@ -37,7 +37,8 @@ class ArgoApiClient:
         self.paths.update({
             'reports': '/api/v2/reports',
             'operations': '/api/v2/operations_profiles',
-            'aggregations': '/api/v2/aggregation_profiles'
+            'aggregations': '/api/v2/aggregation_profiles',
+            'thresholds': '/api/v2/thresholds_profiles'
         })
 
     def get_url(self, resource, item_uuid):
@@ -92,6 +93,8 @@ class ArgoApiClient:
 
         """
         item_uuid = self.find_profile_uuid(tenant, report, profile_type)
+	if item_uuid is None:
+	    return None
         profiles = self.get_resource(tenant, self.get_url(profile_type, item_uuid))
         if profiles is not None:
             return profiles[0]
@@ -185,7 +188,7 @@ class HdfsReader:
         Args:
             tenant: str. tenant to be used
             report: str. report to be used
-            profile_type: str. profile_type (operations|reports|aggregations)
+            profile_type: str. profile_type (operations|reports|aggregations|thresholds)
 
         Returns:
             str: hdfs path
@@ -195,7 +198,8 @@ class HdfsReader:
         templates.update({
             'operations': '{0}_ops.json',
             'aggregations': '{0}_{1}_ap.json',
-            'reports': '{0}_{1}_cfg.json'
+            'reports': '{0}_{1}_cfg.json',
+            'thresholds': '{0}_{1}_thresholds.json'
         })
 
         sync_path = self.base_path.replace("{{tenant}}", tenant)
@@ -208,7 +212,7 @@ class HdfsReader:
         Args:
             tenant: str. tenant name
             report: str. report name
-            profile_type: str. profile type (operations|reports|aggregations)
+            profile_type: str. profile type (operations|reports|aggregations|thresholds)
 
         Returns:
 
@@ -227,7 +231,7 @@ class HdfsReader:
         Args:
             tenant: str. tenant name
             report: str. report name
-            profile_type: str. profile type (operations|reports|aggregations)
+            profile_type: str. profile type (operations|reports|aggregations|thresholds)
 
         Returns:
 
@@ -282,6 +286,9 @@ class ArgoProfileManager:
         """
 
         prof_api = self.api.get_profile(tenant, report, profile_type)
+	if prof_api is None:
+            self.log.info("profile type %s doesn't exist in report --skipping",profile_type)
+	    return
         self.log.info("retrieved %s profile(api): %s", profile_type, prof_api)
 
         prof_hdfs, exists = self.hdfs.cat(tenant, report, profile_type)
@@ -442,7 +449,7 @@ def run_profile_update(args):
     argo = ArgoProfileManager(args.config)
 
     # check for the following profile types
-    profile_type_checklist = ["operations", "aggregations", "reports"]
+    profile_type_checklist = ["operations", "aggregations", "reports", "thresholds"]
     for profile_type in profile_type_checklist:
         argo.profile_update_check(args.tenant, args.report, profile_type)
 
@@ -460,3 +467,4 @@ if __name__ == '__main__':
 
     # Parse the command line arguments accordingly and introduce them to the run method
     sys.exit(run_profile_update(arg_parser.parse_args()))
+

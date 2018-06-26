@@ -176,7 +176,7 @@ def main(args=None):
     # optional call to update profiles
     if args.profile_check:
         profile_mgr = ArgoProfileManager(args.ConfigPath)
-        profile_type_checklist = ["operations", "aggregations", "reports"]
+        profile_type_checklist = ["operations", "aggregations", "reports", "thresholds"]
         for profile_type in profile_type_checklist:
             profile_mgr.profile_update_check(args.Tenant, args.Report, profile_type)
 
