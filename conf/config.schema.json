@@ -1,0 +1,211 @@
+{
+    "HDFS": {
+      "namenode": {
+        "desc": "endpoint host of namenode",
+        "type": "uri"
+      },
+      "path_metric": {
+        "desc": "template for constructing the hdfs path to tenants metric data location",
+        "type": "template"
+      },
+      "path_sync": {
+        "desc": "template for constructing the hdfs path to tenants sync data location",
+        "type": "template"
+      },
+      "user": {
+        "desc": "name of the hdfs user",
+        "type": "string"
+      },
+      "rollback_days": {
+        "desc": "how many days to roll back if a sync file is missing",
+        "type": "int"
+      },
+      "writer_bin": {
+        "desc": "path to hdfs binary used for uploading files in hdfs",
+        "type": "path"
+      }
+    },
+    "API": {
+      "host": {
+        "desc": "argo-web-api endpoint",
+        "type": "uri"
+      },
+      "tenants": {
+        "desc": "list of tenants",
+        "type": "list"
+      },
+      "~_key": {
+        "~": "tenants",
+        "desc": "tenants key",
+        "type": "string"
+      }
+    },
+    "FLINK": {
+      "path": {
+        "desc": "path to flink executable",
+        "type": "path"
+      },
+      "job_manager": {
+        "desc": "url of flink's job manager",
+        "type": "uri"
+      }
+    },
+    "JOB-NAMESPACE": {
+      "ingest-metric-namespace": {
+        "desc": "template for naming ingest metric jobs in flink",
+        "type": "template"
+      },
+      "ingest-sync-namespace": {
+        "desc": "template for naming ingest sync jobs in flink",
+        "type": "template"
+      },
+      "stream-status-namespace": {
+        "desc": "template for naming stream status jobs in flink",
+        "type": "template"
+      }
+    },
+    "CLASSES": {
+      "ams-ingest-metric": {
+        "desc": "class name for entry point in ingest metric flink job jar",
+        "type": "string"
+      },
+      "ams-ingest-sync": {
+        "desc": "class name for entry point in ingest sync flink job jar",
+        "type": "string"
+      },
+      "batch-ar": {
+        "desc": "class name for entry point in batch ar flink job jar",
+        "type": "string"
+      },
+      "batch-status": {
+        "desc": "class name for entry point in batch status flink job jar",
+        "type": "string"
+      },
+      "stream-status": {
+        "desc": "class name for entry point in stream status flink job jar",
+        "type": "string"
+      }
+    },
+    "JARS": {
+      "ams-ingest-metric": {
+        "desc": "class name for entry point in ingest metric flink job jar",
+        "type": "path"
+      },
+      "ams-ingest-sync": {
+        "desc": "class name for entry point in ingest sync flink job jar",
+        "type": "path"
+      },
+      "batch-ar": {
+        "desc": "class name for entry point in batch ar flink job jar",
+        "type": "path"
+      },
+      "batch-status": {
+        "desc": "class name for entry point in batch status flink job jar",
+        "type": "path"
+      },
+      "stream-status": {
+        "desc": "class name for entry point in stream status flink job jar",
+        "type": "path"
+      }
+    },
+
+    "TENANTS:~":{
+      "~":"API.tenants",
+      "reports":{
+        "desc": "available reports for tenant",
+        "type": "list"
+      },
+      "report_~": {
+        "desc": "reports uuid",
+        "type": "string",
+        "~": "reports" 
+      },
+      "ams_project": {
+        "desc": "ams project used for this tenant",
+        "type": "string" 
+      },
+      "ams_token": {
+        "desc": "ams token used for this tenant",
+        "type": "string" 
+      },
+      "mongo_uri": {
+        "desc": "mongo uri including host port and database",
+        "type": "uri" 
+      }
+    },
+    "TENANTS:~:ingest-metric":{
+      "~":"API.tenants",
+      "ams_sub":{
+        "desc": "subscription for ingesting metric data",
+        "type": "string"
+      },
+      "ams_interval":{
+        "desc": "interval for polling ams for metric data",
+        "type": "long"
+      },
+      "ams_batch":{
+        "desc": "number of messages to retrieve at once from ams",
+        "type": "long"
+      },
+      "checkpoint_path": {
+        "desc": "hdfs checkpoint path",
+        "type": "template" 
+      },
+      "checkpoint_interval": {
+        "desc": "interval between hdfs checkpoints",
+        "type": "long" 
+      }
+    },
+    "TENANTS:~:ingest-sync":{
+      "~":"API.tenants",
+      "ams_sub":{
+        "desc": "subscription for ingesting sync data",
+        "type": "string"
+      },
+      "ams_interval":{
+        "desc": "interval for polling ams for sync data",
+        "type": "long"
+      },
+      "ams_batch":{
+        "desc": "number of messages to retrieve at once from ams",
+        "type": "long"
+      }
+    },
+    "TENANTS:~:stream-status":{
+      "~":"API.tenants",
+      "ams_sub_metric":{
+        "desc": "subscription for ingesting metric data",
+        "type": "string"
+      },
+      "ams_sub_sync":{
+        "desc": "subscription for ingesting sync data",
+        "type": "string"
+      },
+      "ams_interval":{
+        "desc": "interval for polling ams for sync data",
+        "type": "long"
+      },
+      "ams_batch":{
+        "desc": "number of messages to retrieve at once from ams",
+        "type": "long"
+      },
+      "kafka_servers":{
+        "desc": "list of kafka servers to send messages to",
+        "type": "list"
+      },
+      "kafka_topic":{
+        "desc": "kafka topic to directly write to",
+        "type": "string"
+      },
+      "flink_parallelism":{
+        "desc": "number of parallelism to be used in flink",
+        "type": "int"
+      },
+      "outputs":{
+        "desc": "where to output",
+        "type": "list"
+      }
+      
+    }
+    
+}
