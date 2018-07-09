@@ -2,9 +2,6 @@ import unittest
 import os
 from update_profiles import HdfsReader
 from update_profiles import ArgoApiClient
-from update_profiles import get_config
-
-CONF_TEMPLATE = os.path.join(os.path.dirname(__file__), '../../conf/conf.template')
 
 
 class TestClass(unittest.TestCase):
@@ -67,22 +64,3 @@ class TestClass(unittest.TestCase):
             actual = argo_api.get_url(test_case["resource"], test_case["item_uuid"])
             expected = test_case["expected"]
             self.assertEquals(expected, actual)
-
-    def test_cfg(self):
-
-        actual_cfg = get_config(CONF_TEMPLATE)
-
-        expected_cfg = {
-            'hdfs_host': 'hdfs_test_host',
-            'hdfs_port': 'hdfs_test_port',
-            'hdfs_user': 'hdfs_test_user',
-            'hdfs_writer': '/path/to/binary',
-            'hdfs_sync': 'hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/sync',
-            'log_level': 'info',
-            'api_host': 'api.foo',
-            'tenant_keys': {'TA': 'key1',
-                            'TB': 'key2',
-                            'TC': 'key3'}
-        }
-
-        self.assertEquals(expected_cfg, actual_cfg)

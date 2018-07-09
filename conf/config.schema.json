@@ -6,11 +6,11 @@
       },
       "path_metric": {
         "desc": "template for constructing the hdfs path to tenants metric data location",
-        "type": "template"
+        "type": "template,uri"
       },
       "path_sync": {
         "desc": "template for constructing the hdfs path to tenants sync data location",
-        "type": "template"
+        "type": "template,uri"
       },
       "user": {
         "desc": "name of the hdfs user",
@@ -25,8 +25,24 @@
         "type": "path"
       }
     },
+    "AMS": {
+      "endpoint": {
+        "desc": "argo messaging endpoint",
+        "type": "uri"
+      },
+      "proxy": {
+        "desc": "ams proxy to be used",
+        "type": "uri",
+        "optional": true
+      },
+      "verify":{
+          "desc":"ssl verify ams endpoint",
+          "type":"bool",
+          "optional": true
+      }
+    },
     "API": {
-      "host": {
+      "endpoint": {
         "desc": "argo-web-api endpoint",
         "type": "uri"
       },
@@ -118,19 +134,19 @@
       "report_~": {
         "desc": "reports uuid",
         "type": "string",
-        "~": "reports" 
+        "~": "reports"
       },
       "ams_project": {
         "desc": "ams project used for this tenant",
-        "type": "string" 
+        "type": "string"
       },
       "ams_token": {
         "desc": "ams token used for this tenant",
-        "type": "string" 
+        "type": "string"
       },
       "mongo_uri": {
         "desc": "mongo uri including host port and database",
-        "type": "uri" 
+        "type": "uri"
       }
     },
     "TENANTS:~:ingest-metric":{
@@ -149,11 +165,11 @@
       },
       "checkpoint_path": {
         "desc": "hdfs checkpoint path",
-        "type": "template" 
+        "type": "template"
       },
       "checkpoint_interval": {
         "desc": "interval between hdfs checkpoints",
-        "type": "long" 
+        "type": "long"
       }
     },
     "TENANTS:~:ingest-sync":{
@@ -189,23 +205,56 @@
         "desc": "number of messages to retrieve at once from ams",
         "type": "long"
       },
+
+      "hbase_master":{
+        "desc": "hbase master node uri hbase://localhost:9090",
+        "type": "uri",
+        "optional": true
+      },
+      "hbase_zk_quorum":{
+        "desc": "comma-separated list of kafka servers",
+        "type": "list",
+        "optional": true
+      },
+      "hbase_zk_port":{
+        "desc": "hbase zookeeper port",
+        "type": "long",
+        "optional": true
+      },
+      "hbase_table":{
+        "desc": "hbase table used",
+        "type": "string",
+        "optional": true
+      },
+      "hbase_namespace":{
+        "desc": "hbase namespace used ",
+        "type": "string",
+        "optional": true
+      },
       "kafka_servers":{
-        "desc": "list of kafka servers to send messages to",
-        "type": "list"
+        "desc": "comma-separated list of kafka servers to send messages to",
+        "type": "list",
+        "optional": true
       },
       "kafka_topic":{
         "desc": "kafka topic to directly write to",
-        "type": "string"
+        "type": "string",
+        "optional": true
+      },
+      "mongo_method": {
+        "desc": "method on how to insert data in mongo (insert|upsert)",
+        "type": "string",
+        "optional": true
       },
       "flink_parallelism":{
         "desc": "number of parallelism to be used in flink",
         "type": "int"
       },
       "outputs":{
-        "desc": "where to output",
+        "desc": "list of output destinations",
         "type": "list"
       }
-      
+
     }
-    
+
 }

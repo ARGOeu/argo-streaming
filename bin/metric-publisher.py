@@ -27,11 +27,10 @@ import sys
 import logging
 import logging.handlers
 
+log = logging.getLogger(__name__)
 
-from time import sleep
 
-
-def publish(message, endpoint, project, topic, key,log):
+def publish(message, endpoint, project, topic, key):
     url = "https://" + endpoint + "/v1/projects/"+project+"/topics/" + topic + ":publish?key=" + key
     log.debug("publishing to: " + url)
     r = requests.post(url, data=message, timeout=10)
@@ -41,10 +40,8 @@ def publish(message, endpoint, project, topic, key,log):
         log.debug(r.text)
 
 
-
-
 def main(args):
-    log = logging.getLogger(__name__)
+
     log.setLevel(logging.INFO)
 
     sys_log = logging.handlers.SysLogHandler("/dev/log")
@@ -69,7 +66,8 @@ def main(args):
 
         json_str = json.dumps(msg)
         log.debug("json msg:" + json_str)
-        publish(json_str, args.ams_endpoint, args.ams_project, args.ams_topic, args.ams_key, log)
+        publish(json_str, args.ams_endpoint, args.ams_project, args.ams_topic, args.ams_key)
+
 
 if __name__ == "__main__":
 
@@ -77,15 +75,15 @@ if __name__ == "__main__":
     # (input_file,output_file,schema_file)
     arg_parser = ArgumentParser(description="Read a consumer avro file and publish rows to AMS")
     arg_parser.add_argument(
-        "-f", "--file", help="consumer avro file ", dest="avro_file", metavar="STRING", required="TRUE")
+        "-f", "--file", help="consumer avro file ", dest="avro_file", metavar="STRING", required=True)
     arg_parser.add_argument(
-        "-e", "--endpoint", help="ams endpoint", dest="ams_endpoint", metavar="STRING", required="TRUE")
+        "-e", "--endpoint", help="ams endpoint", dest="ams_endpoint", metavar="STRING", required=True)
     arg_parser.add_argument(
-        "-k", "--key", help="ams key(token) ", dest="ams_key", metavar="STRING", required="TRUE")
+        "-k", "--key", help="ams key(token) ", dest="ams_key", metavar="STRING", required=True)
     arg_parser.add_argument(
-        "-p", "--project", help="ams project ", dest="ams_project", metavar="STRING", required="TRUE")
+        "-p", "--project", help="ams project ", dest="ams_project", metavar="STRING", required=True)
     arg_parser.add_argument(
-        "-t", "--topic", help="ams topic ", dest="ams_topic", metavar="STRING", required="TRUE")
+        "-t", "--topic", help="ams topic ", dest="ams_topic", metavar="STRING", required=True)
 
     # Parse the command line arguments accordingly and introduce them to
     # main...

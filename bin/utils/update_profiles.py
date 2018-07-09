@@ -3,9 +3,7 @@ import requests
 import json
 from snakebite.client import Client
 from snakebite.errors import FileNotFoundException
-from ConfigParser import SafeConfigParser
 import logging
-import logging.handlers
 import os
 import uuid
 from urlparse import urlparse
@@ -13,8 +11,7 @@ from argparse import ArgumentParser
 import sys
 import subprocess
 
-CONF_ETC = '/etc/argo-streaming/argo-streaming.cfg'
-CONF_LOCAL = './argo-streaming.cfg'
+log = logging.getLogger(__name__)
 
 
 class ArgoApiClient:
@@ -93,8 +90,8 @@ class ArgoApiClient:
 
         """
         item_uuid = self.find_profile_uuid(tenant, report, profile_type)
-	if item_uuid is None:
-	    return None
+        if item_uuid is None:
+            return None
         profiles = self.get_resource(tenant, self.get_url(profile_type, item_uuid))
         if profiles is not None:
             return profiles[0]
@@ -254,26 +251,32 @@ class ArgoProfileManager:
     from their latest profile definitions given from argo-web-api.
     """
 
-    def __init__(self, cfg_path):
+    def __init__(self, config):
         """
         Initialized ArgoProfileManager which manages updating argo profile files in hdfs
         Args:
-            cfg_path: str. path to the configuration file used
+            config: obj. ArgoConfig object containing the main configuration
         """
-        self.cfg = get_config(cfg_path)
 
-        self.log = get_logger("argo-profile-mgr", self.cfg["log_level"])
+        self.cfg = config
 
         # process hdfs base path
-        full_path = str(self.cfg["hdfs_sync"])
-        full_path = full_path.replace("{{hdfs_host}}", str(self.cfg["hdfs_host"]))
-        full_path = full_path.replace("{{hdfs_port}}", str(self.cfg["hdfs_port"]))
-        full_path = full_path.replace("{{hdfs_user}}", str(self.cfg["hdfs_user"]))
+        namenode = config.get("HDFS", "namenode")
+        hdfs_user = config.get("HDFS", "user")
+        full_path = config.get("HDFS", "path_sync")
+        full_path = full_path.partial_fill(namenode=namenode, hdfs_user=hdfs_user)
 
         short_path = urlparse(full_path).path
 
-        self.hdfs = HdfsReader(self.cfg["hdfs_host"], int(self.cfg["hdfs_port"]), short_path)
-        self.api = ArgoApiClient(self.cfg["api_host"], self.cfg["tenant_keys"])
+        tenant_list = config.get("API", "tenants")
+        tenant_keys = dict()
+        # Create a list of tenants -> api_keys
+        for tenant in tenant_list:
+            tenant_key = config.get("API", tenant + "_key")
+            tenant_keys[tenant] = tenant_key
+
+        self.hdfs = HdfsReader(namenode.hostname, namenode.port, short_path)
+        self.api = ArgoApiClient(config.get("API", "endpoint").geturl(), tenant_keys)
 
     def profile_update_check(self, tenant, report, profile_type):
         """
@@ -286,25 +289,26 @@ class ArgoProfileManager:
         """
 
         prof_api = self.api.get_profile(tenant, report, profile_type)
-	if prof_api is None:
-            self.log.info("profile type %s doesn't exist in report --skipping",profile_type)
-	    return
-        self.log.info("retrieved %s profile(api): %s", profile_type, prof_api)
+        if prof_api is None:
+            log.info("profile type %s doesn't exist in report --skipping", profile_type)
+            return
+
+        log.info("retrieved %s profile(api): %s", profile_type, prof_api)
 
         prof_hdfs, exists = self.hdfs.cat(tenant, report, profile_type)
 
         if exists:
-            self.log.info("retrieved %s profile(hdfs): %s ", profile_type, prof_hdfs)
+            log.info("retrieved %s profile(hdfs): %s ", profile_type, prof_hdfs)
             prof_update = prof_api != prof_hdfs
 
             if prof_update:
-                self.log.info("%s profile mismatch", profile_type)
+                log.info("%s profile mismatch", profile_type)
             else:
-                self.log.info("%s profiles match -- no need for update", profile_type)
+                log.info("%s profiles match -- no need for update", profile_type)
         else:
             # doesn't exist so it should be uploaded
             prof_update = True
-            self.log.info("%s profile doesn't exist in hdfs, should be uploaded", profile_type)
+            log.info("%s profile doesn't exist in hdfs, should be uploaded", profile_type)
 
         # Upload if it's deemed to be uploaded
         if prof_update:
@@ -329,7 +333,7 @@ class ArgoProfileManager:
         if exists:
             is_removed = self.hdfs.rem(tenant, report, profile_type)
             if not is_removed:
-                self.log.error("Could not remove old %s profile from hdfs", profile_type)
+                log.error("Could not remove old %s profile from hdfs", profile_type)
                 return
 
         # If all ok continue with uploading the new file to hdfs
@@ -348,93 +352,11 @@ class ArgoProfileManager:
         status = subprocess.check_call([hdfs_write_bin, hdfs_write_cmd, local_path, hdfs_path])
 
         if status == 0:
-            self.log.info("File uploaded successfully to hdfs host: %s path: %s", hdfs_host, hdfs_path)
+            log.info("File uploaded successfully to hdfs host: %s path: %s", hdfs_host, hdfs_path)
             return True
         else:
-            self.log.error("File uploaded unsuccessful to hdfs host: %s path: %s", hdfs_host, hdfs_path)
+            log.error("File uploaded unsuccessful to hdfs host: %s path: %s", hdfs_host, hdfs_path)
             return False
-
-
-def get_config(path):
-    """
-    Creates a specific dictionary with only needed configuration options retrieved from an argo config file
-    Args:
-        path: str. path to the generic argo config file to be used
-
-    Returns:
-        dict: a specific configuration option dictionary with only necessary parameters
-
-    """
-    # set up the config parser
-    config = SafeConfigParser()
-
-    if path is None:
-
-        if os.path.isfile(CONF_ETC):
-            # Read default etc_conf
-            config.read(CONF_ETC)
-        else:
-            # Read local
-            config.read(CONF_LOCAL)
-    else:
-        config.read(path)
-
-    cfg = dict()
-    cfg.update(dict(log_level=config.get("LOGS", "log_level"), hdfs_host=config.get("HDFS", "hdfs_host"),
-                    hdfs_port=config.get("HDFS", "hdfs_port"), hdfs_user=config.get("HDFS", "hdfs_user"),
-                    hdfs_sync=config.get("HDFS", "hdfs_sync"), api_host=config.get("API", "host"),
-                    hdfs_writer=config.get("HDFS", "writer_bin")))
-
-    tenant_list = config.get("API", "tenants").split(",")
-    tenant_keys = dict()
-    # Create a list of tenants -> api_keys
-    for tenant in tenant_list:
-        tenant_key = config.get("API", tenant + "_key")
-        tenant_keys[tenant] = tenant_key
-    cfg["tenant_keys"] = tenant_keys
-
-    return cfg
-
-
-def get_logger(log_name, log_level):
-    """
-    Instantiates a logger
-    Args:
-        log_name: str. log name to be used in logger
-        log_level: str. log level
-
-    Returns:
-        obj: logger
-
-    """
-    # Instantiate logger with proper name
-    log = logging.getLogger(log_name)
-    log.setLevel(logging.DEBUG)
-
-    log_level = log_level.upper()
-
-    # Instantiate default levels
-    levels = {
-        'DEBUG': logging.DEBUG,
-        'INFO': logging.INFO,
-        'WARNING': logging.WARNING,
-        'ERROR': logging.ERROR,
-        'CRITICAL': logging.CRITICAL
-    }
-
-    # Log to console
-    stream_log = logging.StreamHandler()
-    stream_log.setLevel(logging.INFO)
-    log.addHandler(stream_log)
-
-    # Log to syslog
-    sys_log = logging.handlers.SysLogHandler("/dev/log")
-    sys_format = logging.Formatter('%(name)s[%(process)d]: %(levelname)s %(message)s')
-    sys_log.setFormatter(sys_format)
-    sys_log.setLevel(levels[log_level])
-    log.addHandler(sys_log)
-
-    return log
 
 
 def run_profile_update(args):
@@ -467,4 +389,3 @@ if __name__ == '__main__':
 
     # Parse the command line arguments accordingly and introduce them to the run method
     sys.exit(run_profile_update(arg_parser.parse_args()))
-

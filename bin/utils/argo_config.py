@@ -42,12 +42,31 @@ class Template:
          """
         txt = self.tmpl  # type: str
         args = self.get_args()
-        if sorted(args) != sorted(args_new.keys()):
+
+        # If provided arguments fill the needed ones we are ok (extra arguments will be ingored)
+        if not set(args).issubset(set(args_new.keys())):
             raise RuntimeError("Argument mismatch, needed arguments:"+str(args))
         for arg in args:
             txt = re.sub(r"{{\s*"+str(arg)+r"\s*}}", str(args_new[arg]), txt)
 
         return self.get_as(txt)
+
+    def partial_fill(self, **args_new):
+        """
+         Fill template partially with argument values and get result
+
+         Args:
+             args_new = list of argument key,value pairs fill the template
+         Returns:
+             str: Fills partially a template and returns a string
+         """
+        txt = self.tmpl  # type: str
+        args = self.get_args()
+
+        for arg in args:
+            txt = re.sub(r"{{\s*" + str(arg) + r"\s*}}", str(args_new[arg]), txt)
+
+        return txt
 
     def get_as(self, text):
         """
@@ -62,6 +81,8 @@ class Template:
             return str(text)
         elif self.sub_type == "int" or self.sub_type == "long":
             return int(text)
+        elif self.sub_type == "bool":
+            return bool(text)
         elif self.sub_type == "float":
             return float(text)
         elif self.sub_type == "uri":
@@ -78,13 +99,22 @@ class ArgoConfig:
     based on a specific schema
     """
 
-    def __init__(self):
+    def __init__(self, config=None, schema=None):
         self.conf = SafeConfigParser()
         self.schema = dict()
         self.fix = dict()
         self.var = dict()
+        if config is not None and schema is not None:
+            self.load_conf(config)
+            self.load_schema(schema)
+            self.check_conf()
 
-    def get(self, group, item):
+    def has(self, group, item=None):
+        if item is None:
+            return self.conf.has_section(group)
+        return self.conf.has_option(group, item)
+
+    def get(self, group, item=None):
         """
         Given a group and an item return its value
 
@@ -94,6 +124,33 @@ class ArgoConfig:
         Returns:
             obj: an object containing the value
         """
+        if item is None:
+            # If user specified group.item together
+            if '.' in group:
+                tokens = group.split('.')
+                group = tokens[0]
+                item = tokens[1]
+            # If only group was specified
+            else:
+                result = {}
+                if group in self.fix:
+                    result.update(self.fix[group])
+                if group in self.var:
+                    result.update(self.var[group])
+                return result
+
+        if '*' in item:
+            r = re.compile(item.replace('*', '.*'))
+            results = {}
+            if group in self.fix:
+                items = filter(r.match, self.fix[group].keys())
+                for item in items:
+                    results[item] = self.fix[group][item]
+            if group in self.var:
+                items = filter(r.match, self.var[group].keys())
+                for item in items:
+                    results[item] = self.var[group][item]
+            return results
 
         if group in self.fix:
             if item in self.fix[group]:
@@ -135,6 +192,8 @@ class ArgoConfig:
             result = self.conf.get(group, item)
         elif item_type == "int" or item_type == "long":
             result = self.conf.getint(group, item)
+        elif item_type == "bool":
+            result = self.conf.getboolean(group, item)
         elif item_type == "float":
             result = self.conf.getfloat(group, item)
         elif item_type == "uri":
@@ -170,15 +229,22 @@ class ArgoConfig:
             dest: dict. where to add the item (in the fixed or varied item dictionary)
             og_group: str. reference to original group in schema
         """
+        if og_group is not None:
+            schema_group = og_group
+        else:
+            schema_group = group
+
+        if "optional" in self.schema[schema_group][og_item].keys():
+            if self.schema[schema_group][og_item]["optional"]:
+                if not self.conf.has_option(group, item):
+                    return
 
         if group not in dest:
             dest[group] = dict()
             if og_group is not None:
                 dest[group]["og_group"] = og_group
-        if og_group is not None:
-            dest[group][item] = self.get_as(group,  item, self.schema[og_group][og_item]["type"], og_item)
-        else:
-            dest[group][item] = self.get_as(group, item, self.schema[group][og_item]["type"], og_item)
+
+        dest[group][item] = self.get_as(group,  item, self.schema[schema_group][og_item]["type"], og_item)
 
     def add_group_items(self, group, items, var, og_group):
         """
@@ -308,23 +374,3 @@ class ArgoConfig:
                 # Both fix and var items are in a var group so are considered var
                 self.add_group_items(sub_group, fix_items, True, group["group"])
                 self.add_group_items(sub_group, var_items, True, group["group"])
-
-
-def main():
-    # Local files
-    conf_fn = "argo-streaming.conf"
-    schema_fn = "config.schema.json"
-
-    argo_conf = ArgoConfig()
-    argo_conf.load_conf(conf_fn)
-    argo_conf.load_schema(schema_fn)
-    argo_conf.check_conf()
-
-    print "Fixed parameters:"
-    print json.dumps(argo_conf.fix, default=str, indent=2)
-    print "Variable parameters:"
-    print json.dumps(argo_conf.var, default=str, indent=2)
-
-
-if __name__ == '__main__':
-    main()
