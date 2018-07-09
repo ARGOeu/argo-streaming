@@ -97,7 +97,7 @@ class ArgoApiClient:
                 if user["name"].startswith("argo_engine_"):
                     tenant_keys[item["info"]["name"]] = user["api_key"]
         return tenant_keys
-        
+
     @staticmethod
     def get_admin_resource(token, url):
         """
@@ -435,6 +435,9 @@ class ArgoProfileManager:
             # Update tenant's report definitions in configuration
             self.upload_tenant_reports_cfg(tenant_name)
 
+        for tenant_name in tenant_keys.keys():
+            self.cfg.set("API", tenant_name+"_key", tenant_keys[tenant_name])
+
     def save_config(self, file_path):
         """
         Saves configuration to a specified ini file
@@ -475,16 +478,14 @@ def run_profile_update(args):
         argo.save_config(conf_paths["main"])
 
 
-
-
 if __name__ == '__main__':
     # Feed Argument parser with the description of the 3 arguments we need
     arg_parser = ArgumentParser(
         description="update profiles for specific tenant/report")
     arg_parser.add_argument(
-        "-t", "--tenant", help="tenant owner ", dest="tenant", metavar="STRING", required=False)
+        "-t", "--tenant", help="tenant owner ", dest="tenant", metavar="STRING", required=False, default=None)
     arg_parser.add_argument(
-        "-r", "--report", help="report", dest="report", metavar="STRING", required=False)
+        "-r", "--report", help="report", dest="report", metavar="STRING", required=False, default=None)
     arg_parser.add_argument(
         "-c", "--config", help="config", dest="config", metavar="STRING")
 
