@@ -121,13 +121,12 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 			.append("summary", record.getSummary())
 			.append("time_integer",record.getTimeInt()) 
 			.append("previous_state",record.getPrevState())
-			.append("previous_ts", record.getPrevTs())
+			.append("previous_timestamp", record.getPrevTs())
 			// append the actual data to status metric record in datastore
 			.append("actual_data", record.getActualData())
 			// append original status and threshold rule applied
 			.append("original_status", record.getOgStatus())
 			.append("threshold_rule_applied", record.getRuleApplied());
-			
 		}
 		
 		

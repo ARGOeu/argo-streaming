@@ -87,8 +87,6 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusM
 			}
 			
 			
-			
-			
 			prevStatus = item.getStatus();
 			prevTimestamp = item.getTimestamp();
 			

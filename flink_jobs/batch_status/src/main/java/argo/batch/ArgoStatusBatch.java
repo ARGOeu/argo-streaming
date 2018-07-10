@@ -105,17 +105,28 @@ public class ArgoStatusBatch {
 		// Find the latest day
 		DataSet<MetricData> pdataMin = pdataDS.groupBy("service", "hostname", "metric")
 				.sortGroup("timestamp", Order.DESCENDING).first(1);
-
-		DataSet<MetricData> mdataTotalDS = mdataDS.union(pdataMin);
+		
+		// Union todays data with the latest statuses from previous day 
+		DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
+		
+		// Use yesterday's latest statuses and todays data to find the missing ones and add them to the mix
+		DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
+				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+				.withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf");
+		
 
 		// Discard unused data and attach endpoint group as information
-		DataSet<StatusMetric> mdataTrimDS = mdataTotalDS.flatMap(new PickEndpoints(params))
+		DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
 				.withBroadcastSet(opsDS, "ops");
 
+		// Combine prev and todays metric data with the generated missing metric
+		// data
+		DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
+		
 		// Create status detail data set
-		DataSet<StatusMetric> stDetailDS = mdataTrimDS.groupBy("group", "service", "hostname", "metric")
+		DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
 				.sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp");
 						
