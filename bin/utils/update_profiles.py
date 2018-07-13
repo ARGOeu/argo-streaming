@@ -10,6 +10,8 @@ from urlparse import urlparse
 from argparse import ArgumentParser
 import sys
 import subprocess
+from common import get_log_conf, get_config_paths
+from argo_config import ArgoConfig
 
 log = logging.getLogger(__name__)
 
@@ -35,10 +37,11 @@ class ArgoApiClient:
             'reports': '/api/v2/reports',
             'operations': '/api/v2/operations_profiles',
             'aggregations': '/api/v2/aggregation_profiles',
-            'thresholds': '/api/v2/thresholds_profiles'
+            'thresholds': '/api/v2/thresholds_profiles',
+            'tenants': '/api/v2/admin/tenants'
         })
 
-    def get_url(self, resource, item_uuid):
+    def get_url(self, resource, item_uuid=None):
         """
         Constructs an argo-web-api url based on the resource and item_uuid
         Args:
@@ -69,6 +72,48 @@ class ArgoApiClient:
         headers.update({
             'Accept': 'application/json',
             'x-api-key': self.tenant_keys[tenant]
+        })
+        r = requests.get(url, headers=headers, verify=False)
+
+        if 200 == r.status_code:
+            return json.loads(r.text)["data"]
+        else:
+            return None
+
+    def get_tenants(self, token):
+        """
+        Returns an argo-web-api resource by tenant and url
+        Args:
+            token: str. web-api token to be used (for auth)
+
+        Returns:
+            dict: list of tenants and access keys
+
+        """
+        tenants = self.get_admin_resource(token, self.get_url("tenants"))
+        tenant_keys = dict()
+        for item in tenants:
+            for user in item["users"]:
+                if user["name"].startswith("argo_engine_"):
+                    tenant_keys[item["info"]["name"]] = user["api_key"]
+        return tenant_keys
+        
+    @staticmethod
+    def get_admin_resource(token, url):
+        """
+        Returns an argo-web-api resource by tenant and url
+        Args:
+            token: str. admin token to be used
+            url: str. url of resource
+
+        Returns:
+            dict: resource contents
+
+        """
+        headers = dict()
+        headers.update({
+            'Accept': 'application/json',
+            'x-api-key': token
         })
         r = requests.get(url, headers=headers, verify=False)
 
@@ -276,7 +321,7 @@ class ArgoProfileManager:
             tenant_keys[tenant] = tenant_key
 
         self.hdfs = HdfsReader(namenode.hostname, namenode.port, short_path)
-        self.api = ArgoApiClient(config.get("API", "endpoint").geturl(), tenant_keys)
+        self.api = ArgoApiClient(config.get("API", "endpoint").netloc, tenant_keys)
 
     def profile_update_check(self, tenant, report, profile_type):
         """
@@ -358,6 +403,48 @@ class ArgoProfileManager:
             log.error("File uploaded unsuccessful to hdfs host: %s path: %s", hdfs_host, hdfs_path)
             return False
 
+    def upload_tenant_reports_cfg(self, tenant):
+        reports = self.api.get_reports(tenant)
+
+        report_name_list = []
+        for report in reports:
+            # double check if indeed report belongs to tenant
+            if report["tenant"] == tenant:
+                report_name = report["info"]["name"]
+                report_name_list.append(report_name)
+                report_uuid = report["id"]
+                # Set report in configuration
+                self.cfg.set("TENANTS:"+tenant, "report_" + report_name, report_uuid)
+
+        # update tenant's report name list
+        self.cfg.set("TENANTS:"+tenant, "reports", ",".join(report_name_list))
+
+    def upload_tenants_cfg(self):
+        """
+        Uses admin access credentials to contact argo-web-api and retrieve tenant list.
+        Then updates configuration with tenant list, tenant reports etc.
+        """
+        token = self.cfg.get("API", "access_token")
+        tenant_keys = self.api.get_tenants(token)
+        tenant_names = ",".join(tenant_keys.keys())
+        self.cfg.set("API", "tenants", tenant_names)
+
+        # For each tenant update also it's report list
+        for tenant_name in tenant_keys.keys():
+            self.cfg.set("API", tenant_name+"_key", tenant_keys[tenant_name])
+            # Update tenant's report definitions in configuration
+            self.upload_tenant_reports_cfg(tenant_name)
+
+    def save_config(self, file_path):
+        """
+        Saves configuration to a specified ini file
+
+        Args:
+            file_path: str. path to the configuration file to be saved
+        """
+        self.cfg.save_as(file_path)
+        log.info("Configuration file %s updated...", file_path)
+
 
 def run_profile_update(args):
     """
@@ -367,13 +454,27 @@ def run_profile_update(args):
     Args:
         args: obj. command line arguments from arg parser
     """
-    # Set a new profile manager to be used
-    argo = ArgoProfileManager(args.config)
+    # Get configuration paths
+    conf_paths = get_config_paths(args.config)
 
-    # check for the following profile types
-    profile_type_checklist = ["operations", "aggregations", "reports", "thresholds"]
-    for profile_type in profile_type_checklist:
-        argo.profile_update_check(args.tenant, args.report, profile_type)
+    # Get logger config file
+    get_log_conf(conf_paths['log'])
+
+    # Get main configuration and schema
+    config = ArgoConfig(conf_paths["main"], conf_paths["schema"])
+
+    argo = ArgoProfileManager(config)
+
+    if args.tenant is not None:
+        # check for the following profile types
+        profile_type_checklist = ["operations", "aggregations", "reports", "thresholds"]
+        for profile_type in profile_type_checklist:
+            argo.profile_update_check(args.tenant, args.report, profile_type)
+    else:
+        argo.upload_tenants_cfg()
+        argo.save_config(conf_paths["main"])
+
+
 
 
 if __name__ == '__main__':
@@ -381,9 +482,9 @@ if __name__ == '__main__':
     arg_parser = ArgumentParser(
         description="update profiles for specific tenant/report")
     arg_parser.add_argument(
-        "-t", "--tenant", help="tenant owner ", dest="tenant", metavar="STRING", required=True)
+        "-t", "--tenant", help="tenant owner ", dest="tenant", metavar="STRING", required=False)
     arg_parser.add_argument(
-        "-r", "--report", help="report", dest="report", metavar="STRING", required=True)
+        "-r", "--report", help="report", dest="report", metavar="STRING", required=False)
     arg_parser.add_argument(
         "-c", "--config", help="config", dest="config", metavar="STRING")
 

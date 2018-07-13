@@ -16,6 +16,7 @@ writer_bin: /path/to/binary
 [API]
 endpoint = api.foo
 tenants = TENANTA
+access_token = key0
 TENANTA_key = key1
 TENANTB_key = key2
 TENANTC_key = key3

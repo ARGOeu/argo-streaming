@@ -1,5 +1,4 @@
 import unittest
-import os
 from update_profiles import HdfsReader
 from update_profiles import ArgoApiClient
 
@@ -57,7 +56,11 @@ class TestClass(unittest.TestCase):
             {"resource": "aggregations", "item_uuid": None,
              "expected": "https://foo.host/api/v2/aggregation_profiles"},
             {"resource": "aggregations", "item_uuid": "12",
-             "expected": "https://foo.host/api/v2/aggregation_profiles/12"}
+             "expected": "https://foo.host/api/v2/aggregation_profiles/12"},
+            {"resource": "tenants", "item_uuid": None,
+             "expected": "https://foo.host/api/v2/admin/tenants"},
+            {"resource": "tenants", "item_uuid": "12",
+             "expected": "https://foo.host/api/v2/admin/tenants/12"}
             ]
 
         for test_case in test_cases:
