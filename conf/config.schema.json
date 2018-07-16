@@ -46,6 +46,10 @@
         "desc": "argo-web-api endpoint",
         "type": "uri"
       },
+      "access_token": {
+        "desc": "token for argo-web-api access",
+        "type": "string"
+      },
       "tenants": {
         "desc": "list of tenants",
         "type": "list"

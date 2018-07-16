@@ -64,6 +64,8 @@ class Template:
         args = self.get_args()
 
         for arg in args:
+            if arg not in args_new.keys():
+                continue
             txt = re.sub(r"{{\s*" + str(arg) + r"\s*}}", str(args_new[arg]), txt)
 
         return txt
@@ -113,6 +115,9 @@ class ArgoConfig:
         if item is None:
             return self.conf.has_section(group)
         return self.conf.has_option(group, item)
+
+    def set(self, group, item, value):
+        self.conf.set(group, item, value)
 
     def get(self, group, item=None):
         """
@@ -172,6 +177,11 @@ class ArgoConfig:
         """
         with open(schema_path, 'r') as schema_file:
             self.schema = json.load(schema_file)
+
+    def save_as(self,file_path):
+        with open(file_path, 'w') as file_conf:
+            self.conf.write(file_conf)
+
 
     def get_as(self, group, item, item_type, og_item):
         """

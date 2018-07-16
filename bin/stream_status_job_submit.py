@@ -52,19 +52,15 @@ def compose_command(config, args,  hdfs_commands):
     if args.sudo is True:
         cmd_command.append("sudo")
 
-    tenant = args.tenant
-
     # get needed config params
     section_tenant = "TENANTS:" + args.tenant
     section_tenant_job = "TENANTS:" + args.tenant + ":stream-status"
     job_namespace = config.get("JOB-NAMESPACE", "stream-status-namespace")
     ams_endpoint = config.get("AMS", "endpoint")
 
-
     ams_project = config.get(section_tenant, "ams_project")
     ams_sub_metric = config.get(section_tenant_job, "ams_sub_metric")
     ams_sub_sync = config.get(section_tenant_job, "ams_sub_sync")
-
 
     # flink executable
     cmd_command.append(config.get("FLINK", "path"))
@@ -162,7 +158,7 @@ def compose_command(config, args,  hdfs_commands):
                 # kafka list of servers
                 if config.has(section_tenant_job, "kafka_servers"):
                     cmd_command.append("--kafka.servers")
-                    kafka_servers = ','.join(config.get(section_tenant_job,"kafka_servers"))
+                    kafka_servers = ','.join(config.get(section_tenant_job, "kafka_servers"))
                     cmd_command.append(kafka_servers)
                 # kafka topic to send status events to
                 if config.has(section_tenant_job, "kafka_topic"):
