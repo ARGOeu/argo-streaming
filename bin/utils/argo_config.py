@@ -178,10 +178,9 @@ class ArgoConfig:
         with open(schema_path, 'r') as schema_file:
             self.schema = json.load(schema_file)
 
-    def save_as(self,file_path):
+    def save_as(self, file_path):
         with open(file_path, 'w') as file_conf:
             self.conf.write(file_conf)
-
 
     def get_as(self, group, item, item_type, og_item):
         """
@@ -315,6 +314,8 @@ class ArgoConfig:
             map_pool.append(tmp_item)
 
         name_pool = self.conf.get(map_pool[0], map_pool[1]).split(",")
+        if name_pool == [""]:
+            return None
 
         for name in name_pool:
             variations["vars"].append(item.replace("~", name))
@@ -340,6 +341,10 @@ class ArgoConfig:
             map_pool.append(item)
 
         name_pool = self.conf.get(map_pool[0], map_pool[1]).split(",")
+
+        if name_pool == [""]:
+            return None
+
         for name in name_pool:
             variations["vars"].append(group.replace("~", name))
         return variations
@@ -362,7 +367,9 @@ class ArgoConfig:
             var_items = list()
             for item in self.schema[group].keys():
                 if self.is_var(item):
-                    var_items.append(self.get_item_variations(group, item, None))
+                    group_vars = self.get_item_variations(group,item,None)
+                    if group_vars is not None:
+                        var_items.append(self.get_item_variations(group, item, None))
                     continue
                 fix_items.append(item)
             self.add_group_items(group, fix_items, False, None)
@@ -378,7 +385,9 @@ class ArgoConfig:
                         continue
 
                     if self.is_var(item):
-                        var_items.append(self.get_item_variations(sub_group, item, group["group"]))
+                        item_vars = self.get_item_variations(sub_group, item, group["group"])
+                        if item_vars is not None:
+                            var_items.append(item_vars)
                         continue
                     fix_items.append(item)
                 # Both fix and var items are in a var group so are considered var
