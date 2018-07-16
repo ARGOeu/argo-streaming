@@ -1,59 +1,70 @@
 #!/usr/bin/env python
 import sys
-import os
 import argparse
 import datetime
 from snakebite.client import Client
-import ConfigParser
 import logging
-from utils.argo_log import ArgoLogger
-from utils.common import cmd_toString, date_rollback, flink_job_submit, hdfs_check_path
+from utils.argo_config import ArgoConfig
+from utils.common import cmd_to_string, date_rollback, flink_job_submit, hdfs_check_path, get_config_paths, get_log_conf
+
+log = logging.getLogger(__name__)
 
 
-def compose_hdfs_commands(year, month, day, args, config, logger):
-
+def compose_hdfs_commands(year, month, day, args, config):
     # set up the hdfs client to be used in order to check the files
-    client = Client(config.get("HDFS", "hdfs_host"), config.getint("HDFS", "hdfs_port"), use_trash=False)
+    namenode = config.get("HDFS", "namenode")
+    client = Client(namenode.hostname, namenode.port, use_trash=False)
 
     # hdfs sync  path for the tenant
-    hdfs_sync = config.get("HDFS", "hdfs_sync")
-    hdfs_sync = hdfs_sync.replace("{{hdfs_host}}", config.get("HDFS", "hdfs_host"))
-    hdfs_sync = hdfs_sync.replace("{{hdfs_port}}", config.get("HDFS", "hdfs_port"))
-    hdfs_sync = hdfs_sync.replace("{{hdfs_user}}", config.get("HDFS", "hdfs_user"))
-    hdfs_sync = hdfs_sync.replace("{{tenant}}", args.Tenant)
+
+    hdfs_user = config.get("HDFS", "user")
+    tenant = args.tenant
+    hdfs_sync = config.get("HDFS", "path_sync")
+    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), user=hdfs_user, tenant=tenant).geturl()
 
     # dictionary holding all the commands with their respective arguments' name
-    hdfs_commands = {}
+    hdfs_commands = dict()
 
     # file location of metric profile (local or hdfs)
-    hdfs_commands["--sync.mps"] = date_rollback(hdfs_sync+"/"+args.Report+"/"+"metric_profile_"+"{{date}}"+".avro", year, month, day, config, logger, client)
+    hdfs_commands["--sync.mps"] = date_rollback(
+        hdfs_sync + "/" + args.report + "/" + "metric_profile_" + "{{date}}" + ".avro", year, month, day, config,
+        client)
 
     # file location of operations profile (local or hdfs)
-    hdfs_commands["--sync.ops"] = hdfs_check_path(hdfs_sync+"/"+args.Tenant+"_ops.json", logger, client)
+    hdfs_commands["--sync.ops"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_ops.json", client)
 
     # file location of aggregations profile (local or hdfs)
-    hdfs_commands["--sync.apr"] = hdfs_check_path(hdfs_sync+"/"+args.Tenant+"_"+args.Report+"_ap.json", logger, client)
+    hdfs_commands["--sync.apr"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap.json", client)
 
     #  file location of endpoint group topology file (local or hdfs)
-    hdfs_commands["-sync.egp"] = date_rollback(hdfs_sync+"/"+args.Report+"/"+"group_endpoints_"+"{{date}}"+".avro", year, month, day, config, logger, client)
+    hdfs_commands["-sync.egp"] = date_rollback(
+        hdfs_sync + "/" + args.report + "/" + "group_endpoints_" + "{{date}}" + ".avro", year, month, day, config,
+        client)
 
     return hdfs_commands
 
 
-def compose_command(config, args,  hdfs_commands, logger=None):
+def compose_command(config, args,  hdfs_commands):
 
-    # job sumbission command
+    # job submission command
     cmd_command = []
 
-    # job namespace on the flink manager
-    job_namespace = config.get("JOB-NAMESPACE", "stream-status-namespace")
-
-    if args.Sudo is True:
+    if args.sudo is True:
         cmd_command.append("sudo")
 
-    # create a simple stream_handler whenever tetsing
-    if logger is None:
-        logger = ArgoLogger()
+    tenant = args.tenant
+
+    # get needed config params
+    section_tenant = "TENANTS:" + args.tenant
+    section_tenant_job = "TENANTS:" + args.tenant + ":stream-status"
+    job_namespace = config.get("JOB-NAMESPACE", "stream-status-namespace")
+    ams_endpoint = config.get("AMS", "endpoint")
+
+
+    ams_project = config.get(section_tenant, "ams_project")
+    ams_sub_metric = config.get(section_tenant_job, "ams_sub_metric")
+    ams_sub_sync = config.get(section_tenant_job, "ams_sub_sync")
+
 
     # flink executable
     cmd_command.append(config.get("FLINK", "path"))
@@ -65,37 +76,36 @@ def compose_command(config, args,  hdfs_commands, logger=None):
     # Job's class inside the jar
     cmd_command.append(config.get("CLASSES", "stream-status"))
 
-    # jar to be sumbitted to flink
+    # jar to be submitted to flink
     cmd_command.append(config.get("JARS", "stream-status"))
 
     # ams endpoint
     cmd_command.append("--ams.endpoint")
-    cmd_command.append(config.get("AMS", "ams_endpoint"))
-    job_namespace = job_namespace.replace("{{ams_endpoint}}", config.get("AMS", "ams_endpoint"))
+    cmd_command.append(ams_endpoint.hostname)
 
     # ams port
     cmd_command.append("--ams.port")
-    cmd_command.append(config.get("AMS", "ams_port"))
-    job_namespace = job_namespace.replace("{{ams_port}}", config.get("AMS", "ams_port"))
+    cmd_command.append(ams_endpoint.port)
 
     # tenant's token for ams
     cmd_command.append("--ams.token")
-    cmd_command.append(config.get("TENANTS:"+args.Tenant, "ams_token"))
+    cmd_command.append(config.get(section_tenant, "ams_token"))
 
     # ams project
     cmd_command.append("--ams.project")
-    cmd_command.append(config.get("TENANTS:"+args.Tenant, "ams_project"))
-    job_namespace = job_namespace.replace("{{project}}", config.get("TENANTS:"+args.Tenant, "ams_project"))
+    cmd_command.append(ams_project)
 
     # ams sub metric
     cmd_command.append("--ams.sub.metric")
-    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "ams.sub.metric"))
-    job_namespace = job_namespace.replace("{{ams_sub_metric}}", config.get("TENANTS:"+args.Tenant+":stream-status", "ams.sub.metric"))
+    cmd_command.append(ams_sub_metric)
 
     # ams sub sync
     cmd_command.append("--ams.sub.sync")
-    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "ams.sub.sync"))
-    job_namespace = job_namespace.replace("{{ams_sub_sync}}", config.get("TENANTS:"+args.Tenant+":stream-status", "ams.sub.sync"))
+    cmd_command.append(ams_sub_sync)
+
+    # fill job namespace template with the required arguments
+    job_namespace.fill(ams_endpoint=ams_endpoint.hostname, ams_port=ams_endpoint.port, ams_project=ams_project,
+                       ams_sub_metric=ams_sub_metric, ams_sub_sync=ams_sub_sync)
 
     # add the hdfs commands
     for command in hdfs_commands:
@@ -104,159 +114,151 @@ def compose_command(config, args,  hdfs_commands, logger=None):
 
     # date
     cmd_command.append("--run.date")
-    cmd_command.append(args.Date)
+    cmd_command.append(args.date)
 
     # flink parallelism
     cmd_command.append("--p")
-    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "flink_parallelism"))
+    cmd_command.append(config.get(section_tenant_job, "flink_parallelism"))
 
-    outputs = config.get("TENANTS:"+args.Tenant+":stream-status", "outputs").split(",")
+    # grab tenant configuration section for stream-status
+
+    outputs = config.get(section_tenant_job, "outputs")
     if len(outputs) == 0:
-        logger.print_and_log(logging.INFO, "No output formats found.")
+        log.fatal("No output formats found.")
+        sys.exit(1)
     else:
         for output in outputs:
             if output == "hbase":
                 # hbase endpoint
-                if logger.config_str_validator(config, "TENANTS:"+args.Tenant+":stream-status", "hbase.master"):
+                if config.has(section_tenant_job, "hbase_master"):
                     cmd_command.append("--hbase.master")
-                    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "hbase.master"))
-
+                    cmd_command.append(config.get(section_tenant_job, "hbase_master").hostname)
                 # hbase endpoint port
-                if logger.config_str_validator(config, "TENANTS:"+args.Tenant+":stream-status", "hbase.master.port"):
+                if config.has(section_tenant_job, "hbase_master"):
                     cmd_command.append("--hbase.port")
-                    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "hbase.master.port"))
+                    cmd_command.append(config.get(section_tenant_job, "hbase_master").port)
 
                 # comma separate list of zookeeper servers
-                if logger.config_str_validator(config, "TENANTS:"+args.Tenant+":stream-status", "hbase.zk.quorum"):
+                if config.has(section_tenant_job, "hbase_zk_quorum"):
                     cmd_command.append("--hbase.zk.quorum")
-                    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "hbase.zk.quorum"))
+                    cmd_command.append(config.get(section_tenant_job, "hbase_zk_quorum"))
 
                 # port used by zookeeper servers
-                if logger.config_str_validator(config, "TENANTS:"+args.Tenant+":stream-status", "hbase.zk.port"):
+                if config.has(section_tenant_job, "hbase_zk_port"):
                     cmd_command.append("--hbase.zk.port")
-                    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "hbase.zk.port"))
+                    cmd_command.append(config.get(section_tenant_job, "hbase_zk_port"))
 
                 # table namespace, usually tenant
-                if logger.config_str_validator(config, "TENANTS:"+args.Tenant+":stream-status", "hbase.namespace"):
+                if config.has(section_tenant_job, "hbase_namespace"):
                     cmd_command.append("--hbase.namespace")
-                    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "hbase.namespace"))
+                    cmd_command.append(config.get(section_tenant_job, "hbase_namespace"))
 
                 # table name, usually metric data
-                if logger.config_str_validator(config, "TENANTS:"+args.Tenant+":stream-status", "hbase.table"):
+                if config.has(section_tenant_job, "hbase_table"):
                     cmd_command.append("--hbase.table")
-                    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "hbase.table"))
+                    cmd_command.append(config.get(section_tenant_job, "hbase_table"))
 
             elif output == "kafka":
                 # kafka list of servers
-                if logger.config_str_validator(config, "TENANTS:"+args.Tenant+":stream-status", "kafka.servers"):
+                if config.has(section_tenant_job, "kafka_servers"):
                     cmd_command.append("--kafka.servers")
-                    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "kafka.servers"))
+                    kafka_servers = ','.join(config.get(section_tenant_job,"kafka_servers"))
+                    cmd_command.append(kafka_servers)
                 # kafka topic to send status events to
-                if logger.config_str_validator(config, "TENANTS:"+args.Tenant+":stream-status", "kafka.topic"):
+                if config.has(section_tenant_job, "kafka_topic"):
                     cmd_command.append("--kafka.topic")
-                    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "kafka.topic"))
+                    cmd_command.append(config.get(section_tenant_job, "kafka_topic"))
             elif output == "fs":
                 # filesystem path for output(use "hdfs://" for hdfs path)
-                if logger.config_str_validator(config, "TENANTS:"+args.Tenant+":stream-status", "fs.output"):
+                if config.has(section_tenant_job, "fs_output"):
                     cmd_command.append("--fs.output")
-                    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "fs.output"))
-
-    if config.getboolean("TENANTS:"+args.Tenant+":stream-status", "use_mongo"):
-        #  MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
-        cmd_command.append("--mongo.uri")
-        mongo_tenant = "TENANTS:"+args.Tenant+":MONGO"
-        mongo_uri = config.get(mongo_tenant, "mongo_uri")
-        mongo_uri = mongo_uri.replace("{{mongo_host}}", config.get(mongo_tenant, "mongo_host"))
-        mongo_uri = mongo_uri.replace("{{mongo_port}}", config.get(mongo_tenant, "mongo_port"))
-        cmd_command.append(mongo_uri)
-
-        # mongo method
-        cmd_command.append("--mongo.method")
-        cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "mongo_method"))
+                    cmd_command.append(config.get(section_tenant_job, "fs_output"))
+            elif output == "mongo":
+                cmd_command.append("--mongo.uri")
+                mongo_uri = config.get(section_tenant, "mongo_uri")
+                cmd_command.append(mongo_uri.geturl())
+                # mongo method
+                cmd_command.append("--mongo.method")
+                cmd_command.append(config.get(section_tenant_job, "mongo_method"))
 
     # num of messages to be retrieved from AMS per request
     cmd_command.append("--ams.batch")
-    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "ams_batch"))
+    cmd_command.append(config.get(section_tenant_job, "ams_batch"))
 
     # interval in ms betweeb AMS service requests
     cmd_command.append("--ams.interval")
-    cmd_command.append(config.get("TENANTS:"+args.Tenant+":stream-status", "ams_interval"))
+    cmd_command.append(config.get(section_tenant_job, "ams_interval"))
 
-    # ams proxy
-    if config.getboolean("AMS", "proxy_enabled"):
+    # get optional ams proxy
+    proxy = config.get("AMS", "proxy")
+    if proxy is not None:
         cmd_command.append("--ams.proxy")
-        cmd_command.append(config.get("AMS", "ams_proxy"))
+        cmd_command.append(proxy.geturl())
 
     # ssl verify
     cmd_command.append("--ams.verify")
-    if config.getboolean("AMS", "ssl_enabled"):
-        cmd_command.append("true")
+    ams_verify = config.get("AMS", "verify")
+    if ams_verify is not None:
+        cmd_command.append(str(ams_verify).lower())
     else:
-        cmd_command.append("false")
+        # by default assume ams verify is always true
+        cmd_command.append("true")
 
-    if args.Timeout is not None:
+    if args.timeout is not None:
         cmd_command.append("--timeout")
-        cmd_command.append(args.Timeout)
+        cmd_command.append(args.timeout)
 
     return cmd_command, job_namespace
 
 
 def main(args=None):
 
-    # make sure the argument are in the correct form
-    args.Tenant = args.Tenant.upper()
-    
+    # Get configuration paths
+    conf_paths = get_config_paths(args.config)
 
-    # set up the config parser
-    config = ConfigParser.ConfigParser()
+    # Get logger config file
+    get_log_conf(conf_paths['log'])
 
-    # check if config file has been given as cli argument else
-    # check if config file resides in /etc/argo-streaming/ folder else
-    # check if config file resides in local folder
-    if args.ConfigPath is None:
-        if os.path.isfile("/etc/argo-streaming/conf/conf.cfg"):
-            config.read("/etc/argo-streaming/conf/conf.cfg")
-        else:
-            config.read("../conf/conf.cfg")
-    else:
-        config.read(args.ConfigPath)
-
-    # set up the logger
-    logger = ArgoLogger(log_name="batch-status", config=config)
+    # Get main configuration and schema
+    config = ArgoConfig(conf_paths["main"], conf_paths["schema"])
 
     # check if configuration for the given tenant exists
-    if not config.has_section("TENANTS:"+args.Tenant):
-        logger.print_and_log(logging.CRITICAL, "Tenant: "+args.Tenant+" doesn't exist.", 1)
+    if not config.has("TENANTS:" + args.tenant):
+        log.info("Tenant: " + args.tenant + " doesn't exist.")
+        sys.exit(1)
 
-    year, month, day = [int(x) for x in args.Date.split("T")[0].split("-")]
+    year, month, day = [int(x) for x in args.date.split("T")[0].split("-")]
 
     # dictionary containing the argument's name and the command assosciated with each name
-    hdfs_commands = compose_hdfs_commands(year, month, day, args, config, logger)
+    hdfs_commands = compose_hdfs_commands(year, month, day, args, config)
 
-    cmd_command, job_namespace = compose_command(config, args, hdfs_commands, logger)
+    cmd_command, job_namespace = compose_command(config, args, hdfs_commands)
 
-    logger.print_and_log(logging.INFO, "Getting ready to submit job")
-    logger.print_and_log(logging.INFO, cmd_toString(cmd_command)+"\n")
+    log.info("Getting ready to submit job")
+    log.info(cmd_to_string(cmd_command)+"\n")
 
     # submit the script's command
-    flink_job_submit(config, logger, cmd_command, job_namespace)
+    flink_job_submit(config, cmd_command, job_namespace)
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Stream Status Job submit script")
     parser.add_argument(
-        "-t", "--Tenant", type=str, help="Name of the tenant", required=True)
+        "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True, dest="tenant")
     parser.add_argument(
-        "-d", "--Date", type=str, default=str(datetime.datetime.utcnow().replace(microsecond=0).isoformat())+"Z", help="Date in ISO-8601 format")
+        "-d", "--date", metavar="DATE(ISO-8601)",
+        default=str(datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + "Z",
+        help="Date in ISO-8601 format", dest="date")
     parser.add_argument(
-        "-r", "--Report", type=str, help="Report status", required=True)
+        "-r", "--report", metavar="STRING", help="Report status", required=True, dest="report")
     parser.add_argument(
-        "-c", "--ConfigPath", type=str, help="Path for the config file")
+        "-c", "--config", metavar="PATH", help="Path for the config file", dest="config")
     parser.add_argument(
-        "-u", "--Sudo", help="Run the submition as superuser",  action="store_true")
+        "-u", "--sudo", help="Run the submition as superuser",  action="store_true", dest="sudo")
     parser.add_argument(
-        "-timeout", "--Timeout", type=str, help="Controls default timeout for event regeneration (used in notifications)")
+        "-timeout", "--timeout", metavar="INT",
+        help="Controls default timeout for event regeneration (used in notifications)", dest="timeout")
 
     # Pass the arguments to main method
     sys.exit(main(parser.parse_args()))

@@ -108,9 +108,6 @@ Status streaming job receives metric and sync data from AMS calculates and gener
 [HDFS]
 HDFS credentials
 
-[LOGS]
-log modes describe what kind of logging handlers we want to use. For each handler we specify its logging level and resource. If there is no specified level for each handler, we specify a global log level for all handlers.
-
 [FLINK]
 Specify where to find the flink executable and the job manager.
 
@@ -122,14 +119,10 @@ AMS port to connect to and endpoint where you find the service.Also whether or n
 
 [TENANTS:]
 Token for each tenant to access the service
+Avaliable tenant reports
+Tenant Mongo connectivity
 
-[TENANTS:TENANTA:REPORTS]
-the reports' UUIDs for the respective tenant
-
-[TENANTS:TENANTA:MONGO]
-Mongo information, specific to each respective tenant
-
-[TENANTS:TENANTA:JOB]
+[TENANTS:TENANTA:JOB-TYPE]
 Specific parameters needed for each job to run
 ams_batch : num of messages to be retrieved per request to AMS service
 ams_interval : interval (in ms) between AMS service requests
@@ -137,7 +130,7 @@ check_interval : interval for checkpointing (in ms)
 check_path : path to store flink checkpoints
 flink_parallelism: execution environment level
 ---Specific for stream-status job---
-use_mongo: Whether or not it should include mongo information
+mongo_method: input method for mongo, when mongo is specified in outputs
 outputs: the possible output dstination sepaarted by comma. For each destination, its respective  information should also be specififed.
 FOR the hbase output we need, the hbase endpoint, the hbase endpoint port, the zookeeper servers(comma separated list), the port used by the servers and the table namespace.
 FOR the kafka output we need the the kafka servers(comma separated list), and the topic.

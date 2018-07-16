@@ -1,38 +1,32 @@
 #!/usr/bin/env python
 
 import sys
-import os
 import argparse
-import ConfigParser
 import logging
-from utils.argo_log import ArgoLogger
-from utils.common import cmd_toString, flink_job_submit
+from utils.common import cmd_to_string, flink_job_submit, get_config_paths, get_log_conf
+from utils.argo_config import ArgoConfig
+
+log = logging.getLogger(__name__)
 
 
-def compose_command(config, args, sudo, logger=None):
+def compose_command(config, args):
 
-    # job_namespace
-    job_namespace = config.get("JOB-NAMESPACE", "ingest-metric-namespace")
-
-    # job sumbission command
+    # job submission command
     cmd_command = []
 
-    if sudo is True:
+    if args.sudo is True:
         cmd_command.append("sudo")
 
-    # create a simple stream_handler whenever tetsing
-    if logger is None:
-        logger = ArgoLogger()
+    # tenant the job will run for
+    section_tenant = "TENANTS:"+args.tenant
+    section_tenant_job = section_tenant+":ingest-metric"
+    config.get(section_tenant, "ams_project")
 
-    # check if configuration for the given tenant exists
-    try:
-        # tenant the job will run for
-        tenant = "TENANTS:"+args.Tenant.upper()
-        tenant_job = tenant+":ingest-metric"
-        config.get(tenant, "ams_project")
-        logger.print_and_log(logging.INFO, "Starting building the submit command for tenant: " + args.Tenant.upper())
-    except ConfigParser.NoSectionError as e:
-        logger.print_and_log(logging.CRITICAL, str(e), 1)
+    # get needed config params
+    job_namespace = config.get("JOB-NAMESPACE", "ingest-metric-namespace")
+    ams_endpoint = config.get("AMS", "endpoint")
+    ams_project = config.get(section_tenant, "ams_project")
+    ams_sub = config.get(section_tenant_job, "ams_sub")
 
     # flink executable
     cmd_command.append(config.get("FLINK", "path"))
@@ -44,108 +38,110 @@ def compose_command(config, args, sudo, logger=None):
     # Job's class inside the jar
     cmd_command.append(config.get("CLASSES", "ams-ingest-metric"))
 
-    # jar to be sumbitted to flink
+    # jar to be submitted to flink
     cmd_command.append(config.get("JARS", "ams-ingest-metric"))
 
     # ams endpoint
     cmd_command.append("--ams.endpoint")
-    cmd_command.append(config.get("AMS", "ams_endpoint"))
-    job_namespace = job_namespace.replace("{{ams_endpoint}}", config.get("AMS", "ams_endpoint"))
+    cmd_command.append(ams_endpoint.hostname)
 
     # ams port
     cmd_command.append("--ams.port")
-    cmd_command.append(config.get("AMS", "ams_port"))
-    job_namespace = job_namespace.replace("{{ams_port}}", config.get("AMS", "ams_port"))
+    cmd_command.append(ams_endpoint.port)
 
     # tenant token
     cmd_command.append("--ams.token")
-    cmd_command.append(config.get(tenant, "ams_token"))
+    cmd_command.append(config.get(section_tenant, "ams_token"))
 
     # project/tenant
     cmd_command.append("--ams.project")
-    cmd_command.append(config.get(tenant, "ams_project"))
-    job_namespace = job_namespace.replace("{{project}}",  config.get(tenant, "ams_project"))
+    cmd_command.append(ams_project)
 
     # ams subscription
     cmd_command.append("--ams.sub")
-    cmd_command.append(config.get(tenant_job, "ams_sub"))
-    job_namespace = job_namespace.replace("{{ams_sub}}", config.get(tenant_job, "ams_sub"))
+    cmd_command.append(ams_sub)
 
-    # hdfs path for the tenant
-    hdfs_metric = config.get("HDFS", "hdfs_metric")
-    hdfs_metric = hdfs_metric.replace("{{hdfs_host}}", config.get("HDFS", "hdfs_host"))
-    hdfs_metric = hdfs_metric.replace("{{hdfs_port}}", config.get("HDFS", "hdfs_port"))
-    hdfs_metric = hdfs_metric.replace("{{hdfs_user}}", config.get("HDFS", "hdfs_user"))
-    hdfs_metric = hdfs_metric.replace("{{tenant}}", args.Tenant.upper())
+    # fill job_namespace template
+    job_namespace = job_namespace.fill(ams_endpoint=ams_endpoint.hostname, ams_port=ams_endpoint.port,
+                                       ams_project=ams_project, ams_sub=ams_sub)
+
+    # set up the hdfs client to be used in order to check the files
+    namenode = config.get("HDFS", "namenode")
+    hdfs_user = config.get("HDFS", "user")
+
+    hdfs_metric = config.get("HDFS", "path_metric")
+    hdfs_metric.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant)
+
+    hdfs_metric = hdfs_metric.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant).geturl()
+
     cmd_command.append("--hdfs.path")
     cmd_command.append(hdfs_metric)
 
     # path to store flink checkpoints
     cmd_command.append("--check.path")
-    cmd_command.append(config.get(tenant_job, "checkpoint_path"))
+    cmd_command.append(config.get(section_tenant_job, "checkpoint_path"))
 
     # interval for checkpont in ms
     cmd_command.append("--check.interval")
-    cmd_command.append(config.get(tenant_job, "checkpoint_interval"))
+    cmd_command.append(config.get(section_tenant_job, "checkpoint_interval"))
 
     # num of messages to be retrieved from AMS per request
     cmd_command.append("--ams.batch")
-    cmd_command.append(config.get(tenant_job, "ams_batch"))
+    cmd_command.append(config.get(section_tenant_job, "ams_batch"))
 
     # interval in ms betweeb AMS service requests
     cmd_command.append("--ams.interval")
-    cmd_command.append(config.get(tenant_job, "ams_interval"))
+    cmd_command.append(config.get(section_tenant_job, "ams_interval"))
 
-    # ams proxy
-    if config.getboolean("AMS", "proxy_enabled"):
+    # get optional ams proxy
+    proxy = config.get("AMS", "proxy")
+    if proxy is not None:
         cmd_command.append("--ams.proxy")
-        cmd_command.append(config.get("AMS", "ams_proxy"))
+        cmd_command.append(proxy.geturl())
 
     # ssl verify
     cmd_command.append("--ams.verify")
-    if config.getboolean("AMS", "ssl_enabled"):
-        cmd_command.append("true")
+    ams_verify = config.get("AMS", "verify")
+    if ams_verify is not None:
+        cmd_command.append(str(ams_verify).lower())
     else:
-        cmd_command.append("false")
+        # by default assume ams verify is always true
+        cmd_command.append("true")
 
     return cmd_command, job_namespace
 
 
 def main(args=None):
+    # Get configuration paths
+    conf_paths = get_config_paths(args.config)
 
-    # set up the config parser
-    config = ConfigParser.ConfigParser()
+    # Get logger config file
+    get_log_conf(conf_paths['log'])
 
-    # check if config file has been given as cli argument else
-    # check if config file resides in /etc/argo-streaming/ folder else
-    # check if config file resides in local folder
-    if args.ConfigPath is None:
-        if os.path.isfile("/etc/argo-streaming/conf/conf.cfg"):
-            config.read("/etc/argo-streaming/conf/conf.cfg")
-        else:
-            config.read("../conf/conf.cfg")
-    else:
-        config.read(args.ConfigPath)
+    # Get main configuration and schema
+    config = ArgoConfig(conf_paths["main"], conf_paths["schema"])
 
-    # set up the logger
-    logger = ArgoLogger(log_name="ingest-metric", config=config)
+    # check if configuration for the given tenant exists
+    if not config.has("TENANTS:" + args.tenant):
+        log.info("Tenant: " + args.tenant + " doesn't exist.")
+        sys.exit(1)
 
-    cmd_command, job_namespace = compose_command(config, args, args.Sudo, logger)
+    cmd_command, job_namespace = compose_command(config, args)
 
-    logger.print_and_log(logging.INFO, "Getting ready to submit job")
-    logger.print_and_log(logging.INFO, cmd_toString(cmd_command)+"\n")
+    log.info("Getting ready to submit job")
+    log.info(cmd_to_string(cmd_command)+"\n")
 
     # submit script's command
-    flink_job_submit(config, logger, cmd_command, job_namespace)
+    flink_job_submit(config, cmd_command, job_namespace)
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="AMS Metric Ingestion submission script")
     parser.add_argument(
-        "-t", "--Tenant", type=str, help="Name of the tenant", required=True)
+        "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True)
     parser.add_argument(
-        "-c", "--ConfigPath", type=str, help="Path for the config file")
+        "-c", "--config", metavar="PATH", help="Path for the config file")
     parser.add_argument(
-        "-u", "--Sudo", help="Run the submition as superuser",  action="store_true")
+        "-u", "--sudo", help="Run the submition as superuser",  action="store_true")
     sys.exit(main(parser.parse_args()))

@@ -1,26 +1,24 @@
 [HDFS]
 # hdfs namenode host
-hdfs_host: hdfs_test_host
-# hdfs namenode port
-hdfs_port: hdfs_test_port
+namenode: hdfs://hdfs_test_host:hdfs_test_host
 # hdfs user
-hdfs_user: hdfs_test_user
+user: hdfs_test_user
 # hdfs rollback days:
 rollback_days: 3
 # hdfs path for metric data
-hdfs_metric: hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/mdata
+path_metric: {{namenode}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/mdata
 # hdfs path for sync data
-hdfs_sync: hdfs://{{hdfs_host}}:{{hdfs_port}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/sync
+path_sync: {{namenode}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/sync
 
 # hdfs writer executable
 writer_bin: /path/to/binary
 
 [API]
-host = api.foo
-tenants = TA,TB,TC
-TA_key = key1
-TB_key = key2
-TC_key = key3
+endpoint = api.foo
+tenants = TENANTA
+TENANTA_key = key1
+TENANTB_key = key2
+TENANTC_key = key3
 
 
 [LOGS]
@@ -47,11 +45,11 @@ job_manager:
 
 [JOB-NAMESPACE]
 # Template to check if a metric job with similar name already runs
-ingest-metric-namespace: Ingesting data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/{{ams_sub}}
+ingest-metric-namespace: Ingesting data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{ams_project}}/subscriptions/{{ams_sub}}
 # Template to check if a sync job with similar name already runs
-ingest-sync-namespace: Ingesting sync data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/{{ams_sub}}
+ingest-sync-namespace: Ingesting sync data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{ams_project}}/subscriptions/{{ams_sub}}
 #Template to check if a stream status job with similar name already runs
-stream-status-namespace: Streaming status using data {{ams_endpoint}}:{{ams_port}}/v1/projects/{{project}}/subscriptions/[{{ams_sub_metric}}, {{ams_sub_sync}}]
+stream-status-namespace: Streaming status using data {{ams_endpoint}}:{{ams_port}}/v1/projects/{{ams_project}}/subscriptions/[{{ams_sub_metric}}, {{ams_sub_sync}}]
 
 [CLASSES]
 # Specify class to run during job submit
@@ -71,36 +69,22 @@ stream-status: test.jar
 
 
 [AMS]
-# AMS service port
-ams_port: test_port
-# Ams service endpoint
-ams_endpoint: test_endpoint
+endpoint: https://test_endpoint:8080
 # Ams proxy
-proxy_enabled: true
-ams_proxy:test_proxy
+proxy:test_proxy
 # Verify ssl
-ssl_enabled: true
+verify: true
 
 # Tenant General Configuration
 [TENANTS:TENANTA]
 # Map tenant to AMS project
-ams_project:test_project
+ams_project: test_project
 # Tenant's AMS token
-ams_token:test_token
+ams_token: test_token
+reports: report_name
+report_report_name: report_uuid
+mongo_uri: mongodb://mongo_test_host:21017/argo_TENANTA
 
-# report names per tenant
-[TENANTS:TENANTA:REPORTS]
-# report UUID
-report_name : report_uuid
-
-# tenant specific mongo configuration
-[TENANTS:TENANTA:MONGO]
-# mongo host
-mongo_host: mongo_test_host
-# mongo port
-mongo_port: mongo_test_port
-# mongo uri for batch ar
-mongo_uri: mongodb://{{mongo_host}}:{{mongo_port}}/argo_TENANTA
 
 # Tenant-job specific configuration
 [TENANTS:TENANTA:ingest-metric]
@@ -120,33 +104,30 @@ ams_interval: 3000
 ams_batch: 100
 [TENANTS:TENANTA:stream-status]
 # whether or not it should also include mongo information(it will access the section TENANTS:TENANTA:MONGO)
-use_mongo:true
 mongo_method:upsert
-ams_batch: test_batch
-ams_interval: test_interval
+ams_batch: 10
+ams_interval: 300
 # ARGO messaging subscription to pull metric data from
-ams.sub.metric: metric_status
+ams_sub_metric: metric_status
 # ARGO messaging subscription to pull sync data from
-ams.sub.sync: sync_status
+ams_sub_sync: sync_status
 #hbase endpoint
-hbase.master: hbase.devel
-# hbase master port
-hbase.master.port: test_hbase_port
+hbase_master: hbase://hbase.devel:8080
 # comma separated list of hbase zookeeper servers
-hbase.zk.quorum: test_zk_servers
+hbase_zk_quorum: test_zk_servers
 # port used by hbase zookeeper servers
-hbase.zk.port: test_zk_port
+hbase_zk_port: 8080
 # table namespace used (usually tenant name)
-hbase.namespace: test_hbase_namespace
+hbase_namespace: test_hbase_namespace
 # table name (usually metric_data)
-hbase.table: metric_data
+hbase_table: metric_data
 # Kafka server list to connect to
-kafka.servers: test_kafka_servers
+kafka_servers: kafka_server:9090,kafka_server2:9092
 # Kafka topic to send status events to
-kafka.topic: test_kafka_topic
+kafka_topic: test_kafka_topic
 # filesystem path for output (prefix with "hfds://" for hdfs usage)
-fs.output: test_fs_output
+fs_output: test_fs_output
 # flink parallelism for specific tenant and job(execution environment level)
 flink_parallelism: 1
 # different output destinations for the results
-outputs: hbase,kafka,fs
+outputs: hbase,kafka,fs,mongo

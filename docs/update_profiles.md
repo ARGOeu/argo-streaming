@@ -82,9 +82,6 @@ tenants : TENANT_A, TENANT_B
 TENANT_A_key = secret1
 TENANT_B_key = secret2
 
-[LOGS]
-# get log level
-log_level: info
 ```
 
 # Dependencies
