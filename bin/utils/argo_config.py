@@ -102,6 +102,8 @@ class ArgoConfig:
     """
 
     def __init__(self, config=None, schema=None):
+        self.conf_path = None
+        self.schema_path = None
         self.conf = SafeConfigParser()
         self.schema = dict()
         self.fix = dict()
@@ -170,6 +172,7 @@ class ArgoConfig:
         Load configuration from file using a SafeConfigParser
         """
         self.conf.read(conf_path)
+        self.conf_path = conf_path
 
     def load_schema(self, schema_path):
         """
@@ -177,6 +180,7 @@ class ArgoConfig:
         """
         with open(schema_path, 'r') as schema_file:
             self.schema = json.load(schema_file)
+        self.schema_path = schema_path
 
     def save_as(self, file_path):
         with open(file_path, 'w') as file_conf:

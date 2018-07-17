@@ -22,22 +22,6 @@ TENANTB_key = key2
 TENANTC_key = key3
 
 
-[LOGS]
-# log handlers to support
-log_modes: console,syslog,file
-# global log level
-log_level: info
-# specific level for syslog handler
-syslog_level: critical
-# specific level for file handler
-file_level: warning
-# specific level for console handler
-console_level: info
-# socket for syslog handler
-syslog_socket: /dev/log
-# path for file handler
-file_path:
-
 [FLINK]
 # path for flink executable
 path: flink_path
@@ -85,6 +69,7 @@ ams_token: test_token
 reports: report_name
 report_report_name: report_uuid
 mongo_uri: mongodb://mongo_test_host:21017/argo_TENANTA
+mongo_method: insert
 
 
 # Tenant-job specific configuration
