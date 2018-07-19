@@ -55,6 +55,7 @@ stream-status: test.jar
 
 [AMS]
 endpoint: https://test_endpoint:8080
+access_token: foo_token
 # Ams proxy
 proxy:test_proxy
 # Verify ssl

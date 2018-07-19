@@ -3,7 +3,11 @@ from ConfigParser import SafeConfigParser
 from urlparse import urlparse
 import json
 import re
+import logging
 from os import path
+
+
+log = logging.getLogger(__name__)
 
 
 class Template:
@@ -102,6 +106,7 @@ class ArgoConfig:
     """
 
     def __init__(self, config=None, schema=None):
+        self.log_changes = True
         self.conf_path = None
         self.schema_path = None
         self.conf = SafeConfigParser()
@@ -119,7 +124,10 @@ class ArgoConfig:
         return self.conf.has_option(group, item)
 
     def set(self, group, item, value):
+        old_val = self.conf.get(group, item)
         self.conf.set(group, item, value)
+        if self.log_changes:
+            log.info("config option changed [{}]{}={} (from:{})".format(group, item, value, old_val))
 
     def get(self, group, item=None):
         """

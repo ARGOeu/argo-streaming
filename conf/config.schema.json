@@ -30,6 +30,10 @@
         "desc": "argo messaging endpoint",
         "type": "uri"
       },
+      "access_token": {
+        "desc": "argo messaging access token",
+        "type": "string"
+      },
       "proxy": {
         "desc": "ams proxy to be used",
         "type": "uri",
