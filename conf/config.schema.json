@@ -151,6 +151,10 @@
       "mongo_uri": {
         "desc": "mongo uri including host port and database",
         "type": "uri"
+      },
+      "mongo_method": {
+        "desc": "default method used in mongodb operations",
+        "type": "string"
       }
     },
     "TENANTS:~:ingest-metric":{
