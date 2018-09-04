@@ -11,8 +11,11 @@ import ops.ConfigManager;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.flink.api.common.operators.Order;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
@@ -54,6 +57,8 @@ public class ArgoStatusBatch {
 		// make parameters available in the web interface
 		env.getConfig().setGlobalJobParameters(params);
 		env.setParallelism(1);
+		// Fixed restart strategy: on failure attempt max 10 times to restart with a retry interval of 2 minutes
+		env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, Time.of(2, TimeUnit.MINUTES)));
 		// sync data for input
 		Path mps = new Path(params.getRequired("mps"));
 		Path egp = new Path(params.getRequired("egp"));

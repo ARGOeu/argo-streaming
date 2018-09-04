@@ -57,6 +57,10 @@ Job optional cli parameters:
 
 `--ams.verify`        : optional turn on/off ssl verify
 
+### Restart strategy
+Job has a fixed delay restart strategy. If it fails it will try to restart for a maximum of 10 attempt with a retry interval of 2 minutes
+between each attempt
+
 ### Metric data hbase schema
 
 Metric data are stored in hbase tables using different namespaces for different tenants (e.g. hbase table name = '{TENANT_name}:metric_data')
@@ -127,6 +131,9 @@ Job required cli parameters:
 
 `--ams.verify`        : optional turn on/off ssl verify
 
+### Restart strategy
+Job has a fixed delay restart strategy. If it fails it will try to restart for a maximum of 10 attempt with a retry interval of 2 minutes
+between each attempt
 
 ### Stream Status
 
@@ -210,6 +217,9 @@ Other optional cli parameters
 
 `--ams.verify`        : optional turn on/off ssl verify
 
+### Restart strategy
+Job has a fixed delay restart strategy. If it fails it will try to restart for a maximum of 10 attempt with a retry interval of 2 minutes
+between each attempt
 
 
 ### Status events schema
@@ -233,13 +243,13 @@ Status events are generated as JSON messages that are defined by the following c
 A metric data message can produce zero, one or more status metric events. The system analyzes the new status introduced by the metric and then aggregates on top levels to see if any other status changes are produced.
 If a status of an item actually changes an appropriate status event is produced based on the item type (endpoint_group,service,endpoint,metric).
 
-## Threshold rule files 
+## Threshold rule files
 Each report can be accompanied by a threshold rules file which includes rules on low level metric data which may accompany a monitoring message with the field 'actual_data'.
 The rule file is in JSON format and has the following schema:
 ```
 {
   "rules": [
-    { 
+    {
       "group" : "site-101",
       "host" : "host.foo",
       "metric": "org.namespace.metric",
@@ -292,7 +302,7 @@ Job required cli parameters:
 
 `--mongo.method`      : MongoDB method to be used when storing the results ~ either: `insert` or `upsert`
 
-`--thr`               : (optional) file location of threshold rules 
+`--thr`               : (optional) file location of threshold rules
 
 
 ## Batch AR
@@ -339,7 +349,7 @@ Job required cli parameters:
 
 `--mongo.method`      : MongoDB method to be used when storing the results ~ either: `insert` or `upsert`
 
-`--thr`               : (optional) file location of threshold rules 
+`--thr`               : (optional) file location of threshold rules
 
 
 ## Flink job names

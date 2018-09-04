@@ -2,6 +2,7 @@ package argo.streaming;
 
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.io.DatumReader;
@@ -12,6 +13,8 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.io.OutputFormat;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.utils.ParameterTool;
 
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
@@ -115,6 +118,8 @@ public class AmsIngestMetric {
 		// Create flink execution environment
 		StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
 		see.setParallelism(1);
+		// On failure attempt max 10 times to restart with a retry interval of 2 minutes
+		see.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, Time.of(2, TimeUnit.MINUTES)));
 
 		// Initialize cli parameter tool
 		final ParameterTool parameterTool = ParameterTool.fromArgs(args);
