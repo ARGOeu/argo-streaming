@@ -19,7 +19,7 @@ TENANTA/sync/Critical/metric_profile_2018-03-01.avro \
 sync/TENANTA_ops.json --run.date 2018-03-05T00:00:00Z --p 1 \
 --hbase.master hbase.devel --hbase.port 8080 --hbase.zk.quorum ['test_zk_servers'] \
 --hbase.zk.port 8080 --hbase.namespace test_hbase_namespace --hbase.table metric_data \
---kafka.servers kafka_server:9090,kafka_server2:9092 --kafka.topic test_kafka_topic --fs.output None --mongo.uri mongodb://mongo_test_host:21017/argo_TENANTA --mongo.method upsert --ams.batch 10 --ams.interval 300 --ams.proxy test_proxy --ams.verify true --timeout 500"""
+--kafka.servers kafka_server:9090,kafka_server2:9092 --kafka.topic test_kafka_topic --fs.output None --mongo.uri mongodb://localhost:21017/argo_TENANTA --mongo.method upsert --ams.batch 10 --ams.interval 300 --ams.proxy test_proxy --ams.verify true --timeout 500"""
 
 
 

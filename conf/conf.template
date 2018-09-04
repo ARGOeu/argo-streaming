@@ -21,6 +21,8 @@ TENANTA_key = key1
 TENANTB_key = key2
 TENANTC_key = key3
 
+[MONGO]
+endpoint = mongodb://localhost:21017
 
 [FLINK]
 # path for flink executable
@@ -69,7 +71,7 @@ ams_project: test_project
 ams_token: test_token
 reports: report_name
 report_report_name: report_uuid
-mongo_uri: mongodb://mongo_test_host:21017/argo_TENANTA
+mongo_uri: {{mongo_uri}}/argo_{{tenant}}
 mongo_method: insert
 
 
