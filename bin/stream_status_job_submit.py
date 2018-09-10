@@ -171,7 +171,8 @@ def compose_command(config, args,  hdfs_commands):
                     cmd_command.append(config.get(section_tenant_job, "fs_output"))
             elif output == "mongo":
                 cmd_command.append("--mongo.uri")
-                mongo_uri = config.get(section_tenant, "mongo_uri")
+                mongo_endpoint = config.get("MONGO","endpoint").geturl()
+                mongo_uri = config.get(section_tenant, "mongo_uri").fill(mongo_uri=mongo_endpoint,tenant=args.tenant)
                 cmd_command.append(mongo_uri.geturl())
                 # mongo method
                 cmd_command.append("--mongo.method")

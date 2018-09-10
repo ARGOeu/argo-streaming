@@ -113,6 +113,7 @@ class ArgoConfig:
         self.schema = dict()
         self.fix = dict()
         self.var = dict()
+        self.valid = False
         if config is not None and schema is not None:
             self.load_conf(config)
             self.load_schema(schema)
@@ -124,11 +125,73 @@ class ArgoConfig:
         return self.conf.has_option(group, item)
 
     def set(self, group, item, value):
-        old_val = self.conf.get(group, item)
-        self.conf.set(group, item, value)
-        if self.log_changes:
-            log.info("config option changed [{}]{}={} (from:{})".format(group, item, value, old_val))
+        if not self.conf.has_section(group):
+            self.conf.add_section(group)
+            if self.log_changes:
+                log.info("config section added [{}]".format(group))
+        if self.conf.has_option(group, item):
+            old_val = self.conf.get(group, item)
+        else: 
+            old_val = None
+        if old_val != value:
+            self.conf.set(group, item, value)
+            if self.log_changes:
+                log.info("config option changed [{}]{}={} (from:{})".format(group, item, value, old_val))
 
+    def set_default(self, group, item_name):
+        self.set(group,item_name,str(self.get_default(group, item_name)))
+
+    def get_var_origin(self, group_name, ):
+        # reverse keys alphabetically 
+        keys = sorted(self.schema.keys(), reverse=True)
+
+        for item in keys:
+            if "~" in item:
+                tok = item.split("~")
+                if len(tok) == 1:
+                    item_prefix = tok[0]
+                    item_postfix = ""
+                elif len(tok) == 2:
+                    item_prefix = tok[0]
+                    item_postfix = tok[1]
+                else:
+                    return ""
+
+                if group_name.startswith(item_prefix) and group_name.endswith(item_postfix):
+                    return item 
+        return ""
+
+    def get_default(self, group, item_name):
+        group_og = self.get_var_origin(group)
+        
+        item = self.schema[group_og][item_name]
+        if "default" not in item.keys():
+            return ""
+        item_type = item["type"]
+        if item_type == "string":
+            result =item["default"]
+        elif item_type == "int" or item_type == "long":
+            result = int(item["default"])
+        elif item_type == "bool":
+            result = bool(item["default"])
+        elif item_type == "float":
+            result = float(item["default"])
+        elif item_type == "uri":
+            result = urlparse(item["default"])
+        elif item_type == "list":
+            result = item["default"].split(",")
+        elif item_type == "path":
+            result = path.normpath(item["default"])
+        elif item_type.startswith("template"):
+            tok = item_type.split(",")
+            if len(tok) > 1:
+                sub_type = tok[1]
+            else:
+                sub_type = "string"
+            result = Template(item["default"], sub_type)
+
+       
+        return result
     def get(self, group, item=None):
         """
         Given a group and an item return its value
@@ -208,35 +271,40 @@ class ArgoConfig:
         Returns:
             dict: result dictionary with value and optional reference to original item in schema
         """
-        result = None
-        if item_type == "string":
-            result = self.conf.get(group, item)
-        elif item_type == "int" or item_type == "long":
-            result = self.conf.getint(group, item)
-        elif item_type == "bool":
-            result = self.conf.getboolean(group, item)
-        elif item_type == "float":
-            result = self.conf.getfloat(group, item)
-        elif item_type == "uri":
-            result = urlparse(self.conf.get(group, item))
-        elif item_type == "list":
-            result = self.conf.get(group, item).split(",")
-        elif item_type == "path":
-            result = path.normpath(self.conf.get(group, item))
-        elif item_type.startswith("template"):
-            tok = item_type.split(",")
-            if len(tok) > 1:
-                sub_type = tok[1]
-            else:
-                sub_type = "string"
-            result = Template(self.conf.get(group, item), sub_type)
-
         pack = dict()
-        pack["value"] = result
+           
+        try:    
+            result = None
+            if item_type == "string":
+                result = self.conf.get(group, item)
+            elif item_type == "int" or item_type == "long":
+                result = self.conf.getint(group, item)
+            elif item_type == "bool":
+                result = self.conf.getboolean(group, item)
+            elif item_type == "float":
+                result = self.conf.getfloat(group, item)
+            elif item_type == "uri":
+                result = urlparse(self.conf.get(group, item))
+            elif item_type == "list":
+                result = self.conf.get(group, item).split(",")
+            elif item_type == "path":
+                result = path.normpath(self.conf.get(group, item))
+            elif item_type.startswith("template"):
+                tok = item_type.split(",")
+                if len(tok) > 1:
+                    sub_type = tok[1]
+                else:
+                    sub_type = "string"
+                result = Template(self.conf.get(group, item), sub_type)
 
-        if og_item != item:
-            pack["og_item"] = og_item
+            pack["value"] = result
 
+            if og_item != item:
+                pack["og_item"] = og_item
+        except Exception, e:
+            log.error("Not found [{}][{}]".format(group,item))
+            self.valid = False
+            return 
         return pack
 
     def add_config_item(self, group, item, og_item, dest, og_group):
@@ -324,11 +392,14 @@ class ArgoConfig:
             map_pool = list()
             map_pool.append(group)
             map_pool.append(tmp_item)
-
-        name_pool = self.conf.get(map_pool[0], map_pool[1]).split(",")
-        if name_pool == [""]:
+        try:
+            name_pool = self.conf.get(map_pool[0], map_pool[1]).split(",")
+            if name_pool == [""]:
+                return None
+        except Exception, e:
+            log.error("Not found [{}]{}".format(map_pool[0],map_pool[1]))
+            self.valid=False
             return None
-
         for name in name_pool:
             variations["vars"].append(item.replace("~", name))
         return variations
@@ -367,8 +438,10 @@ class ArgoConfig:
         Validate schema and configuration file. Iterate and extract
         all configuration parameters
         """
+        self.valid = True
         fix_groups = self.schema.keys()
         var_groups = list()
+
 
         for group in fix_groups:
             if self.is_var(group):
@@ -405,3 +478,5 @@ class ArgoConfig:
                 # Both fix and var items are in a var group so are considered var
                 self.add_group_items(sub_group, fix_items, True, group["group"])
                 self.add_group_items(sub_group, var_items, True, group["group"])
+
+        

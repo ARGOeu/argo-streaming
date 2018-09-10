@@ -10,7 +10,7 @@ CONF_SCHEMA = os.path.join(os.path.dirname(__file__), '../conf/config.schema.jso
 
 # This is the command that the submission script is expected to compose based on given args and config
 expected_result = """sudo flink_path run -c test_class test.jar --run.date 2018-02-11 \
---mongo.uri mongodb://mongo_test_host:21017/argo_TENANTA --mongo.method upsert \
+--mongo.uri mongodb://localhost:21017/argo_TENANTA --mongo.method upsert \
 --mdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2018-02-11 \
 --mps hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
 TENANTA/sync/Critical/metric_profile_2018-02-11.avro \

@@ -405,9 +405,9 @@ class ArgoProfileManager:
 
     def upload_tenant_reports_cfg(self, tenant):
         reports = self.api.get_reports(tenant)
-
         report_name_list = []
         for report in reports:
+           
             # double check if indeed report belongs to tenant
             if report["tenant"] == tenant:
                 report_name = report["info"]["name"]
@@ -426,7 +426,9 @@ class ArgoProfileManager:
         """
         token = self.cfg.get("API", "access_token")
         tenant_keys = self.api.get_tenants(token)
+        self.api.tenant_keys=tenant_keys
         tenant_names = ",".join(tenant_keys.keys())
+       
         self.cfg.set("API", "tenants", tenant_names)
 
         # For each tenant update also it's report list
@@ -434,9 +436,40 @@ class ArgoProfileManager:
             self.cfg.set("API", tenant_name+"_key", tenant_keys[tenant_name])
             # Update tenant's report definitions in configuration
             self.upload_tenant_reports_cfg(tenant_name)
+            self.upload_tenant_defaults(tenant_name)
 
-        for tenant_name in tenant_keys.keys():
-            self.cfg.set("API", tenant_name+"_key", tenant_keys[tenant_name])
+    def upload_tenant_defaults(self, tenant):
+        # check
+        section_tenant = "TENANTS:"+ tenant
+        section_metric = "TENANTS:"+ tenant + ":ingest-metric"
+        mongo_uri = self.cfg.get("MONGO","endpoint").geturl()
+        mongo_location = self.cfg.get_default(section_tenant,"mongo_uri").fill(mongo_uri=mongo_uri,tenant=tenant).geturl()
+        hdfs_user = self.cfg.get("HDFS","user")
+        namenode = self.cfg.get("HDFS","namenode").netloc
+        hdfs_check = self.cfg.get_default(section_metric,"checkpoint_path").fill(namenode=namenode,hdfs_user=hdfs_user,tenant=tenant)
+       
+        
+        self.cfg.get("MONGO","endpoint")
+       
+        self.cfg.set(section_tenant,"mongo_uri",mongo_location)
+        self.cfg.set_default(section_tenant,"mongo_method")
+        
+        
+        self.cfg.set_default(section_metric,"ams_interval")
+        self.cfg.set_default(section_metric,"ams_batch")
+        self.cfg.set(section_metric,"checkpoint_path",hdfs_check.geturl())
+        self.cfg.set_default(section_metric,"checkpoint_interval")
+        section_sync = "TENANTS:"+ tenant + ":ingest-sync"
+        
+        self.cfg.set_default(section_sync,"ams_interval")
+        self.cfg.set_default(section_sync,"ams_batch")
+        section_stream = "TENANTS:"+ tenant + ":stream-status"
+        
+        self.cfg.set_default(section_stream,"ams_sub_sync")
+        self.cfg.set_default(section_stream,"ams_interval")
+        self.cfg.set_default(section_stream,"ams_batch")
+        
+        
 
     def save_config(self, file_path):
         """

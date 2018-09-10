@@ -110,7 +110,8 @@ def compose_command(config, args,  hdfs_commands):
     #  MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
     cmd_command.append("--mongo.uri")
     group_tenant = "TENANTS:" + args.tenant
-    mongo_uri = config.get(group_tenant, "mongo_uri")
+    mongo = config.get("MONGO","endpoint").geturl()
+    mongo_uri = config.get(group_tenant, "mongo_uri").fill(mongo_uri=mongo,tenant=args.tenant)
     cmd_command.append(mongo_uri.geturl())
 
     if args.method == "insert":

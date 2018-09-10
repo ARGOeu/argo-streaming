@@ -28,7 +28,7 @@ class ArgoMongoClient(object):
             report_name = self.args.report
             tenant_group = "TENANTS:" + self.args.tenant
             if report_name in self.config.get(tenant_group, "reports"):
-                tenant_report = self.config.get(tenant_group, report_name)
+                tenant_report = self.config.get(tenant_group, "report_"+report_name)
             else:
                 log.critical("Report %s not found", report_name)
                 sys.exit(1)
@@ -89,13 +89,13 @@ class ArgoMongoClient(object):
             report_name = self.args.report
             tenant_group = "TENANTS:" + self.args.tenant
             if report_name in self.config.get(tenant_group, "reports"):
-                tenant_report = self.config.get(tenant_group, report_name)
+                tenant_report = self.config.get(tenant_group, "report_"+report_name)
             else:
                 log.critical("Report %s not found", report_name)
                 sys.exit(1)
 
         # Create a date integer for use in the database queries
-        date_int = int(self.args.Date.replace("-", ""))
+        date_int = int(self.args.date.replace("-", ""))
 
         # set up the mongo client
         try:
@@ -128,7 +128,7 @@ class ArgoMongoClient(object):
                     # response returned from the delete operation
                     res = db[col].delete_many({"date_integer": date_int, "report": tenant_report})
                     log.info("Collection: " + col + " -> Removed " + str(res.deleted_count) +
-                             " entries for date: " + self.args.Date + " and report: " + self.args.report)
+                             " entries for date: " + self.args.date + " and report: " + self.args.report)
                 else:
                     # response returned from the delete operation
                     res = db[col].delete_many({"date_integer": date_int, "report": tenant_report})

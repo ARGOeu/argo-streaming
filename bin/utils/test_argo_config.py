@@ -21,8 +21,8 @@ class TestClass(unittest.TestCase):
         # get var TENANTS:TENANT_A -> reports param (list of strings)
         self.assertEqual(["report1", "report2"], argo_conf.get("TENANTS:TENANT_A", "reports"))
         # get var TENANTS:TENANT_B -> mongo_uri (url)
-        self.assertEqual(urlparse("mongodb://localhost:21017/tenant_db"),
-                         argo_conf.get("TENANTS:TENANT_B", "mongo_uri"))
+        self.assertEqual(urlparse("mongodb://localhost:21017/argo_FOO"),
+                         argo_conf.get("TENANTS:TENANT_B", "mongo_uri").fill(mongo_uri=argo_conf.get("MONGO","endpoint").geturl(),tenant="FOO"))
 
         # get var HDFS -> path_metric (template) and fill it with specific arguments
         exp_result = urlparse("hdfs://localhost:2000/user/foobar/argo/tenants/wolf/mdata")
