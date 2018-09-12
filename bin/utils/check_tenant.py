@@ -9,6 +9,7 @@ import json
 from snakebite.client import Client
 from datetime import datetime
 from update_ams import ArgoAmsClient
+import requests
 
 
 
@@ -54,7 +55,7 @@ def check_tenant_hdfs(tenant, target_date, namenode, hdfs_user, client, config):
     
     # check hdfs metric data
     hdfs_metric = config.get("HDFS","path_metric").fill(namenode=namenode.geturl(),user=hdfs_user,tenant=tenant)
-    hdfs_status = {}
+    hdfs_status = dict()
     metric_path = "".join([hdfs_metric.path,"/",target_date,"/*"])
     count = 0
 
@@ -79,7 +80,7 @@ def check_tenant_hdfs(tenant, target_date, namenode, hdfs_user, client, config):
                 }
     reports = config.get("TENANTS:{}".format(tenant),"reports")
 
-    sync_result = {}
+    sync_result = dict()
     for report in reports:
         sync_result[report]={}
         for item in sync_list:
@@ -173,17 +174,12 @@ def check_tenants(args):
     # Get main configuration and schema
     config = ArgoConfig(conf_paths["main"], conf_paths["schema"])
     
-    # set whole status placeholder
-    status = {
-        "engine_config": True,
-        "tenants": []
-    }
 
     # if argo_engine configuration is invalid return
     if config.valid is False:
-        status["engine_config"]= False
-        print json.dumps(status)
-        return 
+        log.error("Argo engine not properly configured check file:{}".format(conf_paths["main"]))
+        sys.exit(1)
+
 
     # hdfs client init
     namenode = config.get("HDFS","namenode")
@@ -212,10 +208,20 @@ def check_tenants(args):
             log.error("tenant {} not found".format(args.tenant))
             return
 
- 
+    # Upload tenant statuses in argo web api 
+    api_endpoint = config.get("API","endpoint").netloc
+    api_token = config.get("API","access_token")
+
+    # Get tenant uuids 
+    tenant_uuids = get_tenant_uuids(api_endpoint, api_token)
+    if not tenant_uuids: 
+        log.error("Without tenant uuids service is unable to check and upload tenant status")
+        sys.exit(1)
+    
 
     for tenant in tenants:
         status_tenant = {}
+        
         # add tenant name
         status_tenant["tenant"] = tenant
         # add check timestamp in UTC
@@ -226,11 +232,73 @@ def check_tenants(args):
         status_tenant["hdfs"] = check_tenant_hdfs(tenant,target_date,namenode,hdfs_user,client,config)
         # get ams status
         status_tenant["ams"] = check_tenant_ams(tenant,target_date,ams,config)
-        # append current tenant status to tenant list 
-        status["tenants"].append(status_tenant)
+        
+        log.info("Status for tenant[{}] = {}".format(tenant,json.dumps(status_tenant)))
+        # Upload tenant status to argo-web-api
+        upload_tenant_status(api_endpoint,api_token,tenant,tenant_uuids[tenant],status_tenant)
+
+def get_tenant_uuids(api_endpoint, api_token):
+    """Get tenant uuids from remote argo-web-api endpoint
+    
+    Args:
+        api_endpoint (str.): hostname of the remote argo-web-api endpoint
+        api_token (str.): access token for the remote argo-web-api endpoint
+    
+    Returns:
+        dict.: dictionary with mappings of tenant names to tenant uuidss
+    """
+
+    log.info("Retrieving tenant uuids from api: {}".format(api_endpoint))
+    result = dict()
+    url = "https://{}/api/v2/admin/tenants".format(api_endpoint)
+    headers = dict()
+    headers.update({
+        'Accept': 'application/json',
+        'x-api-key': api_token
+    })
+    r = requests.get(url, headers=headers, verify=False)
+
+    if 200 == r.status_code:
+       
+        tenants = json.loads(r.text)["data"]
+        for tenant in tenants:
+            result[tenant["info"]["name"]] = tenant["id"]
+        log.info("tenant uuids retrieved")
+        return result 
+    else:
+        log.error("unable to retrieve tenant uuids")
+        return result
+
+    
+def upload_tenant_status(api_endpoint, api_token, tenant, tenant_id, tenant_status):
+    """Uploads tenant's status to a remote argo-web-api endpoint
+    
+    Args:
+        api_endpoint (str.): hostname of the remote argo-web-api endpoint
+        api_token (str.): access token for remote argo-web-api
+        tenant (str.): tenant name
+        tenant_id (str.): tenant uuid
+        tenant_status (obj.): json representation of tenant's status report
+    
+    Returns:
+        bool: true if upload is successfull
+    """
+
+    log.info("Uploading status for tenant: {}({}) at api: {}".format(tenant,tenant_id,api_endpoint))
+    url = "https://{}/api/v2/admin/tenants/{}/status".format(api_endpoint,tenant_id)
+    headers = dict()
+    headers.update({
+        'Accept': 'application/json',
+        'x-api-key': api_token
+    })
+    r = requests.put(url, headers=headers, data=json.dumps(tenant_status), verify=False)
+    if 200 == r.status_code:
+        log.info("Tenant's {} status upload succesfull to {}".format(tenant, api_endpoint))
+        return True
+    else:
+        log.error("Error uploading to the api {}, status_code: {} - response: {}".format(api_endpoint,r.status_code, r.text))
+        return False
    
-    # Output tenant/s status in console
-    print json.dumps(status)
     
 
 
