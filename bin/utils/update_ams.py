@@ -215,6 +215,28 @@ class ArgoAmsClient:
         url = self.get_url("subscriptions", None, project)
         return self.get_resource(url)
 
+    def get_topic_num_of_messages(self, project, topic):
+        """
+        Get number of messages arrived in a topic
+        Args:
+            project: str. project name
+            topic: str. topic name
+
+        Returns:
+           int. number of messages
+
+        """
+        url = self.get_url("topics", topic, project, "metrics")
+        metrics =  self.get_resource(url)["metrics"]
+        
+        for metric in metrics:
+            if metric["metric"] == "topic.number_of_messages":
+                ts = metric["timeseries"]
+                if len(ts) > 0:
+                    return ts[0]["value"]
+        return 0
+
+
     def get_topic_acl(self, project, topic):
         """
         Get ACL list for a specific project's topic
