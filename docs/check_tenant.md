@@ -17,47 +17,41 @@ To check for all tenants for today's date issue:
 `./bin/utils/check_tenant.py -c /path/to/argo-streaming.conf`
 
 # Report format
-Script produces a status report in json format with the following schema:
+Script produces a status report in json format for each tenant which is automatically uploaded to the argo-web-api service
 ```json
 {
+  "last_check": "2018-09-10T13:58:14Z",
   "engine_config": true,
-  "tenants": [
-    {
-      "tenant": "Foo_tenant",
-      "last_check": "2018-09-10T13:58:14Z",
-      "engine_config": true,
-      "hdfs": {
-        "metric_data": true,
-        "sync_data": {
-          "Critical": {
-            "downtimes": true,
-            "group_endpoints": true,
-            "blank_recomputation": true,
-            "configuration_profile": true,
-            "group_groups": true,
-            "weights": true,
-            "operations_profile": true,
-            "metric_profile": true,
-            "aggregation_profile": true
-          }
-        }
-      },
-      "ams": {
-        "metric_data": {
-          "ingestion": true,
-          "status_streaming": true,
-          "publishing": true,
-          "messages_arrived": 1774700
-        },
-        "sync_data": {
-          "ingestion": true,
-          "status_streaming": true,
-          "publishing": true,
-          "messages_arrived": 715
-        }
+  "hdfs": {
+    "metric_data": true,
+    "sync_data": {
+      "Critical": {
+        "downtimes": true,
+        "group_endpoints": true,
+        "blank_recomputation": true,
+        "configuration_profile": true,
+        "group_groups": true,
+        "weights": true,
+        "operations_profile": true,
+        "metric_profile": true,
+        "aggregation_profile": true
       }
     }
-  ]
+  },
+  "ams": {
+    "metric_data": {
+      "ingestion": true,
+      "status_streaming": true,
+      "publishing": true,
+      "messages_arrived": 1774700
+    },
+    "sync_data": {
+      "ingestion": true,
+      "status_streaming": true,
+      "publishing": true,
+      "messages_arrived": 715
+    }
+  }
 }
 ```
 
