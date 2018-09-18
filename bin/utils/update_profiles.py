@@ -442,7 +442,7 @@ class ArgoProfileManager:
         # check
         section_tenant = "TENANTS:"+ tenant
         section_metric = "TENANTS:"+ tenant + ":ingest-metric"
-        mongo_uri = self.cfg.get("MONGO","endpoint").geturl()
+        mongo_uri = self.cfg.get("MONGO","endpoint").netloc
         mongo_location = self.cfg.get_default(section_tenant,"mongo_uri").fill(mongo_uri=mongo_uri,tenant=tenant).geturl()
         hdfs_user = self.cfg.get("HDFS","user")
         namenode = self.cfg.get("HDFS","namenode").netloc

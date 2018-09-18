@@ -11,6 +11,7 @@ from utils.argo_mongo import ArgoMongoClient
 from utils.common import cmd_to_string, date_rollback, flink_job_submit, hdfs_check_path, get_log_conf, get_config_paths
 from utils.update_profiles import ArgoProfileManager
 from utils.argo_config import ArgoConfig
+from utils.recomputations import upload_recomputations
 
 
 log = logging.getLogger(__name__)
@@ -81,7 +82,9 @@ def compose_hdfs_commands(year, month, day, args, config):
 
     # file location of recomputations file (local or hdfs)
     # first check if there is a recomputations file for the given date
-    if client.test(urlparse(hdfs_sync+"/recomp_"+args.date+".json").path, exists=True):
+    # recomputation lies in the hdfs in the form of
+    # /sync/recomp_TENANTNAME_ReportName_2018-08-02.json
+    if client.test(urlparse(hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json").path, exists=True):
         hdfs_commands["--rec"] = hdfs_sync+"/recomp_"+args.date+".json"
     else:
         hdfs_commands["--rec"] = hdfs_check_path(hdfs_sync+"/recomp.json", client)
@@ -117,8 +120,8 @@ def compose_command(config, args,  hdfs_commands):
     #  MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
     cmd_command.append("--mongo.uri")
     group_tenant = "TENANTS:"+args.tenant
-    mongo = config.get("MONGO","endpoint").geturl()
-    mongo_uri = config.get(group_tenant, "mongo_uri").fill(mongo_uri=mongo, tenant=args.tenant).geturl()
+    mongo_endpoint = config.get("MONGO","endpoint").geturl()
+    mongo_uri = config.get(group_tenant, "mongo_uri").fill(mongo_endpoint=mongo_endpoint, tenant=args.tenant).geturl()
     cmd_command.append(mongo_uri)
 
     if args.method == "insert":
@@ -169,6 +172,9 @@ def main(args=None):
     if not config.has("TENANTS:"+args.tenant):
         log.info("Tenant: "+args.tenant+" doesn't exist.")
         sys.exit(1)
+
+    # check and upload recomputations 
+    upload_recomputations(args.tenant, args.report, args.date, config)
 
     # optional call to update profiles
     if args.profile_check:

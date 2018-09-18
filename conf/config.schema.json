@@ -178,7 +178,7 @@
     "mongo_uri": {
       "desc": "mongo uri including host port and database",
       "type": "template,uri",
-      "default": "{{mongo_uri}}/argo_{{tenant}}"
+      "default": "{{mongo_endpoint}}/argo_{{tenant}}"
     },
     "mongo_method": {
       "desc": "default method used in mongodb operations",
