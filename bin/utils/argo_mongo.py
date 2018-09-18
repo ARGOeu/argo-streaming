@@ -154,9 +154,11 @@ def main_clean(args=None):
     # Get main configuration and schema
     config = ArgoConfig(conf_paths["main"], conf_paths["schema"])
 
-    # set up the mongo uri
-    tenant_group = "TENANTS:" + args.tenant
-    mongo_uri = config.get(tenant_group, "mongo_uri")
+     # set up the mongo uri
+    section_tenant = "TENANTS:" + args.tenant
+    mongo_endpoint = config.get("MONGO","endpoint")
+    mongo_uri = config.get(section_tenant,"mongo_uri").fill(mongo_endpoint=mongo_endpoint,tenant=args.tenant)
+
 
     if args.job == "clean_ar":
         argo_mongo_client = ArgoMongoClient(args, config, ["service_ar", "endpoint_group_ar"])

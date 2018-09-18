@@ -71,7 +71,7 @@ ams_project: test_project
 ams_token: test_token
 reports: report_name
 report_report_name: report_uuid
-mongo_uri: {{mongo_uri}}/argo_{{tenant}}
+mongo_uri: {{mongo_endpoint}}/argo_{{tenant}}
 mongo_method: insert
 
 
