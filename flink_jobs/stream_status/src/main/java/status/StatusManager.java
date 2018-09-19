@@ -43,7 +43,7 @@ public class StatusManager {
 	static Logger LOG = LoggerFactory.getLogger(StatusManager.class);
 
 	// Name of the report used
-	String report;
+	private String report;
 
 	// Sync file structures necessary for status computation
 	public EndpointGroupManagerV2 egp = new EndpointGroupManagerV2();
@@ -70,6 +70,13 @@ public class StatusManager {
 	// trigger
 	String tsLatest;
 	
+	public void setReport(String report) {
+		this.report = report;
+	}
+	
+	public String getReport() {
+		return this.report;
+	}
 	
 	public void setTimeout(Long timeout) {
 		this.timeout = timeout;
@@ -760,8 +767,9 @@ public class StatusManager {
 				toZulu(ts), tsProc, prevStatus, toZulu(prevTs), new Boolean(repeat).toString(), summary, message );
 		
 		Gson gson = new Gson();
-		LOG.debug("Event Generated: " + gson.toJson(evnt));
-		return gson.toJson(evnt);
+		String evntJson = gson.toJson(evnt);
+		LOG.debug("Event Generated: " + evntJson);
+		return evntJson;
 	
 	}
 
