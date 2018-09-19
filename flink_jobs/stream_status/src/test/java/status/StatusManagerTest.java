@@ -41,6 +41,9 @@ public class StatusManagerTest {
 
 	@Test
 	public void test() throws URISyntaxException, IOException, ParseException {
+		
+		
+		
 		// Prepare Resource File
 		URL resAPSJsonFile = StatusManagerTest.class.getResource("/ops/ap1.json");
 		File jsonAPSFile = new File(resAPSJsonFile.toURI());
@@ -58,7 +61,7 @@ public class StatusManagerTest {
 		File avroDownFile = new File(resDownAvroFile.toURI());
 
 		StatusManager sm = new StatusManager();
-		sm.report="Critical";
+		sm.setReport("Critical");
 		sm.loadAllFiles("2017-03-03", avroDownFile, avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
 
 		Date ts1 = sm.fromZulu("2017-03-03T00:00:00Z");

@@ -64,6 +64,8 @@ import sync.MetricProfileManager;
  * --sync.aps          : availability profile used 
  * --sync.ops          : operations profile used
  * --sync.downtimes    : initial downtime file (same for run date)
+ * --report			   : report name
+ * --report.uuid	   : report uuid
  * Job optional cli parameters:
  * --ams.batch         : num of messages to be retrieved per request to AMS service
  * --ams.interval      : interval (in ms) between AMS service requests
@@ -160,6 +162,7 @@ public class AmsStreamStatus {
 		String project = parameterTool.getRequired("ams.project");
 		String subMetric = parameterTool.getRequired("ams.sub.metric");
 		String subSync = parameterTool.getRequired("ams.sub.sync");
+		
 
 		// set ams client batch and interval to default values
 		int batch = 1;
@@ -206,7 +209,7 @@ public class AmsStreamStatus {
 
 		DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf));
 
-		events.print();
+		
 
 		if (hasKafkaArgs(parameterTool)) {
 			// Initialize kafka parameters
@@ -236,7 +239,7 @@ public class AmsStreamStatus {
 
 			MongoStatusOutput mongoOut = new MongoStatusOutput(parameterTool.get("mongo.uri"), "status_metrics",
 					"status_endpoints", "status_services", "status_endpoint_groups", parameterTool.get("mongo.method"),
-					parameterTool.get("report"));
+					parameterTool.get("report.uuid"));
 			events.writeUsingOutputFormat(mongoOut);
 		}
 
@@ -421,6 +424,8 @@ public class AmsStreamStatus {
 
 		public int defStatus;
 		
+	
+		
 		
 
 		public StatusMap(StatusConfig config) {
@@ -441,7 +446,7 @@ public class AmsStreamStatus {
 			pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 			
 			SyncData sd = new SyncData();
-
+			
 			String opsJSON = sd.readText(config.ops);
 			String apsJSON = sd.readText(config.aps);
 			ArrayList<Downtime> downList = sd.readDowntime(config.downtime);
@@ -451,6 +456,7 @@ public class AmsStreamStatus {
 			// create a new status manager
 			sm = new StatusManager();
 			sm.setTimeout(config.timeout);
+			sm.setReport(config.report);
 			// load all the connector data
 			sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsJSON, opsJSON);
 
@@ -524,10 +530,13 @@ public class AmsStreamStatus {
 			// Decode from base64
 			byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
 			JsonElement jAttr = jRoot.getAsJsonObject().get("attributes");
+			
 			Map<String, String> attr = SyncParse.parseAttributes(jAttr);
-			if (attr.containsKey("type")) {
-
+			// The sync dataset should have a type and report attribute and report should be the job's report
+			if (attr.containsKey("type") && attr.containsKey("report") && attr.get("report") == config.report ) {
+				
 				String sType = attr.get("type");
+				LOG.info("Accepted " + sType + " for report: " + attr.get("report"));
 				if (sType.equalsIgnoreCase("metric_profile")) {
 					// Update mps
 					ArrayList<MetricProfile> mpsList = SyncParse.parseMetricProfile(decoded64);
@@ -547,7 +556,6 @@ public class AmsStreamStatus {
 							egpTrim.add(egpItem);
 						}
 					}
-
 					sm.egp = new EndpointGroupManagerV2();
 					sm.egp.loadFromList(egpTrim);
 				} else if (sType.equals("downtimes") && attr.containsKey("partition_date")) {
@@ -556,6 +564,8 @@ public class AmsStreamStatus {
 					// Update downtime cache in status manager
 					sm.addDowntimeSet(pDate, downList);
 				}
+			} else {
+				LOG.info("Declined " + attr.get("type") + "for report: " + attr.get("report"));
 			}
 
 		}
