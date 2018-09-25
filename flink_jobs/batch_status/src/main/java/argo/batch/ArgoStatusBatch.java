@@ -124,7 +124,7 @@ public class ArgoStatusBatch {
 		DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
-				.withBroadcastSet(opsDS, "ops");
+				.withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
 
 		// Combine prev and todays metric data with the generated missing metric
 		// data

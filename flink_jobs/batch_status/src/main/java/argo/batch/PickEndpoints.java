@@ -54,6 +54,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 	private List<String> cfg;
 	private List<String> thr;
 	private List<String> ops;
+	private List<String> aps;
 	private OpsManager opsMgr;
 	private MetricProfileManager mpsMgr;
 	private EndpointGroupManager egpMgr;
@@ -61,6 +62,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 	private RecomputationsManager recMgr;
 	private ConfigManager cfgMgr;
 	private ThresholdManager thrMgr;
+	private AggregationProfileManager apsMgr;
 	
 	private String egroupType;
 
@@ -75,6 +77,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		this.cfg = getRuntimeContext().getBroadcastVariable("conf");
 		this.thr = getRuntimeContext().getBroadcastVariable("thr");
 		this.ops = getRuntimeContext().getBroadcastVariable("ops");
+		this.aps = getRuntimeContext().getBroadcastVariable("aps");
 		
 		
 		// Initialize Recomputation manager
@@ -99,6 +102,10 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		this.opsMgr = new OpsManager();
 		this.opsMgr.loadJsonString(ops);
 		
+		// Initialize Aggregation Profile manager
+		this.apsMgr = new AggregationProfileManager();
+		this.apsMgr.loadJsonString(aps);
+		
 		this.egroupType = cfgMgr.egroup;
 		
 		// Initialize Threshold manager
@@ -116,6 +123,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 	public void flatMap(MetricData md, Collector<StatusMetric> out) throws Exception {
 
 		String prof = mpsMgr.getProfiles().get(0);
+		String aprof = apsMgr.getAvProfiles().get(0);
 		String hostname = md.getHostname();
 		String service = md.getService();
 		String metric = md.getMetric();
@@ -125,10 +133,14 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		// Filter By monitoring engine
 		if (recMgr.isMonExcluded(monHost, ts) == true) return;
 		
+		// Filter By aggregation profile
+		if (apsMgr.checkService(aprof, service) == false) return;
 		
 		// Filter By metric profile
 		if (mpsMgr.checkProfileServiceMetric(prof, service, metric) == false) return;
-
+		
+		
+		
 		
 		// Filter By endpoint group if belongs to supergroup
 		ArrayList<String> groupnames = egpMgr.getGroup(egroupType, hostname, service);
