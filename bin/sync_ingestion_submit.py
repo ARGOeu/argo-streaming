@@ -19,7 +19,7 @@ def compose_command(config, args):
 
     # tenant the job will run for
     section_tenant = "TENANTS:" + args.tenant
-    section_tenant_job = section_tenant + ":ingest-metric"
+    section_tenant_job = section_tenant + ":ingest-sync"
     config.get(section_tenant, "ams_project")
 
     # get needed config params
@@ -47,8 +47,11 @@ def compose_command(config, args):
     cmd_command.append(ams_endpoint.hostname)
 
     # ams port
+    ams_port = 443
+    if ams_endpoint.port is not None:
+	ams_port = ams_endpoint.port
     cmd_command.append("--ams.port")
-    cmd_command.append(ams_endpoint.port)
+    cmd_command.append(str(ams_port))
 
     # tenant token
     cmd_command.append("--ams.token")
@@ -63,7 +66,7 @@ def compose_command(config, args):
     cmd_command.append(ams_sub)
 
     # fill job_namespace template
-    job_namespace = job_namespace.fill(ams_endpoint=ams_endpoint.hostname, ams_port=ams_endpoint.port,
+    job_namespace = job_namespace.fill(ams_endpoint=ams_endpoint.hostname, ams_port=ams_port,
                                        ams_project=ams_project, ams_sub=ams_sub)
 
     # set up the hdfs client to be used in order to check the files
@@ -71,9 +74,9 @@ def compose_command(config, args):
     hdfs_user = config.get("HDFS", "user")
 
     hdfs_sync = config.get("HDFS", "path_sync")
-    hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=section_tenant)
+    hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant)
 
-    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=section_tenant).geturl()
+    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant).geturl()
 
     # append hdfs sync base path to the submit command
     cmd_command.append("--hdfs.path")
@@ -81,11 +84,11 @@ def compose_command(config, args):
 
     # num of messages to be retrieved from AMS per request
     cmd_command.append("--ams.batch")
-    cmd_command.append(config.get(section_tenant_job, "ams_batch"))
+    cmd_command.append(str(config.get(section_tenant_job, "ams_batch")))
 
     # interval in ms betweeb AMS service requests
     cmd_command.append("--ams.interval")
-    cmd_command.append(config.get(section_tenant_job, "ams_interval"))
+    cmd_command.append(str(config.get(section_tenant_job, "ams_interval")))
 
     # get optional ams proxy
     proxy = config.get("AMS", "proxy")
@@ -126,6 +129,7 @@ def main(args=None):
     log.info(cmd_to_string(cmd_command)+"\n")
 
     # submit the job
+   
     flink_job_submit(config, cmd_command, job_namespace)
 
 

@@ -46,8 +46,11 @@ def compose_command(config, args):
     cmd_command.append(ams_endpoint.hostname)
 
     # ams port
+    ams_port = 443
+    if ams_endpoint.port is not None:
+	ams_port = ams_endpoint.port
     cmd_command.append("--ams.port")
-    cmd_command.append(ams_endpoint.port)
+    cmd_command.append(str(ams_port))
 
     # tenant token
     cmd_command.append("--ams.token")
@@ -79,19 +82,19 @@ def compose_command(config, args):
 
     # path to store flink checkpoints
     cmd_command.append("--check.path")
-    cmd_command.append(config.get(section_tenant_job, "checkpoint_path"))
+    cmd_command.append(str(config.get(section_tenant_job, "checkpoint_path")))
 
     # interval for checkpont in ms
     cmd_command.append("--check.interval")
-    cmd_command.append(config.get(section_tenant_job, "checkpoint_interval"))
+    cmd_command.append(str(config.get(section_tenant_job, "checkpoint_interval")))
 
     # num of messages to be retrieved from AMS per request
     cmd_command.append("--ams.batch")
-    cmd_command.append(config.get(section_tenant_job, "ams_batch"))
+    cmd_command.append(str(config.get(section_tenant_job, "ams_batch")))
 
     # interval in ms betweeb AMS service requests
     cmd_command.append("--ams.interval")
-    cmd_command.append(config.get(section_tenant_job, "ams_interval"))
+    cmd_command.append(str(config.get(section_tenant_job, "ams_interval")))
 
     # get optional ams proxy
     proxy = config.get("AMS", "proxy")
@@ -107,7 +110,7 @@ def compose_command(config, args):
     else:
         # by default assume ams verify is always true
         cmd_command.append("true")
-
+   
     return cmd_command, job_namespace
 
 

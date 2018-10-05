@@ -121,8 +121,8 @@ def compose_command(config, args,  hdfs_commands):
     cmd_command.append("--mongo.uri")
     group_tenant = "TENANTS:"+args.tenant
     mongo_endpoint = config.get("MONGO","endpoint").geturl()
-    mongo_uri = config.get(group_tenant, "mongo_uri").fill(mongo_endpoint=mongo_endpoint, tenant=args.tenant).geturl()
-    cmd_command.append(mongo_uri)
+    mongo_uri = config.get(group_tenant, "mongo_uri").fill(mongo_endpoint=mongo_endpoint, tenant=args.tenant)
+    cmd_command.append(mongo_uri.geturl())
 
     if args.method == "insert":
         argo_mongo_client = ArgoMongoClient(args, config, ["service_ar", "endpoint_group_ar"])
