@@ -137,7 +137,7 @@ def gen_batch_status(config, tenant, report, iteration="hourly", user=None, mong
     return gen_entry(cron_prefix, cmd, user, description)
 
 
-def gen_tenant_all(config, tenant, user=None):
+def gen_tenant_all(config, tenant, reports=None, user=None):
     """
     For a given tenant and all of his reports generate a/r and status jobs
     Args:
@@ -149,7 +149,8 @@ def gen_tenant_all(config, tenant, user=None):
     """
     cron_body = "#Jobs for {}\n\n".format(tenant)
     section_tenant = "TENANTS:"+tenant
-    reports = config.get(section_tenant, "reports")
+    if reports is None:
+        reports = config.get(section_tenant, "reports")
     mongo_method = config.get(section_tenant, "mongo_method")
     for report in reports:
         # Generate hourly batch Ar
