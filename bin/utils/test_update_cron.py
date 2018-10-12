@@ -3,13 +3,13 @@ import os
 from update_cron import get_daily, get_hourly, gen_entry, gen_batch_ar, gen_batch_status, gen_tenant_all, gen_for_all
 from argo_config import ArgoConfig
 
-CONF_FILE = os.path.join(os.path.dirname(__file__), '../../conf/argo-streaming.conf')
+CONF_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../conf/argo-streaming.conf'))
 SCHEMA_FILE = os.path.join(os.path.dirname(__file__), '../../conf/config.schema.json')
 
 # relative path to ar job submit script
-BATCH_AR = os.path.join(os.path.dirname(__file__), '../bin/ar_job_submit.py')
+BATCH_AR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ar_job_submit.py'))
 # relative path to status job submit script
-BATCH_STATUS = os.path.join(os.path.dirname(__file__), '../bin/status_job_submit.py')
+BATCH_STATUS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../status_job_submit.py'))
 # bash argument to get today's date (utc)
 TODAY = """$(/bin/date --utc +\%Y-\%m-\%d)"""
 # bash argument to get previous date date (utc)
