@@ -94,7 +94,8 @@ class ArgoApiClient:
         tenant_keys = dict()
         for item in tenants:
             for user in item["users"]:
-                if user["name"].startswith("argo_engine_"):
+                if user["name"].startswith("argo_engine_") and user["api_key"]:
+                    print len(user["api_key"])
                     tenant_keys[item["info"]["name"]] = user["api_key"]
         return tenant_keys
 
