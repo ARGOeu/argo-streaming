@@ -199,8 +199,13 @@ class ArgoApiClient:
         Returns:
 
         """
+	if profile_type is "aggregations":
+	   profile_type = "aggregation"
+        	
         report = self.get_report(tenant, self.find_report_uuid(tenant, report))
-        for profile in report["profiles"]:
+        if profile_type == "reports":
+		return report["id"]
+	for profile in report["profiles"]:
             if profile["type"] == profile_type:
                 return profile["id"]
 
@@ -309,7 +314,7 @@ class ArgoProfileManager:
         namenode = config.get("HDFS", "namenode")
         hdfs_user = config.get("HDFS", "user")
         full_path = config.get("HDFS", "path_sync")
-        full_path = full_path.partial_fill(namenode=namenode, hdfs_user=hdfs_user)
+        full_path = full_path.partial_fill(namenode=namenode.geturl(), hdfs_user=hdfs_user)
 
         short_path = urlparse(full_path).path
 
@@ -319,7 +324,8 @@ class ArgoProfileManager:
         for tenant in tenant_list:
             tenant_key = config.get("API", tenant + "_key")
             tenant_keys[tenant] = tenant_key
-
+        
+	print namenode.hostname, namenode.port, short_path 
         self.hdfs = HdfsReader(namenode.hostname, namenode.port, short_path)
         self.api = ArgoApiClient(config.get("API", "endpoint").netloc, tenant_keys)
 
@@ -332,16 +338,16 @@ class ArgoProfileManager:
             report: str. Report name to check profiles from
             profile_type: str. Name of the profile type used (operations|aggregations|reports)
         """
-
         prof_api = self.api.get_profile(tenant, report, profile_type)
         if prof_api is None:
             log.info("profile type %s doesn't exist in report --skipping", profile_type)
             return
 
         log.info("retrieved %s profile(api): %s", profile_type, prof_api)
-
+	
         prof_hdfs, exists = self.hdfs.cat(tenant, report, profile_type)
-
+	
+           
         if exists:
             log.info("retrieved %s profile(hdfs): %s ", profile_type, prof_hdfs)
             prof_update = prof_api != prof_hdfs
@@ -383,18 +389,16 @@ class ArgoProfileManager:
 
         # If all ok continue with uploading the new file to hdfs
 
-        hdfs_write_bin = self.cfg["hdfs_writer"]
+        hdfs_write_bin = self.cfg.get("HDFS", "writer_bin")
         hdfs_write_cmd = "put"
 
         temp_fn = "prof_" + str(uuid.uuid4())
         local_path = "/tmp/" + temp_fn
         with open(local_path, 'w') as outfile:
             json.dump(profile, outfile)
-
-        hdfs_host = str(self.cfg["hdfs_host"])
+        hdfs_host = self.cfg.get("HDFS","namenode").hostname
         hdfs_path = self.hdfs.gen_profile_path(tenant, report, profile_type)
-
-        status = subprocess.check_call([hdfs_write_bin, hdfs_write_cmd, local_path, hdfs_path])
+	status = subprocess.check_call([hdfs_write_bin, hdfs_write_cmd, local_path, hdfs_path])
 
         if status == 0:
             log.info("File uploaded successfully to hdfs host: %s path: %s", hdfs_host, hdfs_path)
@@ -442,8 +446,8 @@ class ArgoProfileManager:
         # check
         section_tenant = "TENANTS:"+ tenant
         section_metric = "TENANTS:"+ tenant + ":ingest-metric"
-        mongo_uri = self.cfg.get("MONGO","endpoint").netloc
-        mongo_location = self.cfg.get_default(section_tenant,"mongo_uri").fill(mongo_uri=mongo_uri,tenant=tenant).geturl()
+        mongo_endpoint = self.cfg.get("MONGO","endpoint").geturl()
+        mongo_uri = self.cfg.get_default(section_tenant,"mongo_uri").fill(mongo_endpoint=mongo_endpoint,tenant=tenant).geturl()
         hdfs_user = self.cfg.get("HDFS","user")
         namenode = self.cfg.get("HDFS","namenode").netloc
         hdfs_check = self.cfg.get_default(section_metric,"checkpoint_path").fill(namenode=namenode,hdfs_user=hdfs_user,tenant=tenant)
@@ -451,7 +455,7 @@ class ArgoProfileManager:
         
         self.cfg.get("MONGO","endpoint")
        
-        self.cfg.set(section_tenant,"mongo_uri",mongo_location)
+        self.cfg.set(section_tenant,"mongo_uri",mongo_uri)
         self.cfg.set_default(section_tenant,"mongo_method")
         
         
@@ -504,8 +508,15 @@ def run_profile_update(args):
     if args.tenant is not None:
         # check for the following profile types
         profile_type_checklist = ["operations", "aggregations", "reports", "thresholds"]
-        for profile_type in profile_type_checklist:
-            argo.profile_update_check(args.tenant, args.report, profile_type)
+	reports = []
+	if args.report is not None:
+	    reports.append(args.report)
+	else:
+	    reports = config.get("TENANTS:"+args.tenant,"reports")
+
+	for report in reports:
+	    for profile_type in profile_type_checklist:
+	        argo.profile_update_check(args.tenant, report, profile_type)
     else:
         argo.upload_tenants_cfg()
         argo.save_config(conf_paths["main"])

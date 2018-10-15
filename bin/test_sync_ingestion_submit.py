@@ -11,8 +11,8 @@ CONF_SCHEMA = os.path.join(os.path.dirname(__file__), '../conf/config.schema.jso
 # This is the command that the submission script is expected to compose based on given args and config
 expected_result = """sudo flink_path run -c test_class test.jar --ams.endpoint test_endpoint --ams.port 8080 \
 --ams.token test_token --ams.project test_project --ams.sub job_name \
---hdfs.path hdfs://hdfs_test_host:hdfs_test_host/user/hdfs_test_user/argo/tenants/TENANTS:TENANTA/sync \
---ams.batch 100 --ams.interval 300 --ams.proxy test_proxy --ams.verify true"""
+--hdfs.path hdfs://hdfs_test_host:hdfs_test_host/user/hdfs_test_user/argo/tenants/TENANTA/sync \
+--ams.batch 100 --ams.interval 3000 --ams.proxy test_proxy --ams.verify true"""
 
 
 class TestClass(unittest.TestCase):

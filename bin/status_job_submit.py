@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Batch Status Job submit script")
     parser.add_argument(
-        "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True, dest="tenants")
+        "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True, dest="tenant")
     parser.add_argument(
         "-r", "--report", metavar="STRING", help="Report status", required=True, dest="report")
     parser.add_argument(

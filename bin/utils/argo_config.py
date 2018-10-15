@@ -232,10 +232,12 @@ class ArgoConfig:
 
         if group in self.fix:
             if item in self.fix[group]:
-                return self.fix[group][item]["value"]
+                if self.fix[group][item] is not None:
+                    return self.fix[group][item]["value"]
         if group in self.var:
             if item in self.var[group]:
-                return self.var[group][item]["value"]
+                if self.var[group][item] is not None: 
+		    return self.var[group][item]["value"]
         return None
 
     def load_conf(self, conf_path):
@@ -442,10 +444,14 @@ class ArgoConfig:
         fix_groups = self.schema.keys()
         var_groups = list()
 
-
+ 
         for group in fix_groups:
             if self.is_var(group):
-                var_groups.append(self.get_group_variations(group))
+              
+                var_group = self.get_group_variations(group)
+                if var_group is not None:
+                    var_groups.append(var_group)
+               
                 continue
 
             fix_items = list()
@@ -460,7 +466,9 @@ class ArgoConfig:
             self.add_group_items(group, fix_items, False, None)
             self.add_group_items(group, var_items, True, None)
 
+
         for group in var_groups:
+            
             for sub_group in group["vars"]:
                 fix_items = list()
                 var_items = list()

@@ -441,12 +441,12 @@ class ArgoAmsClient:
         section_status_stream = "TENANTS:{}:stream-status".format(tenant)
 
         # update tenant ingest-metric
-        if config.get(section_ingest_metric, "ams_sub") != "metric_data":
-            config.set(section_ingest_metric, "ams_sub", "metric_data")
+        if config.get(section_ingest_metric, "ams_sub") != "ingest_metric":
+            config.set(section_ingest_metric, "ams_sub", "ingest_metric")
 
         # update tenant ingest-sync
-        if config.get(section_ingest_sync, "ams_sub") != "sync_data":
-            config.set(section_ingest_sync, "ams_sub", "sync_data")
+        if config.get(section_ingest_sync, "ams_sub") != "ingest_sync":
+            config.set(section_ingest_sync, "ams_sub", "ingest_sync")
 
         # update tenant status_stream
         if config.get(section_status_stream, "ams_sub_metric") != "status_metric":
