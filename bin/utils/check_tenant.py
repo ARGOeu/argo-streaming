@@ -7,7 +7,7 @@ import sys
 import logging
 import json
 from snakebite.client import Client
-from datetime import datetime
+from datetime import datetime, timedelta
 from update_ams import ArgoAmsClient
 import requests
 
@@ -25,6 +25,22 @@ def get_today():
 
     return datetime.today().strftime('%Y-%m-%d')
 
+def get_date_days_back(date_str, days_back):
+    """Get date, x days back from target date, as a string in YYYY-MM-DD format
+    
+    Args:
+        date_str (str.): target date in string YYYY-MM-DD format
+        days_back (int): days to go back 
+    
+    Returns:
+        str.: date in YYYY-MM-DD format
+    """
+
+    if days_back is 0:
+        return date_str
+    target_date = datetime.strptime(date_str,'%Y-%m-%d') - timedelta(days=days_back)
+    return target_date.strftime('%Y-%m-%d')
+
 
 def get_now_iso():
     """Get current utc datetime in YYYY-MM-DDTHH:MM:SSZ format
@@ -36,7 +52,7 @@ def get_now_iso():
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
-def check_tenant_hdfs(tenant, target_date, namenode, hdfs_user, client, config):
+def check_tenant_hdfs(tenant, target_date, days_back, namenode, hdfs_user, client, config):
     """Given a tenant and an hdfs client check if the tenant is properly configured
     in the hdfs destination.
     
@@ -84,12 +100,17 @@ def check_tenant_hdfs(tenant, target_date, namenode, hdfs_user, client, config):
     for report in reports:
         sync_result[report]={}
         for item in sync_list:
-            sync_path = "".join([hdfs_sync.path,"/",report,"/",item,"_",target_date,".avro"])
-            try: 
-                client.test(sync_path)
-                sync_result[report][item] = True
-            except Exception:
-                sync_result[report][item] = False
+            # Repeat check for how many days back user specified
+            for days_iter in range(0,days_back):
+                check_date = get_date_days_back(target_date,days_iter)
+                sync_path = "".join([hdfs_sync.path,"/",report,"/",item,"_",check_date,".avro"])
+                try: 
+                    client.test(sync_path)
+                    # If found set status to True and escape back day check
+                    sync_result[report][item] = True
+                    continue
+                except Exception:
+                    sync_result[report][item] = False
         
         for item in report_profiles.keys():
             profile_path = "".join([hdfs_sync.path,"/",report_profiles[item].format(tenant,report)])
@@ -159,8 +180,67 @@ def check_tenant_ams(tenant, target_date, ams, config):
     return ams_tenant
 
 
-def check_tenants(args):
-    """Run tenant/s check routine and print status json to stdout
+def check_tenants(tenants, target_date, days_back, config):
+    """Gets a list of tenants, a target date and number of days to go back and 
+    checks for each tenant its hdfs and ams status. The status is uploaded in argo-web-api.
+    a complete list of tenant statuses is returned in the end
+    
+    Args:
+        tenants (list(str.)): List of tenant names
+        target_date (str.): target date in YYYY-MM-DD format
+        days_back (int): days to check back
+        config (obj.): ArgoConfig object
+    
+    Returns:
+        list(obj): List of tenants' statuses
+    """
+
+     # hdfs client init
+    namenode = config.get("HDFS","namenode")
+    hdfs_user = config.get("HDFS","user")
+    client = Client(namenode.hostname, namenode.port)
+    log.info("connecting to HDFS: {}".format(namenode.hostname))
+
+    # ams client init
+    ams_token = config.get("AMS", "access_token")
+    ams_host = config.get("AMS", "endpoint").hostname
+    ams = ArgoAmsClient(ams_host, ams_token)
+    log.info("connecting to AMS: {}".format(ams_host))
+
+    # Upload tenant statuses in argo web api 
+    api_endpoint = config.get("API","endpoint").netloc
+    api_token = config.get("API","access_token")
+
+    # Get tenant uuids 
+    tenant_uuids = get_tenant_uuids(api_endpoint, api_token)
+    if not tenant_uuids: 
+        log.error("Without tenant uuids service is unable to check and upload tenant status")
+        sys.exit(1)
+    
+    complete_status = list()
+    for tenant in tenants:
+        status_tenant = {}
+        
+        # add tenant name
+        status_tenant["tenant"] = tenant
+        # add check timestamp in UTC
+        status_tenant["last_check"] = get_now_iso()
+        # add engine_config category 
+        status_tenant["engine_config"] = config.valid
+        # get hdfs status
+        status_tenant["hdfs"] = check_tenant_hdfs(tenant,target_date,days_back,namenode,hdfs_user,client,config)
+        # get ams status
+        status_tenant["ams"] = check_tenant_ams(tenant,target_date,ams,config)
+        
+        log.info("Status for tenant[{}] = {}".format(tenant,json.dumps(status_tenant)))
+        # Upload tenant status to argo-web-api
+        complete_status.append(status_tenant)
+        upload_tenant_status(api_endpoint,api_token,tenant,tenant_uuids[tenant],status_tenant)
+        
+    return complete_status
+
+def run_tenant_check(args):
+    """Run tenant/s check routine and update status json to argo-web-api
     
     Args:
         args (obj): command line arguments
@@ -180,20 +260,7 @@ def check_tenants(args):
         log.error("Argo engine not properly configured check file:{}".format(conf_paths["main"]))
         sys.exit(1)
 
-
-    # hdfs client init
-    namenode = config.get("HDFS","namenode")
-    hdfs_user = config.get("HDFS","user")
-    client = Client(namenode.hostname, namenode.port)
-    log.info("connecting to HDFS: {}".format(namenode.hostname))
-
-    # ams client init
-    ams_token = config.get("AMS", "access_token")
-    ams_host = config.get("AMS", "endpoint").hostname
-    ams = ArgoAmsClient(ams_host, ams_token)
-    log.info("connecting to AMS: {}".format(ams_host))
-
-    # check for specific date or today
+     # check for specific date or today
     if args.date is not None:
         target_date = args.date 
     else:
@@ -208,34 +275,10 @@ def check_tenants(args):
             log.error("tenant {} not found".format(args.tenant))
             return
 
-    # Upload tenant statuses in argo web api 
-    api_endpoint = config.get("API","endpoint").netloc
-    api_token = config.get("API","access_token")
+    check_tenants(tenants,target_date,args.days_back,config)
 
-    # Get tenant uuids 
-    tenant_uuids = get_tenant_uuids(api_endpoint, api_token)
-    if not tenant_uuids: 
-        log.error("Without tenant uuids service is unable to check and upload tenant status")
-        sys.exit(1)
-    
 
-    for tenant in tenants:
-        status_tenant = {}
-        
-        # add tenant name
-        status_tenant["tenant"] = tenant
-        # add check timestamp in UTC
-        status_tenant["last_check"] = get_now_iso()
-        # add engine_config category 
-        status_tenant["engine_config"] = config.valid
-        # get hdfs status
-        status_tenant["hdfs"] = check_tenant_hdfs(tenant,target_date,namenode,hdfs_user,client,config)
-        # get ams status
-        status_tenant["ams"] = check_tenant_ams(tenant,target_date,ams,config)
-        
-        log.info("Status for tenant[{}] = {}".format(tenant,json.dumps(status_tenant)))
-        # Upload tenant status to argo-web-api
-        upload_tenant_status(api_endpoint,api_token,tenant,tenant_uuids[tenant],status_tenant)
+   
 
 def get_tenant_uuids(api_endpoint, api_token):
     """Get tenant uuids from remote argo-web-api endpoint
@@ -309,9 +352,11 @@ if __name__ == '__main__':
     arg_parser.add_argument(
         "-t", "--tenant", help="tenant owner ", dest="tenant", metavar="STRING", required=False, default=None)
     arg_parser.add_argument(
-        "-c", "--config", help="config", dest="config", metavar="STRING")
+        "-c", "--config", help="config", dest="config", metavar="PATH")
     arg_parser.add_argument(
-        "-d", "--date", help="date", dest="date", metavar="STRING")
+        "-d", "--date", help="date", dest="date", metavar="YYYY-MM-DD")
+    arg_parser.add_argument(
+        "-b", "--back-days", help="number", dest="days_back", metavar="INTEGER", default=3)
     
     # Parse the command line arguments accordingly and introduce them to the run method
-    sys.exit(check_tenants(arg_parser.parse_args()))
+    sys.exit(run_tenant_check(arg_parser.parse_args()))

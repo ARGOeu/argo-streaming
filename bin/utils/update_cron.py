@@ -14,9 +14,9 @@ log = logging.getLogger(__name__)
 
 # CONSTANTS
 # relative path to ar job submit script
-BATCH_AR = os.path.join(os.path.dirname(__file__), '../bin/ar_job_submit.py')
+BATCH_AR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ar_job_submit.py'))
 # relative path to status job submit script
-BATCH_STATUS = os.path.join(os.path.dirname(__file__), '../bin/status_job_submit.py')
+BATCH_STATUS =  os.path.abspath(os.path.join(os.path.dirname(__file__), '../status_job_submit.py'))
 # bash argument to get today's date (utc)
 TODAY = """$(/bin/date --utc +\%Y-\%m-\%d)"""
 # bash argument to get previous date date (utc)
@@ -103,7 +103,7 @@ def gen_batch_ar(config, tenant, report, iteration="hourly", user=None, mongo_me
         target_date = YESTERDAY
 
     cmd = "{} -t {} -r {} -d {} -m {} -c {}".format(BATCH_AR, tenant, report, target_date, mongo_method,
-                                                    config.conf_path)
+                                                    os.path.abspath(config.conf_path))
     return gen_entry(cron_prefix, cmd, user, description)
 
 
@@ -133,7 +133,7 @@ def gen_batch_status(config, tenant, report, iteration="hourly", user=None, mong
         # daily jobs target day before
         target_date = YESTERDAY
     cmd = "{} -t {} -r {} -d {} -m {} -c {}".format(BATCH_STATUS, tenant, report, target_date, mongo_method,
-                                                    config.conf_path)
+                                                    os.path.abspath(config.conf_path))
     return gen_entry(cron_prefix, cmd, user, description)
 
 

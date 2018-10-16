@@ -135,6 +135,10 @@ class ArgoApiClient:
             dict: profile contents
 
         """
+        # default recomputation is always an empty json array
+        if profile_type == "recomputations":
+            return "[]"
+
         item_uuid = self.find_profile_uuid(tenant, report, profile_type)
         if item_uuid is None:
             return None
@@ -247,7 +251,8 @@ class HdfsReader:
             'operations': '{0}_ops.json',
             'aggregations': '{0}_{1}_ap.json',
             'reports': '{0}_{1}_cfg.json',
-            'thresholds': '{0}_{1}_thresholds.json'
+            'thresholds': '{0}_{1}_thresholds.json',
+            'recomputations': 'recomp.json'
         })
 
         sync_path = self.base_path.replace("{{tenant}}", tenant)
@@ -339,6 +344,7 @@ class ArgoProfileManager:
             report: str. Report name to check profiles from
             profile_type: str. Name of the profile type used (operations|aggregations|reports)
         """
+
         prof_api = self.api.get_profile(tenant, report, profile_type)
         if prof_api is None:
             log.info("profile type %s doesn't exist in report --skipping", profile_type)
@@ -399,7 +405,7 @@ class ArgoProfileManager:
             json.dump(profile, outfile)
         hdfs_host = self.cfg.get("HDFS","namenode").hostname
         hdfs_path = self.hdfs.gen_profile_path(tenant, report, profile_type)
-	status = subprocess.check_call([hdfs_write_bin, hdfs_write_cmd, local_path, hdfs_path])
+        status = subprocess.check_call([hdfs_write_bin, hdfs_write_cmd, local_path, hdfs_path])
 
         if status == 0:
             log.info("File uploaded successfully to hdfs host: %s path: %s", hdfs_host, hdfs_path)
@@ -508,7 +514,7 @@ def run_profile_update(args):
 
     if args.tenant is not None:
         # check for the following profile types
-        profile_type_checklist = ["operations", "aggregations", "reports", "thresholds"]
+        profile_type_checklist = ["operations", "aggregations", "reports", "thresholds", "recomputations"]
 	reports = []
 	if args.report is not None:
 	    reports.append(args.report)
@@ -518,6 +524,8 @@ def run_profile_update(args):
 	for report in reports:
 	    for profile_type in profile_type_checklist:
 	        argo.profile_update_check(args.tenant, report, profile_type)
+            
+
     else:
         argo.upload_tenants_cfg()
         argo.save_config(conf_paths["main"])

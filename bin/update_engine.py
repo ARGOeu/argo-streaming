@@ -11,7 +11,7 @@ from datetime import datetime
 from utils.argo_config import ArgoConfig
 from utils.update_profiles import ArgoProfileManager
 from utils.update_ams import ArgoAmsClient, is_tenant_complete
-from utils.check_tenant import get_now_iso, get_today, check_tenant_ams, check_tenant_hdfs, upload_tenant_status, get_tenant_uuids
+from utils.check_tenant import check_tenants, get_today
 from utils.update_cron import gen_tenant_all, update_cron_tab
 from snakebite.client import Client
 
@@ -20,7 +20,7 @@ log = logging.getLogger("argo.update_engine")
 
 
 def main(args):
-   
+    
     if args.config is not None and not os.path.isfile(args.config):
         log.info(args.config + " file not found")
     
@@ -32,7 +32,7 @@ def main(args):
 
     # Get main configuration and schema
     config = ArgoConfig(conf_paths["main"], conf_paths["schema"])
-    
+    log.info("Argo-engine update stated.")
     # if backup-conf selected backup the configuration file 
     if args.backup:
         date_postfix = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
@@ -50,7 +50,7 @@ def main(args):
     argo_profiles = ArgoProfileManager(config)
     
     tenants = config.get("API","tenants")
-    profile_type_checklist = ["operations", "aggregations", "reports", "thresholds"]
+    profile_type_checklist = ["operations", "aggregations", "reports", "thresholds", "recomputations"]
     for tenant in tenants:
         reports = config.get("TENANTS:"+tenant,"reports")
         for report in reports:
@@ -82,46 +82,14 @@ def main(args):
     # Upload tenant statuses in argo web api 
     api_endpoint = config.get("API","endpoint").netloc
     api_token = config.get("API","access_token")
+    statuses = check_tenants(tenants,get_today(),3,config)
 
-    # Get tenant uuids 
-    tenant_uuids = get_tenant_uuids(api_endpoint, api_token)
-
-    target_date = get_today()
-     # hdfs client init
-    namenode = config.get("HDFS","namenode")
-    hdfs_user = config.get("HDFS","user")
-    client = Client(namenode.hostname, namenode.port)
-    log.info("connecting to HDFS: {}".format(namenode.hostname))
-
-    # ams client init
-    ams_token = config.get("AMS", "access_token")
-    ams_host = config.get("AMS", "endpoint").hostname
-    ams = ArgoAmsClient(ams_host, ams_token)
-    log.info("connecting to AMS: {}".format(ams_host))
-
-    cron_body = ""
-
-    for tenant in tenants:
-        status_tenant = {} 
-        # add tenant name
-        status_tenant["tenant"] = tenant
-        # add check timestamp in UTC
-        status_tenant["last_check"] = get_now_iso()
-        # add engine_config category 
-        status_tenant["engine_config"] = True
-        # get hdfs status
-        status_tenant["hdfs"] = check_tenant_hdfs(tenant,target_date,namenode,hdfs_user,client,config)
-        # get ams status
-        status_tenant["ams"] = check_tenant_ams(tenant,target_date,ams,config)
-        
-        log.info("Status for tenant[{}] = {}".format(tenant,json.dumps(status_tenant)))
-        # Upload tenant status to argo-web-api
-        upload_tenant_status(api_endpoint,api_token,tenant,tenant_uuids[tenant],status_tenant)
-        # upload cron for tenant
-        ok_reports = tenant_ok_reports(status_tenant)
-        cron_body = cron_body + gen_tenant_all(config,tenant,ok_reports)
-    
+    # Update cron accordingly
+    cron_body = ""  
+    for status in statuses:
+        cron_body = cron_body + gen_tenant_all(config,status["tenant"],tenant_ok_reports(status))
     update_cron_tab(cron_body)
+    log.info("Argo-engine update finished.")
 
 def tenant_ok_reports(status):
     rep_list = list()
