@@ -26,9 +26,9 @@ class TestClass(unittest.TestCase):
 
         # get var HDFS -> path_metric (template) and fill it with specific arguments
         exp_result = urlparse("hdfs://localhost:2000/user/foobar/argo/tenants/wolf/mdata")
-        self.assertEqual(exp_result, argo_conf.get("HDFS", "path_metric").fill(namenode="localhost:2000", user="foobar",
+        self.assertEqual(exp_result, argo_conf.get("HDFS", "path_metric").fill(namenode="localhost:2000", hdfs_user="foobar",
                                                                                tenant="wolf"))
         # fill template with different user argument
         self.assertNotEqual(exp_result,
-                            argo_conf.get("HDFS", "path_metric").fill(namenode="localhost:2000", user="foobar2",
+                            argo_conf.get("HDFS", "path_metric").fill(namenode="localhost:2000", hdfs_user="foobar2",
                                                                       tenant="wolf"))
