@@ -26,13 +26,15 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
 /**
- * Simple http client for pulling and acknowledging messages from AMS service http API
+ * Simple http client for pulling and acknowledging messages from AMS service
+ * http API
  */
 public class ArgoMessagingClient {
 
@@ -53,9 +55,9 @@ public class ArgoMessagingClient {
 	private String maxMessages = "";
 	// ssl verify or not
 	private boolean verify = true;
-	// proxy 
+	// proxy
 	private URI proxy = null;
-	
+
 	// Utility inner class for holding list of messages and acknowledgements
 	private class MsgAck {
 		String[] msgs;
@@ -78,8 +80,9 @@ public class ArgoMessagingClient {
 		this.maxMessages = "100";
 		this.proxy = null;
 	}
-	
-	public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub, int batch, boolean verify) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+
+	public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub, int batch,
+			boolean verify) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 
 		this.proto = method;
 		this.token = token;
@@ -88,33 +91,36 @@ public class ArgoMessagingClient {
 		this.sub = sub;
 		this.maxMessages = String.valueOf(batch);
 		this.verify = verify;
-		
+
 		this.httpClient = buildHttpClient();
-		
+
 	}
-	
+
 	/**
 	 * Initializes Http Client (if not initialized during constructor)
-	 * @return 
+	 * 
+	 * @return
 	 */
-	private  CloseableHttpClient buildHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+	private CloseableHttpClient buildHttpClient()
+			throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 		if (this.verify) {
 			return this.httpClient = HttpClients.createDefault();
 		} else {
 			return this.httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
 		}
 	}
-	
+
 	/**
-	 * Create an SSL Connection Socket Factory with a strategy to trust self signed certificates
+	 * Create an SSL Connection Socket Factory with a strategy to trust self signed
+	 * certificates
 	 */
-	private SSLConnectionSocketFactory selfSignedSSLF() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+	private SSLConnectionSocketFactory selfSignedSSLF()
+			throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 		SSLContextBuilder sslBuild = new SSLContextBuilder();
-	    sslBuild.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-	    return new SSLConnectionSocketFactory(sslBuild.build(),NoopHostnameVerifier.INSTANCE);
+		sslBuild.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+		return new SSLConnectionSocketFactory(sslBuild.build(), NoopHostnameVerifier.INSTANCE);
 	}
-	
-	
+
 	/**
 	 * Set AMS http client to use http proxy
 	 */
@@ -122,26 +128,37 @@ public class ArgoMessagingClient {
 		// parse proxy url
 		this.proxy = URI.create(proxyURL);
 	}
-	
+
 	/**
 	 * Set AMS http client to NOT use an http proxy
 	 */
 	public void unsetProxy() {
-		this.proxy=null;
+		this.proxy = null;
 	}
 
-	
-	
 	/**
 	 * Create a configuration for using http proxy on each request
 	 */
 	private RequestConfig createProxyCfg() {
-		HttpHost proxy = new HttpHost(this.proxy.getHost(),this.proxy.getPort(),this.proxy.getScheme());
+		HttpHost proxy = new HttpHost(this.proxy.getHost(), this.proxy.getPort(), this.proxy.getScheme());
 		RequestConfig config = RequestConfig.custom().setProxy(proxy).build();
 		return config;
 	}
 
+	public void logIssue(CloseableHttpResponse resp) throws UnsupportedOperationException, IOException {
+		InputStreamReader isRdr = new InputStreamReader(resp.getEntity().getContent());
+		BufferedReader bRdr = new BufferedReader(isRdr);
+		int statusCode = resp.getStatusLine().getStatusCode();
 
+		// Parse error content from api response
+		StringBuilder result = new StringBuilder();
+		String rLine;
+		while ((rLine = bRdr.readLine()) != null)
+			result.append(rLine);
+		isRdr.close();
+		Log.warn("ApiStatusCode={}, ApiErrorMessage={}", statusCode, result);
+
+	}
 
 	/**
 	 * Properly compose url for each AMS request
@@ -170,11 +187,11 @@ public class ArgoMessagingClient {
 			this.httpClient = buildHttpClient();
 		}
 
-		// check for proxy 
+		// check for proxy
 		if (this.proxy != null) {
 			postPull.setConfig(createProxyCfg());
 		}
-		
+
 		CloseableHttpResponse response = this.httpClient.execute(postPull);
 		String msg = "";
 		String ackId = "";
@@ -182,7 +199,9 @@ public class ArgoMessagingClient {
 
 		HttpEntity entity = response.getEntity();
 
-		if (entity != null && response.getStatusLine().getStatusCode() == 200) {
+		int statusCode = response.getStatusLine().getStatusCode();
+
+		if (entity != null && statusCode == 200) {
 
 			InputStreamReader isRdr = new InputStreamReader(entity.getContent());
 			BufferedReader bRdr = new BufferedReader(isRdr);
@@ -195,13 +214,11 @@ public class ArgoMessagingClient {
 			// Gather message from json
 			JsonParser jsonParser = new JsonParser();
 			// parse the json root object
-			Log.info("response: {}",result.toString());
+			Log.info("response: {}", result.toString());
 			JsonElement jRoot = jsonParser.parse(result.toString());
-			
+
 			JsonArray jRec = jRoot.getAsJsonObject().get("receivedMessages").getAsJsonArray();
 
-			
-			
 			// if has elements
 			for (JsonElement jMsgItem : jRec) {
 				JsonElement jMsg = jMsgItem.getAsJsonObject().get("message");
@@ -211,8 +228,12 @@ public class ArgoMessagingClient {
 				msgList.add(msg);
 				ackIdList.add(ackId);
 			}
-			
+
 			isRdr.close();
+
+		} else {
+
+			logIssue(response);
 
 		}
 
@@ -221,8 +242,6 @@ public class ArgoMessagingClient {
 		String[] msgArr = msgList.toArray(new String[0]);
 		String[] ackIdArr = ackIdList.toArray(new String[0]);
 
-		
-		
 		// Return a Message array
 		return new MsgAck(msgArr, ackIdArr);
 
@@ -257,7 +276,6 @@ public class ArgoMessagingClient {
 		} catch (IOException e) {
 			LOG.error(e.getMessage());
 		}
-
 		return msgs;
 
 	}
@@ -272,8 +290,8 @@ public class ArgoMessagingClient {
 		StringEntity postBody = new StringEntity("{\"ackIds\":[" + ackId + "]}");
 		postBody.setContentType("application/json");
 		postAck.setEntity(postBody);
-		
-		// check for proxy 
+
+		// check for proxy
 		if (this.proxy != null) {
 			postAck.setConfig(createProxyCfg());
 		}
@@ -298,10 +316,11 @@ public class ArgoMessagingClient {
 			resMsg = result.toString();
 			isRdr.close();
 
+		} else {
+			// Log any api errors
+			logIssue(response);
 		}
-
 		response.close();
-
 		// Return a resposeMessage
 		return resMsg;
 
