@@ -137,7 +137,7 @@ class ArgoApiClient:
         """
         # default recomputation is always an empty json array
         if profile_type == "recomputations":
-            return "[]"
+            return []
 
         item_uuid = self.find_profile_uuid(tenant, report, profile_type)
         if item_uuid is None:

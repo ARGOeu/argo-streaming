@@ -26,11 +26,11 @@ def compose_hdfs_commands(year, month, day, args, config):
     hdfs_user = config.get("HDFS", "user")
     tenant = args.tenant
     hdfs_sync = config.get("HDFS", "path_sync")
-    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), user=hdfs_user, tenant=tenant).geturl()
+    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
 
     hdfs_metric = config.get("HDFS", "path_metric")
 
-    hdfs_metric = hdfs_metric.fill(namenode=namenode.geturl(), user=hdfs_user, tenant=tenant).geturl()
+    hdfs_metric = hdfs_metric.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
 
     # dictionary holding all the commands with their respective arguments' name
     hdfs_commands = dict()
