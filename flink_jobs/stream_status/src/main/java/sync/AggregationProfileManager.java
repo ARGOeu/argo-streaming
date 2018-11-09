@@ -16,10 +16,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+
+
 
 public class AggregationProfileManager {
 
@@ -235,31 +238,35 @@ public class AggregationProfileManager {
 			JsonElement jRootElement = jsonParser.parse(br);
 			JsonObject jRootObj = jRootElement.getAsJsonObject();
 
-			JsonObject apGroups = jRootObj.getAsJsonObject("groups");
-
 			// Create new entry for this availability profile
 			AvProfileItem tmpAvp = new AvProfileItem();
 
+			JsonArray apGroups = jRootObj.getAsJsonArray("groups");
+
 			tmpAvp.name = jRootObj.get("name").getAsString();
 			tmpAvp.namespace = jRootObj.get("namespace").getAsString();
-			tmpAvp.metricProfile = jRootObj.get("metric_profile").getAsString();
-			tmpAvp.metricOp = jRootObj.get("metric_ops").getAsString();
-			tmpAvp.groupType = jRootObj.get("group_type").getAsString();
-			tmpAvp.op = jRootObj.get("operation").getAsString();
+			tmpAvp.metricProfile = jRootObj.get("metric_profile").getAsJsonObject().get("name").getAsString();
+			tmpAvp.metricOp = jRootObj.get("metric_operation").getAsString();
+			tmpAvp.groupType = jRootObj.get("endpoint_group").getAsString();
+			tmpAvp.op = jRootObj.get("profile_operation").getAsString();
 
-			for (Entry<String, JsonElement> item : apGroups.entrySet()) {
+			for ( JsonElement item : apGroups) {
 				// service name
-				String itemName = item.getKey();
-				JsonObject itemObj = item.getValue().getAsJsonObject();
+				JsonObject itemObj = item.getAsJsonObject();
+				String itemName = itemObj.get("name").getAsString();
 				String itemOp = itemObj.get("operation").getAsString();
-				JsonObject itemServices = itemObj.get("services").getAsJsonObject();
+				JsonArray itemServices = itemObj.get("services").getAsJsonArray();
 				tmpAvp.insertGroup(itemName, itemOp);
 
-				for (Entry<String, JsonElement> subItem : itemServices.entrySet()) {
-					tmpAvp.insertService(itemName, subItem.getKey(), subItem.getValue().getAsString());
+				for (JsonElement subItem : itemServices) {
+					JsonObject subObj = subItem.getAsJsonObject();
+					String serviceName = subObj.get("name").getAsString();
+					String serviceOp = subObj.get("operation").getAsString();
+					tmpAvp.insertService(itemName, serviceName,serviceOp);
 				}
 
 			}
+
 
 			// Add profile to the list
 			this.list.put(tmpAvp.name, tmpAvp);
@@ -289,31 +296,35 @@ public class AggregationProfileManager {
 			JsonElement jRootElement = jsonParser.parse(apsJson);
 			JsonObject jRootObj = jRootElement.getAsJsonObject();
 
-			JsonObject apGroups = jRootObj.getAsJsonObject("groups");
-
 			// Create new entry for this availability profile
 			AvProfileItem tmpAvp = new AvProfileItem();
 
+			JsonArray apGroups = jRootObj.getAsJsonArray("groups");
+
 			tmpAvp.name = jRootObj.get("name").getAsString();
 			tmpAvp.namespace = jRootObj.get("namespace").getAsString();
-			tmpAvp.metricProfile = jRootObj.get("metric_profile").getAsString();
-			tmpAvp.metricOp = jRootObj.get("metric_ops").getAsString();
-			tmpAvp.groupType = jRootObj.get("group_type").getAsString();
-			tmpAvp.op = jRootObj.get("operation").getAsString();
+			tmpAvp.metricProfile = jRootObj.get("metric_profile").getAsJsonObject().get("name").getAsString();
+			tmpAvp.metricOp = jRootObj.get("metric_operation").getAsString();
+			tmpAvp.groupType = jRootObj.get("endpoint_group").getAsString();
+			tmpAvp.op = jRootObj.get("profile_operation").getAsString();
 
-			for (Entry<String, JsonElement> item : apGroups.entrySet()) {
+			for ( JsonElement item : apGroups) {
 				// service name
-				String itemName = item.getKey();
-				JsonObject itemObj = item.getValue().getAsJsonObject();
+				JsonObject itemObj = item.getAsJsonObject();
+				String itemName = itemObj.get("name").getAsString();
 				String itemOp = itemObj.get("operation").getAsString();
-				JsonObject itemServices = itemObj.get("services").getAsJsonObject();
+				JsonArray itemServices = itemObj.get("services").getAsJsonArray();
 				tmpAvp.insertGroup(itemName, itemOp);
 
-				for (Entry<String, JsonElement> subItem : itemServices.entrySet()) {
-					tmpAvp.insertService(itemName, subItem.getKey(), subItem.getValue().getAsString());
+				for (JsonElement subItem : itemServices) {
+					JsonObject subObj = subItem.getAsJsonObject();
+					String serviceName = subObj.get("name").getAsString();
+					String serviceOp = subObj.get("operation").getAsString();
+					tmpAvp.insertService(itemName, serviceName,serviceOp);
 				}
 
 			}
+
 
 			// Add profile to the list
 			this.list.put(tmpAvp.name, tmpAvp);

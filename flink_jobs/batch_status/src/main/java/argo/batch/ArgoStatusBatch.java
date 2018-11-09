@@ -11,8 +11,11 @@ import ops.ConfigManager;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.flink.api.common.operators.Order;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
@@ -54,6 +57,8 @@ public class ArgoStatusBatch {
 		// make parameters available in the web interface
 		env.getConfig().setGlobalJobParameters(params);
 		env.setParallelism(1);
+		// Fixed restart strategy: on failure attempt max 10 times to restart with a retry interval of 2 minutes
+		env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, Time.of(2, TimeUnit.MINUTES)));
 		// sync data for input
 		Path mps = new Path(params.getRequired("mps"));
 		Path egp = new Path(params.getRequired("egp"));
@@ -64,6 +69,14 @@ public class ArgoStatusBatch {
 		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
 		DataSource<String> apsDS = env.readTextFile(params.getRequired("apr"));
 		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
+		
+		// begin with empty threshold datasource
+		DataSource<String> thrDS = env.fromElements("");
+		// if threshold filepath has been defined in cli parameters
+		if (params.has("thr")){
+			// read file and update threshold datasource
+			thrDS = env.readTextFile(params.getRequired("thr"));
+		}
 		
 		ConfigManager confMgr = new ConfigManager();
 		confMgr.loadJsonString(cfgDS.collect());
@@ -97,16 +110,28 @@ public class ArgoStatusBatch {
 		// Find the latest day
 		DataSet<MetricData> pdataMin = pdataDS.groupBy("service", "hostname", "metric")
 				.sortGroup("timestamp", Order.DESCENDING).first(1);
-
-		DataSet<MetricData> mdataTotalDS = mdataDS.union(pdataMin);
+		
+		// Union todays data with the latest statuses from previous day 
+		DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
+		
+		// Use yesterday's latest statuses and todays data to find the missing ones and add them to the mix
+		DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
+				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+				.withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf");
+		
 
 		// Discard unused data and attach endpoint group as information
-		DataSet<StatusMetric> mdataTrimDS = mdataTotalDS.flatMap(new PickEndpoints(params))
+		DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf");
+				.withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
+				.withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
 
+		// Combine prev and todays metric data with the generated missing metric
+		// data
+		DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
+		
 		// Create status detail data set
-		DataSet<StatusMetric> stDetailDS = mdataTrimDS.groupBy("group", "service", "hostname", "metric")
+		DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
 				.sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp");
 						

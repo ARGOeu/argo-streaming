@@ -47,15 +47,15 @@ public class MetricTimelineTest {
 		// List of MetricData
 		ArrayList<MetricData> mdata = new ArrayList<MetricData>();
 		mdata.add(new MetricData("2017-07-01T23:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata.add(new MetricData("2017-07-02T05:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "WARNING",
-				"mon01.foo", "summary", "ok", null));
+				"mon01.foo", "summary", "ok", null, null));
 		mdata.add(new MetricData("2017-07-02T00:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 		mdata.add(new MetricData("2017-07-02T12:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "CRITICAL",
-				"mon01.foo", "summary", "ok", null));
+				"mon01.foo", "summary", "ok", null, null));
 		mdata.add(new MetricData("2017-07-02T14:00:00Z", "CREAM-CE", "cream01.foo", "job_submit", "OK", "mon01.foo",
-				"summary", "ok", null));
+				"summary", "ok", null, null));
 
 		DTimeline dtl = new DTimeline();
 		boolean first = true;

@@ -3,18 +3,17 @@ import requests
 import json
 from snakebite.client import Client
 from snakebite.errors import FileNotFoundException
-from ConfigParser import SafeConfigParser
 import logging
-import logging.handlers
 import os
 import uuid
 from urlparse import urlparse
 from argparse import ArgumentParser
 import sys
 import subprocess
+from common import get_log_conf, get_config_paths
+from argo_config import ArgoConfig
 
-CONF_ETC = '/etc/argo-streaming/argo-streaming.cfg'
-CONF_LOCAL = './argo-streaming.cfg'
+log = logging.getLogger(__name__)
 
 
 class ArgoApiClient:
@@ -37,10 +36,12 @@ class ArgoApiClient:
         self.paths.update({
             'reports': '/api/v2/reports',
             'operations': '/api/v2/operations_profiles',
-            'aggregations': '/api/v2/aggregation_profiles'
+            'aggregations': '/api/v2/aggregation_profiles',
+            'thresholds': '/api/v2/thresholds_profiles',
+            'tenants': '/api/v2/admin/tenants'
         })
 
-    def get_url(self, resource, item_uuid):
+    def get_url(self, resource, item_uuid=None):
         """
         Constructs an argo-web-api url based on the resource and item_uuid
         Args:
@@ -79,6 +80,49 @@ class ArgoApiClient:
         else:
             return None
 
+    def get_tenants(self, token):
+        """
+        Returns an argo-web-api resource by tenant and url
+        Args:
+            token: str. web-api token to be used (for auth)
+
+        Returns:
+            dict: list of tenants and access keys
+
+        """
+        tenants = self.get_admin_resource(token, self.get_url("tenants"))
+        tenant_keys = dict()
+        for item in tenants:
+            for user in item["users"]:
+                if user["name"].startswith("argo_engine_") and user["api_key"]:
+                    print len(user["api_key"])
+                    tenant_keys[item["info"]["name"]] = user["api_key"]
+        return tenant_keys
+
+    @staticmethod
+    def get_admin_resource(token, url):
+        """
+        Returns an argo-web-api resource by tenant and url
+        Args:
+            token: str. admin token to be used
+            url: str. url of resource
+
+        Returns:
+            dict: resource contents
+
+        """
+        headers = dict()
+        headers.update({
+            'Accept': 'application/json',
+            'x-api-key': token
+        })
+        r = requests.get(url, headers=headers, verify=False)
+
+        if 200 == r.status_code:
+            return json.loads(r.text)["data"]
+        else:
+            return None
+
     def get_profile(self, tenant, report, profile_type):
         """
         Gets an argo-web-api profile by tenant, report and profile type
@@ -91,7 +135,13 @@ class ArgoApiClient:
             dict: profile contents
 
         """
+        # default recomputation is always an empty json array
+        if profile_type == "recomputations":
+            return []
+
         item_uuid = self.find_profile_uuid(tenant, report, profile_type)
+        if item_uuid is None:
+            return None
         profiles = self.get_resource(tenant, self.get_url(profile_type, item_uuid))
         if profiles is not None:
             return profiles[0]
@@ -154,8 +204,13 @@ class ArgoApiClient:
         Returns:
 
         """
+	if profile_type is "aggregations":
+	   profile_type = "aggregation"
+        	
         report = self.get_report(tenant, self.find_report_uuid(tenant, report))
-        for profile in report["profiles"]:
+        if profile_type == "reports":
+		return report["id"]
+	for profile in report["profiles"]:
             if profile["type"] == profile_type:
                 return profile["id"]
 
@@ -185,7 +240,7 @@ class HdfsReader:
         Args:
             tenant: str. tenant to be used
             report: str. report to be used
-            profile_type: str. profile_type (operations|reports|aggregations)
+            profile_type: str. profile_type (operations|reports|aggregations|thresholds)
 
         Returns:
             str: hdfs path
@@ -195,7 +250,9 @@ class HdfsReader:
         templates.update({
             'operations': '{0}_ops.json',
             'aggregations': '{0}_{1}_ap.json',
-            'reports': '{0}_{1}_cfg.json'
+            'reports': '{0}_{1}_cfg.json',
+            'thresholds': '{0}_{1}_thresholds.json',
+            'recomputations': 'recomp.json'
         })
 
         sync_path = self.base_path.replace("{{tenant}}", tenant)
@@ -208,7 +265,7 @@ class HdfsReader:
         Args:
             tenant: str. tenant name
             report: str. report name
-            profile_type: str. profile type (operations|reports|aggregations)
+            profile_type: str. profile type (operations|reports|aggregations|thresholds)
 
         Returns:
 
@@ -227,7 +284,7 @@ class HdfsReader:
         Args:
             tenant: str. tenant name
             report: str. report name
-            profile_type: str. profile type (operations|reports|aggregations)
+            profile_type: str. profile type (operations|reports|aggregations|thresholds)
 
         Returns:
 
@@ -250,26 +307,33 @@ class ArgoProfileManager:
     from their latest profile definitions given from argo-web-api.
     """
 
-    def __init__(self, cfg_path):
+    def __init__(self, config):
         """
         Initialized ArgoProfileManager which manages updating argo profile files in hdfs
         Args:
-            cfg_path: str. path to the configuration file used
+            config: obj. ArgoConfig object containing the main configuration
         """
-        self.cfg = get_config(cfg_path)
 
-        self.log = get_logger("argo-profile-mgr", self.cfg["log_level"])
+        self.cfg = config
 
         # process hdfs base path
-        full_path = str(self.cfg["hdfs_sync"])
-        full_path = full_path.replace("{{hdfs_host}}", str(self.cfg["hdfs_host"]))
-        full_path = full_path.replace("{{hdfs_port}}", str(self.cfg["hdfs_port"]))
-        full_path = full_path.replace("{{hdfs_user}}", str(self.cfg["hdfs_user"]))
+        namenode = config.get("HDFS", "namenode")
+        hdfs_user = config.get("HDFS", "user")
+        full_path = config.get("HDFS", "path_sync")
+        full_path = full_path.partial_fill(namenode=namenode.geturl(), hdfs_user=hdfs_user)
 
         short_path = urlparse(full_path).path
 
-        self.hdfs = HdfsReader(self.cfg["hdfs_host"], int(self.cfg["hdfs_port"]), short_path)
-        self.api = ArgoApiClient(self.cfg["api_host"], self.cfg["tenant_keys"])
+        tenant_list = config.get("API", "tenants")
+        tenant_keys = dict()
+        # Create a list of tenants -> api_keys
+        for tenant in tenant_list:
+            tenant_key = config.get("API", tenant + "_key")
+            tenant_keys[tenant] = tenant_key
+        
+	print namenode.hostname, namenode.port, short_path 
+        self.hdfs = HdfsReader(namenode.hostname, namenode.port, short_path)
+        self.api = ArgoApiClient(config.get("API", "endpoint").netloc, tenant_keys)
 
     def profile_update_check(self, tenant, report, profile_type):
         """
@@ -282,22 +346,27 @@ class ArgoProfileManager:
         """
 
         prof_api = self.api.get_profile(tenant, report, profile_type)
-        self.log.info("retrieved %s profile(api): %s", profile_type, prof_api)
+        if prof_api is None:
+            log.info("profile type %s doesn't exist in report --skipping", profile_type)
+            return
 
+        log.info("retrieved %s profile(api): %s", profile_type, prof_api)
+	
         prof_hdfs, exists = self.hdfs.cat(tenant, report, profile_type)
-
+	
+           
         if exists:
-            self.log.info("retrieved %s profile(hdfs): %s ", profile_type, prof_hdfs)
+            log.info("retrieved %s profile(hdfs): %s ", profile_type, prof_hdfs)
             prof_update = prof_api != prof_hdfs
 
             if prof_update:
-                self.log.info("%s profile mismatch", profile_type)
+                log.info("%s profile mismatch", profile_type)
             else:
-                self.log.info("%s profiles match -- no need for update", profile_type)
+                log.info("%s profiles match -- no need for update", profile_type)
         else:
             # doesn't exist so it should be uploaded
             prof_update = True
-            self.log.info("%s profile doesn't exist in hdfs, should be uploaded", profile_type)
+            log.info("%s profile doesn't exist in hdfs, should be uploaded", profile_type)
 
         # Upload if it's deemed to be uploaded
         if prof_update:
@@ -322,112 +391,106 @@ class ArgoProfileManager:
         if exists:
             is_removed = self.hdfs.rem(tenant, report, profile_type)
             if not is_removed:
-                self.log.error("Could not remove old %s profile from hdfs", profile_type)
+                log.error("Could not remove old %s profile from hdfs", profile_type)
                 return
 
         # If all ok continue with uploading the new file to hdfs
 
-        hdfs_write_bin = self.cfg["hdfs_writer"]
+        hdfs_write_bin = self.cfg.get("HDFS", "writer_bin")
         hdfs_write_cmd = "put"
 
         temp_fn = "prof_" + str(uuid.uuid4())
         local_path = "/tmp/" + temp_fn
         with open(local_path, 'w') as outfile:
             json.dump(profile, outfile)
-
-        hdfs_host = str(self.cfg["hdfs_host"])
+        hdfs_host = self.cfg.get("HDFS","namenode").hostname
         hdfs_path = self.hdfs.gen_profile_path(tenant, report, profile_type)
-
         status = subprocess.check_call([hdfs_write_bin, hdfs_write_cmd, local_path, hdfs_path])
 
         if status == 0:
-            self.log.info("File uploaded successfully to hdfs host: %s path: %s", hdfs_host, hdfs_path)
+            log.info("File uploaded successfully to hdfs host: %s path: %s", hdfs_host, hdfs_path)
             return True
         else:
-            self.log.error("File uploaded unsuccessful to hdfs host: %s path: %s", hdfs_host, hdfs_path)
+            log.error("File uploaded unsuccessful to hdfs host: %s path: %s", hdfs_host, hdfs_path)
             return False
 
+    def upload_tenant_reports_cfg(self, tenant):
+        reports = self.api.get_reports(tenant)
+        report_name_list = []
+        for report in reports:
+           
+            # double check if indeed report belongs to tenant
+            if report["tenant"] == tenant:
+                report_name = report["info"]["name"]
+                report_name_list.append(report_name)
+                report_uuid = report["id"]
+                # Set report in configuration
+                self.cfg.set("TENANTS:"+tenant, "report_" + report_name, report_uuid)
 
-def get_config(path):
-    """
-    Creates a specific dictionary with only needed configuration options retrieved from an argo config file
-    Args:
-        path: str. path to the generic argo config file to be used
+        # update tenant's report name list
+        self.cfg.set("TENANTS:"+tenant, "reports", ",".join(report_name_list))
 
-    Returns:
-        dict: a specific configuration option dictionary with only necessary parameters
+    def upload_tenants_cfg(self):
+        """
+        Uses admin access credentials to contact argo-web-api and retrieve tenant list.
+        Then updates configuration with tenant list, tenant reports etc.
+        """
+        token = self.cfg.get("API", "access_token")
+        tenant_keys = self.api.get_tenants(token)
+        self.api.tenant_keys=tenant_keys
+        tenant_names = ",".join(tenant_keys.keys())
+       
+        self.cfg.set("API", "tenants", tenant_names)
 
-    """
-    # set up the config parser
-    config = SafeConfigParser()
+        # For each tenant update also it's report list
+        for tenant_name in tenant_keys.keys():
+            self.cfg.set("API", tenant_name+"_key", tenant_keys[tenant_name])
+            # Update tenant's report definitions in configuration
+            self.upload_tenant_reports_cfg(tenant_name)
+            self.upload_tenant_defaults(tenant_name)
 
-    if path is None:
+    def upload_tenant_defaults(self, tenant):
+        # check
+        section_tenant = "TENANTS:"+ tenant
+        section_metric = "TENANTS:"+ tenant + ":ingest-metric"
+        mongo_endpoint = self.cfg.get("MONGO","endpoint").geturl()
+        mongo_uri = self.cfg.get_default(section_tenant,"mongo_uri").fill(mongo_endpoint=mongo_endpoint,tenant=tenant).geturl()
+        hdfs_user = self.cfg.get("HDFS","user")
+        namenode = self.cfg.get("HDFS","namenode").netloc
+        hdfs_check = self.cfg.get_default(section_metric,"checkpoint_path").fill(namenode=namenode,hdfs_user=hdfs_user,tenant=tenant)
+       
+        
+        self.cfg.get("MONGO","endpoint")
+       
+        self.cfg.set(section_tenant,"mongo_uri",mongo_uri)
+        self.cfg.set_default(section_tenant,"mongo_method")
+        
+        
+        self.cfg.set_default(section_metric,"ams_interval")
+        self.cfg.set_default(section_metric,"ams_batch")
+        self.cfg.set(section_metric,"checkpoint_path",hdfs_check.geturl())
+        self.cfg.set_default(section_metric,"checkpoint_interval")
+        section_sync = "TENANTS:"+ tenant + ":ingest-sync"
+        
+        self.cfg.set_default(section_sync,"ams_interval")
+        self.cfg.set_default(section_sync,"ams_batch")
+        section_stream = "TENANTS:"+ tenant + ":stream-status"
+        
+        self.cfg.set_default(section_stream,"ams_sub_sync")
+        self.cfg.set_default(section_stream,"ams_interval")
+        self.cfg.set_default(section_stream,"ams_batch")
+        
+        
 
-        if os.path.isfile(CONF_ETC):
-            # Read default etc_conf
-            config.read(CONF_ETC)
-        else:
-            # Read local
-            config.read(CONF_LOCAL)
-    else:
-        config.read(path)
+    def save_config(self, file_path):
+        """
+        Saves configuration to a specified ini file
 
-    cfg = dict()
-    cfg.update(dict(log_level=config.get("LOGS", "log_level"), hdfs_host=config.get("HDFS", "hdfs_host"),
-                    hdfs_port=config.get("HDFS", "hdfs_port"), hdfs_user=config.get("HDFS", "hdfs_user"),
-                    hdfs_sync=config.get("HDFS", "hdfs_sync"), api_host=config.get("API", "host"),
-                    hdfs_writer=config.get("HDFS", "writer_bin")))
-
-    tenant_list = config.get("API", "tenants").split(",")
-    tenant_keys = dict()
-    # Create a list of tenants -> api_keys
-    for tenant in tenant_list:
-        tenant_key = config.get("API", tenant + "_key")
-        tenant_keys[tenant] = tenant_key
-    cfg["tenant_keys"] = tenant_keys
-
-    return cfg
-
-
-def get_logger(log_name, log_level):
-    """
-    Instantiates a logger
-    Args:
-        log_name: str. log name to be used in logger
-        log_level: str. log level
-
-    Returns:
-        obj: logger
-
-    """
-    # Instantiate logger with proper name
-    log = logging.getLogger(log_name)
-    log.setLevel(logging.DEBUG)
-
-    log_level = log_level.upper()
-
-    # Instantiate default levels
-    levels = {
-        'DEBUG': logging.DEBUG,
-        'INFO': logging.INFO,
-        'WARNING': logging.WARNING,
-        'ERROR': logging.ERROR,
-        'CRITICAL': logging.CRITICAL
-    }
-
-    # Log to console
-    stream_log = logging.StreamHandler()
-    stream_log.setLevel(logging.INFO)
-    log.addHandler(stream_log)
-
-    # Log to syslog
-    sys_log = logging.handlers.SysLogHandler("/dev/log")
-    sys_format = logging.Formatter('%(name)s[%(process)d]: %(levelname)s %(message)s')
-    sys_log.setFormatter(sys_format)
-    sys_log.setLevel(levels[log_level])
-    log.addHandler(sys_log)
-
-    return log
+        Args:
+            file_path: str. path to the configuration file to be saved
+        """
+        self.cfg.save_as(file_path)
+        log.info("Configuration file %s updated...", file_path)
 
 
 def run_profile_update(args):
@@ -438,13 +501,34 @@ def run_profile_update(args):
     Args:
         args: obj. command line arguments from arg parser
     """
-    # Set a new profile manager to be used
-    argo = ArgoProfileManager(args.config)
+    # Get configuration paths
+    conf_paths = get_config_paths(args.config)
 
-    # check for the following profile types
-    profile_type_checklist = ["operations", "aggregations", "reports"]
-    for profile_type in profile_type_checklist:
-        argo.profile_update_check(args.tenant, args.report, profile_type)
+    # Get logger config file
+    get_log_conf(conf_paths['log'])
+
+    # Get main configuration and schema
+    config = ArgoConfig(conf_paths["main"], conf_paths["schema"])
+
+    argo = ArgoProfileManager(config)
+
+    if args.tenant is not None:
+        # check for the following profile types
+        profile_type_checklist = ["operations", "aggregations", "reports", "thresholds", "recomputations"]
+	reports = []
+	if args.report is not None:
+	    reports.append(args.report)
+	else:
+	    reports = config.get("TENANTS:"+args.tenant,"reports")
+
+	for report in reports:
+	    for profile_type in profile_type_checklist:
+	        argo.profile_update_check(args.tenant, report, profile_type)
+            
+
+    else:
+        argo.upload_tenants_cfg()
+        argo.save_config(conf_paths["main"])
 
 
 if __name__ == '__main__':
@@ -452,9 +536,9 @@ if __name__ == '__main__':
     arg_parser = ArgumentParser(
         description="update profiles for specific tenant/report")
     arg_parser.add_argument(
-        "-t", "--tenant", help="tenant owner ", dest="tenant", metavar="STRING", required=True)
+        "-t", "--tenant", help="tenant owner ", dest="tenant", metavar="STRING", required=False, default=None)
     arg_parser.add_argument(
-        "-r", "--report", help="report", dest="report", metavar="STRING", required=True)
+        "-r", "--report", help="report", dest="report", metavar="STRING", required=False, default=None)
     arg_parser.add_argument(
         "-c", "--config", help="config", dest="config", metavar="STRING")
 

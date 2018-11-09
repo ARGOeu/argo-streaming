@@ -16,6 +16,9 @@ public class StatusMetric {
 	private String message;
 	private String prevState;
 	private String prevTs;
+	private String actualData;
+	private String ogStatus; // original status from moniting host
+	private String ruleApplied; // threshold rule applied - empty if not 
 	
 	public StatusMetric(){
 		this.group = "";
@@ -30,10 +33,13 @@ public class StatusMetric {
 		this.message = "";
 		this.prevState = "";
 		this.prevTs = "";
+		this.actualData = "";
+		this.ogStatus = "";
+		this.ruleApplied = "";
 	}
 	
 	public StatusMetric(String group, String service, String hostname, String metric, String status, String timestamp,
-			int dateInt, int timeInt, String summary, String message, String prevState, String prevTs) {
+			int dateInt, int timeInt, String summary, String message, String prevState, String prevTs, String actualData, String ogStatus, String ruleApplied) {
 		
 		this.group = group;
 		this.service = service;
@@ -47,6 +53,9 @@ public class StatusMetric {
 		this.message = message;
 		this.prevState = prevState;
 		this.prevTs = prevTs;
+		this.actualData = actualData;
+		this.ogStatus = ogStatus;
+		this.ruleApplied = ruleApplied;
 	}
 
 	
@@ -128,10 +137,31 @@ public class StatusMetric {
 		this.prevTs = prevTs;
 	}
 	
+	public String getActualData() {
+		return actualData;
+	}
+	public void setActualData(String actualData) {
+		this.actualData = actualData;
+	}
+	
+	public String getOgStatus() {
+		return ogStatus;
+	}
+	public void setOgStatus(String ogStatus) {
+		this.ogStatus = ogStatus;
+	}
+	
+	public String getRuleApplied() {
+		return ruleApplied;
+	}
+	public void setRuleApplied(String ruleApplied) {
+		this.ruleApplied = ruleApplied;
+	}
+	
 	@Override
 	public String toString() {
 		return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + "," + 
-				this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + ")";
+				this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + ")";
 	}
 	
 }

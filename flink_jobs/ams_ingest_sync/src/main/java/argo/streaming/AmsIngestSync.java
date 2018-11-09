@@ -1,5 +1,9 @@
 package argo.streaming;
 
+import java.util.concurrent.TimeUnit;
+
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -53,6 +57,8 @@ public class AmsIngestSync {
 		// Create flink execution enviroment
 		StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
 		see.setParallelism(1);
+		// Fixed restart strategy: on failure attempt max 10 times to restart with a retry interval of 2 minutes
+		see.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, Time.of(2, TimeUnit.MINUTES)));
 		// Initialize cli parameter tool
 		final ParameterTool parameterTool = ParameterTool.fromArgs(args);
 

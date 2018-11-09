@@ -15,6 +15,7 @@ public class MonData {
 	private String monHost;
 	private String summary;
 	private String message;
+	private String actualData;
 
 	
 	public MonData(){
@@ -27,6 +28,7 @@ public class MonData {
 		this.monHost="";
 		this.summary="";
 		this.message="";
+		this.actualData="";
 	}
 	
 	public String getGroup() {
@@ -100,10 +102,19 @@ public class MonData {
 	public void setMessage(String message) {
 		this.message = message;
 	}
+	
+	public String getActualData() {
+		return actualData;
+	}
+	
+	public void setActualData(String actualData) {
+		this.actualData = actualData;
+	}
+	
 
 	public String toString() {
 		return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + ","
-				+ this.timestamp + "," + this.monHost + "," + this.summary + "," + this.message + ")";
+				+ this.timestamp + "," + this.monHost + "," + this.summary + "," + this.message + "," + this.actualData + ")";
 	}
 
 }

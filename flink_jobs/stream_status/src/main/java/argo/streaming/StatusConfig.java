@@ -22,6 +22,8 @@ public class StatusConfig implements Serializable {
 	// Avro schema
 	public String avroSchema;
 	
+	public String report;
+	
 	// Sync files
 	public String aps;
 	public String mps;
@@ -50,6 +52,7 @@ public class StatusConfig implements Serializable {
 	   this.ops = pt.getRequired("sync.ops");
 	   this.runDate = pt.getRequired("run.date");
 	   this.downtime = pt.getRequired("sync.downtime");
+	   this.report = pt.getRequired("report");
 	   // Optional timeout parameter
 	   if (pt.has("timeout")){
 		   this.timeout = pt.getLong("timeout");

@@ -86,7 +86,6 @@ public class SpecificAvroWriter<T> extends StreamWriterBase<T> {
 
 	@Override
 	public Writer<T> duplicate() {
-		// TODO Auto-generated method stub
 		return new SpecificAvroWriter<T>();
 	}
 
