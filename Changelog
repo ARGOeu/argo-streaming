@@ -1,0 +1,89 @@
+* Tue Jun 12 14:54:12 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1243 Fix recomputation list initialization in batch_ar
+--
+* Mon Jun 11 17:11:50 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1239 Refactor Operations Profile Manager to read new schema
+--
+* Thu Jun 7 10:29:37 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1233 Fetch latest report cfg from argo-web-api
+--
+* Fri Jun 8 17:16:35 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1231 Fetch latest aggregations profile from argo-web-api
+--
+* Thu Jun 7 10:29:37 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1230 Fetch latest ops profile from argo-web-api
+--
+* Tue May 29 14:08:12 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1221 Report name capitalization fix
+--
+* Thu May 17 15:27:53 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1164 Add downtime feed to streaming status
+--
+* Thu May 17 11:12:57 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1163 Fix close on Specific Avro Writer
+--
+* Wed May 9 14:57:24 2018 +0300 agelostsal <agelos.tsal@gmail.com> 
+- ARGO-1156 Refactor flink sumbissions scripts with updated execution parameters(proxy and ssl)
+--
+* Mon May 7 14:20:46 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1160 Fix StatusManager Aggregation Initialization Bug
+--
+* Thu Apr 12 14:29:51 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1083 Streaming status job timeout and multiple-group fixes
+--
+* Thu Apr 12 14:29:51 2018 +0300 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1107 Refactor AMS source / connector to support proxy option
+--
+* Wed Mar 7 16:03:01 2018 +0200 agelostsal <agelos.tsal@gmail.com> 
+- ARGO-1042 Create Status Streaming sumbit script
+--
+* Tue Mar 6 12:33:32 2018 +0200 agelostsal <agelos.tsal@gmail.com> 
+- ARGO-1041 Create Status job submit script
+--
+* Wed Mar 7 16:56:33 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1074 Add reference to config template relative to each test file
+--
+* Wed Mar 7 13:52:27 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1073 Add more verbose names to flink jobs
+--
+* Tue Mar 6 14:30:21 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1072 Batch status read report cfg
+--
+* Fri Mar 2 15:42:42 2018 +0200 agelostsal <agelos.tsal@gmail.com> 
+- ARGO-1040 Create A/R job submission script
+--
+* Fri Mar 2 14:50:19 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1067 Fix job sumbit when 0 job run in cluster
+--
+* Tue Feb 27 14:52:52 2018 +0200 agelostsal <agelos.tsal@gmail.com> 
+- ARGO-1039 Create Sync Ingestion submission Script
+--
+* Wed Feb 21 16:11:59 2018 +0200 agelostsal <agelos.tsal@gmail.com> 
+- ARGO-1038 Create Metric Ingestion Submit Script
+--
+* Wed Feb 21 16:11:59 2018 +0200 agelostsal <agelos.tsal@gmail.com> 
+- ARGO-1038 Create Metric Ingestion Submit Script
+--
+* Thu Feb 22 09:02:00 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1044 Fix Downtime handling in compute ar batch job
+--
+* Fri Jan 26 12:22:41 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-1000 Remove hardcoded default parallelism from streaming status job env
+--
+* Wed Jan 17 16:09:05 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-992 Fix hdfs instance handling in ingest sync job
+--
+* Tue Jan 16 10:01:39 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-988 BucketSink: Inacticity threshold increase to 30 minutes
+--
+* Thu Jan 11 15:18:06 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-969 Add ability to configure AMS source ingestion rate in flink jobs
+--
+* Wed Jan 10 15:44:06 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-983 Implement and use direct Mongo Output Format for storing status batch results
+--
+* Tue Jan 9 15:51:22 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-982 Implement and use direct MongoOutputFormat for ar batch results
+--
+* Mon Jan 8 12:48:34 2018 +0200 Konstantinos Kagkelidis <kaggis@gmail.com> 
+- ARGO-979 Refactor Metric Ingestion fix datetime buckets at HDFS
