@@ -19,6 +19,54 @@ class ArgoMongoClient(object):
         self.config = config
         self.cols = cols
 
+
+    def ensure_status_indexes(self, db):
+        """Checks if required indexes exist in specific argo status-related collections
+        in mongodb
+        
+        Args:
+            db (obj): pymongo database object
+        
+        """
+
+        log.info("Checking required indexes in status collections...")
+        def is_index_included(index_set, index):
+            """gets a set of mongodb indexes and checks if specified
+            mongodb index exists in this set
+            
+            Args:
+                index_set (dict): pymongo mongodb index object
+                index (obj): pymongo index object
+            
+            Returns:
+                bool: If index exists in set return true
+            """
+
+            for name in index_set.keys():
+                if index_set[name]['key'] == index:
+                    return True 
+            return False
+        # Used in all status collections
+        index_report_date = [("report",pymongo.ASCENDING), ("date_integer",pymongo.ASCENDING)]
+        # Used only in status_metrics collection
+        index_date_host = [("date_integer",pymongo.ASCENDING), ("report",pymongo.ASCENDING)]
+        status_collections = ["status_metrics","status_endpoints","status_services","status_endpoint_groups"]
+        # Check first for index report,date
+        for status_name in status_collections:
+            col = db[status_name]
+            indexes = col.index_information()
+            if not is_index_included(indexes,index_report_date):
+                # ensure index
+                col.create_index(index_report_date,background=True)
+                log.info("Created (report,date) index in %s.%s",col.database.name,col.name)
+        
+        # Check for index date,host in status_metrics
+        col = db["status_metrics"]
+        if not is_index_included(indexes,index_date_host):
+            col.create_index(index_date_host,background=True)
+            log.info("Created (report,date) index in %s.%s",col.database.name,col.name)
+
+
     def mongo_clean_ar(self, uri):
 
         tenant_report = None
@@ -110,6 +158,9 @@ class ArgoMongoClient(object):
         # specify the db we will be using. e.g argo_TENANTA
         # from the uri, retrieve the path section, which reprents the db, and ignore the / in the begging
         db = client[uri.path[1:]]
+
+        # ensure indexes for status collections
+        self.ensure_status_indexes(db)
 
         # iterate over the specified collections
         for col in self.cols:
