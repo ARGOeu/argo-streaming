@@ -34,7 +34,8 @@ public class StatusConfig implements Serializable {
 	public long timeout;
 	// Parameter used for daily event generation (not used in notifications)
 	public boolean daily;
-	public String defStatus = "MISSING";
+	// Parameter used to initialize a status to a default value (OK optimistically, MISSING pessimistically)
+	public String initStatus;
 	
 	// Raw parameters
 	public final ParameterTool pt;
@@ -58,6 +59,14 @@ public class StatusConfig implements Serializable {
 		   this.timeout = pt.getLong("timeout");
 	   } else {
 		   this.timeout = 86400000L;
+	   }
+	   
+	   // optional cli parameter to configure default status
+	   if (pt.has("init.status")) {
+		   this.initStatus = pt.get("init.status");
+	   } else {
+		   // by default, default initial status should be optimistically OK
+		   this.initStatus = "OK";
 	   }
 	   
 	   // Optional set daily parameter
