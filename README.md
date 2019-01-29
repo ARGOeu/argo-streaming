@@ -209,6 +209,8 @@ Job Optional cli parameters for ams ingestion related
 
 `--ams.interval`      : interval (in ms) between AMS service requests
 Other optional cli parameters
+`--init.status`       : "OK", "MISSING" - initialize statuses for new items to a default value. Optimistically defaults to "OK"
+
 `--daily`             : true/false - controls daily regeneration of events (not used in notifications)
 
 `--timeout`           : long(ms) - controls default timeout for event regeneration (used in notifications)

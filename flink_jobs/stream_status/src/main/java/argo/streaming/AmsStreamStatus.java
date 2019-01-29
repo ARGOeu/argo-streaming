@@ -422,7 +422,7 @@ public class AmsStreamStatus {
 
 		public StatusConfig config;
 
-		public int defStatus;
+		public int initStatus;
 		
 	
 		
@@ -461,7 +461,7 @@ public class AmsStreamStatus {
 			sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsJSON, opsJSON);
 
 			// Set the default status as integer
-			defStatus = sm.getOps().getIntStatus(config.defStatus);
+			initStatus = sm.getOps().getIntStatus(config.initStatus);
 			LOG.info("Initialized status manager:" + pID + " (with timeout:" + sm.getTimeout() + ")");
 
 		}
@@ -506,7 +506,7 @@ public class AmsStreamStatus {
 			if (!sm.hasGroup(group)) {
 				// Get start of the day to create new entries
 				Date dateTS = sm.setDate(tsMon);
-				sm.addNewGroup(group, defStatus, dateTS);
+				sm.addNewGroup(group, initStatus, dateTS);
 			}
 
 			ArrayList<String> events = sm.setStatus(group, service, hostname, metric, status, monHost, tsMon, message, summary);
