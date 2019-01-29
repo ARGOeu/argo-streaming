@@ -57,8 +57,7 @@ public class ArgoStatusBatch {
 		// make parameters available in the web interface
 		env.getConfig().setGlobalJobParameters(params);
 		env.setParallelism(1);
-		// Fixed restart strategy: on failure attempt max 10 times to restart with a retry interval of 2 minutes
-		env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, Time.of(2, TimeUnit.MINUTES)));
+		
 		// sync data for input
 		Path mps = new Path(params.getRequired("mps"));
 		Path egp = new Path(params.getRequired("egp"));
