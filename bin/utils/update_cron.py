@@ -91,16 +91,16 @@ def gen_batch_ar(config, tenant, report, iteration="hourly", user=None, mongo_me
     """
     description = "{}:{} {} A/R".format(tenant, report, iteration)
 
-    if iteration == "hourly":
-        # generate an hourly job
+    if iteration == "daily":
+        # generate an daily job
         cron_prefix = get_daily(DAILY_HOUR, HOURLY_MIN)
-        # hourly jobs target today's date
-        target_date = TODAY
-    else:
-        # generate a daily job
-        cron_prefix = get_hourly(HOURLY_MIN)
-        # daily jobs target day before
+        # daily jobs target today's date
         target_date = YESTERDAY
+    else:
+        # generate a hourly job
+        cron_prefix = get_hourly(HOURLY_MIN)
+        # hourly jobs target day before
+        target_date = TODAY
 
     cmd = "{} -t {} -r {} -d {} -m {} -c {}".format(BATCH_AR, tenant, report, target_date, mongo_method,
                                                     os.path.abspath(config.conf_path))
@@ -122,16 +122,16 @@ def gen_batch_status(config, tenant, report, iteration="hourly", user=None, mong
     """
     description = "{}:{} {} Status".format(tenant, report, iteration)
 
-    if iteration == "hourly":
-        # generate an hourly job
-        cron_prefix = get_daily(DAILY_HOUR, HOURLY_MIN)
-        # hourly jobs target today's date
-        target_date = TODAY
-    else:
+    if iteration == "daily":
         # generate a daily job
-        cron_prefix = get_hourly(HOURLY_MIN)
-        # daily jobs target day before
+        cron_prefix = get_daily(DAILY_HOUR, HOURLY_MIN)
+        # daily jobs target today's date
         target_date = YESTERDAY
+    else:
+        # generate an hourly job
+        cron_prefix = get_hourly(HOURLY_MIN)
+        # hourly jobs target day before
+        target_date = TODAY
     cmd = "{} -t {} -r {} -d {} -m {} -c {}".format(BATCH_STATUS, tenant, report, target_date, mongo_method,
                                                     os.path.abspath(config.conf_path))
     return gen_entry(cron_prefix, cmd, user, description)
