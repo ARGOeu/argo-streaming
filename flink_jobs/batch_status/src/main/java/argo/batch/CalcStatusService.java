@@ -121,7 +121,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 		avGroup = this.apsMgr.getGroupByService(aProfile, service);
 		String avOp = this.apsMgr.getProfileGroupServiceOp(aProfile, avGroup, service);
 		
-		this.serviceAggr.aggregate(this.opsMgr, "OR");
+		this.serviceAggr.aggregate(this.opsMgr, avOp);
 
 		// Append the timeline	
 		for (Entry<DateTime, Integer> item : this.serviceAggr.getSamples()) {
