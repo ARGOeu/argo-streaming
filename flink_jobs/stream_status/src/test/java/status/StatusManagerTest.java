@@ -88,6 +88,9 @@ public class StatusManagerTest {
 		StatusEvent evnt = new StatusEvent("Critical","metric","20170303","GR-01-AUTH", "CREAM-CE", "cream01.grid.auth.gr",
 				"eu.egi.CREAM-IGTF", "OK", "mon01.argo.eu", "2017-03-03T15:00:00Z", jproc,"WARNING","2017-03-03T05:00:00Z", "false","","");
 		
+		evnt.setStatusMetric(new String[] {"OK","WARNING","2017-03-03T15:00:00Z","2017-03-03T05:00:00Z"});
+	
+		
 		assertTrue(gson.toJson(evnt).equals(list4.get(0)));
 
 		
@@ -96,10 +99,10 @@ public class StatusManagerTest {
 		sm.addNewGroup("UKI-LT2-IC-HEP",sm.ops.getIntStatus("OK"), ts1);
 		
 
-		// This should create 2 events metric & endpoint
+		// This should create 4 events
 		ArrayList<String> elist01 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod05.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
 				"CRITICAL", "mon01.argo.eu", "2017-03-03T11:00:00Z","","");
-		assertTrue(elist01.size()==2);
+		assertTrue(elist01.size()==4);
 		JsonObject j01 = getJSON(elist01.get(0));
 		JsonObject j02 = getJSON(elist01.get(1));
 		assertTrue(j01.get("type").getAsString().equals("metric"));
@@ -113,11 +116,10 @@ public class StatusManagerTest {
 		assertTrue(j01.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j02.get("status").getAsString().equals("CRITICAL"));
 		
-		
 		ArrayList<String> elist02 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod06.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
 				"CRITICAL", "mon01.argo.eu", "2017-03-03T12:00:00Z","","");
 		
-		assertTrue(elist02.size()==2);
+		assertTrue(elist02.size()==4);
 		j01 = getJSON(elist02.get(0));
 		j02 = getJSON(elist02.get(1));
 		assertTrue(j01.get("type").getAsString().equals("metric"));
@@ -135,7 +137,7 @@ public class StatusManagerTest {
 		ArrayList<String> elist03 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod07.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
 				"CRITICAL", "mon01.argo.eu", "2017-03-03T14:00:00Z","","");
 		
-		assertTrue(elist03.size()==2);
+		assertTrue(elist03.size()==4);
 		j01 = getJSON(elist03.get(0));
 		j02 = getJSON(elist03.get(1));
 		assertTrue(j01.get("type").getAsString().equals("metric"));
@@ -154,7 +156,7 @@ public class StatusManagerTest {
 		ArrayList<String> elist04 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod08.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
 				"CRITICAL", "mon01.argo.eu", "2017-03-03T16:00:00Z","","");
 		
-		assertTrue(elist04.size()==3);
+		assertTrue(elist04.size()==4);
 		j01 = getJSON(elist04.get(0));
 		j02 = getJSON(elist04.get(1));
 		JsonObject j03 = getJSON(elist04.get(2));
@@ -182,7 +184,7 @@ public class StatusManagerTest {
 		// This should create 2 events metric
 		ArrayList<String> elist05 = sm.setStatus("UKI-LT2-IC-HEP", "ARC-CE", "cetest01.grid.hep.ph.ic.ac.uk", "org.nordugrid.ARC-CE-sw-csh",
 				"CRITICAL", "mon01.argo.eu", "2017-03-03T19:00:00Z","","");
-		assertTrue(elist05.size()==2);
+		assertTrue(elist05.size()==4);
 		j01 = getJSON(elist05.get(0));
 		j02 = getJSON(elist05.get(1));
 		
