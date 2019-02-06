@@ -45,21 +45,21 @@ class TestClass(unittest.TestCase):
 
         # Test generation of ar cronjob for a specific tenant and report
         expected = "#TENANT_A:report1 daily A/R\n"\
-                   + "5 * * * * foo " + BATCH_AR + " -t TENANT_A -r report1 -d " + YESTERDAY + " -m upsert " + "-c "\
+                   + "5 5 * * * foo " + BATCH_AR + " -t TENANT_A -r report1 -d " + YESTERDAY + " -m upsert " + "-c "\
                    + config.conf_path + "\n"
 
         self.assertEquals(expected, gen_batch_ar(config, "TENANT_A", "report1", "daily", "foo", "upsert"))
 
         # Test generation of ar cronjob for a specific tenant and report
         expected = "#TENANT_A:report1 hourly A/R\n"\
-                   + "5 5 * * * " + BATCH_AR + " -t TENANT_A -r report1 -d " + TODAY + " -m insert " + "-c "\
+                   + "5 * * * * " + BATCH_AR + " -t TENANT_A -r report1 -d " + TODAY + " -m insert " + "-c "\
                    + config.conf_path + "\n"
 
         self.assertEquals(expected, gen_batch_ar(config, "TENANT_A", "report1", "hourly"))
 
         # Test generation of ar cronjob for a specific tenant and report
         expected = "#TENANT_B:report1 daily Status\n"\
-                   + "5 * * * * foo " + BATCH_STATUS + " -t TENANT_B -r report1 -d " \
+                   + "5 5 * * * foo " + BATCH_STATUS + " -t TENANT_B -r report1 -d " \
                    + YESTERDAY + " -m upsert " + "-c "\
                    + config.conf_path + "\n"
 
@@ -67,7 +67,7 @@ class TestClass(unittest.TestCase):
 
         # Test generation of status cronjob for a specific tenant and report
         expected = "#TENANT_B:report1 hourly Status\n"\
-                   + "5 5 * * * " + BATCH_STATUS + " -t TENANT_B -r report1 -d " + TODAY + " -m insert " + "-c "\
+                   + "5 * * * * " + BATCH_STATUS + " -t TENANT_B -r report1 -d " + TODAY + " -m insert " + "-c "\
                    + config.conf_path + "\n"
 
         self.assertEquals(expected, gen_batch_status(config, "TENANT_B", "report1", "hourly"))
@@ -75,28 +75,28 @@ class TestClass(unittest.TestCase):
         # Test generation of cronjobs for a tenant's reports
         expected = "#Jobs for TENANT_A\n\n" \
                    + "#TENANT_A:report1 hourly A/R\n" \
-                   + "5 5 * * * " + BATCH_AR + " -t TENANT_A -r report1 -d " + TODAY + " -m insert -c " \
+                   + "5 * * * * " + BATCH_AR + " -t TENANT_A -r report1 -d " + TODAY + " -m insert -c " \
                    + config.conf_path + "\n\n" \
                    + "#TENANT_A:report1 daily A/R\n" \
-                   + "5 * * * * " + BATCH_AR + " -t TENANT_A -r report1 -d " + YESTERDAY + " -m insert -c " \
+                   + "5 5 * * * " + BATCH_AR + " -t TENANT_A -r report1 -d " + YESTERDAY + " -m insert -c " \
                    + config.conf_path + "\n\n" \
                    + "#TENANT_A:report1 hourly Status\n" \
-                   + "5 5 * * * " + BATCH_STATUS + " -t TENANT_A -r report1 -d " + TODAY + " -m insert -c " \
+                   + "5 * * * * " + BATCH_STATUS + " -t TENANT_A -r report1 -d " + TODAY + " -m insert -c " \
                    + config.conf_path + "\n\n" \
                    + "#TENANT_A:report1 daily Status\n" \
-                   + "5 * * * * " + BATCH_STATUS + " -t TENANT_A -r report1 -d " + YESTERDAY + " -m insert -c " \
+                   + "5 5 * * * " + BATCH_STATUS + " -t TENANT_A -r report1 -d " + YESTERDAY + " -m insert -c " \
                    + config.conf_path + "\n\n" \
                    + "#TENANT_A:report2 hourly A/R\n" \
-                   + "5 5 * * * " + BATCH_AR + " -t TENANT_A -r report2 -d " + TODAY + " -m insert -c " \
+                   + "5 * * * * " + BATCH_AR + " -t TENANT_A -r report2 -d " + TODAY + " -m insert -c " \
                    + config.conf_path + "\n\n" \
                    + "#TENANT_A:report2 daily A/R\n" \
-                   + "5 * * * * " + BATCH_AR + " -t TENANT_A -r report2 -d " + YESTERDAY + " -m insert -c " \
+                   + "5 5 * * * " + BATCH_AR + " -t TENANT_A -r report2 -d " + YESTERDAY + " -m insert -c " \
                    + config.conf_path + "\n\n" \
                    + "#TENANT_A:report2 hourly Status\n" \
-                   + "5 5 * * * " + BATCH_STATUS + " -t TENANT_A -r report2 -d " + TODAY + " -m insert -c " \
+                   + "5 * * * * " + BATCH_STATUS + " -t TENANT_A -r report2 -d " + TODAY + " -m insert -c " \
                    + config.conf_path + "\n\n" \
                    + "#TENANT_A:report2 daily Status\n" \
-                   + "5 * * * * " + BATCH_STATUS + " -t TENANT_A -r report2 -d " + YESTERDAY + " -m insert -c " \
+                   + "5 5 * * * " + BATCH_STATUS + " -t TENANT_A -r report2 -d " + YESTERDAY + " -m insert -c " \
                    + config.conf_path + "\n\n" \
                    + "\n"
 
@@ -105,28 +105,28 @@ class TestClass(unittest.TestCase):
         # Test generation of cronjobs for all tenants and all reports
         expected2 = "#Jobs for TENANT_B\n\n" \
                     + "#TENANT_B:report1 hourly A/R\n" \
-                    + "5 5 * * * " + BATCH_AR + " -t TENANT_B -r report1 -d " + TODAY + " -m insert -c " \
+                    + "5 * * * * " + BATCH_AR + " -t TENANT_B -r report1 -d " + TODAY + " -m insert -c " \
                     + config.conf_path + "\n\n" \
                     + "#TENANT_B:report1 daily A/R\n" \
-                    + "5 * * * * " + BATCH_AR + " -t TENANT_B -r report1 -d " + YESTERDAY + " -m insert -c " \
+                    + "5 5 * * * " + BATCH_AR + " -t TENANT_B -r report1 -d " + YESTERDAY + " -m insert -c " \
                     + config.conf_path + "\n\n" \
                     + "#TENANT_B:report1 hourly Status\n" \
-                    + "5 5 * * * " + BATCH_STATUS + " -t TENANT_B -r report1 -d " + TODAY + " -m insert -c " \
+                    + "5 * * * * " + BATCH_STATUS + " -t TENANT_B -r report1 -d " + TODAY + " -m insert -c " \
                     + config.conf_path + "\n\n" \
                     + "#TENANT_B:report1 daily Status\n" \
-                    + "5 * * * * " + BATCH_STATUS + " -t TENANT_B -r report1 -d " + YESTERDAY + " -m insert -c " \
+                    + "5 5 * * * " + BATCH_STATUS + " -t TENANT_B -r report1 -d " + YESTERDAY + " -m insert -c " \
                     + config.conf_path + "\n\n" \
                     + "#TENANT_B:report2 hourly A/R\n" \
-                    + "5 5 * * * " + BATCH_AR + " -t TENANT_B -r report2 -d " + TODAY + " -m insert -c " \
+                    + "5 * * * * " + BATCH_AR + " -t TENANT_B -r report2 -d " + TODAY + " -m insert -c " \
                     + config.conf_path + "\n\n" \
                     + "#TENANT_B:report2 daily A/R\n" \
-                    + "5 * * * * " + BATCH_AR + " -t TENANT_B -r report2 -d " + YESTERDAY + " -m insert -c " \
+                    + "5 5 * * * " + BATCH_AR + " -t TENANT_B -r report2 -d " + YESTERDAY + " -m insert -c " \
                     + config.conf_path + "\n\n" \
                     + "#TENANT_B:report2 hourly Status\n" \
-                    + "5 5 * * * " + BATCH_STATUS + " -t TENANT_B -r report2 -d " + TODAY + " -m insert -c " \
+                    + "5 * * * * " + BATCH_STATUS + " -t TENANT_B -r report2 -d " + TODAY + " -m insert -c " \
                     + config.conf_path + "\n\n" \
                     + "#TENANT_B:report2 daily Status\n" \
-                    + "5 * * * * " + BATCH_STATUS + " -t TENANT_B -r report2 -d " + YESTERDAY + " -m insert -c " \
+                    + "5 5 * * * " + BATCH_STATUS + " -t TENANT_B -r report2 -d " + YESTERDAY + " -m insert -c " \
                     + config.conf_path + "\n\n" \
                     + "\n"
 
