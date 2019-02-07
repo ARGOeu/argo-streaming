@@ -7,18 +7,15 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
-import ops.ConfigManager;
-import sync.EndpointGroupManagerV2.EndpointItem;
+
+
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import argo.avro.GroupEndpoint;
-import argo.avro.MetricData;
+
 
 public class EndpointGroupManagerV2Test {
 
@@ -59,7 +56,6 @@ public class EndpointGroupManagerV2Test {
 		ArrayList<String> result1 = new ArrayList<String>();
 		result1.add("ru-PNPI");
 		assertEquals(ge.getGroup( "gt3.pnpi.nw.ru", "CREAM-CE"), result1);
-		ArrayList<String> l = ge.getGroup("gt3.pnpi.nw.ru", "CREAM-CE");
 		
 
 		// Check non-existent groups

@@ -44,6 +44,7 @@ import com.google.gson.JsonParser;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
+import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
 import status.StatusManager;
 import sync.EndpointGroupManagerV2;
@@ -340,10 +341,22 @@ public class AmsStreamStatus {
 			byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
 			// Decode from avro
 			DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),
-					MetricData.getClassSchema(), new SpecificData());
+					MetricDataOld.getClassSchema(), new SpecificData());
 			Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
 			MetricData item;
-			item = avroReader.read(null, decoder);
+			
+			
+			
+			try {
+				item = avroReader.read(null, decoder);
+			} catch (java.io.EOFException ex)
+			{
+					//convert from old to new
+					avroReader = new SpecificDatumReader<MetricData>(MetricDataOld.getClassSchema(),MetricData.getClassSchema());
+					decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
+					item = avroReader.read(null, decoder);
+			}
+			
 
 			//System.out.println("metric data item received" + item.toString());
 

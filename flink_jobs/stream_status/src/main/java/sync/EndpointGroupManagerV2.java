@@ -22,8 +22,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import argo.avro.GroupEndpoint;
-import sync.EndpointGroupManager.EndpointItem;
-
 
 public class EndpointGroupManagerV2 {
 
