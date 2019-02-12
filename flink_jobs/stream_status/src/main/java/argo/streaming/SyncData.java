@@ -24,6 +24,7 @@ import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
+import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
 
@@ -252,7 +253,7 @@ public class SyncData {
 	 * Read a list of MetricData Avro Objects from an input stream
 	 */
 	public ArrayList<MetricData> readMetricDataFile(BufferedInputStream bis) throws IOException {
-		DatumReader<MetricData> datumReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),MetricData.getClassSchema(),new SpecificData());
+		DatumReader<MetricData> datumReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),MetricDataOld.getClassSchema(),new SpecificData());
 		DataFileStream<MetricData> dataFileStream = new DataFileStream<MetricData>(bis, datumReader);
 
 		ArrayList<MetricData> list = new ArrayList<MetricData>();
