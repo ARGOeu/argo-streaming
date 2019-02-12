@@ -220,6 +220,7 @@ public class AmsStreamStatus {
 			kafkaProps.setProperty("bootstrap.servers", kafkaServers);
 			FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic, new SimpleStringSchema(),
 					kafkaProps);
+			
 			events.addSink(kSink);
 		}
 
@@ -245,7 +246,8 @@ public class AmsStreamStatus {
 		}
 
 		if (hasFsOutArgs(parameterTool)) {
-			events.writeAsText(parameterTool.get("fs.output"));
+            events.writeAsText(parameterTool.get("fs.output"));
+			//events.print();
 		}
 
 		
