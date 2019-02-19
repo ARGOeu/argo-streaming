@@ -29,6 +29,7 @@ public class StatusEvent{
 	private @SerializedName("status_endpoint") String statusEndpoint[];
 	private @SerializedName("status_metric") String statusMetric[];
 	
+	
 	public StatusEvent() {
 		this.report  = "";
 		this.type = "";
@@ -46,10 +47,10 @@ public class StatusEvent{
 		this.repeat = "";
 		this.summary = "";
 		this.message = "";
-		this.statusEgroup = null;
-		this.statusService = null;
-		this.statusEndpoint = null;
-		this.statusMetric = null;
+		this.statusEgroup = new String[0];
+		this.statusService = new String[0];
+		this.statusEndpoint = new String[0];
+		this.statusMetric = new String[0];
 		
 	}
 	

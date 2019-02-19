@@ -68,13 +68,13 @@ public class StatusManagerTest {
 		
 		sm.addNewGroup("GR-01-AUTH",sm.ops.getIntStatus("OK"), ts1);
 		ArrayList<String> list = sm.setStatus("GR-01-AUTH", "CREAM-CE", "cream01.grid.auth.gr", "emi.cream.CREAMCE-JobCancel",
-				"CRITICAL", "mon01.argo.eu", "2017-03-03T00:00:00Z","","");
+				"CRITICAL", "mon01.argo.eu", "2017-03-03T00:00:00Z","sum1","msg1");
 		ArrayList<String> list2 = sm.setStatus("GR-01-AUTH","CREAM-CE", "cream01.grid.auth.gr", "eu.egi.CREAM-IGTF", "WARNING",
-				"mon01.argo.eu", "2017-03-03T05:00:00Z","","");
+				"mon01.argo.eu", "2017-03-03T05:00:00Z","sum2","msg2");
 		ArrayList<String> list3 = sm.setStatus("GR-01-AUTH","CREAM-CE", "cream01.grid.auth.gr", "emi.cream.CREAMCE-JobCancel", "OK",
-				"mon01.argo.eu", "2017-03-03T09:00:00Z","","");
+				"mon01.argo.eu", "2017-03-03T09:00:00Z","sum3","msg3");
 		ArrayList<String> list4 = sm.setStatus("GR-01-AUTH","CREAM-CE", "cream01.grid.auth.gr", "eu.egi.CREAM-IGTF", "OK",
-				"mon01.argo.eu", "2017-03-03T15:00:00Z","","");
+				"mon01.argo.eu", "2017-03-03T15:00:00Z","sum4","msg4");
 
 		
 		Gson gson = new Gson();
@@ -86,10 +86,11 @@ public class StatusManagerTest {
 
 		String jproc = jRoot.getAsJsonObject().get("ts_processed").getAsString();
 		StatusEvent evnt = new StatusEvent("Critical","metric","20170303","GR-01-AUTH", "CREAM-CE", "cream01.grid.auth.gr",
-				"eu.egi.CREAM-IGTF", "OK", "mon01.argo.eu", "2017-03-03T15:00:00Z", jproc,"WARNING","2017-03-03T05:00:00Z", "false","","");
+				"eu.egi.CREAM-IGTF", "OK", "mon01.argo.eu", "2017-03-03T15:00:00Z", jproc,"WARNING","2017-03-03T05:00:00Z", "false","sum4","msg4");
 		
 		evnt.setStatusMetric(new String[] {"OK","WARNING","2017-03-03T15:00:00Z","2017-03-03T05:00:00Z"});
 	
+		
 		
 		assertTrue(gson.toJson(evnt).equals(list4.get(0)));
 
@@ -101,7 +102,7 @@ public class StatusManagerTest {
 
 		// This should create 4 events
 		ArrayList<String> elist01 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod05.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
-				"CRITICAL", "mon01.argo.eu", "2017-03-03T11:00:00Z","","");
+				"CRITICAL", "mon01.argo.eu", "2017-03-03T11:00:00Z","sum_A","msg_A");
 		assertTrue(elist01.size()==4);
 		JsonObject j01 = getJSON(elist01.get(0));
 		JsonObject j02 = getJSON(elist01.get(1));
@@ -110,14 +111,19 @@ public class StatusManagerTest {
 		assertTrue(j01.get("ts_monitored").getAsString().equals("2017-03-03T11:00:00Z"));
 		assertTrue(j02.get("ts_monitored").getAsString().equals("2017-03-03T11:00:00Z"));
 		assertTrue(j01.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
-		assertTrue(j02.get("metric").getAsString().equals(""));
+		assertTrue(j02.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
 		assertTrue(j01.get("hostname").getAsString().equals("ceprod05.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j02.get("hostname").getAsString().equals("ceprod05.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j01.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j02.get("status").getAsString().equals("CRITICAL"));
 		
+		assertTrue(j01.get("summary").getAsString().equals("sum_A"));
+		assertTrue(j01.get("message").getAsString().equals("msg_A"));
+		assertTrue(j02.get("summary").getAsString().equals("sum_A"));
+		assertTrue(j02.get("message").getAsString().equals("msg_A"));
+		
 		ArrayList<String> elist02 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod06.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
-				"CRITICAL", "mon01.argo.eu", "2017-03-03T12:00:00Z","","");
+				"CRITICAL", "mon01.argo.eu", "2017-03-03T12:00:00Z","sum_B","msg_B");
 		
 		assertTrue(elist02.size()==4);
 		j01 = getJSON(elist02.get(0));
@@ -127,15 +133,20 @@ public class StatusManagerTest {
 		assertTrue(j01.get("ts_monitored").getAsString().equals("2017-03-03T12:00:00Z"));
 		assertTrue(j02.get("ts_monitored").getAsString().equals("2017-03-03T12:00:00Z"));
 		assertTrue(j01.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
-		assertTrue(j02.get("metric").getAsString().equals(""));
+		assertTrue(j02.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
 		assertTrue(j01.get("hostname").getAsString().equals("ceprod06.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j02.get("hostname").getAsString().equals("ceprod06.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j01.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j02.get("status").getAsString().equals("CRITICAL"));
 		
+		assertTrue(j01.get("summary").getAsString().equals("sum_B"));
+		assertTrue(j01.get("message").getAsString().equals("msg_B"));
+		assertTrue(j02.get("summary").getAsString().equals("sum_B"));
+		assertTrue(j02.get("message").getAsString().equals("msg_B"));
+		
 		
 		ArrayList<String> elist03 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod07.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
-				"CRITICAL", "mon01.argo.eu", "2017-03-03T14:00:00Z","","");
+				"CRITICAL", "mon01.argo.eu", "2017-03-03T14:00:00Z","sum_C","msg_C");
 		
 		assertTrue(elist03.size()==4);
 		j01 = getJSON(elist03.get(0));
@@ -145,16 +156,19 @@ public class StatusManagerTest {
 		assertTrue(j01.get("ts_monitored").getAsString().equals("2017-03-03T14:00:00Z"));
 		assertTrue(j02.get("ts_monitored").getAsString().equals("2017-03-03T14:00:00Z"));
 		assertTrue(j01.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
-		assertTrue(j02.get("metric").getAsString().equals(""));
+		assertTrue(j02.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
 		assertTrue(j01.get("hostname").getAsString().equals("ceprod07.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j02.get("hostname").getAsString().equals("ceprod07.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j01.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j02.get("status").getAsString().equals("CRITICAL"));
 		
-		
+		assertTrue(j01.get("summary").getAsString().equals("sum_C"));
+		assertTrue(j01.get("message").getAsString().equals("msg_C"));
+		assertTrue(j02.get("summary").getAsString().equals("sum_C"));
+		assertTrue(j02.get("message").getAsString().equals("msg_C"));
 		// This should create 3 events metric,endpoint and service as all services endpoints turned into critical
 		ArrayList<String> elist04 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod08.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
-				"CRITICAL", "mon01.argo.eu", "2017-03-03T16:00:00Z","","");
+				"CRITICAL", "mon01.argo.eu", "2017-03-03T16:00:00Z","sum_D","msg_D");
 		
 		assertTrue(elist04.size()==4);
 		j01 = getJSON(elist04.get(0));
@@ -168,14 +182,21 @@ public class StatusManagerTest {
 		assertTrue(j02.get("ts_monitored").getAsString().equals("2017-03-03T16:00:00Z"));
 		assertTrue(j03.get("ts_monitored").getAsString().equals("2017-03-03T16:00:00Z"));
 		assertTrue(j01.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
-		assertTrue(j02.get("metric").getAsString().equals(""));
-		assertTrue(j03.get("metric").getAsString().equals(""));
+		assertTrue(j02.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
+		assertTrue(j03.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
 		assertTrue(j01.get("hostname").getAsString().equals("ceprod08.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j02.get("hostname").getAsString().equals("ceprod08.grid.hep.ph.ic.ac.uk"));
-		assertTrue(j03.get("hostname").getAsString().equals(""));
+		assertTrue(j03.get("hostname").getAsString().equals("ceprod08.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j01.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j02.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j03.get("status").getAsString().equals("CRITICAL"));
+		
+		assertTrue(j01.get("summary").getAsString().equals("sum_D"));
+		assertTrue(j01.get("message").getAsString().equals("msg_D"));
+		assertTrue(j02.get("summary").getAsString().equals("sum_D"));
+		assertTrue(j02.get("message").getAsString().equals("msg_D"));
+		assertTrue(j03.get("summary").getAsString().equals("sum_D"));
+		assertTrue(j03.get("message").getAsString().equals("msg_D"));
 		
 		// Site remains ok due to the ARC-CE service. 
 		// Turn ARC-CE service to Critical 
@@ -183,7 +204,7 @@ public class StatusManagerTest {
 		
 		// This should create 2 events metric
 		ArrayList<String> elist05 = sm.setStatus("UKI-LT2-IC-HEP", "ARC-CE", "cetest01.grid.hep.ph.ic.ac.uk", "org.nordugrid.ARC-CE-sw-csh",
-				"CRITICAL", "mon01.argo.eu", "2017-03-03T19:00:00Z","","");
+				"CRITICAL", "mon01.argo.eu", "2017-03-03T19:00:00Z","sum_E","msg_E");
 		assertTrue(elist05.size()==4);
 		j01 = getJSON(elist05.get(0));
 		j02 = getJSON(elist05.get(1));
@@ -195,17 +216,22 @@ public class StatusManagerTest {
 		assertTrue(j01.get("ts_monitored").getAsString().equals("2017-03-03T19:00:00Z"));
 		assertTrue(j02.get("ts_monitored").getAsString().equals("2017-03-03T19:00:00Z"));
 		assertTrue(j01.get("metric").getAsString().equals("org.nordugrid.ARC-CE-sw-csh"));
-		assertTrue(j02.get("metric").getAsString().equals(""));
+		assertTrue(j02.get("metric").getAsString().equals("org.nordugrid.ARC-CE-sw-csh"));
 		assertTrue(j01.get("hostname").getAsString().equals("cetest01.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j02.get("hostname").getAsString().equals("cetest01.grid.hep.ph.ic.ac.uk"));
-		assertTrue(j03.get("hostname").getAsString().equals(""));
+		
 		assertTrue(j01.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j02.get("status").getAsString().equals("CRITICAL"));
-		assertTrue(j03.get("status").getAsString().equals("CRITICAL"));
+		
+		assertTrue(j01.get("summary").getAsString().equals("sum_E"));
+		assertTrue(j01.get("message").getAsString().equals("msg_E"));
+		assertTrue(j02.get("summary").getAsString().equals("sum_E"));
+		assertTrue(j02.get("message").getAsString().equals("msg_E"));
+	
 		
 		// This should create 4 events metric,endpoint,service and finally endpoint group (the whole site)
 		ArrayList<String> elist06 = sm.setStatus("UKI-LT2-IC-HEP", "ARC-CE", "cetest02.grid.hep.ph.ic.ac.uk", "org.nordugrid.ARC-CE-sw-csh",
-				"CRITICAL", "mon01.argo.eu", "2017-03-03T21:30:00Z","","");
+				"CRITICAL", "mon01.argo.eu", "2017-03-03T21:30:00Z","sum_X","msg_X");
 		
 		
 		assertTrue(elist06.size()==4);
@@ -225,17 +251,25 @@ public class StatusManagerTest {
 		assertTrue(j03.get("ts_monitored").getAsString().equals("2017-03-03T21:30:00Z"));
 		assertTrue(j04.get("ts_monitored").getAsString().equals("2017-03-03T21:30:00Z"));
 		assertTrue(j01.get("metric").getAsString().equals("org.nordugrid.ARC-CE-sw-csh"));
-		assertTrue(j02.get("metric").getAsString().equals(""));
-		assertTrue(j03.get("metric").getAsString().equals(""));
-		assertTrue(j04.get("metric").getAsString().equals(""));
+		assertTrue(j02.get("metric").getAsString().equals("org.nordugrid.ARC-CE-sw-csh"));
+		assertTrue(j03.get("metric").getAsString().equals("org.nordugrid.ARC-CE-sw-csh"));
+		assertTrue(j04.get("metric").getAsString().equals("org.nordugrid.ARC-CE-sw-csh"));
 		assertTrue(j01.get("hostname").getAsString().equals("cetest02.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j02.get("hostname").getAsString().equals("cetest02.grid.hep.ph.ic.ac.uk"));
-		assertTrue(j03.get("hostname").getAsString().equals(""));
-		assertTrue(j04.get("hostname").getAsString().equals(""));
+		assertTrue(j03.get("hostname").getAsString().equals("cetest02.grid.hep.ph.ic.ac.uk"));
+		assertTrue(j04.get("hostname").getAsString().equals("cetest02.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j01.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j02.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j03.get("status").getAsString().equals("CRITICAL"));
 		assertTrue(j03.get("status").getAsString().equals("CRITICAL"));
+		assertTrue(j01.get("summary").getAsString().equals("sum_X"));
+		assertTrue(j01.get("message").getAsString().equals("msg_X"));
+		assertTrue(j02.get("summary").getAsString().equals("sum_X"));
+		assertTrue(j02.get("message").getAsString().equals("msg_X"));
+		assertTrue(j03.get("summary").getAsString().equals("sum_X"));
+		assertTrue(j03.get("message").getAsString().equals("msg_X"));
+		assertTrue(j04.get("summary").getAsString().equals("sum_X"));
+		assertTrue(j04.get("message").getAsString().equals("msg_X"));
 		
 		// This should create 4 events metric,endpoint,service and finally endpoint group (the whole site)
 		ArrayList<String> elist07 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod05.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
@@ -259,19 +293,27 @@ public class StatusManagerTest {
 		assertTrue(j03.get("ts_monitored").getAsString().equals("2017-03-03T22:30:00Z"));
 		assertTrue(j04.get("ts_monitored").getAsString().equals("2017-03-03T22:30:00Z"));
 		assertTrue(j01.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
-		assertTrue(j02.get("metric").getAsString().equals(""));
-		assertTrue(j03.get("metric").getAsString().equals(""));
-		assertTrue(j04.get("metric").getAsString().equals(""));
+		assertTrue(j02.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
+		assertTrue(j03.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
+		assertTrue(j04.get("metric").getAsString().equals("emi.cream.CREAMCE-JobCancel"));
 		assertTrue(j01.get("hostname").getAsString().equals("ceprod05.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j02.get("hostname").getAsString().equals("ceprod05.grid.hep.ph.ic.ac.uk"));
-		assertTrue(j03.get("hostname").getAsString().equals(""));
-		assertTrue(j04.get("hostname").getAsString().equals(""));
+		assertTrue(j03.get("hostname").getAsString().equals("ceprod05.grid.hep.ph.ic.ac.uk"));
+		assertTrue(j04.get("hostname").getAsString().equals("ceprod05.grid.hep.ph.ic.ac.uk"));
 		assertTrue(j01.get("status").getAsString().equals("OK"));
 		assertTrue(j02.get("status").getAsString().equals("OK"));
 		assertTrue(j03.get("status").getAsString().equals("OK"));
 		assertTrue(j03.get("status").getAsString().equals("OK"));
+		
+		assertTrue(j01.get("summary").getAsString().equals(""));
+		assertTrue(j01.get("message").getAsString().equals(""));
+		assertTrue(j02.get("summary").getAsString().equals(""));
+		assertTrue(j02.get("message").getAsString().equals(""));
+		assertTrue(j03.get("summary").getAsString().equals(""));
+		assertTrue(j03.get("message").getAsString().equals(""));
 
-		// downtime affected should not create events
+
+		// downtime affected should not create event
 		sm.addNewGroup("GR-07-UOI-HEPLAB",sm.ops.getIntStatus("OK"), ts1);
 		ArrayList<String> elist08 = sm.setStatus("GR-07-UOI-HEPLAB", "CREAM-CE", "grid01.physics.uoi.gr", "emi.cream.CREAMCE-JobCancel", "CRITICAL", "mon01.argo.eu", "2017-03-03T22:45:00Z", "", "");
 		assertEquals(0,elist08.size());

@@ -32,6 +32,10 @@ import com.google.gson.Gson;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricProfile;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Base64;
+
 
 /**
  * Status Manager implements a live structure containing a topology of entities
@@ -660,12 +664,15 @@ public class StatusManager {
 		boolean updService = false;
 	
 
-		Date oldGroup;
-		Date oldService;
-		Date oldEndpoint;
-		Date oldMetric;
+		Date oldGroupTS;
+		Date oldServiceTS;
+		Date oldEndpointTS;
+		Date oldMetricTS;
 		
-		
+		int oldGroupStatus;
+		int oldServiceStatus;
+		int oldEndpointStatus;
+		int oldMetricStatus;
 
 		// Open groups
 		groupNode = this.groups.get(group);
@@ -674,7 +681,8 @@ public class StatusManager {
 			if (groupNode.item.timestamp.compareTo(ts) > 0)
 				return results;
 			// update ts
-			oldGroup = groupNode.item.timestamp;
+			oldGroupTS = groupNode.item.timestamp;
+			oldGroupStatus = groupNode.item.status;
 			groupNode.item.timestamp = ts;
 
 			// Open services
@@ -685,7 +693,8 @@ public class StatusManager {
 				if (serviceNode.item.timestamp.compareTo(ts) > 0)
 					return results;
 				// update ts
-				oldService = serviceNode.item.timestamp;
+				oldServiceTS = serviceNode.item.timestamp;
+				oldServiceStatus = serviceNode.item.status;
 				serviceNode.item.timestamp = ts;
 
 				// Open endpoints
@@ -696,7 +705,8 @@ public class StatusManager {
 					if (endpointNode.item.timestamp.compareTo(ts) > 0)
 						return results;
 					// update ts
-					oldEndpoint = endpointNode.item.timestamp;
+					oldEndpointTS = endpointNode.item.timestamp;
+					oldEndpointStatus = endpointNode.item.status;
 					endpointNode.item.timestamp = ts;
 
 					// Open metrics
@@ -708,11 +718,12 @@ public class StatusManager {
 						if (metricNode.item.timestamp.compareTo(ts) <= 0) {
 							// update status
 							boolean repeat = hasTimeDiff(ts,metricNode.item.genTs,this.timeout);
-							oldMetric = metricNode.item.timestamp;
+							oldMetricTS = metricNode.item.timestamp;
+							oldMetricStatus = metricNode.item.status;
 							if (metricNode.item.status != status || repeat ) {
 								// generate event
 								evtMetric = genEvent("metric", group, service, hostname, metric, ops.getStrStatus(status),
-										monHost, ts, ops.getStrStatus(metricNode.item.status), oldMetric, repeat, message, summary);
+										monHost, ts, ops.getStrStatus(oldMetricStatus), oldMetricTS, repeat, summary, message);
 										
 								
 								// Create metric status level object
@@ -743,9 +754,9 @@ public class StatusManager {
 						if (true) {
 
 							// generate event
-							evtEndpoint = genEvent("endpoint", group, service, hostname, "",
+							evtEndpoint = genEvent("endpoint", group, service, hostname, metric,
 									ops.getStrStatus(endpNewStatus), monHost, ts,
-									ops.getStrStatus(endpointNode.item.status), oldEndpoint,repeat,"","");
+									ops.getStrStatus(oldEndpointStatus), oldEndpointTS,repeat,summary,message);
 							
 							// Create metric,endpoint status level object
 							statusEndpoint = new String[] {evtEndpoint.getStatus(),evtEndpoint.getPrevStatus(), evtEndpoint.getTsMonitored(), evtEndpoint.getPrevTs()};
@@ -770,8 +781,8 @@ public class StatusManager {
 					if (true) {
 
 						// generate event
-						evtService = genEvent("service", group, service, "", "", ops.getStrStatus(servNewStatus),
-								monHost, ts, ops.getStrStatus(serviceNode.item.status), oldService,repeat,"","");
+						evtService = genEvent("service", group, service, hostname, metric, ops.getStrStatus(servNewStatus),
+								monHost, ts, ops.getStrStatus(oldServiceStatus), oldServiceTS,repeat,summary,message);
 						
 						
 						// Create metric, endpoint, service status metric objects
@@ -801,8 +812,8 @@ public class StatusManager {
 					
 					// generate event
 					
-					evtEgroup = genEvent("endpoint_group", group, "", "", "", ops.getStrStatus(groupNewStatus),
-							monHost, ts, ops.getStrStatus(groupNode.item.status), oldGroup,repeat,"","");
+					evtEgroup = genEvent("endpoint_group", group, service, hostname, metric, ops.getStrStatus(groupNewStatus),
+							monHost, ts, ops.getStrStatus(oldGroupStatus), oldGroupTS,repeat,summary,message);
 					
 					// Create metric, endpoint, service, egroup status metric objects
 					statusEgroup = new String[] {evtEgroup.getStatus(),evtEgroup.getPrevStatus(), evtEgroup.getTsMonitored(), evtEgroup.getPrevTs()};
@@ -859,10 +870,18 @@ public class StatusManager {
 		String tsStr = toZulu(ts);
 		String dt = tsStr.split("T")[0].replaceAll("-", "");
 		String tsProc = toZulu(new Date());
+		
+		if (summary==null) {
+			summary="";
+		}
+		if (message==null) {
+			message="";
+		}
+		
 		StatusEvent evnt = new StatusEvent(this.report, type, dt, group, service, hostname, metric, status, monHost,
-				toZulu(ts), tsProc, prevStatus, toZulu(prevTs), new Boolean(repeat).toString(), summary, message );
+				toZulu(ts), tsProc, prevStatus, toZulu(prevTs), new Boolean(repeat).toString(),summary, message );
 		
-		
+
 		return evnt;
 	}
 	

@@ -524,7 +524,7 @@ public class AmsStreamStatus {
 				sm.addNewGroup(group, initStatus, dateTS);
 			}
 
-			ArrayList<String> events = sm.setStatus(group, service, hostname, metric, status, monHost, tsMon, message, summary);
+			ArrayList<String> events = sm.setStatus(group, service, hostname, metric, status, monHost, tsMon, summary, message);
 
 			
 			
