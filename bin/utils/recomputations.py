@@ -44,8 +44,8 @@ def write_output(results, tenant, report, target_date, config):
     hdfs_writer = config.get("HDFS", "writer_bin")
     hdfs_namenode = config.get("HDFS", "namenode")
     hdfs_user = config.get("HDFS", "user")
-    hdfs_sync = config.get("HDFS", "path_sync").fill(namenode=hdfs_namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
-    print type(hdfs_sync), hdfs_sync
+    hdfs_sync = config.get("HDFS", "path_sync").fill(namenode=hdfs_namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).path
+    
     status = subprocess.check_call([hdfs_writer, "put", recomp_filepath, hdfs_sync])
     # clear temp local file
     os.remove(recomp_filepath)
