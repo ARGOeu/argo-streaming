@@ -14,7 +14,6 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.minlog.Log;
 
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
