@@ -72,8 +72,8 @@ def compose_hdfs_commands(year, month, day, args, config):
 
     # file location of recomputations file (local or hdfs)
     # first check if there is a recomputations file for the given date
-    if client.test(urlparse(hdfs_sync+"/recomp_"+args.date+".json").path, exists=True):
-        hdfs_commands["--rec"] = hdfs_sync+"/recomp_"+args.date+".json"
+    if client.test(urlparse(hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json").path, exists=True):
+        hdfs_commands["--rec"] = hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json"
         log.info("Using recomputations file for the given date")
     else:
         hdfs_commands["--rec"] = hdfs_check_path(hdfs_sync+"/recomp.json", client)
