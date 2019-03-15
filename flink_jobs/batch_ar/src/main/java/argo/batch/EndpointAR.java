@@ -1,10 +1,11 @@
 package argo.batch;
 
-public class ServiceAR {
+public class EndpointAR {
 	
 	private int dateInt;
 	private String report;
 	private String name;
+	private String service;
 	private String group;
 	private double a;
 	private double r;
@@ -12,16 +13,26 @@ public class ServiceAR {
 	private double unknown;
 	private double down;
 	
-	public ServiceAR(int _dateInt, String _report, String _name, String _group, double _a, double _r, double _up, double _unknown, double _down){
+	public EndpointAR(int _dateInt, String _report, String _name, String _service, String _group, double _a, double _r, double _up, double _unknown, double _down){
 		this.dateInt = _dateInt;
 		this.report=_report;
 		this.name = _name;
+		this.service = _service;
 		this.group = _group;
 		this.a = _a;
 		this.r = _r;
 		this.up = _up;
 		this.unknown = _unknown;
 		this.down = _down;
+	}
+	
+	
+	public String getService() {
+		return this.service;
+	}
+	
+	public void setService(String service) {
+		this.service = service;
 	}
 	
 	public int getDateInt(){
@@ -82,7 +93,7 @@ public class ServiceAR {
 	}
 	
 	public String toString() {
-		return "(" + this.dateInt+ "," + this.report + "," + this.name + "," + this.group + "," + this.a + "," + this.r + ","  + this.up + ","  + this.unknown + ","  + this.down  + ")";
+		return "(" + this.dateInt+ "," + this.report + "," + this.name + "," + this.service + "," + this.group + "," + this.a + "," + this.r + ","  + this.up + ","  + this.unknown + ","  + this.down  + ")";
 	}
 
 }
