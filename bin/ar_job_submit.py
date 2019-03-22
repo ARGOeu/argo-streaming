@@ -85,7 +85,7 @@ def compose_hdfs_commands(year, month, day, args, config):
     # recomputation lies in the hdfs in the form of
     # /sync/recomp_TENANTNAME_ReportName_2018-08-02.json
     if client.test(urlparse(hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json").path, exists=True):
-        hdfs_commands["--rec"] = hdfs_sync+"/recomp_"+args.date+".json"
+        hdfs_commands["--rec"] = hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json"
     else:
         hdfs_commands["--rec"] = hdfs_check_path(hdfs_sync+"/recomp.json", client)
 

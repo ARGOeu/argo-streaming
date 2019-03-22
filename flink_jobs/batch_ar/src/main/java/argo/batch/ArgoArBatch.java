@@ -165,6 +165,12 @@ public class ArgoArBatch {
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
 				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(recDS, "rec");
 
+		// Calculate endpoint ar from endpoint timelines
+		DataSet<EndpointAR> endpointResultDS = endpointTimelinesDS.flatMap(new CalcEndpointAR(params))
+				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops")
+						.withBroadcastSet(confDS, "conf");
+		
 		// Calculate service ar from service timelines
 		DataSet<ServiceAR> serviceResultDS = serviceTimelinesDS.flatMap(new CalcServiceAR(params))
 				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
@@ -181,11 +187,15 @@ public class ArgoArBatch {
 		String dbURI = params.getRequired("mongo.uri");
 		String dbMethod = params.getRequired("mongo.method");
 
-	    // Initialize two mongodb outputs
+		// Initialize endpoint ar mongo output 
+		MongoEndpointArOutput endpointMongoOut = new MongoEndpointArOutput(dbURI,"endpoint_ar",dbMethod);
+	    // Initialize service ar mongo output
 		MongoServiceArOutput serviceMongoOut = new MongoServiceArOutput(dbURI,"service_ar",dbMethod);
-		 // Initialize two mongodb outputs
+		 // Initialize endpoint group ar mongo output
 		MongoEndGroupArOutput egroupMongoOut = new MongoEndGroupArOutput(dbURI,"endpoint_group_ar",dbMethod);
 		
+		
+		endpointResultDS.output(endpointMongoOut);
 		serviceResultDS.output(serviceMongoOut);
 		groupResultDS.output(egroupMongoOut);
 		

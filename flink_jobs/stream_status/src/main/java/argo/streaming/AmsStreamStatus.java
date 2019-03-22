@@ -44,6 +44,7 @@ import com.google.gson.JsonParser;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
+import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
 import status.StatusManager;
 import sync.EndpointGroupManagerV2;
@@ -219,6 +220,7 @@ public class AmsStreamStatus {
 			kafkaProps.setProperty("bootstrap.servers", kafkaServers);
 			FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic, new SimpleStringSchema(),
 					kafkaProps);
+			
 			events.addSink(kSink);
 		}
 
@@ -244,7 +246,8 @@ public class AmsStreamStatus {
 		}
 
 		if (hasFsOutArgs(parameterTool)) {
-			events.writeAsText(parameterTool.get("fs.output"));
+            events.writeAsText(parameterTool.get("fs.output"));
+			//events.print();
 		}
 
 		
@@ -340,10 +343,22 @@ public class AmsStreamStatus {
 			byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
 			// Decode from avro
 			DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),
-					MetricData.getClassSchema(), new SpecificData());
+					MetricDataOld.getClassSchema(), new SpecificData());
 			Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
 			MetricData item;
-			item = avroReader.read(null, decoder);
+			
+			
+			
+			try {
+				item = avroReader.read(null, decoder);
+			} catch (java.io.EOFException ex)
+			{
+					//convert from old to new
+					avroReader = new SpecificDatumReader<MetricData>(MetricDataOld.getClassSchema(),MetricData.getClassSchema());
+					decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
+					item = avroReader.read(null, decoder);
+			}
+			
 
 			//System.out.println("metric data item received" + item.toString());
 
@@ -422,7 +437,7 @@ public class AmsStreamStatus {
 
 		public StatusConfig config;
 
-		public int defStatus;
+		public int initStatus;
 		
 	
 		
@@ -461,7 +476,7 @@ public class AmsStreamStatus {
 			sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsJSON, opsJSON);
 
 			// Set the default status as integer
-			defStatus = sm.getOps().getIntStatus(config.defStatus);
+			initStatus = sm.getOps().getIntStatus(config.initStatus);
 			LOG.info("Initialized status manager:" + pID + " (with timeout:" + sm.getTimeout() + ")");
 
 		}
@@ -506,10 +521,10 @@ public class AmsStreamStatus {
 			if (!sm.hasGroup(group)) {
 				// Get start of the day to create new entries
 				Date dateTS = sm.setDate(tsMon);
-				sm.addNewGroup(group, defStatus, dateTS);
+				sm.addNewGroup(group, initStatus, dateTS);
 			}
 
-			ArrayList<String> events = sm.setStatus(group, service, hostname, metric, status, monHost, tsMon, message, summary);
+			ArrayList<String> events = sm.setStatus(group, service, hostname, metric, status, monHost, tsMon, summary, message);
 
 			
 			
