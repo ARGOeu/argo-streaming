@@ -28,7 +28,10 @@ public class StatusEvent{
 	private @SerializedName("status_service") String statusService[];
 	private @SerializedName("status_endpoint") String statusEndpoint[];
 	private @SerializedName("status_metric") String statusMetric[];
-	
+	// Record statuses of the other groups
+	private @SerializedName("group_statuses") String groupStatuses[];
+	private @SerializedName("group_endpoints") String groupEndpoints[];
+	private @SerializedName("group_services") String groupServices[];
 	
 	public StatusEvent() {
 		this.report  = "";
@@ -51,6 +54,9 @@ public class StatusEvent{
 		this.statusService = new String[0];
 		this.statusEndpoint = new String[0];
 		this.statusMetric = new String[0];
+		this.groupEndpoints = new String[0];
+		this.groupServices= new String[0];
+		this.groupStatuses = new String[0];
 		
 	}
 	
@@ -76,6 +82,10 @@ public class StatusEvent{
 		this.statusService = null;
 		this.statusEndpoint = null;
 		this.statusMetric = null;
+		this.groupEndpoints = null;
+		this.groupServices = null;
+		this.groupStatuses = null;
+
 		
 	}
 	
@@ -107,6 +117,31 @@ public class StatusEvent{
 	}
 	public void setStatusMetric(String[]  statusMetric ) {
 		this.statusMetric = statusMetric;
+	}
+	
+	public void setGroupStatuses(String[] groupStatuses) {
+		this.groupStatuses = groupStatuses;
+	}
+	
+	public void setGroupEndpoints(String[] groupEndpoints) {
+		this.groupEndpoints = groupEndpoints;
+	}
+	
+	
+	public void setGroupServices(String[] groupServices) {
+		this.groupServices = groupServices;
+	}
+	
+	public String[] getGroupStatuses() {
+		return this.groupStatuses;
+	}
+	
+	public String[] getGroupServices() {
+		return this.groupServices;
+	}
+	
+	public String[] getGroupEndpoints() {
+		return this.groupEndpoints;
 	}
 	
 	

@@ -343,7 +343,7 @@ public class AmsStreamStatus {
 			byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
 			// Decode from avro
 			DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),
-					MetricDataOld.getClassSchema(), new SpecificData());
+					MetricData.getClassSchema(), new SpecificData());
 			Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
 			MetricData item;
 			

@@ -13,7 +13,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.hadoop.hdfs.tools.DFSAdmin;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,6 @@ import java.util.TimeZone;
 
 import sync.AggregationProfileManager;
 import sync.DowntimeCache;
-import sync.DowntimeManager;
 import sync.EndpointGroupManagerV2;
 import sync.EndpointGroupManagerV2.EndpointItem;
 import sync.MetricProfileManager;
@@ -32,9 +31,6 @@ import com.google.gson.Gson;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricProfile;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Base64;
 
 
 /**
@@ -486,6 +482,10 @@ public class StatusManager {
 		utcFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 		return utcFormat.format(ts);
 	}
+	
+	
+	
+	
 
 	/**
 	 * For all entities in the topology generate status events
@@ -610,6 +610,49 @@ public class StatusManager {
 		
 		// else everything is ok and timestamp belongs inside element's downtime period
 		return true;
+	}
+	
+	/**
+	 * getGroupEndpointStatuses receives a StatusNode of type "endpoint_group" iterates over the
+	 * nested children nodes and captures information about all endpoint nodes included in the group
+	 * 
+	 * @param egroup
+	 *            StatusNode input object of type "endpoint group"
+	 * @param ops
+	 *            OpsManager reference object to translate status ids to string names
+	 *            
+	 * @return	Map<String,ArrayList<String>> a hashmap of three string arraylists keyed: "endpoints", "services", "statuses"
+	 *            
+	 */
+	public Map<String,ArrayList<String>> getGroupEndpointStatuses(StatusNode egroup, OpsManager ops) {
+		Map<String, ArrayList<String>> results = new HashMap<String,ArrayList<String>>();
+		ArrayList<String> endpoints = new ArrayList<String>();
+		ArrayList<String> services = new ArrayList<String>();
+		ArrayList<String> statuses = new ArrayList<String>();
+		results.put("endpoints", endpoints);
+		results.put("services", services);
+		results.put("statuses", statuses);
+		// check if StatusNode is indeed of endpoint group type
+		if (egroup.type.equalsIgnoreCase("group") == false) {
+			return results;
+		}
+		
+		for (Entry<String, StatusNode> serviceEntry : egroup.children.entrySet()) {
+			String serviceName = serviceEntry.getKey();
+			StatusNode service = serviceEntry.getValue();
+			for (Entry<String, StatusNode> endpointEntry : service.children.entrySet()) {
+				String endpointName = endpointEntry.getKey();
+				StatusNode endpoint = endpointEntry.getValue();
+				// Add endpoint information to results
+				results.get("endpoints").add(endpointName);
+				results.get("services").add(serviceName);
+				results.get("statuses").add(ops.getStrStatus(endpoint.item.status));
+			}
+		}
+		
+		
+		
+		return results;
 	}
 
 	/**
@@ -817,6 +860,12 @@ public class StatusManager {
 					
 					// Create metric, endpoint, service, egroup status metric objects
 					statusEgroup = new String[] {evtEgroup.getStatus(),evtEgroup.getPrevStatus(), evtEgroup.getTsMonitored(), evtEgroup.getPrevTs()};
+					
+					// generate group endpoint information 
+					Map<String, ArrayList<String>> groupStatuses = getGroupEndpointStatuses(groupNode,ops);
+					evtEgroup.setGroupEndpoints( groupStatuses.get("endpoints").toArray(new String[0]));
+					evtEgroup.setGroupServices( groupStatuses.get("services").toArray(new String[0]));
+					evtEgroup.setGroupStatuses( groupStatuses.get("statuses").toArray(new String[0]));
 					
 					
 					evtEgroup.setStatusMetric(statusMetric);

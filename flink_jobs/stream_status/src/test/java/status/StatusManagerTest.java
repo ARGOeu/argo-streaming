@@ -275,7 +275,7 @@ public class StatusManagerTest {
 		ArrayList<String> elist07 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod05.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
 				"OK", "mon01.argo.eu", "2017-03-03T22:30:00Z","","");
 		
-	
+		
 		
 		assertTrue(elist07.size()==4);
 		j01 = getJSON(elist07.get(0));
@@ -283,7 +283,10 @@ public class StatusManagerTest {
 		j03 = getJSON(elist07.get(2));
 		j04 = getJSON(elist07.get(3));
 		
-		
+		// check if endpoint groups have been captured
+		assertTrue(j04.get("group_endpoints").toString().equals("[\"cetest01.grid.hep.ph.ic.ac.uk\",\"cetest02.grid.hep.ph.ic.ac.uk\",\"bdii.grid.hep.ph.ic.ac.uk\",\"ceprod08.grid.hep.ph.ic.ac.uk\",\"ceprod06.grid.hep.ph.ic.ac.uk\",\"ceprod07.grid.hep.ph.ic.ac.uk\",\"ceprod05.grid.hep.ph.ic.ac.uk\"]"));
+		assertTrue(j04.get("group_services").toString().equals("[\"ARC-CE\",\"ARC-CE\",\"Site-BDII\",\"CREAM-CE\",\"CREAM-CE\",\"CREAM-CE\",\"CREAM-CE\"]"));
+		assertTrue(j04.get("group_statuses").toString().equals("[\"CRITICAL\",\"CRITICAL\",\"OK\",\"CRITICAL\",\"CRITICAL\",\"CRITICAL\",\"OK\"]"));
 		assertTrue(j01.get("type").getAsString().equals("metric"));
 		assertTrue(j02.get("type").getAsString().equals("endpoint"));
 		assertTrue(j03.get("type").getAsString().equals("service"));
