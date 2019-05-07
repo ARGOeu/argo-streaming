@@ -105,9 +105,11 @@ public class ArgoStatusBatch {
 		Path pin = new Path(params.getRequired("pdata"));
 		AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
 		DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
+		
+		DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData(params)).withBroadcastSet(recDS, "rec");
 
 		// Find the latest day
-		DataSet<MetricData> pdataMin = pdataDS.groupBy("service", "hostname", "metric")
+		DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
 				.sortGroup("timestamp", Order.DESCENDING).first(1);
 		
 		// Union todays data with the latest statuses from previous day 
