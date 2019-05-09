@@ -125,7 +125,7 @@ def compose_command(config, args,  hdfs_commands):
     cmd_command.append(mongo_uri.geturl())
 
     if args.method == "insert":
-        argo_mongo_client = ArgoMongoClient(args, config, ["service_ar", "endpoint_group_ar"])
+        argo_mongo_client = ArgoMongoClient(args, config, ["endpoint_ar", "service_ar", "endpoint_group_ar"])
         argo_mongo_client.mongo_clean_ar(mongo_uri)
 
     # MongoDB method to be used when storing the results, either insert or upsert
