@@ -1,0 +1,43 @@
+[{
+  "reason": "testing_compute_engine",
+  "start_time": "2013-12-08T12:03:44Z",
+  "end_time": "2013-12-10T12:03:44Z",
+  "exclude": [
+    "GR-01-AUTH",
+    "HG-03-AUTH"
+  ],
+  "status": "running",
+  "timestamp": "2015-02-01 14:58:40"
+},
+{
+  "reason": "testing_compute_engine",
+  "start_time": "2013-12-08T12:03:44Z",
+  "end_time": "2013-12-08T13:03:44Z",
+  "exclude": [
+    "SITE-A",
+    "SITE-B"
+  ],
+  "status": "running",
+  "timestamp": "2015-02-01 14:58:40",
+  "exclude_monitoring_source": [
+  	{ "host": "monA",
+  	  "start_time": "2013-12-08T12:03:44Z",
+  	  "end_time": "2013-12-08T15:03:44Z"
+  	},
+  	{ "host": "monA",
+  	  "start_time": "2013-12-08T18:03:44Z",
+  	  "end_time": "2013-12-08T19:03:44Z"
+  	}
+  ]
+},
+{
+  "reason": "testing_compute_engine",
+  "start_time": "2013-12-08T16:03:44Z",
+  "end_time": "2013-12-08T18:03:44Z",
+  "exclude": [
+    "SITE-A",
+    "SITE-c"
+  ],
+  "status": "running",
+  "timestamp": "2015-02-01 14:58:40"
+}]
