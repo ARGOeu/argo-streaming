@@ -212,7 +212,7 @@ def main_clean(args=None):
 
 
     if args.job == "clean_ar":
-        argo_mongo_client = ArgoMongoClient(args, config, ["service_ar", "endpoint_group_ar"])
+        argo_mongo_client = ArgoMongoClient(args, config, ["endpoint_ar", "service_ar", "endpoint_group_ar"])
         argo_mongo_client.mongo_clean_ar(mongo_uri)
 
     elif args.job == "clean_status":
