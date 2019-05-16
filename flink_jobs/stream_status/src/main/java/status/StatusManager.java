@@ -794,24 +794,24 @@ public class StatusManager {
 						int endpNewStatus = aggregate("", endpointNode, ts);
 						// check if status changed
 						boolean repeat = hasTimeDiff(ts,endpointNode.item.genTs,this.timeout);
-						if (true) {
+						
 
-							// generate event
-							evtEndpoint = genEvent("endpoint", group, service, hostname, metric,
-									ops.getStrStatus(endpNewStatus), monHost, ts,
-									ops.getStrStatus(oldEndpointStatus), oldEndpointTS,repeat,summary,message);
-							
-							// Create metric,endpoint status level object
-							statusEndpoint = new String[] {evtEndpoint.getStatus(),evtEndpoint.getPrevStatus(), evtEndpoint.getTsMonitored(), evtEndpoint.getPrevTs()};
-							
-							evtEndpoint.setStatusMetric(statusMetric);
-							evtEndpoint.setStatusEndpoint(statusEndpoint);
-							results.add(eventToString(evtEndpoint));
-							
-							endpointNode.item.status = endpNewStatus;
-							endpointNode.item.genTs = ts;
-							updEndpoint = true;
-						}
+						// generate event
+						evtEndpoint = genEvent("endpoint", group, service, hostname, metric,
+								ops.getStrStatus(endpNewStatus), monHost, ts,
+								ops.getStrStatus(oldEndpointStatus), oldEndpointTS,repeat,summary,message);
+						
+						// Create metric,endpoint status level object
+						statusEndpoint = new String[] {evtEndpoint.getStatus(),evtEndpoint.getPrevStatus(), evtEndpoint.getTsMonitored(), evtEndpoint.getPrevTs()};
+						
+						evtEndpoint.setStatusMetric(statusMetric);
+						evtEndpoint.setStatusEndpoint(statusEndpoint);
+						results.add(eventToString(evtEndpoint));
+						
+						endpointNode.item.status = endpNewStatus;
+						endpointNode.item.genTs = ts;
+						updEndpoint = true;
+						
 
 					}
 				}
@@ -821,27 +821,27 @@ public class StatusManager {
 					int servNewStatus = aggregate(service, serviceNode, ts);
 					// check if status changed
 					boolean repeat = hasTimeDiff(ts,groupNode.item.genTs,this.timeout);
-					if (true) {
+					
 
-						// generate event
-						evtService = genEvent("service", group, service, hostname, metric, ops.getStrStatus(servNewStatus),
-								monHost, ts, ops.getStrStatus(oldServiceStatus), oldServiceTS,repeat,summary,message);
-						
-						
-						// Create metric, endpoint, service status metric objects
-						statusService = new String[] {evtService.getStatus(),evtService.getPrevStatus(), evtService.getTsMonitored(), evtService.getPrevTs()};
-						
-						evtService.setStatusMetric(statusMetric);
-						evtService.setStatusEndpoint(statusEndpoint);
-						evtService.setStatusService(statusService);
-						
-						
-						results.add(eventToString(evtService));
-						serviceNode.item.status = servNewStatus;
-						serviceNode.item.genTs=ts;
-						updService = true;
+					// generate event
+					evtService = genEvent("service", group, service, hostname, metric, ops.getStrStatus(servNewStatus),
+							monHost, ts, ops.getStrStatus(oldServiceStatus), oldServiceTS,repeat,summary,message);
+					
+					
+					// Create metric, endpoint, service status metric objects
+					statusService = new String[] {evtService.getStatus(),evtService.getPrevStatus(), evtService.getTsMonitored(), evtService.getPrevTs()};
+					
+					evtService.setStatusMetric(statusMetric);
+					evtService.setStatusEndpoint(statusEndpoint);
+					evtService.setStatusService(statusService);
+					
+					
+					results.add(eventToString(evtService));
+					serviceNode.item.status = servNewStatus;
+					serviceNode.item.genTs=ts;
+					updService = true;
 
-					}
+					
 
 				}
 			}
@@ -851,34 +851,34 @@ public class StatusManager {
 				int groupNewStatus = aggregate(group, groupNode, ts);
 				// check if status changed
 				boolean repeat = hasTimeDiff(ts,groupNode.item.genTs,this.timeout);
-				if (true){
+				
 					
-					// generate event
+				// generate event
+				
+				evtEgroup = genEvent("endpoint_group", group, service, hostname, metric, ops.getStrStatus(groupNewStatus),
+						monHost, ts, ops.getStrStatus(oldGroupStatus), oldGroupTS,repeat,summary,message);
+				
+				// Create metric, endpoint, service, egroup status metric objects
+				statusEgroup = new String[] {evtEgroup.getStatus(),evtEgroup.getPrevStatus(), evtEgroup.getTsMonitored(), evtEgroup.getPrevTs()};
+				
+				// generate group endpoint information 
+				Map<String, ArrayList<String>> groupStatuses = getGroupEndpointStatuses(groupNode,ops);
+				evtEgroup.setGroupEndpoints( groupStatuses.get("endpoints").toArray(new String[0]));
+				evtEgroup.setGroupServices( groupStatuses.get("services").toArray(new String[0]));
+				evtEgroup.setGroupStatuses( groupStatuses.get("statuses").toArray(new String[0]));
+				
+				
+				evtEgroup.setStatusMetric(statusMetric);
+				evtEgroup.setStatusEndpoint(statusEndpoint);
+				evtEgroup.setStatusService(statusService);
+				evtEgroup.setStatusEgroup(statusEgroup);
+				
+				results.add(eventToString(evtEgroup));
+				
+				groupNode.item.status = groupNewStatus;
+				groupNode.item.genTs = ts;
 					
-					evtEgroup = genEvent("endpoint_group", group, service, hostname, metric, ops.getStrStatus(groupNewStatus),
-							monHost, ts, ops.getStrStatus(oldGroupStatus), oldGroupTS,repeat,summary,message);
-					
-					// Create metric, endpoint, service, egroup status metric objects
-					statusEgroup = new String[] {evtEgroup.getStatus(),evtEgroup.getPrevStatus(), evtEgroup.getTsMonitored(), evtEgroup.getPrevTs()};
-					
-					// generate group endpoint information 
-					Map<String, ArrayList<String>> groupStatuses = getGroupEndpointStatuses(groupNode,ops);
-					evtEgroup.setGroupEndpoints( groupStatuses.get("endpoints").toArray(new String[0]));
-					evtEgroup.setGroupServices( groupStatuses.get("services").toArray(new String[0]));
-					evtEgroup.setGroupStatuses( groupStatuses.get("statuses").toArray(new String[0]));
-					
-					
-					evtEgroup.setStatusMetric(statusMetric);
-					evtEgroup.setStatusEndpoint(statusEndpoint);
-					evtEgroup.setStatusService(statusService);
-					evtEgroup.setStatusEgroup(statusEgroup);
-					
-					results.add(eventToString(evtEgroup));
-					
-					groupNode.item.status = groupNewStatus;
-					groupNode.item.genTs = ts;
-					
-				}
+				
 			}
 		}
 		// If service host combination has downtime clear result set
@@ -1003,6 +1003,8 @@ public class StatusManager {
 					res = ops.opInt(gOp, res, b.item.status);
 					aGroups.put(groupName, res);
 
+				} else { // if groupname doesn't exist add it 
+					aGroups.put(groupName, b.item.status);
 				}
 			}
 
