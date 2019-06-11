@@ -553,6 +553,7 @@ public class StatusManager {
 					evtEndpoint.setStatusMetric(statusMetric);
 					evtEndpoint.setStatusEndpoint(statusEndpoint);
 					
+					
 					results.add(eventToString(evtEndpoint));
 				}
 				// Generate service status event
@@ -611,6 +612,47 @@ public class StatusManager {
 		// else everything is ok and timestamp belongs inside element's downtime period
 		return true;
 	}
+	
+	
+	/**
+	 * getMetricStatuses receives a StatusNode of type "endpoint" iterates over the
+	 * nested children nodes and captures information about all metric nodes included in the group
+	 * 
+	 * @param egroup
+	 *            StatusNode input object of type "endpoint"
+	 * @param ops
+	 *            OpsManager reference object to translate status ids to string names
+	 *            
+	 * @return	Map<String,ArrayList<String>> a hashmap of two string arraylists keyed: "metrics", "statuses"
+	 *            
+	 */
+	public Map<String,ArrayList<String>> getMetricStatuses(StatusNode endpoint, OpsManager ops) {
+		Map<String, ArrayList<String>> results = new HashMap<String,ArrayList<String>>();
+		
+		ArrayList<String> metrics = new ArrayList<String>();
+		ArrayList<String> statuses = new ArrayList<String>();
+		
+		results.put("metrics", metrics);
+		results.put("statuses", statuses);
+		// check if StatusNode is indeed of endpoint group type
+		if (endpoint.type.equalsIgnoreCase("endpoint") == false) {
+			return results;
+		}
+		
+	
+		for (Entry<String, StatusNode> metricEntry : endpoint.children.entrySet()) {
+			String metricName = metricEntry.getKey();
+			StatusNode metric = metricEntry.getValue();
+			// Add endpoint information to results
+			results.get("metrics").add(metricName);
+			results.get("statuses").add(ops.getStrStatus(metric.item.status));
+		}
+		
+		
+		
+		return results;
+	}
+
 	
 	/**
 	 * getGroupEndpointStatuses receives a StatusNode of type "endpoint_group" iterates over the
@@ -686,8 +728,6 @@ public class StatusManager {
 		
 		int status = ops.getIntStatus(statusStr);
 		Date ts = fromZulu(tsStr);
-
-			
 
 			
 		// Set StatusNodes
@@ -806,7 +846,15 @@ public class StatusManager {
 						
 						evtEndpoint.setStatusMetric(statusMetric);
 						evtEndpoint.setStatusEndpoint(statusEndpoint);
+						
+						// generate group endpoint information 
+						Map<String, ArrayList<String>> metricStatuses = getMetricStatuses(endpointNode,ops);
+						evtEndpoint.setMetricNames( metricStatuses.get("metrics").toArray(new String[0]));
+						evtEndpoint.setMetricStatuses( metricStatuses.get("statuses").toArray(new String[0]));
+						
 						results.add(eventToString(evtEndpoint));
+						
+						
 						
 						endpointNode.item.status = endpNewStatus;
 						endpointNode.item.genTs = ts;

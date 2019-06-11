@@ -33,6 +33,11 @@ public class StatusEvent{
 	private @SerializedName("group_endpoints") String groupEndpoints[];
 	private @SerializedName("group_services") String groupServices[];
 	
+	// Record all statuses of endpoint's metrics
+	private @SerializedName("metric_statuses") String metricStatuses[];
+	private @SerializedName("metric_names") String metricNames[];
+	
+	
 	public StatusEvent() {
 		this.report  = "";
 		this.type = "";
@@ -57,6 +62,8 @@ public class StatusEvent{
 		this.groupEndpoints = new String[0];
 		this.groupServices= new String[0];
 		this.groupStatuses = new String[0];
+		this.metricStatuses = new String[0];
+		this.metricNames = new String[0];
 		
 	}
 	
@@ -85,6 +92,8 @@ public class StatusEvent{
 		this.groupEndpoints = null;
 		this.groupServices = null;
 		this.groupStatuses = null;
+		this.metricStatuses = null;
+		this.metricNames = null;
 
 		
 	}
@@ -144,7 +153,22 @@ public class StatusEvent{
 		return this.groupEndpoints;
 	}
 	
+	public String[] getMetricStatuses() {
+		return this.metricStatuses;
+	}
 	
+	public String[] getMetricNames() {
+		return this.metricNames;
+	}
+	
+
+	public void setMetricNames(String[] metricNames) {
+		this.metricNames = metricNames;
+	}
+	
+	public void setMetricStatuses(String[] metricStatuses) {
+		this.metricStatuses = metricStatuses;
+	}
 	
 	
 	public String getReport() { return report; }

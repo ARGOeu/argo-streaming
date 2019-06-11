@@ -283,6 +283,10 @@ public class StatusManagerTest {
 		j03 = getJSON(elist07.get(2));
 		j04 = getJSON(elist07.get(3));
 		
+		// check list of metric statuses and metric names included in the endpoint
+		assertTrue(j02.get("metric_statuses").toString().equals("[\"OK\",\"OK\",\"OK\",\"OK\",\"OK\",\"OK\"]"));
+		assertTrue(j02.get("metric_names").toString().equals("[\"emi.cream.CREAMCE-ServiceInfo\",\"emi.cream.CREAMCE-JobCancel\",\"hr.srce.CREAMCE-CertLifetime\",\"eu.egi.CREAM-IGTF\",\"emi.cream.CREAMCE-JobPurge\",\"emi.cream.CREAMCE-AllowedSubmission\"]"));
+		
 		// check if endpoint groups have been captured
 		assertTrue(j04.get("group_endpoints").toString().equals("[\"cetest01.grid.hep.ph.ic.ac.uk\",\"cetest02.grid.hep.ph.ic.ac.uk\",\"bdii.grid.hep.ph.ic.ac.uk\",\"ceprod08.grid.hep.ph.ic.ac.uk\",\"ceprod06.grid.hep.ph.ic.ac.uk\",\"ceprod07.grid.hep.ph.ic.ac.uk\",\"ceprod05.grid.hep.ph.ic.ac.uk\"]"));
 		assertTrue(j04.get("group_services").toString().equals("[\"ARC-CE\",\"ARC-CE\",\"Site-BDII\",\"CREAM-CE\",\"CREAM-CE\",\"CREAM-CE\",\"CREAM-CE\"]"));
