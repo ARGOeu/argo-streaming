@@ -6,10 +6,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Set;
 
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
@@ -62,6 +63,10 @@ public class EndpointGroupManagerV2 {
 		public String getService() { return service; }
 		public String getHostname() { return hostname; }
 
+		public String toString() {
+			return type+","+group+","+service+","+hostname;
+		}
+		
 	}
 	
 	public Map<String,Map<String,EndpointItem>> getList(){
@@ -75,6 +80,38 @@ public class EndpointGroupManagerV2 {
 
 	}
 	
+	
+	public Set<String> getEndpointSet() {
+		Set<String> curItems = new HashSet<String>();
+		for (String groupKey:this.groupIndex.keySet()) {
+			ArrayList<EndpointItem> eList = this.groupIndex.get(groupKey);
+			for (EndpointItem item: eList) {
+				curItems.add(item.toString());
+			}
+		}
+		return curItems;
+	}
+	
+	public ArrayList<String> getGroupList() {
+		ArrayList<String> results = new ArrayList<String>();
+		results.addAll(this.groupIndex.keySet());
+		return results;
+	}
+	
+	public ArrayList<String> compareToBeRemoved(EndpointGroupManagerV2 egp) {
+		
+		ArrayList<String> results = new ArrayList<String>();
+		
+		Set<String> curItems = this.getEndpointSet();
+		Set<String> futurItems = egp.getEndpointSet();
+		
+		// lost items is cur items minus future set
+		curItems.removeAll(futurItems);
+		
+		results.addAll(curItems);
+		
+		return results;
+	}
 
 	public int insert(String type, String group, String service, String hostname, HashMap<String, String> tags) {
 		EndpointItem itemNew = new EndpointItem(type, group, service, hostname, tags);

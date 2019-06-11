@@ -26,6 +26,7 @@ import sync.EndpointGroupManagerV2.EndpointItem;
 import sync.MetricProfileManager;
 import ops.OpsManager;
 
+import com.esotericsoftware.minlog.Log;
 import com.google.gson.Gson;
 
 import argo.avro.Downtime;
@@ -162,7 +163,72 @@ public class StatusManager {
 		}
 
 	}
+	
+	
+	public void removeEndpoint(String endpointDef) {
+		String[] tokens = endpointDef.split(",");
+		if (tokens.length != 4) return; //endpoint definition must split to 4 tokens
+		String etype = tokens[0];
+		String group = tokens[1];
+		String service = tokens[2];
+		String hostname = tokens[3];
+	
+		if (!this.groups.containsKey(group)) return;
+		StatusNode groupNode = this.groups.get(group);
+		
+		if (!groupNode.children.containsKey(service)) return;
+		StatusNode serviceNode = groupNode.children.get(service);
+		
+		if (!serviceNode.children.containsKey(hostname)) return;
+				
+		// Remove endpoint 
+		serviceNode.children.remove(hostname);
+		Log.info("Removed endpoint:" + hostname + " from the tree");
+		// if service node contains other items return
+		if (!serviceNode.children.isEmpty()) return;
+		groupNode.children.remove(service);
+		Log.info("Removed service:" + service + " from the tree");
+		
+		// if group node contains other items return
+		if (!groupNode.children.isEmpty()) return;
+		this.groups.remove(group);
+		Log.info("Removed group:" + group + " from the tree");
+		
+	
+	}
+	
+	public void updateTopology(EndpointGroupManagerV2 egpNext) {
+		// find a list of lost items to remove them from status tree
+		ArrayList<String> lostItems = this.egp.compareToBeRemoved(egpNext);
+		
+		for (String item : lostItems) {
+			removeEndpoint(item);
+		}
+		
+	}
 
+	public boolean hasEndpoint(String group, String service, String hostname) {
+		if (hasService(group, service)) {
+			StatusNode groupNode = this.groups.get(group);
+			StatusNode serviceNode = groupNode.children.get(service);
+			return serviceNode.children.containsKey(hostname);
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Checks if this status manager handles the specific endpoint group service
+	 */
+	public boolean hasService(String group, String service) {
+		if (hasGroup(group)) {
+			StatusNode groupNode = this.groups.get(group);
+			return groupNode.children.containsKey(service);
+		}
+		
+		return false;
+	}
+	
 	/**
 	 * Checks if this status manager handles the specific endpoint group
 	 */

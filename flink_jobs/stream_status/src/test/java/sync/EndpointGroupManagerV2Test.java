@@ -17,6 +17,7 @@ import org.junit.Test;
 import argo.avro.GroupEndpoint;
 
 
+
 public class EndpointGroupManagerV2Test {
 
 	@BeforeClass
@@ -24,6 +25,12 @@ public class EndpointGroupManagerV2Test {
 		// Assert that files are present
 		assertNotNull("Test file missing",
 				EndpointGroupManagerV2Test.class.getResource("/avro/group_endpoints_v2.avro"));
+		assertNotNull("Test file missing",
+				EndpointGroupManagerV2Test.class.getResource("/avro/gp_day01.avro"));
+		assertNotNull("Test file missing",
+				EndpointGroupManagerV2Test.class.getResource("/avro/gp_day02.avro"));	
+		assertNotNull("Test file missing",
+				EndpointGroupManagerV2Test.class.getResource("/avro/gp_day03.avro"));	
 	}
 
 	@Test
@@ -36,10 +43,35 @@ public class EndpointGroupManagerV2Test {
 		// Test loading file 2
 		ge.loadAvro(avroFile);
 		
-		
+		// Prepare Resource File
+		resAvroFile = EndpointGroupManagerV2Test.class.getResource("/avro/gp_day01.avro");
+		avroFile = new File(resAvroFile.toURI());
+		// Instantiate class
+		EndpointGroupManagerV2 geDay01 = new EndpointGroupManagerV2();
+		// Test loading file 2
+		geDay01.loadAvro(avroFile);
+		// Prepare Resource File
+		resAvroFile = EndpointGroupManagerV2Test.class.getResource("/avro/gp_day02.avro");
+		avroFile = new File(resAvroFile.toURI());
+		// Instantiate class
+		EndpointGroupManagerV2 geDay02 = new EndpointGroupManagerV2();
+		// Test loading file 2
+		geDay02.loadAvro(avroFile);
+		// Prepare Resource File
+		resAvroFile = EndpointGroupManagerV2Test.class.getResource("/avro/gp_day03.avro");
+		avroFile = new File(resAvroFile.toURI());
+		// Instantiate class
+		EndpointGroupManagerV2 geDay03 = new EndpointGroupManagerV2();
+		// Test loading file 2
+		geDay03.loadAvro(avroFile);
 		
 		
 		assertNotNull("File Loaded", ge);
+		assertNotNull("File Loaded", geDay01);
+		assertNotNull("File Loaded", geDay02);
+		assertNotNull("File Loaded", geDay03);
+		
+		
 
 		// Test Check if service endpoint exists in topology
 		assertTrue(ge.checkEndpoint("storage1.grid.upjs.sk", "ARC-CE"));
@@ -76,8 +108,9 @@ public class EndpointGroupManagerV2Test {
 		
 		assertTrue(egpMgr.getList().size()==5);
 		
+		ArrayList<String> toBeRemoved = geDay01.compareToBeRemoved(geDay03);
+		assertTrue(toBeRemoved.toString().equals("[SITES,RRC-KI-T1,CREAM-CE,calc1.t1.grid.kiae.ru, SITES,UKI-NORTHGRID-MAN-HEP,CREAM-CE,ce03.tier2.hep.manchester.ac.uk, SITES,INFN-ROMA1,gLExec,atlas-ce-02.roma1.infn.it, SITES,INFN-ROMA1,gLExec,atlas-creamce-02.roma1.infn.it, SITES,UKI-NORTHGRID-LANCS-HEP,com.ceph.object-storage,storage.datacentred.io, SITES,UKI-NORTHGRID-MAN-HEP,gLExec,ce03.tier2.hep.manchester.ac.uk, SITES,INFN-ROMA1,gLExec,atlas-creamce-01.roma1.infn.it, SITES,PSNC,ARC-CE,cream01.egee.man.poznan.pl, SITES,UKI-SCOTGRID-ECDF,gLite-APEL,mon2.glite.ecdf.ed.ac.uk, SITES,UKI-NORTHGRID-MAN-HEP,APEL,ce03.tier2.hep.manchester.ac.uk, SITES,INFN-ROMA1,CREAM-CE,atlas-creamce-01.roma1.infn.it]"));
 		
-	
 	}
 
 }
