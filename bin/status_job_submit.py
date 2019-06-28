@@ -6,7 +6,7 @@ import datetime
 from snakebite.client import Client
 
 import logging
-from urlparse import urlparse
+from urllib.parse import urlparse
 from utils.argo_mongo import ArgoMongoClient
 from utils.common import cmd_to_string, date_rollback, flink_job_submit, hdfs_check_path, get_log_conf, get_config_paths
 from utils.update_profiles import ArgoProfileManager
@@ -26,11 +26,13 @@ def compose_hdfs_commands(year, month, day, args, config):
     hdfs_user = config.get("HDFS", "user")
     tenant = args.tenant
     hdfs_sync = config.get("HDFS", "path_sync")
-    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
+    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(
+    ), hdfs_user=hdfs_user, tenant=tenant).geturl()
 
     hdfs_metric = config.get("HDFS", "path_metric")
 
-    hdfs_metric = hdfs_metric.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
+    hdfs_metric = hdfs_metric.fill(
+        namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
 
     # dictionary holding all the commands with their respective arguments' name
     hdfs_commands = dict()
@@ -40,21 +42,26 @@ def compose_hdfs_commands(year, month, day, args, config):
         hdfs_metric + "/" + str(datetime.date(year, month, day) - datetime.timedelta(1)), client)
 
     # file location of target day's metric data (local or hdfs)
-    hdfs_commands["--mdata"] = hdfs_check_path(hdfs_metric+"/"+args.date,  client)
+    hdfs_commands["--mdata"] = hdfs_check_path(
+        hdfs_metric+"/"+args.date,  client)
 
     # file location of report configuration json file (local or hdfs)
-    hdfs_commands["--conf"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_"+args.report+"_cfg.json",  client)
+    hdfs_commands["--conf"] = hdfs_check_path(
+        hdfs_sync+"/"+args.tenant+"_"+args.report+"_cfg.json",  client)
 
     # file location of metric profile (local or hdfs)
     hdfs_commands["--mps"] = date_rollback(
-        hdfs_sync + "/" + args.report + "/" + "metric_profile_" + "{{date}}" + ".avro", year, month, day, config,
+        hdfs_sync + "/" + args.report + "/" + "metric_profile_" +
+        "{{date}}" + ".avro", year, month, day, config,
         client)
 
     # file location of operations profile (local or hdfs)
-    hdfs_commands["--ops"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_ops.json", client)
+    hdfs_commands["--ops"] = hdfs_check_path(
+        hdfs_sync+"/"+args.tenant+"_ops.json", client)
 
     # file location of aggregations profile (local or hdfs)
-    hdfs_commands["--apr"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap.json", client)
+    hdfs_commands["--apr"] = hdfs_check_path(
+        hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap.json", client)
 
     if args.thresholds:
         # file location of thresholds rules file (local or hdfs)
@@ -63,7 +70,8 @@ def compose_hdfs_commands(year, month, day, args, config):
 
     #  file location of endpoint group topology file (local or hdfs)
     hdfs_commands["-egp"] = date_rollback(
-        hdfs_sync + "/" + args.report + "/" + "group_endpoints_" + "{{date}}" + ".avro", year, month, day, config,
+        hdfs_sync + "/" + args.report + "/" + "group_endpoints_" +
+        "{{date}}" + ".avro", year, month, day, config,
         client)
 
     # file location of group of groups topology file (local or hdfs)
@@ -73,11 +81,14 @@ def compose_hdfs_commands(year, month, day, args, config):
     # file location of recomputations file (local or hdfs)
     # first check if there is a recomputations file for the given date
     if client.test(urlparse(hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json").path, exists=True):
-        hdfs_commands["--rec"] = hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json"
+        hdfs_commands["--rec"] = hdfs_sync+"/recomp_" + \
+            args.tenant+"_"+args.report+"_"+args.date+".json"
         log.info("Using recomputations file for the given date")
     else:
-        hdfs_commands["--rec"] = hdfs_check_path(hdfs_sync+"/recomp.json", client)
-        log.info("Recomputations file for the given date was not found. Using default.")
+        hdfs_commands["--rec"] = hdfs_check_path(
+            hdfs_sync+"/recomp.json", client)
+        log.info(
+            "Recomputations file for the given date was not found. Using default.")
 
     return hdfs_commands
 
@@ -110,8 +121,9 @@ def compose_command(config, args,  hdfs_commands):
     #  MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
     cmd_command.append("--mongo.uri")
     group_tenant = "TENANTS:" + args.tenant
-    mongo_endpoint = config.get("MONGO","endpoint").geturl()
-    mongo_uri = config.get(group_tenant, "mongo_uri").fill(mongo_endpoint=mongo_endpoint,tenant=args.tenant)
+    mongo_endpoint = config.get("MONGO", "endpoint").geturl()
+    mongo_uri = config.get(group_tenant, "mongo_uri").fill(
+        mongo_endpoint=mongo_endpoint, tenant=args.tenant)
     cmd_command.append(mongo_uri.geturl())
 
     if args.method == "insert":
@@ -168,9 +180,11 @@ def main(args=None):
     # optional call to update profiles
     if args.profile_check:
         profile_mgr = ArgoProfileManager(config)
-        profile_type_checklist = ["operations", "aggregations", "reports", "thresholds"]
+        profile_type_checklist = ["operations",
+                                  "aggregations", "reports", "thresholds"]
         for profile_type in profile_type_checklist:
-            profile_mgr.profile_update_check(args.tenant, args.report, profile_type)
+            profile_mgr.profile_update_check(
+                args.tenant, args.report, profile_type)
 
     # dictionary containing the argument's name and the command associated with each name
     hdfs_commands = compose_hdfs_commands(year, month, day, args, config)
@@ -186,7 +200,8 @@ def main(args=None):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Batch Status Job submit script")
+    parser = argparse.ArgumentParser(
+        description="Batch Status Job submit script")
     parser.add_argument(
         "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True, dest="tenant")
     parser.add_argument(

@@ -20,25 +20,30 @@ def compose_hdfs_commands(year, month, day, args, config):
     hdfs_user = config.get("HDFS", "user")
     tenant = args.tenant
     hdfs_sync = config.get("HDFS", "path_sync")
-    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
+    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(
+    ), hdfs_user=hdfs_user, tenant=tenant).geturl()
 
     # dictionary holding all the commands with their respective arguments' name
     hdfs_commands = dict()
 
     # file location of metric profile (local or hdfs)
     hdfs_commands["--sync.mps"] = date_rollback(
-        hdfs_sync + "/" + args.report + "/" + "metric_profile_" + "{{date}}" + ".avro", year, month, day, config,
+        hdfs_sync + "/" + args.report + "/" + "metric_profile_" +
+        "{{date}}" + ".avro", year, month, day, config,
         client)
 
     # file location of operations profile (local or hdfs)
-    hdfs_commands["--sync.ops"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_ops.json", client)
+    hdfs_commands["--sync.ops"] = hdfs_check_path(
+        hdfs_sync+"/"+args.tenant+"_ops.json", client)
 
     # file location of aggregations profile (local or hdfs)
-    hdfs_commands["--sync.apr"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap.json", client)
+    hdfs_commands["--sync.apr"] = hdfs_check_path(
+        hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap.json", client)
 
     #  file location of endpoint group topology file (local or hdfs)
     hdfs_commands["-sync.egp"] = date_rollback(
-        hdfs_sync + "/" + args.report + "/" + "group_endpoints_" + "{{date}}" + ".avro", year, month, day, config,
+        hdfs_sync + "/" + args.report + "/" + "group_endpoints_" +
+        "{{date}}" + ".avro", year, month, day, config,
         client)
 
     return hdfs_commands
@@ -128,55 +133,66 @@ def compose_command(config, args,  hdfs_commands):
                 # hbase endpoint
                 if config.has(section_tenant_job, "hbase_master"):
                     cmd_command.append("--hbase.master")
-                    cmd_command.append(config.get(section_tenant_job, "hbase_master").hostname)
+                    cmd_command.append(config.get(
+                        section_tenant_job, "hbase_master").hostname)
                 # hbase endpoint port
                 if config.has(section_tenant_job, "hbase_master"):
                     cmd_command.append("--hbase.port")
-                    cmd_command.append(config.get(section_tenant_job, "hbase_master").port)
+                    cmd_command.append(config.get(
+                        section_tenant_job, "hbase_master").port)
 
                 # comma separate list of zookeeper servers
                 if config.has(section_tenant_job, "hbase_zk_quorum"):
                     cmd_command.append("--hbase.zk.quorum")
-                    cmd_command.append(config.get(section_tenant_job, "hbase_zk_quorum"))
+                    cmd_command.append(config.get(
+                        section_tenant_job, "hbase_zk_quorum"))
 
                 # port used by zookeeper servers
                 if config.has(section_tenant_job, "hbase_zk_port"):
                     cmd_command.append("--hbase.zk.port")
-                    cmd_command.append(config.get(section_tenant_job, "hbase_zk_port"))
+                    cmd_command.append(config.get(
+                        section_tenant_job, "hbase_zk_port"))
 
                 # table namespace, usually tenant
                 if config.has(section_tenant_job, "hbase_namespace"):
                     cmd_command.append("--hbase.namespace")
-                    cmd_command.append(config.get(section_tenant_job, "hbase_namespace"))
+                    cmd_command.append(config.get(
+                        section_tenant_job, "hbase_namespace"))
 
                 # table name, usually metric data
                 if config.has(section_tenant_job, "hbase_table"):
                     cmd_command.append("--hbase.table")
-                    cmd_command.append(config.get(section_tenant_job, "hbase_table"))
+                    cmd_command.append(config.get(
+                        section_tenant_job, "hbase_table"))
 
             elif output == "kafka":
                 # kafka list of servers
                 if config.has(section_tenant_job, "kafka_servers"):
                     cmd_command.append("--kafka.servers")
-                    kafka_servers = ','.join(config.get(section_tenant_job, "kafka_servers"))
+                    kafka_servers = ','.join(config.get(
+                        section_tenant_job, "kafka_servers"))
                     cmd_command.append(kafka_servers)
                 # kafka topic to send status events to
                 if config.has(section_tenant_job, "kafka_topic"):
                     cmd_command.append("--kafka.topic")
-                    cmd_command.append(config.get(section_tenant_job, "kafka_topic"))
+                    cmd_command.append(config.get(
+                        section_tenant_job, "kafka_topic"))
             elif output == "fs":
                 # filesystem path for output(use "hdfs://" for hdfs path)
                 if config.has(section_tenant_job, "fs_output"):
                     cmd_command.append("--fs.output")
-                    cmd_command.append(config.get(section_tenant_job, "fs_output"))
+                    cmd_command.append(config.get(
+                        section_tenant_job, "fs_output"))
             elif output == "mongo":
                 cmd_command.append("--mongo.uri")
-                mongo_endpoint = config.get("MONGO","endpoint").geturl()
-                mongo_uri = config.get(section_tenant, "mongo_uri").fill(mongo_endpoint=mongo_endpoint,tenant=args.tenant)
+                mongo_endpoint = config.get("MONGO", "endpoint").geturl()
+                mongo_uri = config.get(section_tenant, "mongo_uri").fill(
+                    mongo_endpoint=mongo_endpoint, tenant=args.tenant)
                 cmd_command.append(mongo_uri.geturl())
                 # mongo method
                 cmd_command.append("--mongo.method")
-                cmd_command.append(config.get(section_tenant_job, "mongo_method"))
+                cmd_command.append(config.get(
+                    section_tenant_job, "mongo_method"))
 
     # num of messages to be retrieved from AMS per request
     cmd_command.append("--ams.batch")
@@ -240,12 +256,14 @@ def main(args=None):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Stream Status Job submit script")
+    parser = argparse.ArgumentParser(
+        description="Stream Status Job submit script")
     parser.add_argument(
         "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True, dest="tenant")
     parser.add_argument(
         "-d", "--date", metavar="DATE(ISO-8601)",
-        default=str(datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + "Z",
+        default=str(datetime.datetime.utcnow().replace(
+            microsecond=0).isoformat()) + "Z",
         help="Date in ISO-8601 format", dest="date")
     parser.add_argument(
         "-r", "--report", metavar="STRING", help="Report status", required=True, dest="report")
