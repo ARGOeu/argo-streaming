@@ -64,6 +64,8 @@ public class StatusManagerTest {
 		sm.setReport("Critical");
 		sm.loadAllFiles("2017-03-03", avroDownFile, avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
 
+		System.out.println("");
+		
 		Date ts1 = sm.fromZulu("2017-03-03T00:00:00Z");
 		
 		sm.addNewGroup("GR-01-AUTH",sm.ops.getIntStatus("OK"), ts1);
