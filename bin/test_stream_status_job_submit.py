@@ -8,18 +8,16 @@ from utils.common import cmd_to_string
 CONF_TEMPLATE = os.path.join(os.path.dirname(__file__), '../conf/conf.template')
 CONF_SCHEMA = os.path.join(os.path.dirname(__file__), '../conf/config.schema.json')
 
-expected_result = """sudo flink_path run -c test_class test.jar --ams.endpoint test_endpoint --ams.port 8080 \
---ams.token test_token --ams.project test_project --ams.sub.metric metric_status --ams.sub.sync sync_status \
---sync.apr hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/TENANTA_Critical_ap.json \
---sync.egp hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/sync/Critical/group_endpoints_2018-03-01.avro \
---sync.mps hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/sync/Critical/metric_profile_2018-03-01.avro \
---sync.ops hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/\
-sync/TENANTA_ops.json --run.date 2018-03-05T00:00:00Z --p 1 \
---hbase.master hbase.devel --hbase.port 8080 --hbase.zk.quorum ['test_zk_servers'] \
---hbase.zk.port 8080 --hbase.namespace test_hbase_namespace --hbase.table metric_data \
---kafka.servers kafka_server:9090,kafka_server2:9092 --kafka.topic test_kafka_topic --fs.output None --mongo.uri mongodb://localhost:21017/argo_TENANTA --mongo.method upsert --ams.batch 10 --ams.interval 300 --ams.proxy test_proxy --ams.verify true --timeout 500"""
+expected_result = ("sudo flink_path run -c test_class test.jar --ams.endpoint test_endpoint --ams.port 8080 "
+"--ams.token test_token --ams.project test_project --ams.sub.metric metric_status --ams.sub.sync sync_status "
+"--sync.mps hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/Critical/metric_profile_2018-03-01.avro "
+"--sync.ops hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/TENANTA_ops.json "
+"--sync.apr hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/TENANTA_Critical_ap.json "
+"--sync.egp hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/Critical/group_endpoints_2018-03-01.avro "
+"--run.date 2018-03-05T00:00:00Z --p 1 --hbase.master hbase.devel --hbase.port 8080 --hbase.zk.quorum ['test_zk_servers'] "
+"--hbase.zk.port 8080 --hbase.namespace test_hbase_namespace --hbase.table metric_data --kafka.servers kafka_server:9090,kafka_server2:9092 "
+"--kafka.topic test_kafka_topic --fs.output None --mongo.uri mongodb://localhost:21017/argo_TENANTA --mongo.method upsert "
+"--ams.batch 10 --ams.interval 300 --ams.proxy test_proxy --ams.verify true --timeout 500")
 
 
 
@@ -47,4 +45,6 @@ class TestClass(unittest.TestCase):
         test_hdfs_commands["--sync.apr"] = hdfs_sync+"/TENANTA_Critical_ap.json"
         test_hdfs_commands["--sync.egp"] = hdfs_sync+"/Critical/group_endpoints_2018-03-01.avro"
 
-        self.assertEquals(expected_result, cmd_to_string(compose_command(config, args, test_hdfs_commands)[0]))
+
+        print(cmd_to_string(compose_command(config, args, test_hdfs_commands)[0]))
+        self.assertEqual(expected_result, cmd_to_string(compose_command(config, args, test_hdfs_commands)[0]))

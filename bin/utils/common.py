@@ -3,7 +3,7 @@ import requests
 import json
 import subprocess
 from subprocess import check_call
-from urlparse import urlparse, urlsplit, urlunsplit
+from urllib.parse import urlparse, urlsplit, urlunsplit
 import logging.config
 import logging
 import os.path

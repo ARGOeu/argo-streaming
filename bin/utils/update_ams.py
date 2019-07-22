@@ -2,8 +2,8 @@
 import requests
 import json
 import logging
-from common import get_config_paths, get_log_conf
-from argo_config import ArgoConfig
+from .common import get_config_paths, get_log_conf
+from .argo_config import ArgoConfig
 from argparse import ArgumentParser
 import sys
 
@@ -88,7 +88,8 @@ class ArgoAmsClient:
             'Accept': 'application/json'
         })
         # do the post requests
-        r = requests.post(url, headers=headers, verify=self.verify, data=json.dumps(data))
+        r = requests.post(url, headers=headers,
+                          verify=self.verify, data=json.dumps(data))
         # if successful return data (or empty json)
         if 200 == r.status_code:
             if r.text == "":
@@ -116,7 +117,8 @@ class ArgoAmsClient:
             'Accept': 'application/json'
         })
         # do the put request
-        r = requests.put(url, headers=headers, verify=self.verify, data=json.dumps(data))
+        r = requests.put(url, headers=headers,
+                         verify=self.verify, data=json.dumps(data))
         # if successful return json data (or empty json)
         if 200 == r.status_code:
             if r.text == "":
@@ -227,15 +229,14 @@ class ArgoAmsClient:
 
         """
         url = self.get_url("topics", topic, project, "metrics")
-        metrics =  self.get_resource(url)["metrics"]
-        
+        metrics = self.get_resource(url)["metrics"]
+
         for metric in metrics:
             if metric["metric"] == "topic.number_of_messages":
                 ts = metric["timeseries"]
                 if len(ts) > 0:
                     return ts[0]["value"]
         return 0
-
 
     def get_topic_acl(self, project, topic):
         """
@@ -307,7 +308,8 @@ class ArgoAmsClient:
 
         """
         # tenant must have 3 users: project_admin, publisher, consumer
-        lookup = [("project_admin", "ams_{}_admin"), ("publisher", "ams_{}_publisher"), ("consumer", "ams_{}_consumer")]
+        lookup = [("project_admin", "ams_{}_admin"), ("publisher",
+                                                      "ams_{}_publisher"), ("consumer", "ams_{}_consumer")]
         lookup = [(x, y.format(tenant.lower())) for (x, y) in lookup]
         users = dict()
         for (role, name) in lookup:
@@ -450,7 +452,8 @@ class ArgoAmsClient:
 
         # update tenant status_stream
         if config.get(section_status_stream, "ams_sub_metric") != "status_metric":
-            config.set(section_status_stream, "ams_sub_metric", "status_metric")
+            config.set(section_status_stream,
+                       "ams_sub_metric", "status_metric")
 
         if config.get(section_status_stream, "ams_sub_sync") != "status_sync":
             config.set(section_status_stream, "ams_sub_sync", "status_sync")
@@ -521,7 +524,7 @@ class ArgoAmsClient:
         else:
             username = "ams_{}_{}".format(tenant.lower(), role)
 
-        print username, role
+        print(username, role)
         url = self.get_url("users", username)
         data = {"projects": [{"project": project_name, "roles": [role]}]}
         return self.post_resource(url, data)
@@ -575,7 +578,8 @@ class ArgoAmsClient:
 
         # Things that sould be present in AMS definitions
         topics_lookup = ["sync_data", "metric_data"]
-        subs_lookup = ["ingest_sync", "ingest_metric", "status_sync", "status_metric"]
+        subs_lookup = ["ingest_sync", "ingest_metric",
+                       "status_sync", "status_metric"]
         users_lookup = ["project_admin", "publisher", "consumer"]
         topic_acl_lookup = ["sync_data", "metric_data"]
         sub_acl_lookup = ["ingest_sync", "ingest_metric"]
@@ -603,17 +607,17 @@ class ArgoAmsClient:
 
         # For each expected topic check if it was indeed found in AMS or if it's missing
         for item in topics_lookup:
-            if item not in topics.keys():
+            if item not in list(topics.keys()):
                 missing["topics"].append(item)
 
         # For each expected sub check if it was indeed found in AMS or if it's missing
         for item in subs_lookup:
-            if item not in subs.keys():
+            if item not in list(subs.keys()):
                 missing["subs"].append(item)
 
         # For each expected user check if it was indeed found in AMS or if it's missing
         for item in users_lookup:
-            if item not in users.keys():
+            if item not in list(users.keys()):
                 missing["users"].append(item)
 
         user_topics = []
@@ -653,7 +657,8 @@ class ArgoAmsClient:
         for topic in missing["topics"]:
             # create topic
             topic_new = self.create_tenant_topic(tenant, topic)
-            log.info("Tenant:{} - created missing topic: {}".format(tenant, topic_new["name"]))
+            log.info(
+                "Tenant:{} - created missing topic: {}".format(tenant, topic_new["name"]))
 
         # For each missing sub attempt to create it in AMS
         for sub in missing["subs"]:
@@ -672,7 +677,8 @@ class ArgoAmsClient:
         for user in missing["users"]:
             # create user
             user_new = self.create_tenant_user(tenant, user)
-            log.info("Tenant:{} - created missing user: {}".format(tenant, user_new["name"]))
+            log.info(
+                "Tenant:{} - created missing user: {}".format(tenant, user_new["name"]))
 
         # For each missing topic acl attempt to set it in AMS
         for topic_acl in missing["topic_acls"]:
@@ -683,7 +689,8 @@ class ArgoAmsClient:
 
             r = self.set_topic_acl(tenant, topic_acl, acl)
             if r is not None:
-                log.info("Tenant:{} - set missing acl on topic: {} for user: {}".format(tenant, topic_acl, user_pub))
+                log.info(
+                    "Tenant:{} - set missing acl on topic: {} for user: {}".format(tenant, topic_acl, user_pub))
 
         # For each missing subscription attempt to set it in AMS
         for sub_acl in missing["sub_acls"]:
@@ -713,9 +720,11 @@ class ArgoAmsClient:
             # if project doesn't exist attempt to create it
             log.info("{} project not found on ams".format(tenant))
             project = self.create_tenant_project(tenant)
-            log.info("{} project created for tenant: {}".format(project["name"], tenant))
+            log.info("{} project created for tenant: {}".format(
+                project["name"], tenant))
             return project
-        log.info("{} project found for tenant: {}".format(project["name"], tenant))
+        log.info("{} project found for tenant: {}".format(
+            project["name"], tenant))
         return project
 
 
@@ -767,7 +776,8 @@ def run_ams_update(args):
     if args.tenant is not None:
         # Check if tenant exists in argo configuarion
         if args.tenant not in tenant_list:
-            log.fatal("Tenant:{} is not in argo configuration - exiting...".format(args.tenant))
+            log.fatal(
+                "Tenant:{} is not in argo configuration - exiting...".format(args.tenant))
             sys.exit(1)
         # Check only the tenant that user specified
         check_tenants = [args.tenant]

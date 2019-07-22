@@ -9,27 +9,19 @@ CONF_TEMPLATE = os.path.join(os.path.dirname(__file__), '../conf/conf.template')
 CONF_SCHEMA = os.path.join(os.path.dirname(__file__), '../conf/config.schema.json')
 
 # This is the command that the submission script is expected to compose based on given args and config
-expected_result = """flink_path run -c test_class test.jar --run.date 2018-02-11 \
---mongo.uri mongodb://localhost:21017/argo_TENANTA --mongo.method upsert \
---mdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2018-02-11 \
---rec hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/recomp.json \
---downtimes hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/sync/Critical/downtimes_2018-02-11.avro \
---mps hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/sync/Critical/metric_profile_2018-02-11.avro \
---apr hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/sync/TENANTA_Critical_ap.json \
---ggp hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/sync/Critical/group_groups_2018-02-11.avro \
---conf hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/sync/TENANTA_Critical_cfg.json \
---egp hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/sync/Critical/group_endpoints_2018-02-11.avro \
---pdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/mdata/2018-02-10 --weights hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/\
-TENANTA/sync/Critical/weights_2018-02-11.avro \
---ops hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/TENANTA_ops.json \
---ams.proxy test_proxy --ams.verify true"""
+expected_result = ("flink_path run -c test_class test.jar --run.date 2018-02-11 "
+"--mongo.uri mongodb://localhost:21017/argo_TENANTA --mongo.method upsert "
+"--pdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2018-02-10 "
+"--mdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2018-02-11 "
+"--conf hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/TENANTA_Critical_cfg.json "
+"--mps hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/Critical/metric_profile_2018-02-11.avro "
+"--ops hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/TENANTA_ops.json "
+"--apr hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/TENANTA_Critical_ap.json "
+"--egp hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/Critical/group_endpoints_2018-02-11.avro "
+"--ggp hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/Critical/group_groups_2018-02-11.avro "
+"--weights hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/Critical/weights_2018-02-11.avro "
+"--downtimes hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/Critical/downtimes_2018-02-11.avro "
+"--rec hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/sync/recomp.json --ams.proxy test_proxy --ams.verify true")
 
 
 class TestClass(unittest.TestCase):
@@ -64,5 +56,5 @@ class TestClass(unittest.TestCase):
         test_hdfs_commands["--weights"] = hdfs_sync+"/Critical/weights_2018-02-11.avro"
         test_hdfs_commands["--downtimes"] = hdfs_sync+"/Critical/downtimes_2018-02-11.avro"
         test_hdfs_commands["--rec"] = hdfs_sync+"/recomp.json"
-
+        
         self.assertEquals(expected_result, cmd_to_string(compose_command(config, args, test_hdfs_commands)))

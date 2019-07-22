@@ -1,11 +1,13 @@
 import unittest
 import os
-from argo_config import ArgoConfig
-from urlparse import urlparse
+from .argo_config import ArgoConfig
+from urllib.parse import urlparse
 
 
-CONF_FILE = os.path.join(os.path.dirname(__file__), '../../conf/argo-streaming.conf')
-SCHEMA_FILE = os.path.join(os.path.dirname(__file__), '../../conf/config.schema.json')
+CONF_FILE = os.path.join(os.path.dirname(
+    __file__), '../../conf/argo-streaming.conf')
+SCHEMA_FILE = os.path.join(os.path.dirname(
+    __file__), '../../conf/config.schema.json')
 
 
 class TestClass(unittest.TestCase):
@@ -19,13 +21,15 @@ class TestClass(unittest.TestCase):
         # get fixed HDFS -> user param (string)
         self.assertEqual("foo", argo_conf.get("HDFS", "user"))
         # get var TENANTS:TENANT_A -> reports param (list of strings)
-        self.assertEqual(["report1", "report2"], argo_conf.get("TENANTS:TENANT_A", "reports"))
+        self.assertEqual(["report1", "report2"], argo_conf.get(
+            "TENANTS:TENANT_A", "reports"))
         # get var TENANTS:TENANT_B -> mongo_uri (url)
         self.assertEqual(urlparse("mongodb://localhost:21017/argo_FOO"),
-                         argo_conf.get("TENANTS:TENANT_B", "mongo_uri").fill(mongo_uri=argo_conf.get("MONGO","endpoint").geturl(),tenant="FOO"))
+                         argo_conf.get("TENANTS:TENANT_B", "mongo_uri").fill(mongo_uri=argo_conf.get("MONGO", "endpoint").geturl(), tenant="FOO"))
 
         # get var HDFS -> path_metric (template) and fill it with specific arguments
-        exp_result = urlparse("hdfs://localhost:2000/user/foobar/argo/tenants/wolf/mdata")
+        exp_result = urlparse(
+            "hdfs://localhost:2000/user/foobar/argo/tenants/wolf/mdata")
         self.assertEqual(exp_result, argo_conf.get("HDFS", "path_metric").fill(namenode="localhost:2000", hdfs_user="foobar",
                                                                                tenant="wolf"))
         # fill template with different user argument

@@ -49,7 +49,7 @@ def compose_command(config, args):
     # ams port
     ams_port = 443
     if ams_endpoint.port is not None:
-	ams_port = ams_endpoint.port
+        ams_port = ams_endpoint.port
     cmd_command.append("--ams.port")
     cmd_command.append(str(ams_port))
 
@@ -74,9 +74,11 @@ def compose_command(config, args):
     hdfs_user = config.get("HDFS", "user")
 
     hdfs_sync = config.get("HDFS", "path_sync")
-    hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant)
+    hdfs_sync.fill(namenode=namenode.geturl(),
+                   hdfs_user=hdfs_user, tenant=args.tenant)
 
-    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant).geturl()
+    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(
+    ), hdfs_user=hdfs_user, tenant=args.tenant).geturl()
 
     # append hdfs sync base path to the submit command
     cmd_command.append("--hdfs.path")
@@ -129,13 +131,14 @@ def main(args=None):
     log.info(cmd_to_string(cmd_command)+"\n")
 
     # submit the job
-   
+
     flink_job_submit(config, cmd_command, job_namespace)
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="AMS Sync Ingestion submission script")
+    parser = argparse.ArgumentParser(
+        description="AMS Sync Ingestion submission script")
     parser.add_argument(
         "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True)
     parser.add_argument(
