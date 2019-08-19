@@ -104,7 +104,6 @@ class ArgoApiClient:
         for item in tenants:
             for user in item["users"]:
                 if user["name"].startswith("argo_engine_") and user["api_key"]:
-
                     tenant_keys[item["info"]["name"]] = user["api_key"]
         return tenant_keys
 
@@ -345,6 +344,7 @@ class ArgoProfileManager:
         ams_proxy = config.get("API","proxy")
         if ams_proxy:
             ams_proxy = ams_proxy.geturl()
+            
         self.hdfs = HdfsReader(namenode.hostname, namenode.port, short_path)
         self.api = ArgoApiClient(config.get("API", "endpoint").netloc, tenant_keys, config.get(
             "API", "verify"),ams_proxy)
@@ -473,34 +473,52 @@ class ArgoProfileManager:
 
     def upload_tenant_defaults(self, tenant):
         # check
-        section_tenant = "TENANTS:" + tenant
-        section_metric = "TENANTS:" + tenant + ":ingest-metric"
-        mongo_endpoint = self.cfg.get("MONGO", "endpoint").geturl()
-        mongo_uri = self.cfg.get_default(section_tenant, "mongo_uri").fill(
-            mongo_endpoint=mongo_endpoint, tenant=tenant).geturl()
-        hdfs_user = self.cfg.get("HDFS", "user")
-        namenode = self.cfg.get("HDFS", "namenode").netloc
-        hdfs_check = self.cfg.get_default(section_metric, "checkpoint_path").fill(
-            namenode=namenode, hdfs_user=hdfs_user, tenant=tenant)
+        section_tenant = "TENANTS:"+ tenant
+        section_metric = "TENANTS:"+ tenant + ":ingest-metric"
+        mongo_endpoint = self.cfg.get("MONGO","endpoint").geturl()
+        mongo_uri = self.cfg.get_default(section_tenant,"mongo_uri").fill(mongo_endpoint=mongo_endpoint,tenant=tenant).geturl()
+        hdfs_user = self.cfg.get("HDFS","user")
+        namenode = self.cfg.get("HDFS","namenode").netloc
+        hdfs_check = self.cfg.get_default(section_metric,"checkpoint_path").fill(namenode=namenode,hdfs_user=hdfs_user,tenant=tenant)
+       
+        
+        
+        self.cfg.get("MONGO","endpoint")
+       
+        self.cfg.set(section_tenant,"mongo_uri",mongo_uri)
+        self.cfg.set_default(section_tenant,"mongo_method")
+        
+        
+        self.cfg.set_default(section_metric,"ams_interval")
+        self.cfg.set_default(section_metric,"ams_batch")
+        self.cfg.set(section_metric,"checkpoint_path",hdfs_check.geturl())
+        self.cfg.set_default(section_metric,"checkpoint_interval")
+        section_sync = "TENANTS:"+ tenant + ":ingest-sync"
+        
+        self.cfg.set_default(section_sync,"ams_interval")
+        self.cfg.set_default(section_sync,"ams_batch")
 
-        self.cfg.get("MONGO", "endpoint")
 
-        self.cfg.set(section_tenant, "mongo_uri", mongo_uri)
-        self.cfg.set_default(section_tenant, "mongo_method")
 
-        self.cfg.set_default(section_metric, "ams_interval")
-        self.cfg.set_default(section_metric, "ams_batch")
-        self.cfg.set(section_metric, "checkpoint_path", hdfs_check.geturl())
-        self.cfg.set_default(section_metric, "checkpoint_interval")
-        section_sync = "TENANTS:" + tenant + ":ingest-sync"
-
-        self.cfg.set_default(section_sync, "ams_interval")
-        self.cfg.set_default(section_sync, "ams_batch")
-        section_stream = "TENANTS:" + tenant + ":stream-status"
-
-        self.cfg.set_default(section_stream, "ams_sub_sync")
-        self.cfg.set_default(section_stream, "ams_interval")
-        self.cfg.set_default(section_stream, "ams_batch")
+        section_stream = "TENANTS:"+ tenant + ":stream-status"
+        streaming_kafka_servers = self.cfg.get("STREAMING","kafka_servers")
+        if (streaming_kafka_servers):
+            streaming_kafka_servers = ",".join(streaming_kafka_servers)
+            self.cfg.set(section_stream,"kafka_servers",streaming_kafka_servers)
+        else:
+            self.cfg.set_default(section_stream,"kafka_servers")
+    
+        
+        self.cfg.set_default(section_stream,"ams_sub_sync")
+        self.cfg.set_default(section_stream,"ams_sub_metric")
+        self.cfg.set_default(section_stream,"ams_interval")
+        self.cfg.set_default(section_stream,"ams_batch")
+        self.cfg.set(section_stream,"output","kafka,mongo")
+        
+        self.cfg.set(section_stream,"mongo_method","insert")
+        
+        
+        
 
     def save_config(self, file_path):
         """
@@ -545,7 +563,6 @@ def run_profile_update(args):
         for report in reports:
             for profile_type in profile_type_checklist:
                 argo.profile_update_check(args.tenant, report, profile_type)
-
     else:
         argo.upload_tenants_cfg()
         argo.save_config(conf_paths["main"])

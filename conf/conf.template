@@ -21,6 +21,9 @@ TENANTA_key = key1
 TENANTB_key = key2
 TENANTC_key = key3
 
+[STREAMING]
+kafka_servers: localhost:9092
+
 [MONGO]
 endpoint = mongodb://localhost:21017
 
@@ -36,7 +39,7 @@ ingest-metric-namespace: Ingesting data from {{ams_endpoint}}:{{ams_port}}/v1/pr
 # Template to check if a sync job with similar name already runs
 ingest-sync-namespace: Ingesting sync data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{ams_project}}/subscriptions/{{ams_sub}}
 #Template to check if a stream status job with similar name already runs
-stream-status-namespace: Streaming status using data {{ams_endpoint}}:{{ams_port}}/v1/projects/{{ams_project}}/subscriptions/[{{ams_sub_metric}}, {{ams_sub_sync}}]
+stream-status-namespace: Streaming status using data from {{ams_endpoint}}:{{ams_port}}/v1/projects/{{ams_project}}/subscriptions/[{{ams_sub_metric}},{{ams_sub_sync}}]
 
 [CLASSES]
 # Specify class to run during job submit

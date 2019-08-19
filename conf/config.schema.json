@@ -31,6 +31,15 @@
     }
   },
 
+  "STREAMING": {
+    "kafka_servers":{
+        "desc": "comma-separated list of kafka servers to send messages to",
+        "type": "list",
+        "optional": true,
+        "default": "localhost:9092"
+      }
+  },
+
   "MONGO": {
     "endpoint": {
       "desc": "mongodb core endpoint",
@@ -246,11 +255,13 @@
     "~":"API.tenants",
     "ams_sub_metric":{
       "desc": "subscription for ingesting metric data",
-      "type": "string"
+      "type": "string",
+      "default": "status_metric"
     },
     "ams_sub_sync":{
       "desc": "subscription for ingesting sync data",
-      "type": "string"
+      "type": "string",
+      "default": "status_sync"
     },
     "ams_interval":{
       "desc": "interval for polling ams for sync data",
