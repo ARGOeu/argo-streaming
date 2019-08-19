@@ -73,6 +73,18 @@
       "desc": "list of tenants",
       "type": "list"
     },
+    "proxy": {
+        "desc": "ams proxy to be used",
+        "type": "uri",
+        "optional": true,
+        "default": "http://localhost:3128"
+      },
+      "verify":{
+          "desc":"ssl verify ams endpoint",
+          "type":"bool",
+          "optional": true,
+          "default": "true"
+    },
     "~_key": {
       "~": "tenants",
       "desc": "tenants key",
