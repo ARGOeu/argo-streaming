@@ -78,7 +78,7 @@ def date_rollback(path, year, month, day, config, client):
     sys.exit(1)
 
 
-def flink_job_submit(config, cmd_command, job_namespace=None):
+def flink_job_submit(config, cmd_command, job_namespace=None, dry_run=False):
     """Method that takes a command and executes it, after checking for flink being up and running.
     If the job_namespace is defined, then it will also check for the specific job if its already running.
     If flink is not running or the job is already submitted, it will execute.
@@ -86,30 +86,48 @@ def flink_job_submit(config, cmd_command, job_namespace=None):
               config(ConfigParser): script's configuration
               cmd_command(list): list contaning the command to be submitted
               job_namespace(string): the job's name
+              dry_run(boolean, optional): signifies a dry-run execution - no submission is performed
     """
     # check if flink is up and running
+    if dry_run:
+        log.info("This is a dry run. Job won't be submitted")
+    else:
+        log.info("Getting ready to submit job")
+       
+    log.info(cmd_to_string(cmd_command)+"\n") 
     try:
         flink_response = requests.get(config.get("FLINK", "job_manager").geturl()+"/joboverview/running")
-
+        issues = False
+        job_already_runs = False
         if job_namespace is not None:
             # if the job's already running then exit, else sumbit the command
             for job in json.loads(flink_response.text)["jobs"]:
                 if job["name"] == job_namespace:
                     log.critical("Job: "+"'"+job_namespace+"' is already running")
-                    sys.exit(1)
+                    job_already_runs = True
+                    issues = True
 
         log.info("Everything is ok")
 
         try:
-            check_call(cmd_command)
+            if not dry_run and not job_already_runs:
+                check_call(cmd_command)
         except subprocess.CalledProcessError as esp:
             log.fatal("Job was not submitted. Error exit code: "+str(esp.returncode))
+            issues = True
             sys.exit(1)
     except requests.exceptions.ConnectionError:
         log.fatal("Flink is not currently running. Tried to communicate with job manager at: " +
                   config.get("FLINK", "job_manager").geturl())
-        sys.exit(1)
+        issues = True
 
+    # print dry-run message if needed
+    if dry_run:
+        # print output in green and exit
+        print "\033[92m" + cmd_to_string(cmd_command) + "\033[0m"
+    # if isses exit
+    if issues:
+        exit(1)
 
 def hdfs_check_path(uri, client):
     """Method that checks if a path in hdfs exists. If it exists it will return the path,

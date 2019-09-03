@@ -11,6 +11,19 @@ log = logging.getLogger(__name__)
 
 
 def compose_hdfs_commands(year, month, day, args, config):
+    """Checks hdfs for available files back in time and prepares the correct hdfs arguments
+    
+    Args:
+        year (int): year part of the date to check for hdfs files
+        month (int): month part of the date to check for hdfs files
+        day (int): day part of the date to check for hdfs files
+        config (obj.): argo configuration object
+       
+    
+    Returns:
+        list: A list of all hdfs arguments to be used in flink job submission
+    """
+    
     # set up the hdfs client to be used in order to check the files
     namenode = config.get("HDFS", "namenode")
     client = Client(namenode.hostname, namenode.port, use_trash=False)
@@ -51,6 +64,16 @@ def compose_hdfs_commands(year, month, day, args, config):
 
 
 def compose_command(config, args,  hdfs_commands):
+    """Composes a command line execution string for submitting a flink job.
+    
+    Args:
+        config (obj.): argo configuration object
+        args (dict): command line arguments of this script
+        hdfs_commands (list): a list of hdfs related arguments to be passed in flink job
+    
+    Returns:
+        list: A list of all command line arguments for performing the flink job submission
+    """
 
     # job submission command
     cmd_command = []
@@ -260,11 +283,8 @@ def main(args=None):
 
     cmd_command, job_namespace = compose_command(config, args, hdfs_commands)
 
-    log.info("Getting ready to submit job")
-    log.info(cmd_to_string(cmd_command)+"\n")
-
     # submit the script's command
-    flink_job_submit(config, cmd_command, job_namespace)
+    flink_job_submit(config, cmd_command, job_namespace, args.dry_run)
 
 
 if __name__ == "__main__":
@@ -281,7 +301,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-c", "--config", metavar="PATH", help="Path for the config file", dest="config")
     parser.add_argument(
-        "-u", "--sudo", help="Run the submition as superuser",  action="store_true", dest="sudo")
+        "-u", "--sudo", help="Run the submission as superuser",  action="store_true", dest="sudo")
+    parser.add_argument("--dry-run",help="Runs in test mode without actually submitting the job",
+        action="store_true", dest="dry_run")
     parser.add_argument(
         "-timeout", "--timeout", metavar="INT",
         help="Controls default timeout for event regeneration (used in notifications)", dest="timeout")

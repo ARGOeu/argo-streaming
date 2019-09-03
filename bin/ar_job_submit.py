@@ -18,6 +18,18 @@ log = logging.getLogger(__name__)
 
 
 def compose_hdfs_commands(year, month, day, args, config):
+    """Checks hdfs for available files back in time and prepares the correct hdfs arguments
+    
+    Args:
+        year (int): year part of the date to check for hdfs files
+        month (int): month part of the date to check for hdfs files
+        day (int): day part of the date to check for hdfs files
+        config (obj.): argo configuration object
+       
+    
+    Returns:
+        list: A list of all hdfs arguments to be used in flink job submission
+    """
 
     # set up the hdfs client to be used in order to check the files
     namenode = config.get("HDFS", "namenode")
@@ -92,7 +104,20 @@ def compose_hdfs_commands(year, month, day, args, config):
     return hdfs_commands
 
 
-def compose_command(config, args,  hdfs_commands):
+def compose_command(config, args,  hdfs_commands, dry_run=False):
+    """Composes a command line execution string for submitting a flink job. Also calls mongodb
+       clean up procedure before composing the command
+    
+    Args:
+        config (obj.): argo configuration object
+        args (dict): command line arguments of this script
+        hdfs_commands (list): a list of hdfs related arguments to be passed in flink job    
+        dry_run (bool, optional): signifies a dry-run execution context, if yes no mongodb clean-up is perfomed. 
+                                  Defaults to False.
+    
+    Returns:
+        list: A list of all command line arguments for performing the flink job submission
+    """
 
     # job submission command
     cmd_command = []
@@ -126,7 +151,7 @@ def compose_command(config, args,  hdfs_commands):
 
     if args.method == "insert":
         argo_mongo_client = ArgoMongoClient(args, config, ["endpoint_ar", "service_ar", "endpoint_group_ar"])
-        argo_mongo_client.mongo_clean_ar(mongo_uri)
+        argo_mongo_client.mongo_clean_ar(mongo_uri, dry_run)
 
     # MongoDB method to be used when storing the results, either insert or upsert
     cmd_command.append("--mongo.method")
@@ -186,13 +211,10 @@ def main(args=None):
     # dictionary containing the argument's name and the command assosciated with each name
     hdfs_commands = compose_hdfs_commands(year, month, day, args, config)
 
-    cmd_command = compose_command(config, args, hdfs_commands)
-
-    log.info("Getting ready to submit job")
-    log.info(cmd_to_string(cmd_command)+"\n")
+    cmd_command = compose_command(config, args, hdfs_commands, args.dry_run)
 
     # submit the script's command
-    flink_job_submit(config, cmd_command)
+    flink_job_submit(config, cmd_command, None, args.dry_run)
 
 
 if __name__ == "__main__":
@@ -214,6 +236,8 @@ if __name__ == "__main__":
                         dest="profile_check", action="store_true")
     parser.add_argument("--thresholds", help="check and use threshold rule file if exists",
                         dest="thresholds", action="store_true")
+    parser.add_argument("--dry-run",help="Runs in test mode without actually submitting the job",
+        action="store_true", dest="dry_run")
 
     # Pass the arguments to main method
     sys.exit(main(parser.parse_args()))

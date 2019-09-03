@@ -10,6 +10,15 @@ log = logging.getLogger(__name__)
 
 
 def compose_command(config, args):
+    """Composes a command line execution string for submitting a flink job. 
+    
+    Args:
+        config (obj.): argo configuration object
+        args (dict): command line arguments of this script
+    
+    Returns:
+        list: A list of all command line arguments for performing the flink job submission
+    """
 
     # job submission command
     cmd_command = []
@@ -131,11 +140,8 @@ def main(args=None):
 
     cmd_command, job_namespace = compose_command(config, args)
 
-    log.info("Getting ready to submit job")
-    log.info(cmd_to_string(cmd_command)+"\n")
-
     # submit script's command
-    flink_job_submit(config, cmd_command, job_namespace)
+    flink_job_submit(config, cmd_command, job_namespace, args.dry_run)
 
 
 if __name__ == "__main__":
@@ -147,4 +153,6 @@ if __name__ == "__main__":
         "-c", "--config", metavar="PATH", help="Path for the config file")
     parser.add_argument(
         "-u", "--sudo", help="Run the submition as superuser",  action="store_true")
+    parser.add_argument("--dry-run",help="Runs in test mode without actually submitting the job",
+        action="store_true", dest="dry_run")
     sys.exit(main(parser.parse_args()))
