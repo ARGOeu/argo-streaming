@@ -18,16 +18,23 @@ class ArgoAmsClient:
     It connects to an argo-messaging host and retrieves project/user/topic/subscription information
     """
 
-    def __init__(self, host, admin_key, verify=True):
+    def __init__(self, host, admin_key, verify=True, http_proxy_url=None):
         """
         Initialize ArgoAAmsClient
         Args:
             host: str. argo ams host
             admin_key: str. admin token
+            verify (boolean): flag if the remote web api host should be verified
+            http_proxy_url (str.): optional url for local http proxy to be used
         """
 
         # flag to verify https connections or not
         self.verify = verify
+        # proxy configuration
+        if http_proxy_url:
+            self.proxies = {'http':http_proxy_url,'https':http_proxy_url}
+        else:
+            self.proxies = None
         # ams host
         self.host = host
         # admin key to access ams service
@@ -88,7 +95,7 @@ class ArgoAmsClient:
             'Accept': 'application/json'
         })
         # do the post requests
-        r = requests.post(url, headers=headers, verify=self.verify, data=json.dumps(data))
+        r = requests.post(url, headers=headers, verify=self.verify, data=json.dumps(data), proxies=self.proxies)
         # if successful return data (or empty json)
         if 200 == r.status_code:
             if r.text == "":
@@ -116,7 +123,7 @@ class ArgoAmsClient:
             'Accept': 'application/json'
         })
         # do the put request
-        r = requests.put(url, headers=headers, verify=self.verify, data=json.dumps(data))
+        r = requests.put(url, headers=headers, verify=self.verify, data=json.dumps(data), proxies=self.proxies)
         # if successful return json data (or empty json)
         if 200 == r.status_code:
             if r.text == "":
@@ -143,7 +150,7 @@ class ArgoAmsClient:
             'Accept': 'application/json'
         })
         # do the get resource
-        r = requests.get(url, headers=headers, verify=self.verify)
+        r = requests.get(url, headers=headers, verify=self.verify, proxies=self.proxies)
         # if successful return the json data or empty json
         if 200 == r.status_code:
             if r.text == "":
@@ -521,7 +528,7 @@ class ArgoAmsClient:
         else:
             username = "ams_{}_{}".format(tenant.lower(), role)
 
-        print username, role
+        
         url = self.get_url("users", username)
         data = {"projects": [{"project": project_name, "roles": [role]}]}
         return self.post_resource(url, data)
@@ -759,10 +766,14 @@ def run_ams_update(args):
 
     ams_token = config.get("AMS", "access_token")
     ams_host = config.get("AMS", "endpoint").hostname
+    ams_verify = config.get("AMS", "verify")
+    ams_proxy = config.get("AMS", "proxy")
+    if ams_proxy:
+        ams_proxy = ams_proxy.geturl()
     log.info("ams api used {}".format(ams_host))
 
     tenant_list = config.get("API", "tenants")
-    ams = ArgoAmsClient(ams_host, ams_token)
+    ams = ArgoAmsClient(ams_host, ams_token, ams_verify, ams_proxy)
 
     if args.tenant is not None:
         # Check if tenant exists in argo configuarion

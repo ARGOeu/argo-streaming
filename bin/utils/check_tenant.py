@@ -204,15 +204,24 @@ def check_tenants(tenants, target_date, days_back, config):
     # ams client init
     ams_token = config.get("AMS", "access_token")
     ams_host = config.get("AMS", "endpoint").hostname
-    ams = ArgoAmsClient(ams_host, ams_token)
+    ams_proxy = config.get("AMS","proxy")
+    if ams_proxy:
+        ams_proxy = ams_proxy.geturl()
+    ams_verify = config.get("AMS","verify")
+
+    ams = ArgoAmsClient(ams_host, ams_token, ams_verify, ams_proxy)
     log.info("connecting to AMS: {}".format(ams_host))
 
     # Upload tenant statuses in argo web api 
     api_endpoint = config.get("API","endpoint").netloc
     api_token = config.get("API","access_token")
+    api_proxy = config.get("API","proxy")
+    if api_proxy:
+        api_proxy = api_proxy.geturl()
+    api_verify = config.get("API","verify")
 
     # Get tenant uuids 
-    tenant_uuids = get_tenant_uuids(api_endpoint, api_token)
+    tenant_uuids = get_tenant_uuids(api_endpoint, api_token, api_verify, api_proxy)
     if not tenant_uuids: 
         log.error("Without tenant uuids service is unable to check and upload tenant status")
         sys.exit(1)
@@ -235,7 +244,7 @@ def check_tenants(tenants, target_date, days_back, config):
         log.info("Status for tenant[{}] = {}".format(tenant,json.dumps(status_tenant)))
         # Upload tenant status to argo-web-api
         complete_status.append(status_tenant)
-        upload_tenant_status(api_endpoint,api_token,tenant,tenant_uuids[tenant],status_tenant)
+        upload_tenant_status(api_endpoint,api_token,tenant,tenant_uuids[tenant],status_tenant,api_verify,api_proxy)
         
     return complete_status
 
@@ -280,12 +289,14 @@ def run_tenant_check(args):
 
    
 
-def get_tenant_uuids(api_endpoint, api_token):
+def get_tenant_uuids(api_endpoint, api_token, verify=False, http_proxy_url=None):
     """Get tenant uuids from remote argo-web-api endpoint
     
     Args:
         api_endpoint (str.): hostname of the remote argo-web-api endpoint
         api_token (str.): access token for the remote argo-web-api endpoint
+        verify (boolean): flag if the remote web api host should be verified
+        http_proxy_url (str.): optional url for local http proxy to be used
     
     Returns:
         dict.: dictionary with mappings of tenant names to tenant uuidss
@@ -294,12 +305,15 @@ def get_tenant_uuids(api_endpoint, api_token):
     log.info("Retrieving tenant uuids from api: {}".format(api_endpoint))
     result = dict()
     url = "https://{}/api/v2/admin/tenants".format(api_endpoint)
+    proxies = None
+    if http_proxy_url:
+        proxies = {'http':http_proxy_url,'https':http_proxy_url}
     headers = dict()
     headers.update({
         'Accept': 'application/json',
         'x-api-key': api_token
     })
-    r = requests.get(url, headers=headers, verify=False)
+    r = requests.get(url, headers=headers, verify=verify, proxies=proxies)
 
     if 200 == r.status_code:
        
@@ -313,7 +327,7 @@ def get_tenant_uuids(api_endpoint, api_token):
         return result
 
     
-def upload_tenant_status(api_endpoint, api_token, tenant, tenant_id, tenant_status):
+def upload_tenant_status(api_endpoint, api_token, tenant, tenant_id, tenant_status, verify=False, http_proxy_url=None):
     """Uploads tenant's status to a remote argo-web-api endpoint
     
     Args:
@@ -322,6 +336,8 @@ def upload_tenant_status(api_endpoint, api_token, tenant, tenant_id, tenant_stat
         tenant (str.): tenant name
         tenant_id (str.): tenant uuid
         tenant_status (obj.): json representation of tenant's status report
+        verify (boolean): flag if the remote web api host should be verified
+        http_proxy_url (str.): optional url for local http proxy to be used
     
     Returns:
         bool: true if upload is successfull
@@ -334,7 +350,10 @@ def upload_tenant_status(api_endpoint, api_token, tenant, tenant_id, tenant_stat
         'Accept': 'application/json',
         'x-api-key': api_token
     })
-    r = requests.put(url, headers=headers, data=json.dumps(tenant_status), verify=False)
+    proxies = None
+    if http_proxy_url:
+        proxies={'http':http_proxy_url, 'https':http_proxy_url}
+    r = requests.put(url, headers=headers, data=json.dumps(tenant_status), verify=verify, proxies=proxies)
     if 200 == r.status_code:
         log.info("Tenant's {} status upload succesfull to {}".format(tenant, api_endpoint))
         return True

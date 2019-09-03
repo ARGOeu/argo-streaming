@@ -8,9 +8,10 @@ python:
 script:
   - pip install -r ./bin/requirements.txt
   - pytest
-  - cd flink_jobs/ams_ingest_metric/ && travis_wait mvn test
-  - cd ../batch_ar && travis_wait mvn test
-  - cd ../batch_status && travis_wait mvn test
-  - cd ../stream_status && travis_wait mvn test
-  - cd ../ams_ingest_sync && travis_wait mvn test
+  - cd flink_jobs/ams_ingest_metric/ && travis_wait mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test 
+  - cd ../batch_ar && travis_wait mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test
+  - cd ../batch_status && travis_wait mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test
+  - cd ../stream_status && travis_wait mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test
+  - cd ../ams_ingest_sync && travis_wait mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn test
   
+ 
