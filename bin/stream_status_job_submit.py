@@ -30,6 +30,12 @@ def compose_hdfs_commands(year, month, day, args, config):
         hdfs_sync + "/" + args.report + "/" + "metric_profile_" + "{{date}}" + ".avro", year, month, day, config,
         client)
 
+    # get downtime 
+    # file location of metric profile (local or hdfs)
+    hdfs_commands["--sync.downtime"] = date_rollback(
+        hdfs_sync + "/" + args.report + "/" + "downtimes_" + "{{date}}" + ".avro", year, month, day, config,
+        client)
+
     # file location of operations profile (local or hdfs)
     hdfs_commands["--sync.ops"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_ops.json", client)
 
@@ -55,12 +61,17 @@ def compose_command(config, args,  hdfs_commands):
     # get needed config params
     section_tenant = "TENANTS:" + args.tenant
     section_tenant_job = "TENANTS:" + args.tenant + ":stream-status"
-    job_namespace = config.get("JOB-NAMESPACE", "stream-status-namespace")
+    
     ams_endpoint = config.get("AMS", "endpoint")
 
     ams_project = config.get(section_tenant, "ams_project")
-    ams_sub_metric = config.get(section_tenant_job, "ams_sub_metric")
-    ams_sub_sync = config.get(section_tenant_job, "ams_sub_sync")
+    if args.report.lower() == "critical":
+        ams_sub_metric = config.get(section_tenant_job, "ams_sub_metric")
+        ams_sub_sync = config.get(section_tenant_job, "ams_sub_sync")
+    else:
+        ams_sub_metric = "stream_metric_" + report.lower()
+        ams_sub_sync = "stream_sync_" + report.lower() 
+
 
     # flink executable
     cmd_command.append(config.get("FLINK", "path"))
@@ -80,8 +91,10 @@ def compose_command(config, args,  hdfs_commands):
     cmd_command.append(ams_endpoint.hostname)
 
     # ams port
-    cmd_command.append("--ams.port")
-    cmd_command.append(ams_endpoint.port)
+    ams_port = cmd_command.append("--ams.port")
+    if not ams_port:
+        ams_port = 443
+    cmd_command.append(str(ams_port))
 
     # tenant's token for ams
     cmd_command.append("--ams.token")
@@ -100,9 +113,10 @@ def compose_command(config, args,  hdfs_commands):
     cmd_command.append(ams_sub_sync)
 
     # fill job namespace template with the required arguments
-    job_namespace.fill(ams_endpoint=ams_endpoint.hostname, ams_port=ams_endpoint.port, ams_project=ams_project,
+    job_namespace = config.get("JOB-NAMESPACE", "stream-status-namespace")
+    job_namespace = job_namespace.fill(ams_endpoint=ams_endpoint.hostname, ams_port=ams_port, ams_project=ams_project,
                        ams_sub_metric=ams_sub_metric, ams_sub_sync=ams_sub_sync)
-
+    
     # add the hdfs commands
     for command in hdfs_commands:
         cmd_command.append(command)
@@ -112,9 +126,16 @@ def compose_command(config, args,  hdfs_commands):
     cmd_command.append("--run.date")
     cmd_command.append(args.date)
 
+    # report 
+    cmd_command.append("--report")
+    cmd_command.append(args.report)
+
     # flink parallelism
     cmd_command.append("--p")
-    cmd_command.append(config.get(section_tenant_job, "flink_parallelism"))
+    flink_parallelism = config.get(section_tenant_job, "flink_parallelism")
+    if not flink_parallelism:
+        flink_parallelism = "1"
+    cmd_command.append(flink_parallelism)
 
     # grab tenant configuration section for stream-status
 
@@ -175,16 +196,24 @@ def compose_command(config, args,  hdfs_commands):
                 mongo_uri = config.get(section_tenant, "mongo_uri").fill(mongo_endpoint=mongo_endpoint,tenant=args.tenant)
                 cmd_command.append(mongo_uri.geturl())
                 # mongo method
+                mongo_method = config.get("MONGO", "mongo_method")
+                if not mongo_method:
+                    mongo_method = "insert"
                 cmd_command.append("--mongo.method")
-                cmd_command.append(config.get(section_tenant_job, "mongo_method"))
+                cmd_command.append(mongo_method)
+                # report id 
+                report_id = config.get(section_tenant,"report_" + args.report)
+                cmd_command.append("--report-id")
+                cmd_command.append(report_id)
+        
 
     # num of messages to be retrieved from AMS per request
     cmd_command.append("--ams.batch")
-    cmd_command.append(config.get(section_tenant_job, "ams_batch"))
+    cmd_command.append(str(config.get(section_tenant_job, "ams_batch")))
 
     # interval in ms betweeb AMS service requests
     cmd_command.append("--ams.interval")
-    cmd_command.append(config.get(section_tenant_job, "ams_interval"))
+    cmd_command.append(str(config.get(section_tenant_job, "ams_interval")))
 
     # get optional ams proxy
     proxy = config.get("AMS", "proxy")
@@ -259,3 +288,4 @@ if __name__ == "__main__":
 
     # Pass the arguments to main method
     sys.exit(main(parser.parse_args()))
+
