@@ -313,8 +313,8 @@ class ArgoAmsClient:
             dict. json representation of list of AMS users
 
         """
-        # tenant must have 3 users: project_admin, publisher, consumer
-        lookup = [("project_admin", "ams_{}_admin"), ("publisher", "ams_{}_publisher"), ("consumer", "ams_{}_consumer")]
+        # tenant must have 4 users: project_admin, publisher, consumer, archiver(consumer)
+        lookup = [("project_admin", "ams_{}_admin"), ("publisher", "ams_{}_publisher"), ("consumer", "ams_{}_consumer"), ("archiver", "ams_{}_archiver")]
         lookup = [(x, y.format(tenant.lower())) for (x, y) in lookup]
         users = dict()
         for (role, name) in lookup:
@@ -379,6 +379,9 @@ class ArgoAmsClient:
             if name.endswith('status_metric'):
                 if topics["metric_data"] == sub["topic"]:
                     found["status_metric"] = name
+            if name.endswith('archive_metric'):
+                if topics["metric_data"] == sub["topic"]:
+                    found["archive_metric"] = name
         return found
 
     @staticmethod
@@ -525,6 +528,10 @@ class ArgoAmsClient:
         project_name = tenant.upper()
         if role == "project_admin":
             username = "ams_{}_admin".format(tenant.lower())
+        elif role == "archiver":
+            username = "ams_{}_archiver".format(tenant.lower())
+            # archiver is actually a consumer
+            role = "consumer"
         else:
             username = "ams_{}_{}".format(tenant.lower(), role)
 
@@ -582,10 +589,10 @@ class ArgoAmsClient:
 
         # Things that sould be present in AMS definitions
         topics_lookup = ["sync_data", "metric_data"]
-        subs_lookup = ["ingest_sync", "ingest_metric", "status_sync", "status_metric"]
-        users_lookup = ["project_admin", "publisher", "consumer"]
+        subs_lookup = ["ingest_sync", "ingest_metric", "status_sync", "status_metric", "archive_metric"]
+        users_lookup = ["project_admin", "publisher", "consumer", "archiver"]
         topic_acl_lookup = ["sync_data", "metric_data"]
-        sub_acl_lookup = ["ingest_sync", "ingest_metric"]
+        sub_acl_lookup = ["ingest_sync", "ingest_metric", "archive_metric"]
 
         # Initialize a dictionary with missing definitions
         missing = dict()
@@ -607,6 +614,8 @@ class ArgoAmsClient:
             subs = {}
         if users is None:
             users = {}
+
+        
 
         # For each expected topic check if it was indeed found in AMS or if it's missing
         for item in topics_lookup:
@@ -665,13 +674,17 @@ class ArgoAmsClient:
         # For each missing sub attempt to create it in AMS
         for sub in missing["subs"]:
             # create sub
+            if sub.startswith("archive") and sub.endswith("metric"): 
+                topic = "metric_data"
             if sub.endswith("metric"):
                 topic = "metric_data"
             elif sub.endswith("sync"):
                 topic = "sync_data"
             else:
                 continue
+
             sub_new = self.create_tenant_sub(tenant, topic, sub)
+            
             log.info("Tenant:{} - created missing subscription: {} on topic: {}".format(tenant, sub_new["name"],
                                                                                         sub_new["topic"]))
 
@@ -695,7 +708,10 @@ class ArgoAmsClient:
         # For each missing subscription attempt to set it in AMS
         for sub_acl in missing["sub_acls"]:
             acl = self.get_sub_acl(tenant, sub_acl)
-            user_con = "ams_{}_consumer".format(tenant.lower())
+            if sub_acl.startswith("archive"):
+                user_con = "ams_{}_archiver".format(tenant.lower())
+            else:
+                user_con = "ams_{}_consumer".format(tenant.lower())
             if user_con not in acl:
                 acl.append(user_con)
 
