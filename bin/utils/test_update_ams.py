@@ -110,6 +110,24 @@ class TestClass(unittest.TestCase):
                           "name": "ams_projecta_consumer",
 
                       }, status=200)
+        responses.add(responses.GET, 'https://ams.foo/v1/users/ams_projecta_archiver?key=faketoken',
+                      json={
+                          "uuid": "id02",
+                          "projects": [
+                              {
+                                  "project": "PROJECTA",
+                                  "roles": [
+                                      "consumer"
+                                  ],
+                                  "topics": [
+
+                                  ],
+                                  "subscriptions": ["archive_metric"]
+                              }
+                          ],
+                          "name": "ams_projecta_archiver",
+
+                      }, status=200)
         responses.add(responses.GET, 'https://ams.foo/v1/users/ams_projecta_publisher?key=faketoken',
                       json={
                           "uuid": "id02",
@@ -168,7 +186,7 @@ class TestClass(unittest.TestCase):
 
         self.assertEquals("PROJECTA", ams.check_project_exists("projectA")["name"])
         expected_missing = {'topics': ['sync_data'], 'topic_acls': [],
-                            'subs': ['ingest_sync', 'ingest_metric', 'status_sync', 'status_metric'],
-                            'sub_acls': ['ingest_sync'], 'users': ['project_admin']}
+                            'subs': ['ingest_sync', 'ingest_metric', 'status_sync', 'status_metric', 'archive_metric'],
+                            'sub_acls': ['ingest_sync', 'archive_metric'], 'users': ['project_admin']}
 
         self.assertEquals(expected_missing, ams.check_tenant("projectA"))
