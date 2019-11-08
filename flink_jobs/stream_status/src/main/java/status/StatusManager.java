@@ -201,9 +201,13 @@ public class StatusManager {
 		// find a list of lost items to remove them from status tree
 		ArrayList<String> lostItems = this.egp.compareToBeRemoved(egpNext);
 		
+		// removal performed
 		for (String item : lostItems) {
 			removeEndpoint(item);
 		}
+		
+		// set the next topology as status manager's current topology
+		this.egp = egpNext;
 		
 	}
 

@@ -571,8 +571,17 @@ public class AmsStreamStatus {
 							egpTrim.add(egpItem);
 						}
 					}
-					sm.egp = new EndpointGroupManagerV2();
-					sm.egp.loadFromList(egpTrim);
+					// load next topology into a temporary endpoint group manager
+					EndpointGroupManagerV2 egpNext = new EndpointGroupManagerV2();
+					egpNext.loadFromList(egpTrim);
+					
+					// Use existing topology manager inside status manager to make a comparison
+					// with the new topology stored in the temp endpoint group manager
+					// update topology also sets the next topology manager as status manager current 
+					// topology manager only after removal of decomissioned items
+					sm.updateTopology(egpNext);
+					
+					
 				} else if (sType.equals("downtimes") && attr.containsKey("partition_date")) {
 					String pDate = attr.get("partition_date");
 					ArrayList<Downtime> downList = SyncParse.parseDowntimes(decoded64);
