@@ -267,7 +267,6 @@ class HdfsReader:
             str: hdfs path
 
         """
-
         templates = dict()
         if date:
             date = "_" + date
