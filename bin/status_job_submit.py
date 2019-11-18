@@ -17,14 +17,14 @@ log = logging.getLogger(__name__)
 
 def compose_hdfs_commands(year, month, day, args, config):
     """Checks hdfs for available files back in time and prepares the correct hdfs arguments
-    
+
     Args:
         year (int): year part of the date to check for hdfs files
         month (int): month part of the date to check for hdfs files
         day (int): day part of the date to check for hdfs files
         config (obj.): argo configuration object
-       
-    
+
+
     Returns:
         list: A list of all hdfs arguments to be used in flink job submission
     """
@@ -38,11 +38,13 @@ def compose_hdfs_commands(year, month, day, args, config):
     hdfs_user = config.get("HDFS", "user")
     tenant = args.tenant
     hdfs_sync = config.get("HDFS", "path_sync")
-    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
+    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(
+    ), hdfs_user=hdfs_user, tenant=tenant).geturl()
 
     hdfs_metric = config.get("HDFS", "path_metric")
 
-    hdfs_metric = hdfs_metric.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
+    hdfs_metric = hdfs_metric.fill(
+        namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
 
     # dictionary holding all the commands with their respective arguments' name
     hdfs_commands = dict()
@@ -52,30 +54,65 @@ def compose_hdfs_commands(year, month, day, args, config):
         hdfs_metric + "/" + str(datetime.date(year, month, day) - datetime.timedelta(1)), client)
 
     # file location of target day's metric data (local or hdfs)
-    hdfs_commands["--mdata"] = hdfs_check_path(hdfs_metric+"/"+args.date,  client)
+    hdfs_commands["--mdata"] = hdfs_check_path(
+        hdfs_metric+"/"+args.date,  client)
 
     # file location of report configuration json file (local or hdfs)
-    hdfs_commands["--conf"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_"+args.report+"_cfg.json",  client)
+    hdfs_commands["--conf"] = hdfs_check_path(
+        hdfs_sync+"/"+args.tenant+"_"+args.report+"_cfg.json",  client)
 
-    # file location of metric profile (local or hdfs)
-    hdfs_commands["--mps"] = date_rollback(
-        hdfs_sync + "/" + args.report + "/" + "metric_profile_" + "{{date}}" + ".avro", year, month, day, config,
-        client)
+    # if profile historic mode is used reference profiles by date
+    if args.historic:
+        # file location of historic operations profile (local or hdfs)
+        hdfs_commands["--ops"] = hdfs_check_path(
+            hdfs_sync+"/"+args.tenant+"_ops_" + args.date + ".json",  client)
 
-    # file location of operations profile (local or hdfs)
-    hdfs_commands["--ops"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_ops.json", client)
+        # file location of historic aggregations profile (local or hdfs)
+        hdfs_commands["--apr"] = hdfs_check_path(
+            hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap_" + args.date + ".json", client)
 
-    # file location of aggregations profile (local or hdfs)
-    hdfs_commands["--apr"] = hdfs_check_path(hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap.json", client)
+        if args.thresholds:
+            # file location of thresholds rules file (local or hdfs)
+            hdfs_commands["--thr"] = hdfs_check_path(
+                os.path.join(hdfs_sync, "".join([args.tenant, "_", args.report, "_thresholds_", args.date, ".json"])), client)
 
-    if args.thresholds:
-        # file location of thresholds rules file (local or hdfs)
-        hdfs_commands["--thr"] = hdfs_check_path(
-            os.path.join(hdfs_sync, "".join([args.tenant, "_", args.report, "_thresholds.json"])), client)
+        # TODO: Don't Use YET metric profiles from api in json form until status computation jobs are updated
+        # accordingly - After that uncomment the following
+        # #file location of historic metric profile (local or hdfs) which is in json format
+        # hdfs_commands["--mps"] = hdfs_check_path(
+        #     hdfs_sync+"/"+args.tenant+"_"+args.report+"_metric_" + args.date + ".json", client)
+
+        # TODO: when compute jobs are updated to use metric profiles in json format comment the following:
+        # file location of metric profile (local or hdfs)
+        hdfs_commands["--mps"] = date_rollback(
+            hdfs_sync + "/" + args.report + "/" + "metric_profile_" +
+            "{{date}}" + ".avro", year, month, day, config,
+            client)
+    else:
+
+        # file location of operations profile (local or hdfs)
+        hdfs_commands["--ops"] = hdfs_check_path(
+            hdfs_sync+"/"+args.tenant+"_ops.json",  client)
+
+        # file location of aggregations profile (local or hdfs)
+        hdfs_commands["--apr"] = hdfs_check_path(
+            hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap.json", client)
+
+        if args.thresholds:
+            # file location of thresholds rules file (local or hdfs)
+            hdfs_commands["--thr"] = hdfs_check_path(
+                os.path.join(hdfs_sync, "".join([args.tenant, "_", args.report, "_thresholds.json"])), client)
+
+        # file location of metric profile (local or hdfs)
+        hdfs_commands["--mps"] = date_rollback(
+            hdfs_sync + "/" + args.report + "/" + "metric_profile_" +
+            "{{date}}" + ".avro", year, month, day, config,
+            client)
 
     #  file location of endpoint group topology file (local or hdfs)
     hdfs_commands["-egp"] = date_rollback(
-        hdfs_sync + "/" + args.report + "/" + "group_endpoints_" + "{{date}}" + ".avro", year, month, day, config,
+        hdfs_sync + "/" + args.report + "/" + "group_endpoints_" +
+        "{{date}}" + ".avro", year, month, day, config,
         client)
 
     # file location of group of groups topology file (local or hdfs)
@@ -85,11 +122,14 @@ def compose_hdfs_commands(year, month, day, args, config):
     # file location of recomputations file (local or hdfs)
     # first check if there is a recomputations file for the given date
     if client.test(urlparse(hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json").path, exists=True):
-        hdfs_commands["--rec"] = hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json"
+        hdfs_commands["--rec"] = hdfs_sync+"/recomp_" + \
+            args.tenant+"_"+args.report+"_"+args.date+".json"
         log.info("Using recomputations file for the given date")
     else:
-        hdfs_commands["--rec"] = hdfs_check_path(hdfs_sync+"/recomp.json", client)
-        log.info("Recomputations file for the given date was not found. Using default.")
+        hdfs_commands["--rec"] = hdfs_check_path(
+            hdfs_sync+"/recomp.json", client)
+        log.info(
+            "Recomputations file for the given date was not found. Using default.")
 
     return hdfs_commands
 
@@ -97,14 +137,14 @@ def compose_hdfs_commands(year, month, day, args, config):
 def compose_command(config, args,  hdfs_commands, dry_run=False):
     """Composes a command line execution string for submitting a flink job. Also calls mongodb
        clean up procedure before composing the command
-    
+
     Args:
         config (obj.): argo configuration object
         args (dict): command line arguments of this script
         hdfs_commands (list): a list of hdfs related arguments to be passed in flink job    
         dry_run (bool, optional): signifies a dry-run execution context, if yes no mongodb clean-up is perfomed. 
                                   Defaults to False.
-    
+
     Returns:
         list: A list of all command line arguments for performing the flink job submission
     """
@@ -135,8 +175,9 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
     #  MongoDB uri for outputting the results to (e.g. mongodb://localhost:21017/example_db)
     cmd_command.append("--mongo.uri")
     group_tenant = "TENANTS:" + args.tenant
-    mongo_endpoint = config.get("MONGO","endpoint").geturl()
-    mongo_uri = config.get(group_tenant, "mongo_uri").fill(mongo_endpoint=mongo_endpoint,tenant=args.tenant)
+    mongo_endpoint = config.get("MONGO", "endpoint").geturl()
+    mongo_uri = config.get(group_tenant, "mongo_uri").fill(
+        mongo_endpoint=mongo_endpoint, tenant=args.tenant)
     cmd_command.append(mongo_uri.geturl())
 
     if args.method == "insert":
@@ -192,10 +233,15 @@ def main(args=None):
 
     # optional call to update profiles
     if args.profile_check:
+        dateParam = None
+        if args.historic:
+            dateParam = args.date
         profile_mgr = ArgoProfileManager(config)
-        profile_type_checklist = ["operations", "aggregations", "reports", "thresholds"]
+        profile_type_checklist = [
+            "operations", "aggregations", "reports", "thresholds", "metrics"]
         for profile_type in profile_type_checklist:
-            profile_mgr.profile_update_check(args.tenant, args.report, profile_type)
+            profile_mgr.profile_update_check(
+                args.tenant, args.report, profile_type, dateParam)
 
     # dictionary containing the argument's name and the command associated with each name
     hdfs_commands = compose_hdfs_commands(year, month, day, args, config)
@@ -208,7 +254,8 @@ def main(args=None):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Batch Status Job submit script")
+    parser = argparse.ArgumentParser(
+        description="Batch Status Job submit script")
     parser.add_argument(
         "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True, dest="tenant")
     parser.add_argument(
@@ -221,12 +268,14 @@ if __name__ == "__main__":
         "-c", "--config", metavar="PATH", help="Path for the config file", dest="config")
     parser.add_argument(
         "-u", "--sudo", help="Run the submit job as superuser",  action="store_true")
+    parser.add_argument("--historic-profiles", help="use historic profiles",
+                        dest="historic", action="store_true")
     parser.add_argument("--profile-check", help="check if profiles are up to date before running job",
                         dest="profile_check", action="store_true")
     parser.add_argument("--thresholds", help="check and use threshold rule file if exists",
                         dest="thresholds", action="store_true")
-    parser.add_argument("--dry-run",help="Runs in test mode without actually submitting the job",
-        action="store_true", dest="dry_run")
+    parser.add_argument("--dry-run", help="Runs in test mode without actually submitting the job",
+                        action="store_true", dest="dry_run")
 
     # Pass the arguments to main method
     sys.exit(main(parser.parse_args()))
