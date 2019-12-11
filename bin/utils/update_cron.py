@@ -6,8 +6,8 @@ import logging
 from argparse import ArgumentParser
 from subprocess import check_output, CalledProcessError, check_call
 from datetime import datetime
-from common import get_log_conf, get_config_paths
-from argo_config import ArgoConfig
+from .common import get_log_conf, get_config_paths
+from .argo_config import ArgoConfig
 
 
 log = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ import requests
 import json
 import subprocess
 from subprocess import check_call
-from urlparse import urlparse, urlsplit, urlunsplit
+from urllib.parse import urlparse, urlsplit, urlunsplit
 import logging.config
 import logging
 import os.path
@@ -124,7 +124,7 @@ def flink_job_submit(config, cmd_command, job_namespace=None, dry_run=False):
     # print dry-run message if needed
     if dry_run:
         # print output in green and exit
-        print "\033[92m" + cmd_to_string(cmd_command) + "\033[0m"
+        print(("\033[92m" + cmd_to_string(cmd_command) + "\033[0m"))
     # if isses exit
     if issues:
         exit(1)

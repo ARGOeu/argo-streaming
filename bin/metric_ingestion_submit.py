@@ -11,11 +11,11 @@ log = logging.getLogger(__name__)
 
 def compose_command(config, args):
     """Composes a command line execution string for submitting a flink job. 
-    
+
     Args:
         config (obj.): argo configuration object
         args (dict): command line arguments of this script
-    
+
     Returns:
         list: A list of all command line arguments for performing the flink job submission
     """
@@ -57,7 +57,7 @@ def compose_command(config, args):
     # ams port
     ams_port = 443
     if ams_endpoint.port is not None:
-	ams_port = ams_endpoint.port
+        ams_port = ams_endpoint.port
     cmd_command.append("--ams.port")
     cmd_command.append(str(ams_port))
 
@@ -82,9 +82,11 @@ def compose_command(config, args):
     hdfs_user = config.get("HDFS", "user")
 
     hdfs_metric = config.get("HDFS", "path_metric")
-    hdfs_metric.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant)
+    hdfs_metric.fill(namenode=namenode.geturl(),
+                     hdfs_user=hdfs_user, tenant=args.tenant)
 
-    hdfs_metric = hdfs_metric.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant).geturl()
+    hdfs_metric = hdfs_metric.fill(namenode=namenode.geturl(
+    ), hdfs_user=hdfs_user, tenant=args.tenant).geturl()
 
     cmd_command.append("--hdfs.path")
     cmd_command.append(hdfs_metric)
@@ -95,7 +97,8 @@ def compose_command(config, args):
 
     # interval for checkpont in ms
     cmd_command.append("--check.interval")
-    cmd_command.append(str(config.get(section_tenant_job, "checkpoint_interval")))
+    cmd_command.append(
+        str(config.get(section_tenant_job, "checkpoint_interval")))
 
     # num of messages to be retrieved from AMS per request
     cmd_command.append("--ams.batch")
@@ -119,7 +122,7 @@ def compose_command(config, args):
     else:
         # by default assume ams verify is always true
         cmd_command.append("true")
-   
+
     return cmd_command, job_namespace
 
 
@@ -146,13 +149,14 @@ def main(args=None):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="AMS Metric Ingestion submission script")
+    parser = argparse.ArgumentParser(
+        description="AMS Metric Ingestion submission script")
     parser.add_argument(
         "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True)
     parser.add_argument(
         "-c", "--config", metavar="PATH", help="Path for the config file")
     parser.add_argument(
         "-u", "--sudo", help="Run the submition as superuser",  action="store_true")
-    parser.add_argument("--dry-run",help="Runs in test mode without actually submitting the job",
-        action="store_true", dest="dry_run")
+    parser.add_argument("--dry-run", help="Runs in test mode without actually submitting the job",
+                        action="store_true", dest="dry_run")
     sys.exit(main(parser.parse_args()))

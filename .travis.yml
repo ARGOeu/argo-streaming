@@ -1,9 +1,9 @@
 # Set-up a python centric enviroment in order to easily choose py version:2.7
 # bonus: Java 7 and mvn also included
 language: python
-# Target py version 2.7
+# Target py version 3.6
 python:
-  - "2.7"
+  - "3.6"
 
 script:
   - pip install -r ./bin/requirements.txt

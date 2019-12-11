@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
-from common import get_config_paths, get_log_conf
-from argo_config import ArgoConfig
+from .common import get_config_paths, get_log_conf
+from .argo_config import ArgoConfig
 import sys
 import logging
 import json
 from snakebite.client import Client
 from datetime import datetime, timedelta
-from update_ams import ArgoAmsClient
+from .update_ams import ArgoAmsClient
 import requests
 
 
@@ -112,7 +112,7 @@ def check_tenant_hdfs(tenant, target_date, days_back, namenode, hdfs_user, clien
                 except Exception:
                     sync_result[report][item] = False
         
-        for item in report_profiles.keys():
+        for item in list(report_profiles.keys()):
             profile_path = "".join([hdfs_sync.path,"/",report_profiles[item].format(tenant,report)])
             try: 
                 client.test(profile_path)
@@ -158,13 +158,13 @@ def check_tenant_ams(tenant, target_date, ams, config):
     if ams.check_project_exists(tenant):
         
         tenant_topics = ams.get_tenant_topics(tenant)
-        topic_types = tenant_topics.keys()
+        topic_types = list(tenant_topics.keys())
         if "metric_data" in topic_types:
             ams_tenant["metric_data"]["publishing"] = True 
         if "sync_data" in topic_types:
             ams_tenant["sync_data"]["publishing"] = True 
         
-        sub_types = ams.get_tenant_subs(tenant,tenant_topics).keys()
+        sub_types = list(ams.get_tenant_subs(tenant,tenant_topics).keys())
         if "ingest_metric" in sub_types:
             ams_tenant["metric_data"]["ingestion"] = True 
         if "status_metric" in sub_types:

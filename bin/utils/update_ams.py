@@ -2,8 +2,8 @@
 import requests
 import json
 import logging
-from common import get_config_paths, get_log_conf
-from argo_config import ArgoConfig
+from .common import get_config_paths, get_log_conf
+from .argo_config import ArgoConfig
 from argparse import ArgumentParser
 import sys
 
@@ -619,17 +619,17 @@ class ArgoAmsClient:
 
         # For each expected topic check if it was indeed found in AMS or if it's missing
         for item in topics_lookup:
-            if item not in topics.keys():
+            if item not in list(topics.keys()):
                 missing["topics"].append(item)
 
         # For each expected sub check if it was indeed found in AMS or if it's missing
         for item in subs_lookup:
-            if item not in subs.keys():
+            if item not in list(subs.keys()):
                 missing["subs"].append(item)
 
         # For each expected user check if it was indeed found in AMS or if it's missing
         for item in users_lookup:
-            if item not in users.keys():
+            if item not in list(users.keys()):
                 missing["users"].append(item)
 
         user_topics = []

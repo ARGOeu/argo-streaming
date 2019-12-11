@@ -11,11 +11,11 @@ log = logging.getLogger(__name__)
 
 def compose_command(config, args):
     """Composes a command line execution string for submitting a flink job. 
-    
+
     Args:
         config (obj.): argo configuration object
         args (dict): command line arguments of this script
-    
+
     Returns:
         list: A list of all command line arguments for performing the flink job submission
     """
@@ -58,7 +58,7 @@ def compose_command(config, args):
     # ams port
     ams_port = 443
     if ams_endpoint.port is not None:
-	ams_port = ams_endpoint.port
+        ams_port = ams_endpoint.port
     cmd_command.append("--ams.port")
     cmd_command.append(str(ams_port))
 
@@ -83,9 +83,11 @@ def compose_command(config, args):
     hdfs_user = config.get("HDFS", "user")
 
     hdfs_sync = config.get("HDFS", "path_sync")
-    hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant)
+    hdfs_sync.fill(namenode=namenode.geturl(),
+                   hdfs_user=hdfs_user, tenant=args.tenant)
 
-    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=args.tenant).geturl()
+    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(
+    ), hdfs_user=hdfs_user, tenant=args.tenant).geturl()
 
     # append hdfs sync base path to the submit command
     cmd_command.append("--hdfs.path")
@@ -135,19 +137,20 @@ def main(args=None):
     cmd_command, job_namespace = compose_command(config, args)
 
     # submit the job
-   
+
     flink_job_submit(config, cmd_command, job_namespace, args.dry_run)
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="AMS Sync Ingestion submission script")
+    parser = argparse.ArgumentParser(
+        description="AMS Sync Ingestion submission script")
     parser.add_argument(
         "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True)
     parser.add_argument(
         "-c", "--config", metavar="PATH", help="Path for the config file")
     parser.add_argument(
         "-u", "--sudo", help="Run the submission as superuser",  action="store_true")
-    parser.add_argument("--dry-run",help="Runs in test mode without actually submitting the job",
-        action="store_true", dest="dry_run")
+    parser.add_argument("--dry-run", help="Runs in test mode without actually submitting the job",
+                        action="store_true", dest="dry_run")
     sys.exit(main(parser.parse_args()))
