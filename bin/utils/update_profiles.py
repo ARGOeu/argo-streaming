@@ -44,26 +44,31 @@ class ArgoApiClient:
         self.paths.update({
             'reports': '/api/v2/reports',
             'operations': '/api/v2/operations_profiles',
+            'metrics': '/api/v2/metric_profiles',
             'aggregations': '/api/v2/aggregation_profiles',
             'thresholds': '/api/v2/thresholds_profiles',
             'tenants': '/api/v2/admin/tenants'
         })
 
-    def get_url(self, resource, item_uuid=None):
+    def get_url(self, resource, item_uuid=None, date=None):
         """
         Constructs an argo-web-api url based on the resource and item_uuid
         Args:
             resource:   str. resource to be retrieved (reports|ops)
             item_uuid: str. retrieve a specific item from the resource
+            date: str. returns the historic version of the resource 
 
         Returns:
             str: url path
 
         """
+        dateQuery = ""
+        if date:
+            dateQuery = "?date=" + date
         if item_uuid is None:
-            return "".join(["https://", self.host, self.paths[resource]])
+            return "".join(["https://", self.host, self.paths[resource], dateQuery])
         else:
-            return "".join(["https://", self.host, self.paths[resource], "/", item_uuid])
+            return "".join(["https://", self.host, self.paths[resource], "/", item_uuid, dateQuery])
 
     def get_resource(self, tenant, url):
         """
@@ -99,6 +104,7 @@ class ArgoApiClient:
             dict: list of tenants and access keys
 
         """
+
         tenants = self.get_admin_resource(token, self.get_url("tenants"))
         tenant_keys = dict()
         for item in tenants:
@@ -107,7 +113,7 @@ class ArgoApiClient:
                     tenant_keys[item["info"]["name"]] = user["api_key"]
         return tenant_keys
 
-    def get_admin_resource(token, url):
+    def get_admin_resource(self, token, url):
         """
         Returns an argo-web-api resource by tenant and url
         Args:
@@ -131,7 +137,7 @@ class ArgoApiClient:
         else:
             return None
 
-    def get_profile(self, tenant, report, profile_type):
+    def get_profile(self, tenant, report, profile_type, date=None):
         """
         Gets an argo-web-api profile by tenant, report and profile type
         Args:
@@ -148,10 +154,11 @@ class ArgoApiClient:
             return []
 
         item_uuid = self.find_profile_uuid(tenant, report, profile_type)
+
         if item_uuid is None:
             return None
         profiles = self.get_resource(
-            tenant, self.get_url(profile_type, item_uuid))
+            tenant, self.get_url(profile_type, item_uuid, date))
         if profiles is not None:
             return profiles[0]
 
@@ -180,6 +187,7 @@ class ArgoApiClient:
 
         """
         r = self.get_reports(tenant)
+
         if r is None:
             return ''
 
@@ -198,6 +206,7 @@ class ArgoApiClient:
             obj: Returns an array of reports or one report
 
         """
+
         reports = self.get_resource(tenant, self.get_url("reports", item_uuid))
         if reports is not None:
             return reports[0]
@@ -215,6 +224,9 @@ class ArgoApiClient:
         """
         if profile_type is "aggregations":
             profile_type = "aggregation"
+
+        if profile_type is "metrics":
+            profile_type = "metric"
 
         report = self.get_report(tenant, self.find_report_uuid(tenant, report))
         if profile_type == "reports":
@@ -243,43 +255,49 @@ class HdfsReader:
         self.client = Client(namenode, port)
         self.base_path = base_path
 
-    def gen_profile_path(self, tenant, report, profile_type):
+    def gen_profile_path(self, tenant, report, profile_type, date=None):
         """
         Generates a valid hdfs path to a specific profile
         Args:
             tenant: str. tenant to be used
             report: str. report to be used
-            profile_type: str. profile_type (operations|reports|aggregations|thresholds)
+            profile_type: str. profile_type (operations|reports|aggregations|thresholds|metrics)
 
         Returns:
             str: hdfs path
 
         """
+
         templates = dict()
+        if date:
+            date = "_" + date
+        else:
+            date = ""
         templates.update({
-            'operations': '{0}_ops.json',
-            'aggregations': '{0}_{1}_ap.json',
+            'operations': '{0}_{1}_ops{2}.json',
+            'aggregations': '{0}_{1}_ap{2}.json',
+            'metrics': '{0}_{1}_metrics{2}.json',
             'reports': '{0}_{1}_cfg.json',
-            'thresholds': '{0}_{1}_thresholds.json',
+            'thresholds': '{0}_{1}_thresholds{2}.json',
             'recomputations': 'recomp.json'
         })
 
         sync_path = self.base_path.replace("{{tenant}}", tenant)
-        filename = templates[profile_type].format(tenant, report)
+        filename = templates[profile_type].format(tenant, report, date)
         return os.path.join(sync_path, filename)
 
-    def cat(self, tenant, report, profile_type):
+    def cat(self, tenant, report, profile_type, date=None):
         """
         Returns the contents of a profile stored in hdfs
         Args:
             tenant: str. tenant name
             report: str. report name
-            profile_type: str. profile type (operations|reports|aggregations|thresholds)
+            profile_type: str. profile type (operations|reports|aggregations|thresholds|metric)
 
         Returns:
 
         """
-        path = self.gen_profile_path(tenant, report, profile_type)
+        path = self.gen_profile_path(tenant, report, profile_type, date)
         try:
             txt = self.client.cat([path])
             j = json.loads(txt.next().next())
@@ -287,7 +305,7 @@ class HdfsReader:
         except FileNotFoundException:
             return None, False
 
-    def rem(self, tenant, report, profile_type):
+    def rem(self, tenant, report, profile_type, date=None):
         """
         Removes a profile file that already exists in hdfs (in order to be replaced)
         Args:
@@ -298,7 +316,7 @@ class HdfsReader:
         Returns:
 
         """
-        path = self.gen_profile_path(tenant, report, profile_type)
+        path = self.gen_profile_path(tenant, report, profile_type, date)
 
         try:
             self.client.delete([path]).next()
@@ -341,15 +359,15 @@ class ArgoProfileManager:
             tenant_key = config.get("API", tenant + "_key")
             tenant_keys[tenant] = tenant_key
 
-        ams_proxy = config.get("API","proxy")
+        ams_proxy = config.get("API", "proxy")
         if ams_proxy:
             ams_proxy = ams_proxy.geturl()
-            
+
         self.hdfs = HdfsReader(namenode.hostname, namenode.port, short_path)
         self.api = ArgoApiClient(config.get("API", "endpoint").netloc, tenant_keys, config.get(
-            "API", "verify"),ams_proxy)
+            "API", "verify"), ams_proxy)
 
-    def profile_update_check(self, tenant, report, profile_type):
+    def profile_update_check(self, tenant, report, profile_type, date=None):
         """
         Checks if latest api profiles are aligned with profile files stored in hdfs.
         If not the updated api profile are uploaded to hdfs
@@ -357,9 +375,10 @@ class ArgoProfileManager:
             tenant: str. Tenant name to check profiles from
             report: str. Report name to check profiles from
             profile_type: str. Name of the profile type used (operations|aggregations|reports)
+            date: str. Optional date to retrieve historic version of the profile
         """
 
-        prof_api = self.api.get_profile(tenant, report, profile_type)
+        prof_api = self.api.get_profile(tenant, report, profile_type, date)
         if prof_api is None:
             log.info(
                 "profile type %s doesn't exist in report --skipping", profile_type)
@@ -367,7 +386,7 @@ class ArgoProfileManager:
 
         log.info("retrieved %s profile(api): %s", profile_type, prof_api)
 
-        prof_hdfs, exists = self.hdfs.cat(tenant, report, profile_type)
+        prof_hdfs, exists = self.hdfs.cat(tenant, report, profile_type, date)
 
         if exists:
             log.info("retrieved %s profile(hdfs): %s ",
@@ -387,9 +406,9 @@ class ArgoProfileManager:
         # Upload if it's deemed to be uploaded
         if prof_update:
             self.upload_profile_to_hdfs(
-                tenant, report, profile_type, prof_api, exists)
+                tenant, report, profile_type, prof_api, exists, date)
 
-    def upload_profile_to_hdfs(self, tenant, report, profile_type, profile, exists):
+    def upload_profile_to_hdfs(self, tenant, report, profile_type, profile, exists, date=None):
         """
         Uploads an updated profile (from api) to the specified hdfs destination
         Args:
@@ -406,7 +425,7 @@ class ArgoProfileManager:
 
         # If file exists on hdfs should be removed first
         if exists:
-            is_removed = self.hdfs.rem(tenant, report, profile_type)
+            is_removed = self.hdfs.rem(tenant, report, profile_type, date)
             if not is_removed:
                 log.error(
                     "Could not remove old %s profile from hdfs", profile_type)
@@ -422,7 +441,8 @@ class ArgoProfileManager:
         with open(local_path, 'w') as outfile:
             json.dump(profile, outfile)
         hdfs_host = self.cfg.get("HDFS", "namenode").hostname
-        hdfs_path = self.hdfs.gen_profile_path(tenant, report, profile_type)
+        hdfs_path = self.hdfs.gen_profile_path(
+            tenant, report, profile_type, date)
         status = subprocess.check_call(
             [hdfs_write_bin, hdfs_write_cmd, local_path, hdfs_path])
 
@@ -473,52 +493,46 @@ class ArgoProfileManager:
 
     def upload_tenant_defaults(self, tenant):
         # check
-        section_tenant = "TENANTS:"+ tenant
-        section_metric = "TENANTS:"+ tenant + ":ingest-metric"
-        mongo_endpoint = self.cfg.get("MONGO","endpoint").geturl()
-        mongo_uri = self.cfg.get_default(section_tenant,"mongo_uri").fill(mongo_endpoint=mongo_endpoint,tenant=tenant).geturl()
-        hdfs_user = self.cfg.get("HDFS","user")
-        namenode = self.cfg.get("HDFS","namenode").netloc
-        hdfs_check = self.cfg.get_default(section_metric,"checkpoint_path").fill(namenode=namenode,hdfs_user=hdfs_user,tenant=tenant)
-       
-        
-        
-        self.cfg.get("MONGO","endpoint")
-       
-        self.cfg.set(section_tenant,"mongo_uri",mongo_uri)
-        self.cfg.set_default(section_tenant,"mongo_method")
-        
-        
-        self.cfg.set_default(section_metric,"ams_interval")
-        self.cfg.set_default(section_metric,"ams_batch")
-        self.cfg.set(section_metric,"checkpoint_path",hdfs_check.geturl())
-        self.cfg.set_default(section_metric,"checkpoint_interval")
-        section_sync = "TENANTS:"+ tenant + ":ingest-sync"
-        
-        self.cfg.set_default(section_sync,"ams_interval")
-        self.cfg.set_default(section_sync,"ams_batch")
+        section_tenant = "TENANTS:" + tenant
+        section_metric = "TENANTS:" + tenant + ":ingest-metric"
+        mongo_endpoint = self.cfg.get("MONGO", "endpoint").geturl()
+        mongo_uri = self.cfg.get_default(section_tenant, "mongo_uri").fill(
+            mongo_endpoint=mongo_endpoint, tenant=tenant).geturl()
+        hdfs_user = self.cfg.get("HDFS", "user")
+        namenode = self.cfg.get("HDFS", "namenode").netloc
+        hdfs_check = self.cfg.get_default(section_metric, "checkpoint_path").fill(
+            namenode=namenode, hdfs_user=hdfs_user, tenant=tenant)
 
+        self.cfg.get("MONGO", "endpoint")
 
+        self.cfg.set(section_tenant, "mongo_uri", mongo_uri)
+        self.cfg.set_default(section_tenant, "mongo_method")
 
-        section_stream = "TENANTS:"+ tenant + ":stream-status"
-        streaming_kafka_servers = self.cfg.get("STREAMING","kafka_servers")
+        self.cfg.set_default(section_metric, "ams_interval")
+        self.cfg.set_default(section_metric, "ams_batch")
+        self.cfg.set(section_metric, "checkpoint_path", hdfs_check.geturl())
+        self.cfg.set_default(section_metric, "checkpoint_interval")
+        section_sync = "TENANTS:" + tenant + ":ingest-sync"
+
+        self.cfg.set_default(section_sync, "ams_interval")
+        self.cfg.set_default(section_sync, "ams_batch")
+
+        section_stream = "TENANTS:" + tenant + ":stream-status"
+        streaming_kafka_servers = self.cfg.get("STREAMING", "kafka_servers")
         if (streaming_kafka_servers):
             streaming_kafka_servers = ",".join(streaming_kafka_servers)
-            self.cfg.set(section_stream,"kafka_servers",streaming_kafka_servers)
+            self.cfg.set(section_stream, "kafka_servers",
+                         streaming_kafka_servers)
         else:
-            self.cfg.set_default(section_stream,"kafka_servers")
-    
-        
-        self.cfg.set_default(section_stream,"ams_sub_sync")
-        self.cfg.set_default(section_stream,"ams_sub_metric")
-        self.cfg.set_default(section_stream,"ams_interval")
-        self.cfg.set_default(section_stream,"ams_batch")
-        self.cfg.set(section_stream,"output","kafka,mongo")
-        
-        self.cfg.set(section_stream,"mongo_method","insert")
-        
-        
-        
+            self.cfg.set_default(section_stream, "kafka_servers")
+
+        self.cfg.set_default(section_stream, "ams_sub_sync")
+        self.cfg.set_default(section_stream, "ams_sub_metric")
+        self.cfg.set_default(section_stream, "ams_interval")
+        self.cfg.set_default(section_stream, "ams_batch")
+        self.cfg.set(section_stream, "output", "kafka,mongo")
+
+        self.cfg.set(section_stream, "mongo_method", "insert")
 
     def save_config(self, file_path):
         """
@@ -553,7 +567,7 @@ def run_profile_update(args):
     if args.tenant is not None:
         # check for the following profile types
         profile_type_checklist = [
-            "operations", "aggregations", "reports", "thresholds", "recomputations"]
+            "reports", "operations", "aggregations",  "thresholds", "recomputations", "metrics"]
         reports = []
         if args.report is not None:
             reports.append(args.report)
@@ -562,7 +576,8 @@ def run_profile_update(args):
 
         for report in reports:
             for profile_type in profile_type_checklist:
-                argo.profile_update_check(args.tenant, report, profile_type)
+                argo.profile_update_check(
+                    args.tenant, report, profile_type, args.date)
     else:
         argo.upload_tenants_cfg()
         argo.save_config(conf_paths["main"])
@@ -578,6 +593,8 @@ if __name__ == '__main__':
         "-r", "--report", help="report", dest="report", metavar="STRING", required=False, default=None)
     arg_parser.add_argument(
         "-c", "--config", help="config", dest="config", metavar="STRING")
+    arg_parser.add_argument(
+        "-d", "--date", help="historic date", dest="date", metavar="STRING", required=False, default=None)
 
     # Parse the command line arguments accordingly and introduce them to the run method
     sys.exit(run_profile_update(arg_parser.parse_args()))
