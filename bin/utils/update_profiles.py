@@ -6,12 +6,12 @@ from snakebite.errors import FileNotFoundException
 import logging
 import os
 import uuid
-from urlparse import urlparse
+from urllib.parse import urlparse
 from argparse import ArgumentParser
 import sys
 import subprocess
-from common import get_log_conf, get_config_paths
-from argo_config import ArgoConfig
+from .common import get_log_conf, get_config_paths
+from .argo_config import ArgoConfig
 
 log = logging.getLogger(__name__)
 
@@ -299,7 +299,7 @@ class HdfsReader:
         path = self.gen_profile_path(tenant, report, profile_type, date)
         try:
             txt = self.client.cat([path])
-            j = json.loads(txt.next().next())
+            j = json.loads(next(next(txt)))
             return j, True
         except FileNotFoundException:
             return None, False
@@ -318,7 +318,7 @@ class HdfsReader:
         path = self.gen_profile_path(tenant, report, profile_type, date)
 
         try:
-            self.client.delete([path]).next()
+            next(self.client.delete([path]))
             return True
         except FileNotFoundException:
             return False
@@ -479,12 +479,12 @@ class ArgoProfileManager:
         token = self.cfg.get("API", "access_token")
         tenant_keys = self.api.get_tenants(token)
         self.api.tenant_keys = tenant_keys
-        tenant_names = ",".join(tenant_keys.keys())
+        tenant_names = ",".join(list(tenant_keys.keys()))
 
         self.cfg.set("API", "tenants", tenant_names)
 
         # For each tenant update also it's report list
-        for tenant_name in tenant_keys.keys():
+        for tenant_name in list(tenant_keys.keys()):
             self.cfg.set("API", tenant_name+"_key", tenant_keys[tenant_name])
             # Update tenant's report definitions in configuration
             self.upload_tenant_reports_cfg(tenant_name)

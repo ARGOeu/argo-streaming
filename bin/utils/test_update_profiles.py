@@ -1,6 +1,6 @@
 import unittest
-from update_profiles import HdfsReader
-from update_profiles import ArgoApiClient
+from .update_profiles import HdfsReader
+from .update_profiles import ArgoApiClient
 
 
 class TestClass(unittest.TestCase):
@@ -36,7 +36,7 @@ class TestClass(unittest.TestCase):
             actual = hdfs.gen_profile_path(
                 test_case["tenant"], test_case["report"], test_case["profile_type"])
             expected = test_case["expected"]
-            self.assertEquals(expected, actual)
+            self.assertEqual(expected, actual)
 
         # Test with dates
         test_cases_dates = [
@@ -102,4 +102,4 @@ class TestClass(unittest.TestCase):
             actual = argo_api.get_url(
                 test_case["resource"], test_case["item_uuid"])
             expected = test_case["expected"]
-            self.assertEquals(expected, actual)
+            self.assertEqual(expected, actual)

@@ -1,7 +1,7 @@
 import unittest
 import os
-from argo_config import ArgoConfig
-from urlparse import urlparse
+from .argo_config import ArgoConfig
+from urllib.parse import urlparse
 
 
 CONF_FILE = os.path.join(os.path.dirname(__file__), '../../conf/argo-streaming.conf')

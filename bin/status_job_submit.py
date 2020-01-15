@@ -6,7 +6,7 @@ import datetime
 from snakebite.client import Client
 
 import logging
-from urlparse import urlparse
+from urllib.parse import urlparse
 from utils.argo_mongo import ArgoMongoClient
 from utils.common import cmd_to_string, date_rollback, flink_job_submit, hdfs_check_path, get_log_conf, get_config_paths
 from utils.update_profiles import ArgoProfileManager

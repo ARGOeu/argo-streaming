@@ -1,5 +1,5 @@
-requests==2.20.0
-responses==0.6.0
-pytest==3.4.0
-snakebite==2.11.0
-pymongo==3.6.1
+requests==2.22.0
+responses==0.10.7
+pytest==5.3.1
+snakebite-py3==3.0.5
+pymongo==3.10.0

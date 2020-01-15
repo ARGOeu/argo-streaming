@@ -99,7 +99,7 @@ def tenant_ok_reports(status):
     for report_name in status["hdfs"]["sync_data"]:
         result = 1
         report = status["hdfs"]["sync_data"][report_name]
-        for key in report.keys():
+        for key in list(report.keys()):
             result = result * report[key]
         if result > 0:
             rep_list.append(report_name)

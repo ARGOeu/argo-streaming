@@ -5,9 +5,9 @@ import argparse
 import pymongo
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
-from argo_config import ArgoConfig
-from common import get_config_paths
-from common import get_log_conf
+from .argo_config import ArgoConfig
+from .common import get_config_paths
+from .common import get_log_conf
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class ArgoMongoClient(object):
                 bool: If index exists in set return true
             """
 
-            for name in index_set.keys():
+            for name in list(index_set.keys()):
                 if index_set[name]['key'] == index:
                     return True
             return False

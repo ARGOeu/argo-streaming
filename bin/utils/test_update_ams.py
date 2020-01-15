@@ -1,6 +1,6 @@
 import unittest
 import responses
-from update_ams import ArgoAmsClient
+from .update_ams import ArgoAmsClient
 
 
 class TestClass(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestClass(unittest.TestCase):
             actual = ams.get_url(test_case["resource"], test_case["item_uuid"], test_case["group_uuid"],
                                  test_case["action"])
             expected = test_case["expected"]
-            self.assertEquals(expected, actual)
+            self.assertEqual(expected, actual)
 
     @responses.activate
     def test_basic_request(self):
@@ -171,22 +171,22 @@ class TestClass(unittest.TestCase):
 
         ams = ArgoAmsClient("ams.foo", "faketoken")
 
-        self.assertEquals("PROJECTA", ams.get_project("PROJECTA")["name"])
+        self.assertEqual("PROJECTA", ams.get_project("PROJECTA")["name"])
         users = ams.get_users()
-        self.assertEquals("id01", users[0]["uuid"])
-        self.assertEquals("id02", users[1]["uuid"])
+        self.assertEqual("id01", users[0]["uuid"])
+        self.assertEqual("id02", users[1]["uuid"])
         user = ams.get_user("ams_projecta_consumer")
-        self.assertEquals("ams_projecta_consumer", user["name"])
+        self.assertEqual("ams_projecta_consumer", user["name"])
 
-        self.assertEquals(["sync_data", "metric_data"], ams.user_get_topics(users[0], "PROJECTA"))
-        self.assertEquals([], ams.user_get_subs(users[0], "PROJECTA"))
-        self.assertEquals([], ams.user_get_topics(users[1], "PROJECTA"))
-        self.assertEquals(["ingest_sync", "ingest_metric", "status_sync", "status_metric"],
+        self.assertEqual(["sync_data", "metric_data"], ams.user_get_topics(users[0], "PROJECTA"))
+        self.assertEqual([], ams.user_get_subs(users[0], "PROJECTA"))
+        self.assertEqual([], ams.user_get_topics(users[1], "PROJECTA"))
+        self.assertEqual(["ingest_sync", "ingest_metric", "status_sync", "status_metric"],
                           ams.user_get_subs(users[1], "PROJECTA"))
 
-        self.assertEquals("PROJECTA", ams.check_project_exists("projectA")["name"])
+        self.assertEqual("PROJECTA", ams.check_project_exists("projectA")["name"])
         expected_missing = {'topics': ['sync_data'], 'topic_acls': [],
                             'subs': ['ingest_sync', 'ingest_metric', 'status_sync', 'status_metric', 'archive_metric'],
                             'sub_acls': ['ingest_sync', 'archive_metric'], 'users': ['project_admin']}
 
-        self.assertEquals(expected_missing, ams.check_tenant("projectA"))
+        self.assertEqual(expected_missing, ams.check_tenant("projectA"))
