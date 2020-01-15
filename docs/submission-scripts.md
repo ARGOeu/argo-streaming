@@ -86,6 +86,8 @@ Status job submission is a batch job that will run and finish on the cluster
 
 `--profile-check: (optional) Check if profiles used in computation are out of date and update them`
 
+`--historic: (optional) status job submission script will use the historic versions of the available profiles according to the (-d) date parameter`
+
 `--thresholds: (optional) Check if threshold rules are defined and use them during computations`
 
 <a id = "stream-status"></a>
@@ -107,6 +109,12 @@ Status streaming job receives metric and sync data from AMS calculates and gener
 `-d : The date we want the job to run for. Format should be YYYY-MM-DDT:HH:MM:SSZ`
 
 `-t : long(ms) - controls default timeout for event regeneration (used in notifications)`
+
+`--historic: (optional) status stream job submission script will use the historic versions of the available profiles according to the (-d) date parameter`
+
+`--profile-check: (optional) Check if profiles used in computation are out of date and update them`
+
+`--thresholds: (optional) Check if threshold rules are defined and use them during computations`
 
 ### Important
 
