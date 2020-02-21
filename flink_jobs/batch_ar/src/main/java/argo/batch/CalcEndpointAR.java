@@ -135,8 +135,9 @@ public class CalcEndpointAR extends RichFlatMapFunction<MonTimeline, EndpointAR>
 		dAR.calculateAR(mtl.getTimeline(),this.opsMgr); 
 		
 		int runDateInt = Integer.parseInt(this.runDate.replace("-", ""));
-		
-		EndpointAR result = new EndpointAR(runDateInt,this.report,mtl.getHostname(),mtl.getService(),mtl.getGroup(),dAR.availability,dAR.reliability,dAR.up_f,dAR.unknown_f,dAR.down_f);
+		String groupType = this.confMgr.egroup;
+		String info  = this.egpMgr.getInfo(mtl.getGroup(),groupType, mtl.getHostname(), mtl.getService());
+		EndpointAR result = new EndpointAR(runDateInt,this.report,mtl.getHostname(),mtl.getService(),mtl.getGroup(),dAR.availability,dAR.reliability,dAR.up_f,dAR.unknown_f,dAR.down_f,info);
 		
 		out.collect(result);
 	
