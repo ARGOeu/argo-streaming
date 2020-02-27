@@ -98,6 +98,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 		String service ="";
 		String endpointGroup ="";
 		String hostname ="";
+		String info = "";
 		int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
 
 		
@@ -129,6 +130,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 			String ts = item.getTimestamp();
 			String status = item.getStatus();
 			String prevStatus = item.getPrevState();
+			info = item.getInfo();
 			
 
 			// Check if we are in the switch of a new metric name
@@ -156,6 +158,8 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 			cur.setGroup(endpointGroup);
 			cur.setHostname(hostname);
 			cur.setService(service);
+			cur.setInfo(info);
+			
 			
 			
 			cur.setTimestamp(item.getKey().toString(DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")));
