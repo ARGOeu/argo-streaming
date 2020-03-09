@@ -86,12 +86,29 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
 	 */
 	@Override
 	public void writeRecord(EndpointAR record) throws IOException {
-
+		
+		
+		String info = record.getInfo();
+		    
 		// create document from record
 		Document doc = new Document("report", record.getReport()).append("date", record.getDateInt())
 				.append("name", record.getName()).append("service", record.getService()).append("supergroup", record.getGroup())
 				.append("availability", record.getA()).append("reliability", record.getR()).append("up", record.getUp())
 				.append("unknown", record.getUnknown()).append("down", record.getDown());
+		
+		if (!info.equalsIgnoreCase("")) {
+			Document infoDoc = new Document();
+			String[] kvs = info.split(",");
+			for (String kv : kvs) {
+				String[] kvtok = kv.split(":",2);
+				if (kvtok.length == 2){
+					infoDoc.append(kvtok[0], kvtok[1]);
+				}
+			}
+			
+			doc.append("info", infoDoc);
+			
+		}
 
 		if (this.method == MongoMethod.UPSERT) {
 			Bson f = Filters.and(Filters.eq("report", record.getReport()), Filters.eq("date", record.getDateInt()),
