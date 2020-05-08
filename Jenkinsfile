@@ -10,22 +10,27 @@ pipeline {
         REQUIREMENTS="${PROJECT_DIR}/bin/requirements.txt"
     }
     stages {
-          stage('Configuration scripts Tests') {
-              agent {
-                  docker {
-                      image 'argo.registry:5000/epel-7-py36'
-                      args '-u jenkins:jenkins'
-                  }
-              }
-              steps {
-                  echo 'Testing compute engine auto configuration scripts'
-                  sh """
-                  pip3 install -r ${REQUIREMENTS} --user
-                  pytest --junit-xml=${PROJECT_DIR}/junit.xml --cov=${PROJECT_DIR} --cov-report=xml
-                  """
-                  junit '**/junit.xml'
-                  cobertura coberturaReportFile: '**/coverage.xml'
-              }
+        stage('Configuration scripts Tests') {
+            agent {
+                docker {
+                    image 'argo.registry:5000/epel-7-py36'
+                    args '-u jenkins:jenkins'
+                }
+            }
+            steps {
+                echo 'Testing compute engine auto configuration scripts'
+                sh """
+                pip3 install -r ${REQUIREMENTS} --user
+                pytest --junit-xml=${PROJECT_DIR}/junit.xml --cov=${PROJECT_DIR} --cov-report=xml
+                """
+                junit '**/junit.xml'
+                cobertura coberturaReportFile: '**/coverage.xml'
+            }
+            post {
+                always {
+                    cleanWs()
+                }
+            }
         }
         stage('Flink Jobs Testing & Packaging') {
             agent {
@@ -46,6 +51,30 @@ pipeline {
                 junit '**/target/surefire-reports/*.xml'
                 cobertura coberturaReportFile: '**/target/site/cobertura/coverage.xml'
                 archiveArtifacts artifacts: '**/target/*.jar'
+            }
+            post {
+                always {
+                    cleanWs()
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            script{
+                if ( env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'devel' ) {
+                    slackSend( message: ":rocket: New version for <$BUILD_URL|$PROJECT_DIR>:$BRANCH_NAME Job: $JOB_NAME !")
+                }
+            }
+        }
+        failure {
+            script{
+                if ( env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'devel' ) {
+                    slackSend( message: ":rain_cloud: Build Failed for <$BUILD_URL|$PROJECT_DIR>:$BRANCH_NAME Job: $JOB_NAME")
+                }
             }
         }
     }
