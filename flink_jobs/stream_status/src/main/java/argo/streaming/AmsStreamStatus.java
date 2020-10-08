@@ -548,7 +548,7 @@ public class AmsStreamStatus {
 			
 			Map<String, String> attr = SyncParse.parseAttributes(jAttr);
 			// The sync dataset should have a type and report attribute and report should be the job's report
-			if (attr.containsKey("type") && attr.containsKey("report") && attr.get("report") == config.report ) {
+			if (attr.containsKey("type") && attr.containsKey("report") && attr.get("report").equals(config.report) ) {
 				
 				String sType = attr.get("type");
 				LOG.info("Accepted " + sType + " for report: " + attr.get("report"));
