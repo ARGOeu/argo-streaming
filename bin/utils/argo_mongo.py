@@ -54,6 +54,32 @@ class ArgoMongoClient(object):
                            ("report", pymongo.ASCENDING)]
         status_collections = ["status_metrics", "status_endpoints",
                               "status_services", "status_endpoint_groups"]
+
+        index_history = [("date_integer",pymongo.DESCENDING),
+                         ("id",pymongo.ASCENDING)]
+
+        index_downtimes = [("date_integer",pymongo.DESCENDING)]
+
+        # Check indexes in sync collections
+        for col_name in ["topology_endpoints", "topology_groups", "weights"]:
+            col = db[col_name]
+            indexes = col.index_information()
+            if not is_index_included(indexes, index_history):
+                # ensure index
+                col.create_index(index_history, background=True)
+                log.info("Created (date_integer,id) index in %s.%s",
+                         col.database.name, col.name)
+
+        # Check for index in downtimes
+        col = db["downtimes"]
+        indexes = col.index_information()
+        if not is_index_included(indexes, index_downtimes):
+            col.create_index(index_downtimes, background=True)
+            log.info("Created (date_integer) index in %s.%s",
+                     col.database.name, col.name)             
+
+
+
         # Check first for index report,date
         for status_name in status_collections:
             col = db[status_name]
@@ -66,6 +92,7 @@ class ArgoMongoClient(object):
 
         # Check for index date,host in status_metrics
         col = db["status_metrics"]
+        indexes = col.index_information()
         if not is_index_included(indexes, index_date_host):
             col.create_index(index_date_host, background=True)
             log.info("Created (report,date) index in %s.%s",
