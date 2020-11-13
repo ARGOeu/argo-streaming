@@ -5,7 +5,12 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.net.ssl.SSLContext;
 
@@ -23,6 +28,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
+import argo.avro.Downtime;
+import argo.avro.GroupEndpoint;
+import argo.avro.GroupGroup;
+import argo.avro.MetricProfile;
+import argo.avro.Weight;
 
 
 /**
@@ -422,6 +433,154 @@ public class ApiResourceManager {
 
 		}
 
+	}
+	
+	/**
+	 * Parses the Downtime content retrieved from argo-web-api and provides a list of Downtime avro objects
+	 * to be used in the next steps of the pipeline
+	 */
+	public List<Downtime> getListDowntimes() {
+		List<Downtime> results = new ArrayList<Downtime>();
+		if (!this.data.containsKey(ApiResource.DOWNTIMES))
+			return results;
+		
+		String content = this.data.get(ApiResource.DOWNTIMES);
+		JsonParser jsonParser = new JsonParser();
+		JsonElement jElement = jsonParser.parse(content);
+		JsonObject jRoot = jElement.getAsJsonObject();
+		JsonArray jElements = jRoot.get("endpoints").getAsJsonArray();
+		for (int i = 0; i < jElements.size(); i++) {
+			JsonObject jItem= jElements.get(i).getAsJsonObject();
+			String hostname = jItem.get("hostname").getAsString();
+			String service = jItem.get("service").getAsString();
+			String startTime = jItem.get("start_time").getAsString();
+			String endTime = jItem.get("end_time").getAsString();
+			
+			Downtime d = new Downtime(hostname,service,startTime,endTime);
+			results.add(d);
+		}
+		
+		return results;
+	}
+
+	/**
+	 * Parses the Topology endpoint content retrieved from argo-web-api and provides a list of GroupEndpoint avro objects
+	 * to be used in the next steps of the pipeline
+	 */
+	public List<GroupEndpoint> getListGroupEndpoints() {
+		List<GroupEndpoint> results = new ArrayList<GroupEndpoint>();
+		if (!this.data.containsKey(ApiResource.TOPOENDPOINTS))
+			return results;
+		
+		String content = this.data.get(ApiResource.TOPOENDPOINTS);
+		JsonParser jsonParser = new JsonParser();
+		JsonElement jElement = jsonParser.parse(content);
+		JsonArray jRoot = jElement.getAsJsonArray();
+		for (int i = 0; i < jRoot.size(); i++) {
+			JsonObject jItem= jRoot.get(i).getAsJsonObject();
+			String group = jItem.get("group").getAsString();
+			String gType = jItem.get("type").getAsString();
+			String service = jItem.get("service").getAsString();
+			String hostname = jItem.get("hostname").getAsString();
+			JsonObject jTags = jItem.get("tags").getAsJsonObject();
+			Map<String,String> tags = new HashMap<String,String>();
+		    for ( Entry<String, JsonElement> kv : jTags.entrySet()) {
+		    	tags.put(kv.getKey(), kv.getValue().getAsString());
+		    }
+			GroupEndpoint ge = new GroupEndpoint(gType,group,service,hostname,tags);
+			results.add(ge);
+		}
+		
+		return results;
+	}
+	
+	/**
+	 * Parses the Topology Groups content retrieved from argo-web-api and provides a list of GroupGroup avro objects
+	 * to be used in the next steps of the pipeline
+	 */
+	public List<GroupGroup> getListGroupGroups() {
+		List<GroupGroup> results = new ArrayList<GroupGroup>();
+		if (!this.data.containsKey(ApiResource.TOPOGROUPS))
+			return results;
+		
+		String content = this.data.get(ApiResource.TOPOGROUPS);
+		JsonParser jsonParser = new JsonParser();
+		JsonElement jElement = jsonParser.parse(content);
+		JsonArray jRoot = jElement.getAsJsonArray();
+		for (int i = 0; i < jRoot.size(); i++) {
+			JsonObject jItem= jRoot.get(i).getAsJsonObject();
+			String group = jItem.get("group").getAsString();
+			String gType = jItem.get("type").getAsString();
+			String subgroup = jItem.get("subgroup").getAsString();
+			JsonObject jTags = jItem.get("tags").getAsJsonObject();
+			Map<String,String> tags = new HashMap<String,String>();
+		    for ( Entry<String, JsonElement> kv : jTags.entrySet()) {
+		    	tags.put(kv.getKey(), kv.getValue().getAsString());
+		    }
+			GroupGroup gg = new GroupGroup(gType,group,subgroup,tags);
+			results.add(gg);
+		}
+		
+		return results;
+	}
+	
+	/**
+	 * Parses the Weights content retrieved from argo-web-api and provides a list of Weights avro objects
+	 * to be used in the next steps of the pipeline
+	 */
+	public List<Weight> getListWeights() {
+		List<Weight> results = new ArrayList<Weight>();
+		if (!this.data.containsKey(ApiResource.WEIGHTS))
+			return results;
+		
+		String content = this.data.get(ApiResource.WEIGHTS);
+		JsonParser jsonParser = new JsonParser();
+		JsonElement jElement = jsonParser.parse(content);
+		JsonObject jRoot = jElement.getAsJsonObject();
+		String wType = jRoot.get("weight_type").getAsString();
+		JsonArray jElements = jRoot.get("groups").getAsJsonArray();
+		for (int i = 0; i < jElements.size(); i++) {
+			JsonObject jItem= jElements.get(i).getAsJsonObject();
+			String group = jItem.get("name").getAsString();
+			String weight = jItem.get("value").getAsString();
+			
+			Weight w = new Weight(wType,group,weight);
+			results.add(w);
+		}
+		
+		return results;
+	}
+	
+	/**
+	 * Parses the Metric profile content retrieved from argo-web-api and provides a list of MetricProfile avro objects
+	 * to be used in the next steps of the pipeline
+	 */
+	public List<MetricProfile> getListMetrics() {
+		List<MetricProfile> results = new ArrayList<MetricProfile>();
+		if (!this.data.containsKey(ApiResource.METRIC))
+			return results;
+		
+		String content = this.data.get(ApiResource.METRIC);
+		JsonParser jsonParser = new JsonParser();
+		JsonElement jElement = jsonParser.parse(content);
+		JsonObject jRoot = jElement.getAsJsonObject();
+		String profileName = jRoot.get("name").getAsString();
+		JsonArray jElements = jRoot.get("services").getAsJsonArray();
+		for (int i = 0; i < jElements.size(); i++) {
+			JsonObject jItem= jElements.get(i).getAsJsonObject();
+			String service = jItem.get("service").getAsString();
+			JsonArray jMetrics = jItem.get("metrics").getAsJsonArray();
+			for (int j=0; j < jMetrics.size(); j++) {
+				String metric = jMetrics.get(i).getAsString();
+				
+				Map<String,String> tags = new HashMap<String,String>();
+				MetricProfile mp = new MetricProfile(profileName,service,metric,tags);
+				results.add(mp);
+			}
+			
+		}
+		
+		return results;
 	}
 
 	/**
