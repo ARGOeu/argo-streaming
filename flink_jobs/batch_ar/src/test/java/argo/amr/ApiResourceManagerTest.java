@@ -67,6 +67,7 @@ public class ApiResourceManagerTest {
 		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/topogroups.json"));
 		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/downtimes.json"));
 		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/weights.json"));
+		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/recomputations.json"));
 		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_CONFIG.json"));
 		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_METRIC.json"));
 		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_AGGREGATION.json"));
@@ -76,6 +77,7 @@ public class ApiResourceManagerTest {
 		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_TOPOGROUPS.json"));
 		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_DOWNTIMES.json"));
 		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_WEIGHTS.json"));
+		assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_RECOMPUTATIONS.json"));
 	}
 
 	@Test
@@ -90,6 +92,7 @@ public class ApiResourceManagerTest {
 		String jsonTopoGroups = loadResJSON("/amr/topogroups.json");
 		String jsonDowntimes = loadResJSON("/amr/downtimes.json");
 		String jsonWeights = loadResJSON("/amr/weights.json");
+		String jsonRecomp = loadResJSON("/amr/recomputations.json");
 		
 		// get json data items
 		
@@ -102,6 +105,7 @@ public class ApiResourceManagerTest {
 		String dataTopoGroup = loadResJSON("/amr/data_TOPOGROUPS.json");
 		String dataDown = loadResJSON("/amr/data_DOWNTIMES.json");
 		String dataWeights = loadResJSON("/amr/data_WEIGHTS.json");
+		String dataRecomp = loadResJSON("/amr/data_RECOMPUTATIONS.json");
 		
 		
 	
@@ -124,6 +128,8 @@ public class ApiResourceManagerTest {
 				.willReturn(aResponse().withBody(jsonDowntimes)));
 		stubFor(get(urlEqualTo("/api/v2/weights/3b9602ed-49ec-42f3-8df7-7c35331ebf69?date=2020-11-01"))
 				.willReturn(aResponse().withBody(jsonWeights)));
+		stubFor(get(urlEqualTo("/api/v2/recomputations?date=2020-11-01"))
+				.willReturn(aResponse().withBody(jsonRecomp)));
 		
 		ApiResourceManager amr = new ApiResourceManager("localhost:8443", "s3cr3t");
 		amr.setDate("2020-11-01");
@@ -172,6 +178,10 @@ public class ApiResourceManagerTest {
 	    // get weights
 	    amr.getRemoteWeights();
 		assertEquals("retrieved downtimes",dataWeights,amr.getResourceJSON(ApiResource.WEIGHTS));
+		
+		// get recomputations
+		amr.getRemoteRecomputations();
+		assertEquals("retrieved recomputations",dataRecomp,amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
 	    
 		// initate a second amr and check getRemoteAll routine
 		
