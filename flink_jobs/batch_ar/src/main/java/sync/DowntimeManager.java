@@ -146,8 +146,7 @@ public class DowntimeManager {
 				String service = avroRow.get("service").toString();
 				String startTime = avroRow.get("start_time").toString();
 				String endTime = avroRow.get("end_time").toString();
-
-				// Insert data to list
+                // insert data to list
 				this.insert(hostname, service, startTime, endTime);
 
 			} // end of avro rows
@@ -179,7 +178,7 @@ public class DowntimeManager {
 			String startTime = item.getStartTime();
 			String endTime = item.getEndTime();
 			// Insert data to list
-			this.insert(hostname,service,startTime,endTime);
+			if (hostname != null) this.insert(hostname,service,startTime,endTime);
 		}
 		
 

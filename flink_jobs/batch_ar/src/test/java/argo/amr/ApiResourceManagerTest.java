@@ -196,89 +196,89 @@ public class ApiResourceManagerTest {
 		amr2.getRemoteAll();
 	
 		// test amr2 downtime list
-		List<Downtime> dtl = amr2.getListDowntimes();
-		assertEquals("downtime list size", 3, dtl.size());
-		assertEquals("downtime data", "WebPortal", dtl.get(0).getService());
-		assertEquals("downtime data", "hostA.foo", dtl.get(0).getHostname());
-		assertEquals("downtime data", "2020-11-10T00:00:00Z", dtl.get(0).getStartTime());
-		assertEquals("downtime data", "2020-11-10T23:59:00Z", dtl.get(0).getEndTime());
-		assertEquals("downtime data", "WebPortal", dtl.get(1).getService());
-		assertEquals("downtime data", "hostB.foo", dtl.get(1).getHostname());
-		assertEquals("downtime data", "2020-11-10T00:00:00Z", dtl.get(1).getStartTime());
-		assertEquals("downtime data", "2020-11-10T23:59:00Z", dtl.get(1).getEndTime());
-		assertEquals("downtime data", "WebPortald", dtl.get(2).getService());
-		assertEquals("downtime data", "hostB.foo", dtl.get(2).getHostname());
-		assertEquals("downtime data", "2020-11-10T00:00:00Z", dtl.get(2).getStartTime());
-		assertEquals("downtime data", "2020-11-10T23:59:00Z", dtl.get(2).getEndTime());
+		Downtime[] dtl = amr2.getListDowntimes();
+		assertEquals("downtime list size", 3, dtl.length);
+		assertEquals("downtime data", "WebPortal", dtl[0].getService());
+		assertEquals("downtime data", "hostA.foo", dtl[0].getHostname());
+		assertEquals("downtime data", "2020-11-10T00:00:00Z", dtl[0].getStartTime());
+		assertEquals("downtime data", "2020-11-10T23:59:00Z", dtl[0].getEndTime());
+		assertEquals("downtime data", "WebPortal", dtl[1].getService());
+		assertEquals("downtime data", "hostB.foo", dtl[1].getHostname());
+		assertEquals("downtime data", "2020-11-10T00:00:00Z", dtl[1].getStartTime());
+		assertEquals("downtime data", "2020-11-10T23:59:00Z", dtl[1].getEndTime());
+		assertEquals("downtime data", "WebPortald", dtl[2].getService());
+		assertEquals("downtime data", "hostB.foo", dtl[2].getHostname());
+		assertEquals("downtime data", "2020-11-10T00:00:00Z", dtl[2].getStartTime());
+		assertEquals("downtime data", "2020-11-10T23:59:00Z", dtl[2].getEndTime());
 		
 		// test amr2 group endpoint list
-		List<GroupEndpoint> gel = amr2.getListGroupEndpoints();
-		assertEquals("group endpoint list size", 3, gel.size());
-		assertEquals("group endpoint data", "SERVICEGROUPS", gel.get(0).getType());
-		assertEquals("group endpoint data", "groupA", gel.get(0).getGroup());
-		assertEquals("group endpoint data", "webPortal", gel.get(0).getService());
-		assertEquals("group endpoint data", "host1.foo.bar", gel.get(0).getHostname());
-		assertEquals("group endpoint data", "1", gel.get(0).getTags().get("monitored"));
-		assertEquals("group endpoint data", "1", gel.get(0).getTags().get("production"));
-		assertEquals("group endpoint data", "FOO", gel.get(0).getTags().get("scope"));
+		GroupEndpoint[] gel = amr2.getListGroupEndpoints();
+		assertEquals("group endpoint list size", 3, gel.length);
+		assertEquals("group endpoint data", "SERVICEGROUPS", gel[0].getType());
+		assertEquals("group endpoint data", "groupA", gel[0].getGroup());
+		assertEquals("group endpoint data", "webPortal", gel[0].getService());
+		assertEquals("group endpoint data", "host1.foo.bar", gel[0].getHostname());
+		assertEquals("group endpoint data", "1", gel[0].getTags().get("monitored"));
+		assertEquals("group endpoint data", "1", gel[0].getTags().get("production"));
+		assertEquals("group endpoint data", "FOO", gel[0].getTags().get("scope"));
 		
-		assertEquals("group endpoint data", "SERVICEGROUPS", gel.get(1).getType());
-		assertEquals("group endpoint data", "groupB", gel.get(1).getGroup());
-		assertEquals("group endpoint data", "webPortal", gel.get(1).getService());
-		assertEquals("group endpoint data", "host3.foo.bar", gel.get(1).getHostname());
-		assertEquals("group endpoint data", "1", gel.get(1).getTags().get("monitored"));
-		assertEquals("group endpoint data", "1", gel.get(1).getTags().get("production"));
-		assertEquals("group endpoint data", "FOO", gel.get(1).getTags().get("scope"));
+		assertEquals("group endpoint data", "SERVICEGROUPS", gel[1].getType());
+		assertEquals("group endpoint data", "groupB", gel[1].getGroup());
+		assertEquals("group endpoint data", "webPortal", gel[1].getService());
+		assertEquals("group endpoint data", "host3.foo.bar", gel[1].getHostname());
+		assertEquals("group endpoint data", "1", gel[1].getTags().get("monitored"));
+		assertEquals("group endpoint data", "1", gel[1].getTags().get("production"));
+		assertEquals("group endpoint data", "FOO", gel[1].getTags().get("scope"));
 		
-		assertEquals("group endpoint data", "SERVICEGROUPS", gel.get(2).getType());
-		assertEquals("group endpoint data", "groupA", gel.get(2).getGroup());
-		assertEquals("group endpoint data", "webPortal", gel.get(2).getService());
-		assertEquals("group endpoint data", "host2.foo.bar", gel.get(2).getHostname());
-		assertEquals("group endpoint data", "1", gel.get(2).getTags().get("monitored"));
-		assertEquals("group endpoint data", "1", gel.get(2).getTags().get("production"));
-		assertEquals("group endpoint data", "FOO", gel.get(2).getTags().get("scope"));
+		assertEquals("group endpoint data", "SERVICEGROUPS", gel[2].getType());
+		assertEquals("group endpoint data", "groupA", gel[2].getGroup());
+		assertEquals("group endpoint data", "webPortal", gel[2].getService());
+		assertEquals("group endpoint data", "host2.foo.bar", gel[2].getHostname());
+		assertEquals("group endpoint data", "1", gel[2].getTags().get("monitored"));
+		assertEquals("group endpoint data", "1", gel[2].getTags().get("production"));
+		assertEquals("group endpoint data", "FOO", gel[2].getTags().get("scope"));
 		
 		// test amr2 group groups list
-		List<GroupGroup> ggl = amr2.getListGroupGroups();
-		assertEquals("group endpoint list size", 2, ggl.size());
-		assertEquals("group endpoint data", "PROJECT", ggl.get(0).getType());
-		assertEquals("group endpoint data", "ORG-A", ggl.get(0).getGroup());
-		assertEquals("group endpoint data", "GROUP-101", ggl.get(0).getSubgroup());
-		assertEquals("group endpoint data", "0", ggl.get(0).getTags().get("monitored"));
-		assertEquals("group endpoint data", "Local", ggl.get(0).getTags().get("scope"));
+		GroupGroup[] ggl = amr2.getListGroupGroups();
+		assertEquals("group endpoint list size", 2, ggl.length);
+		assertEquals("group endpoint data", "PROJECT", ggl[0].getType());
+		assertEquals("group endpoint data", "ORG-A", ggl[0].getGroup());
+		assertEquals("group endpoint data", "GROUP-101", ggl[0].getSubgroup());
+		assertEquals("group endpoint data", "0", ggl[0].getTags().get("monitored"));
+		assertEquals("group endpoint data", "Local", ggl[0].getTags().get("scope"));
 		
-		assertEquals("group endpoint data", "PROJECT", ggl.get(1).getType());
-		assertEquals("group endpoint data", "ORG-A", ggl.get(1).getGroup());
-		assertEquals("group endpoint data", "GROUP-202", ggl.get(1).getSubgroup());
-		assertEquals("group endpoint data", "1", ggl.get(1).getTags().get("monitored"));
-		assertEquals("group endpoint data", "Local", ggl.get(1).getTags().get("scope"));
+		assertEquals("group endpoint data", "PROJECT", ggl[1].getType());
+		assertEquals("group endpoint data", "ORG-A", ggl[1].getGroup());
+		assertEquals("group endpoint data", "GROUP-202", ggl[1].getSubgroup());
+		assertEquals("group endpoint data", "1", ggl[1].getTags().get("monitored"));
+		assertEquals("group endpoint data", "Local", ggl[1].getTags().get("scope"));
 		
 		// test amr2 weights list
-		List<Weight> wl = amr2.getListWeights();
-		assertEquals("group endpoint list size", 4, wl.size());
-		assertEquals("group endpoint data", "computationpower", wl.get(0).getType());
-		assertEquals("group endpoint data", "GROUP-A", wl.get(0).getSite());
-		assertEquals("group endpoint data", "366", wl.get(0).getWeight());
+		Weight[] wl = amr2.getListWeights();
+		assertEquals("group endpoint list size", 4, wl.length);
+		assertEquals("group endpoint data", "computationpower", wl[0].getType());
+		assertEquals("group endpoint data", "GROUP-A", wl[0].getSite());
+		assertEquals("group endpoint data", "366",  wl[0].getWeight());
 		
-		assertEquals("group endpoint data", "computationpower", wl.get(1).getType());
-		assertEquals("group endpoint data", "GROUP-B", wl.get(1).getSite());
-		assertEquals("group endpoint data", "4000", wl.get(1).getWeight());
+		assertEquals("group endpoint data", "computationpower",  wl[1].getType());
+		assertEquals("group endpoint data", "GROUP-B",  wl[1].getSite());
+		assertEquals("group endpoint data", "4000",  wl[1].getWeight());
 		
-		assertEquals("group endpoint data", "computationpower", wl.get(2).getType());
-		assertEquals("group endpoint data", "GROUP-C", wl.get(2).getSite());
-		assertEquals("group endpoint data", "19838", wl.get(2).getWeight());
+		assertEquals("group endpoint data", "computationpower",  wl[2].getType());
+		assertEquals("group endpoint data", "GROUP-C",  wl[2].getSite());
+		assertEquals("group endpoint data", "19838",  wl[2].getWeight());
 		
-		assertEquals("group endpoint data", "computationpower", wl.get(3).getType());
-		assertEquals("group endpoint data", "GROUP-D", wl.get(3).getSite());
-		assertEquals("group endpoint data", "19838", wl.get(3).getWeight());
+		assertEquals("group endpoint data", "computationpower",  wl[3].getType());
+		assertEquals("group endpoint data", "GROUP-D",  wl[3].getSite());
+		assertEquals("group endpoint data", "19838",  wl[3].getWeight());
 		
 		// test amr2 metric profile list
-		List<MetricProfile> mpl = amr2.getListMetrics();
-		assertEquals("group endpoint list size", 1, mpl.size());
-		assertEquals("group endpoint data", "test-mon", mpl.get(0).getProfile());
-		assertEquals("group endpoint data", "WebPortal", mpl.get(0).getService());
-		assertEquals("group endpoint data", "org.nagios.WebCheck", mpl.get(0).getMetric());
-		assertEquals("group endpoint data", 0, mpl.get(0).getTags().size());
+		MetricProfile[] mpl = amr2.getListMetrics();
+		assertEquals("group endpoint list size", 1, mpl.length);
+		assertEquals("group endpoint data", "test-mon", mpl[0].getProfile());
+		assertEquals("group endpoint data", "WebPortal", mpl[0].getService());
+		assertEquals("group endpoint data", "org.nagios.WebCheck", mpl[0].getMetric());
+		assertEquals("group endpoint data", 0, mpl[0].getTags().size());
 
 	
 		

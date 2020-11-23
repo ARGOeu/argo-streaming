@@ -217,7 +217,7 @@ public class GroupGroupManager {
 			}
 			
 			// Insert data to list
-			this.insert(type, group, subgroup, tagMap);
+			if (type != null) this.insert(type, group, subgroup, tagMap);
 		}
 		
 		this.unfilter();

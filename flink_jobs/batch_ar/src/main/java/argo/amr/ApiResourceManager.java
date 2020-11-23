@@ -181,7 +181,7 @@ public class ApiResourceManager {
 		
 		
 		Request r = Request.Get(fullURL).addHeader("Accept", "application/json").addHeader("Content-type",
-				"application/json");
+				"application/json").addHeader("x-api-key",this.token);
 		if (!this.proxy.isEmpty()) {
 			r = r.viaProxy(proxy);
 		}
@@ -287,7 +287,7 @@ public class ApiResourceManager {
 	 * @throws KeyManagementException 
 	 */
 	public void getRemoteThresholds() {
-
+		
 		String path = "https://%s/api/v2/thresholds_profiles/%s?date=%s";
 		String fullURL = String.format(path, this.endpoint, this.threshID, this.date);
 		String content = getResource(fullURL);
@@ -394,12 +394,12 @@ public class ApiResourceManager {
 		this.getRemoteMetric();
 		this.getRemoteOps();
 		this.getRemoteAggregation();
-		this.getRemoteThresholds();
+		if (!this.threshID.equals(""))	this.getRemoteThresholds();
 		// Go to topology
 		this.getRemoteTopoEndpoints();
 		this.getRemoteTopoGroups();
 		// get weights
-		this.getRemoteWeights();
+		if (!this.weightsID.equals(""))	this.getRemoteWeights();
 		// get downtimes
 		this.getRemoteDowntimes();
 		// get recomptations
@@ -448,10 +448,13 @@ public class ApiResourceManager {
 	 * Parses the Downtime content retrieved from argo-web-api and provides a list of Downtime avro objects
 	 * to be used in the next steps of the pipeline
 	 */
-	public List<Downtime> getListDowntimes() {
+	public Downtime[] getListDowntimes() {
 		List<Downtime> results = new ArrayList<Downtime>();
-		if (!this.data.containsKey(ApiResource.DOWNTIMES))
-			return results;
+		if (!this.data.containsKey(ApiResource.DOWNTIMES)) {
+			Downtime[] rArr = new Downtime[results.size()];
+			rArr = results.toArray(rArr);
+		}
+			
 		
 		String content = this.data.get(ApiResource.DOWNTIMES);
 		JsonParser jsonParser = new JsonParser();
@@ -469,17 +472,23 @@ public class ApiResourceManager {
 			results.add(d);
 		}
 		
-		return results;
+		Downtime[] rArr = new Downtime[results.size()];
+		rArr = results.toArray(rArr);
+		return rArr;
 	}
 
 	/**
 	 * Parses the Topology endpoint content retrieved from argo-web-api and provides a list of GroupEndpoint avro objects
 	 * to be used in the next steps of the pipeline
 	 */
-	public List<GroupEndpoint> getListGroupEndpoints() {
+	public GroupEndpoint[] getListGroupEndpoints() {
 		List<GroupEndpoint> results = new ArrayList<GroupEndpoint>();
-		if (!this.data.containsKey(ApiResource.TOPOENDPOINTS))
-			return results;
+		if (!this.data.containsKey(ApiResource.TOPOENDPOINTS)) {
+			GroupEndpoint[] rArr = new GroupEndpoint[results.size()]; 
+			rArr = results.toArray(rArr);
+			return rArr;
+		}
+			
 		
 		String content = this.data.get(ApiResource.TOPOENDPOINTS);
 		JsonParser jsonParser = new JsonParser();
@@ -500,17 +509,22 @@ public class ApiResourceManager {
 			results.add(ge);
 		}
 		
-		return results;
+		GroupEndpoint[] rArr = new GroupEndpoint[results.size()]; 
+		rArr = results.toArray(rArr);
+		return rArr;
 	}
 	
 	/**
 	 * Parses the Topology Groups content retrieved from argo-web-api and provides a list of GroupGroup avro objects
 	 * to be used in the next steps of the pipeline
 	 */
-	public List<GroupGroup> getListGroupGroups() {
+	public GroupGroup[] getListGroupGroups() {
 		List<GroupGroup> results = new ArrayList<GroupGroup>();
-		if (!this.data.containsKey(ApiResource.TOPOGROUPS))
-			return results;
+		if (!this.data.containsKey(ApiResource.TOPOGROUPS)){
+			GroupGroup[] rArr = new GroupGroup[results.size()]; 
+			rArr = results.toArray(rArr);
+			return rArr;
+		}
 		
 		String content = this.data.get(ApiResource.TOPOGROUPS);
 		JsonParser jsonParser = new JsonParser();
@@ -530,17 +544,23 @@ public class ApiResourceManager {
 			results.add(gg);
 		}
 		
-		return results;
+		GroupGroup[] rArr = new GroupGroup[results.size()]; 
+		rArr = results.toArray(rArr);
+		return rArr;
 	}
 	
 	/**
 	 * Parses the Weights content retrieved from argo-web-api and provides a list of Weights avro objects
 	 * to be used in the next steps of the pipeline
 	 */
-	public List<Weight> getListWeights() {
+	public Weight[] getListWeights() {
 		List<Weight> results = new ArrayList<Weight>();
-		if (!this.data.containsKey(ApiResource.WEIGHTS))
-			return results;
+		if (!this.data.containsKey(ApiResource.WEIGHTS)) {
+			Weight[] rArr = new Weight[results.size()]; 
+			rArr = results.toArray(rArr);
+			return rArr;
+		}
+			
 		
 		String content = this.data.get(ApiResource.WEIGHTS);
 		JsonParser jsonParser = new JsonParser();
@@ -557,17 +577,23 @@ public class ApiResourceManager {
 			results.add(w);
 		}
 		
-		return results;
+		Weight[] rArr = new Weight[results.size()]; 
+		rArr = results.toArray(rArr);
+		return rArr;
 	}
 	
 	/**
 	 * Parses the Metric profile content retrieved from argo-web-api and provides a list of MetricProfile avro objects
 	 * to be used in the next steps of the pipeline
 	 */
-	public List<MetricProfile> getListMetrics() {
+	public MetricProfile[] getListMetrics() {
 		List<MetricProfile> results = new ArrayList<MetricProfile>();
-		if (!this.data.containsKey(ApiResource.METRIC))
-			return results;
+		if (!this.data.containsKey(ApiResource.METRIC)) {
+			MetricProfile[] rArr = new MetricProfile[results.size()]; 
+			rArr = results.toArray(rArr);
+			return rArr;
+		}
+			
 		
 		String content = this.data.get(ApiResource.METRIC);
 		JsonParser jsonParser = new JsonParser();
@@ -580,7 +606,7 @@ public class ApiResourceManager {
 			String service = jItem.get("service").getAsString();
 			JsonArray jMetrics = jItem.get("metrics").getAsJsonArray();
 			for (int j=0; j < jMetrics.size(); j++) {
-				String metric = jMetrics.get(i).getAsString();
+				String metric = jMetrics.get(j).getAsString();
 				
 				Map<String,String> tags = new HashMap<String,String>();
 				MetricProfile mp = new MetricProfile(profileName,service,metric,tags);
@@ -589,7 +615,9 @@ public class ApiResourceManager {
 			
 		}
 		
-		return results;
+		MetricProfile[] rArr = new MetricProfile[results.size()]; 
+		rArr = results.toArray(rArr);
+		return rArr;
 	}
 
 	/**
