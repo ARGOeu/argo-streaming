@@ -358,6 +358,13 @@ public class ApiResourceManager {
 		this.data.put(ApiResource.DOWNTIMES, getJsonData(content, false));
 	}
 	
+	public void getRemoteRecomputations()  {
+		String path = "https://%s/api/v2/recomputations?date=%s";
+		String fullURL = String.format(path, this.endpoint, this.date);
+		String content = getResource(fullURL);
+		this.data.put(ApiResource.RECOMPUTATIONS, getJsonData(content, true));
+	}
+	
 	/**
 	 * Returns local resource (after has been retrieved) content based on resource type
 	 * 
@@ -395,6 +402,8 @@ public class ApiResourceManager {
 		this.getRemoteWeights();
 		// get downtimes
 		this.getRemoteDowntimes();
+		// get recomptations
+		this.getRemoteRecomputations();
 
 	}
 
