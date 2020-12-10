@@ -2,6 +2,8 @@ package argo.batch;
 
 import org.slf4j.LoggerFactory;
 
+import argo.amr.ApiResource;
+import argo.amr.ApiResourceManager;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
@@ -64,21 +66,48 @@ public class ArgoArBatch {
 		env.getConfig().setGlobalJobParameters(params);
 		env.setParallelism(1);
 		// sync data for input
-
-		Path mps = new Path(params.getRequired("mps"));
-		Path egp = new Path(params.getRequired("egp"));
-		Path ggp = new Path(params.getRequired("ggp"));
-		Path down = new Path(params.getRequired("downtimes"));
-		Path weight = new Path(params.getRequired("weights"));
+		
+		
+		String apiEndpoint = params.getRequired("api.endpoint");
+		String apiToken = params.getRequired("api.token");
+		String reportID = params.getRequired("report.id");
+		
+		ApiResourceManager amr = new ApiResourceManager(apiEndpoint,apiToken);
+		
+		// fetch
+		
+		// set params
+		if (params.has("api.proxy")) {
+			amr.setProxy(params.get("api.proxy"));
+		}
+		
+		amr.setReportID(reportID);
+		amr.getRemoteAll();
+		
 		
 
-		DataSource<String> confDS = env.readTextFile(params.getRequired("conf"));
-		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
-		DataSource<String> aprDS = env.readTextFile(params.getRequired("apr"));
-		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
+//		Path mps = new Path(params.getRequired("mps"));
+//		Path egp = new Path(params.getRequired("egp"));
+//		Path ggp = new Path(params.getRequired("ggp"));
+//		Path down = new Path(params.getRequired("downtimes"));
+//		Path weight = new Path(params.getRequired("weights"));
+		
+
+		//DataSource<String> confDS = env.readTextFile(params.getRequired("conf"));
+//		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
+//		DataSource<String> aprDS = env.readTextFile(params.getRequired("apr"));
+//		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
+		
+	
+		DataSource<String>confDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
+		DataSource<String>opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
+		DataSource<String>aprDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
+		DataSource<String>recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
+		
 		
 		// begin with empty threshold datasource
 		DataSource<String> thrDS = env.fromElements("");
+		
 		// if threshold filepath has been defined in cli parameters
 		if (params.has("thr")){
 			// read file and update threshold datasource
@@ -86,29 +115,27 @@ public class ArgoArBatch {
 		}
 		
 		
+		DataSet<Downtime> downDS = env.fromElements(new Downtime());
+		DataSet<Weight> weightDS = env.fromElements(new Weight());
+		DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
 		
 		ConfigManager confMgr = new ConfigManager();
 		confMgr.loadJsonString(confDS.collect());
 
-		// sync data input: metric profile in avro format
-		AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);
-		DataSet<MetricProfile> mpsDS = env.createInput(mpsAvro);
+		// Get the sync datasets directly from the web-api data
+		DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
+		DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
+		
+		
+		Downtime[] listDowntimes = amr.getListDowntimes();
+		Weight[] listWeights = amr.getListWeights();
+		GroupGroup[] listGroups = amr.getListGroupGroups();
+		
+		if (listDowntimes.length > 0) downDS = env.fromElements(amr.getListDowntimes());
+		if (listWeights.length > 0) weightDS = env.fromElements(amr.getListWeights());
+		if (listGroups.length > 0) ggpDS = env.fromElements(amr.getListGroupGroups());
+		
 
-		// sync data input: endpoint group topology data in avro format
-		AvroInputFormat<GroupEndpoint> egpAvro = new AvroInputFormat<GroupEndpoint>(egp, GroupEndpoint.class);
-		DataSet<GroupEndpoint> egpDS = env.createInput(egpAvro);
-
-		// sync data input: group of group topology data in avro format
-		AvroInputFormat<GroupGroup> ggpAvro = new AvroInputFormat<GroupGroup>(ggp, GroupGroup.class);
-		DataSet<GroupGroup> ggpDS = env.createInput(ggpAvro);
-
-		// sync data input: downtime data in avro format
-		AvroInputFormat<Downtime> downAvro = new AvroInputFormat<Downtime>(down, Downtime.class);
-		DataSet<Downtime> downDS = env.createInput(downAvro);
-
-		// sync data input: weight data in avro format
-		AvroInputFormat<Weight> weightAvro = new AvroInputFormat<Weight>(weight, Weight.class);
-		DataSet<Weight> weightDS = env.createInput(weightAvro);
 
 		// todays metric data
 		Path in = new Path(params.getRequired("mdata"));

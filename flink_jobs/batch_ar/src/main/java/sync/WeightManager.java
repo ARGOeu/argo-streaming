@@ -140,7 +140,7 @@ public class WeightManager {
 				String group = avroRow.get("site").toString();
 				String weight = avroRow.get("weight").toString();
 
-				// Insert data to list
+				// Insert data to list 
 				this.insert(type, group, weight);
 
 			} // end of avro rows
@@ -170,8 +170,8 @@ public class WeightManager {
 			String type = item.getType();
 			String group = item.getSite();
 			String weight = item.getWeight();
-			// Insert data to list
-			this.insert(type, group, weight);
+			// Insert data to list -- ignore empty placeholder items
+			if (type != null) this.insert(type, group, weight);
 		}
 		
 
