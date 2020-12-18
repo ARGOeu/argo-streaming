@@ -41,6 +41,7 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String,String>> {
 	
 
 
+
 	public ArgoApiSource(String endpoint, String token, String reportID, int hourCheck,  Long interval) {
 		this.endpoint = endpoint;
 		this.token = token;
@@ -93,7 +94,7 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String,String>> {
 				this.timeSnapshot = ti;
 				// retrieve info from api
 				this.client.getRemoteAll();
-				// fetch metric_profile, downtimes, group endpoints
+
 				Tuple2<String, String> mt = new Tuple2<String, String>("metric_profile",client.getResourceJSON(ApiResource.METRIC));
 				Tuple2<String, String> gt = new Tuple2<String, String>("group_endpoints",client.getResourceJSON(ApiResource.TOPOENDPOINTS));
 				Tuple2<String, String> dt = new Tuple2<String, String>("downtimes",client.getResourceJSON(ApiResource.DOWNTIMES));

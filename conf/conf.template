@@ -14,7 +14,7 @@ path_sync: {{namenode}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/sync
 writer_bin: /path/to/binary
 
 [API]
-endpoint = api.foo
+endpoint = https://api.foo
 tenants = TENANTA
 access_token = key0
 TENANTA_key = key1

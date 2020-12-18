@@ -12,6 +12,7 @@ from utils.common import cmd_to_string, date_rollback, flink_job_submit, hdfs_ch
 from utils.update_profiles import ArgoProfileManager
 from utils.argo_config import ArgoConfig
 from utils.recomputations import upload_recomputations
+from datetime import datetime
 
 
 log = logging.getLogger(__name__)
@@ -39,9 +40,7 @@ def compose_hdfs_commands(year, month, day, args, config):
 
     hdfs_user = config.get("HDFS", "user")
     tenant = args.tenant
-    hdfs_sync = config.get("HDFS", "path_sync")
-    hdfs_sync = hdfs_sync.fill(namenode=namenode.geturl(
-    ), hdfs_user=hdfs_user, tenant=tenant).geturl()
+    
 
     hdfs_metric = config.get("HDFS", "path_metric")
 
@@ -58,87 +57,6 @@ def compose_hdfs_commands(year, month, day, args, config):
     # file location of target day's metric data (local or hdfs)
     hdfs_commands["--mdata"] = hdfs_check_path(
         hdfs_metric + "/" + args.date, client)
-
-    # file location of report configuration json file (local or hdfs)
-    hdfs_commands["--conf"] = hdfs_check_path(
-        hdfs_sync + "/" + args.tenant+"_"+args.report+"_cfg.json", client)
-
-    # if profile historic mode is used reference profiles by date
-    if args.historic:
-        # file location of historic operations profile (local or hdfs)
-        hdfs_commands["--ops"] = hdfs_check_path(
-            hdfs_sync+"/"+args.tenant+"_ops_" + args.date + ".json",  client)
-
-        # file location of historic aggregations profile (local or hdfs)
-        hdfs_commands["--apr"] = hdfs_check_path(
-            hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap_" + args.date + ".json", client)
-
-        if args.thresholds:
-            # file location of thresholds rules file (local or hdfs)
-            hdfs_commands["--thr"] = hdfs_check_path(os.path.join(hdfs_sync, "".join(
-                [args.tenant, "_", args.report, "_thresholds_", args.date, ".json"])), client)
-
-        # TODO: Don't Use YET metric profiles from api in json form until ar computation jobs are updated
-        # accordingly - After that uncomment the following
-        # #file location of historic metric profile (local or hdfs) which is in json format
-        # hdfs_commands["--mps"] = hdfs_check_path(
-        #     hdfs_sync+"/"+args.tenant+"_"+args.report+"_metric_" + args.date + ".json", client)
-
-        # TODO: when compute jobs are updated to use metric profiles in json format comment the following:
-        # file location of metric profile (local or hdfs)
-        hdfs_commands["--mps"] = date_rollback(
-            hdfs_sync + "/" + args.report + "/" + "metric_profile_" +
-            "{{date}}" + ".avro", year, month, day, config,
-            client)
-    else:
-
-        # file location of operations profile (local or hdfs)
-        hdfs_commands["--ops"] = hdfs_check_path(
-            hdfs_sync+"/"+args.tenant+"_ops.json",  client)
-
-        # file location of aggregations profile (local or hdfs)
-        hdfs_commands["--apr"] = hdfs_check_path(
-            hdfs_sync+"/"+args.tenant+"_"+args.report+"_ap.json", client)
-
-        if args.thresholds:
-            # file location of thresholds rules file (local or hdfs)
-            hdfs_commands["--thr"] = hdfs_check_path(os.path.join(hdfs_sync, "".join(
-                [args.tenant, "_", args.report, "_thresholds.json"])), client)
-
-        # file location of metric profile (local or hdfs)
-        hdfs_commands["--mps"] = date_rollback(
-            hdfs_sync + "/" + args.report + "/" + "metric_profile_" +
-            "{{date}}" + ".avro", year, month, day, config,
-            client)
-
-    #  file location of endpoint group topology file (local or hdfs)
-    hdfs_commands["-egp"] = date_rollback(
-        hdfs_sync + "/" + args.report + "/" + "group_endpoints_" +
-        "{{date}}" + ".avro", year, month, day, config,
-        client)
-
-    # file location of group of groups topology file (local or hdfs)
-    hdfs_commands["-ggp"] = date_rollback(hdfs_sync + "/" + args.report + "/" + "group_groups_" + "{{date}}" + ".avro",
-                                          year, month, day, config, client)
-
-    # file location of weights file (local or hdfs)
-    hdfs_commands["--weights"] = date_rollback(hdfs_sync + "/" + args.report + "/weights_" + "{{date}}" + ".avro", year,
-                                               month, day, config, client)
-
-    # file location of downtimes file (local or hdfs)
-    hdfs_commands["--downtimes"] = hdfs_check_path(
-        hdfs_sync + "/" + args.report + "/downtimes_" + str(datetime.date(year, month, day)) + ".avro", client)
-
-    # file location of recomputations file (local or hdfs)
-    # first check if there is a recomputations file for the given date
-    # recomputation lies in the hdfs in the form of
-    # /sync/recomp_TENANTNAME_ReportName_2018-08-02.json
-    if client.test(urlparse(hdfs_sync+"/recomp_"+args.tenant+"_"+args.report+"_"+args.date+".json").path, exists=True):
-        hdfs_commands["--rec"] = hdfs_sync+"/recomp_" + \
-            args.tenant+"_"+args.report+"_"+args.date+".json"
-    else:
-        hdfs_commands["--rec"] = hdfs_check_path(
-            hdfs_sync+"/recomp.json", client)
 
     return hdfs_commands
 
@@ -189,7 +107,8 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
         mongo_endpoint=mongo_endpoint, tenant=args.tenant)
     cmd_command.append(mongo_uri.geturl())
 
-    if args.method == "insert":
+    # do action if method is insert and not dry run
+    if args.method == "insert" and dry_run == False:
         argo_mongo_client = ArgoMongoClient(
             args, config, ["endpoint_ar", "service_ar", "endpoint_group_ar"])
         argo_mongo_client.mongo_clean_ar(mongo_uri, dry_run)
@@ -203,20 +122,27 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
         cmd_command.append(command)
         cmd_command.append(hdfs_commands[command])
 
-    # get optional ams proxy
-    proxy = config.get("AMS", "proxy")
-    if proxy is not None:
-        cmd_command.append("--ams.proxy")
-        cmd_command.append(proxy.geturl())
+    # get the api endpoint
+    api_endpoint = config.get("API","endpoint")
+    if api_endpoint:
+        cmd_command.append("--api.endpoint")
+        cmd_command.append(api_endpoint.hostname)
 
-    # ssl verify
-    cmd_command.append("--ams.verify")
-    ams_verify = config.get("AMS", "verify")
-    if ams_verify is not None:
-        cmd_command.append(str(ams_verify).lower())
-    else:
-        # by default assume ams verify is always true
-        cmd_command.append("true")
+    # get the api token 
+    cmd_command.append("--api.token")
+    cmd_command.append(config.get("API","access_token"))
+
+    # get report id 
+    
+    cmd_command.append("--report.id")
+    cmd_command.append(config.get("TENANTS:"+args.tenant,"report_"+args.report))
+
+
+    # get optional api proxy
+    proxy = config.get("API", "proxy")
+    if proxy is not None:
+        cmd_command.append("--api.proxy")
+        cmd_command.append(proxy.geturl())
 
     return cmd_command
 
@@ -239,20 +165,6 @@ def main(args=None):
         log.info("Tenant: "+args.tenant+" doesn't exist.")
         sys.exit(1)
 
-    # check and upload recomputations
-    upload_recomputations(args.tenant, args.report, args.date, config)
-
-    # optional call to update profiles
-    if args.profile_check:
-        dateParam = None
-        if args.historic:
-            dateParam = args.date
-        profile_mgr = ArgoProfileManager(config)
-        profile_type_checklist = [
-            "operations", "aggregations", "reports", "thresholds", "metrics"]
-        for profile_type in profile_type_checklist:
-            profile_mgr.profile_update_check(
-                args.tenant, args.report, profile_type, dateParam)
 
     # dictionary containing the argument's name and the command assosciated with each name
     hdfs_commands = compose_hdfs_commands(year, month, day, args, config)
@@ -265,17 +177,19 @@ def main(args=None):
 
 if __name__ == "__main__":
 
+    today = datetime.today().strftime('%Y-%m-%d')
+
     parser = argparse.ArgumentParser(description="Batch A/R Job submit script")
     parser.add_argument(
         "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True, dest="tenant")
     parser.add_argument(
-        "-r", "--report", metavar="STRING", help="Report status", required=True, dest="report")
+        "-r", "--report", metavar="STRING", help="Name of the report", required=True, dest="report")
     parser.add_argument(
-        "-d", "--date", metavar="DATE(YYYY-MM-DD)", help="Date to run the job for", required=True, dest="date")
+        "-d", "--date", metavar="DATE(YYYY-MM-DD)", help="Date to run the job for", required=False, dest="date", default=today)
     parser.add_argument(
-        "-m", "--method", metavar="KEYWORD(insert|upsert)", help="Insert or Upsert data in mongoDB", required=True, dest="method")
+        "-m", "--method", metavar="KEYWORD(insert|upsert)", help="Insert or Upsert data in mongoDB", required=False, dest="method", default="insert")
     parser.add_argument(
-        "-c", "--config", metavar="PATH", help="Path for the config file", dest="config")
+        "-c", "--config", metavar="PATH", help="Path for the config file", dest="config", required=True)
     parser.add_argument(
         "-u", "--sudo", help="Run the submition as superuser",  action="store_true")
     parser.add_argument("--profile-check", help="check if profiles are up to date before running job",
