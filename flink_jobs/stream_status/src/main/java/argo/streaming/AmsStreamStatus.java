@@ -4,7 +4,9 @@ package argo.streaming;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
@@ -41,6 +43,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import argo.amr.ApiResource;
+import argo.amr.ApiResourceManager;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
@@ -162,7 +166,23 @@ public class AmsStreamStatus {
 		String token = parameterTool.getRequired("ams.token");
 		String project = parameterTool.getRequired("ams.project");
 		String subMetric = parameterTool.getRequired("ams.sub.metric");
-		String subSync = parameterTool.getRequired("ams.sub.sync");
+	
+		String apiEndpoint = parameterTool.getRequired("api.endpoint");
+		String apiToken = parameterTool.getRequired("api.token");
+		String reportID = parameterTool.getRequired("report.id");
+		int apiInterval = parameterTool.getInt("api.interval");
+		
+		ApiResourceManager amr = new ApiResourceManager(apiEndpoint,apiToken);
+		
+		// fetch
+		
+		// set params
+		if (parameterTool.has("api.proxy")) {
+			amr.setProxy(parameterTool.get("api.proxy"));
+		}
+		
+		amr.setReportID(reportID);
+		amr.getRemoteAll();
 		
 
 		// set ams client batch and interval to default values
@@ -179,31 +199,31 @@ public class AmsStreamStatus {
 		// Establish the metric data AMS stream
 		// Ingest sync avro encoded data from AMS endpoint
 		ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval);
-		ArgoMessagingSource amsSync = new ArgoMessagingSource(endpoint, port, token, project, subSync, batch, interval);
+		ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint,apiToken,reportID,apiInterval,interval);
 
 		if (parameterTool.has("ams.verify")) {
 			boolean verify = parameterTool.getBoolean("ams.verify");
 			amsMetric.setVerify(verify);
-			amsSync.setVerify(verify);
+			
 		}
 
 		if (parameterTool.has("ams.proxy")) {
 			String proxyURL = parameterTool.get("ams.proxy");
 			amsMetric.setProxy(proxyURL);
-			amsSync.setProxy(proxyURL);
+			
 		}
 		
 		DataStream<String> metricAMS = see.addSource(amsMetric).setParallelism(1);
 
-		// Establish the sync data AMS stream
-		DataStream<String> syncAMS = see.addSource(amsSync).setParallelism(1);
+		// Establish the sync stream from argowebapi
+		DataStream<Tuple2<String,String>> syncAMS = see.addSource(apiSync).setParallelism(1);
 
 		// Forward syncAMS data to two paths
 		// - one with parallelism 1 to connect in the first processing step and
 		// - one with max parallelism for status event generation step
 		// (scalable)
-		DataStream<String> syncA = syncAMS.forward();
-		DataStream<String> syncB = syncAMS.broadcast();
+		DataStream<Tuple2<String,String>> syncA = syncAMS.forward();
+		DataStream<Tuple2<String,String>> syncB = syncAMS.broadcast();
 
 		DataStream<Tuple2<String, MetricData>> groupMdata = metricAMS.connect(syncA)
 				.flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
@@ -259,11 +279,8 @@ public class AmsStreamStatus {
 		jobTitleSB.append(port);
 		jobTitleSB.append("/v1/projects/");
 		jobTitleSB.append(project);
-		jobTitleSB.append("/subscriptions/[");
+		jobTitleSB.append("/subscriptions/");
 		jobTitleSB.append(subMetric);
-		jobTitleSB.append(",");
-		jobTitleSB.append(subSync);
-		jobTitleSB.append("]");
 		
 		// Execute flink dataflow
 		see.execute(jobTitleSB.toString());
@@ -273,7 +290,7 @@ public class AmsStreamStatus {
 	 * MetricDataWithGroup implements a map function that adds group information to
 	 * the metric data message
 	 */
-	private static class MetricDataWithGroup extends RichCoFlatMapFunction<String, String, Tuple2<String, MetricData>> {
+	private static class MetricDataWithGroup extends RichCoFlatMapFunction<String, Tuple2<String,String>, Tuple2<String, MetricData>> {
 
 		private static final long serialVersionUID = 1L;
 
@@ -297,10 +314,18 @@ public class AmsStreamStatus {
 		@Override
 		public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
 
-			SyncData sd = new SyncData();
+			ApiResourceManager amr = new ApiResourceManager(config.apiEndpoint,config.apiToken);
+			
+			if (config.apiProxy != null) {
+				amr.setProxy(config.apiProxy);
+			}
+			
+			amr.setReportID(config.reportID);
+			amr.getRemoteAll();
+			
 
-			ArrayList<MetricProfile> mpsList = sd.readMetricProfile(config.mps);
-			ArrayList<GroupEndpoint> egpList = sd.readGroupEndpoint(config.egp);
+			ArrayList<MetricProfile> mpsList = (ArrayList<MetricProfile>) (Arrays.asList(amr.getListMetrics()));
+			ArrayList<GroupEndpoint> egpList = (ArrayList<GroupEndpoint>) (Arrays.asList(amr.getListGroupEndpoints()));
 
 			mps = new MetricProfileManager();
 			mps.loadFromList(mpsList);
@@ -379,30 +404,18 @@ public class AmsStreamStatus {
 
 		}
 
-		public void flatMap2(String value, Collector<Tuple2<String, MetricData>> out)
+		public void flatMap2(Tuple2<String,String> value, Collector<Tuple2<String, MetricData>> out)
 				throws IOException, ParseException {
 
-			JsonParser jsonParser = new JsonParser();
-			// parse the json root object
-			JsonElement jRoot = jsonParser.parse(value);
-			// parse the json field "data" and read it as string
-			// this is the base64 string payload
-			String data = jRoot.getAsJsonObject().get("data").getAsString();
-			// Decode from base64
-			byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
-			JsonElement jAttr = jRoot.getAsJsonObject().get("attributes");
-			Map<String, String> attr = SyncParse.parseAttributes(jAttr);
-			if (attr.containsKey("type")) {
-
-				String sType = attr.get("type");
-				if (sType.equalsIgnoreCase("metric_profile")) {
+		
+				if (value.f0.equalsIgnoreCase("metric_profile")) {
 					// Update mps
-					ArrayList<MetricProfile> mpsList = SyncParse.parseMetricProfile(decoded64);
+					ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
 					mps = new MetricProfileManager();
 					mps.loadFromList(mpsList);
-				} else if (sType.equals("group_endpoint")) {
+				} else if (value.f0.equalsIgnoreCase("group_endpoints")) {
 					// Update egp
-					ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpoint(decoded64);
+					ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpointJSON(value.f1);
 					egp = new EndpointGroupManagerV2();
 
 					String validMetricProfile = mps.getProfiles().get(0);
@@ -416,7 +429,7 @@ public class AmsStreamStatus {
 						}
 					}
 				}
-			}
+			
 
 		}
 
@@ -427,7 +440,7 @@ public class AmsStreamStatus {
 	 * for all entities in topology and for each received metric generates the
 	 * appropriate status events
 	 */
-	private static class StatusMap extends RichCoFlatMapFunction<Tuple2<String, MetricData>, String, String> {
+	private static class StatusMap extends RichCoFlatMapFunction<Tuple2<String, MetricData>, Tuple2<String,String>, String> {
 
 		private static final long serialVersionUID = 1L;
 
@@ -460,14 +473,24 @@ public class AmsStreamStatus {
 
 			pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 			
-			SyncData sd = new SyncData();
 			
-			String opsJSON = sd.readText(config.ops);
-			String apsJSON = sd.readText(config.aps);
-			ArrayList<Downtime> downList = sd.readDowntime(config.downtime);
-			ArrayList<MetricProfile> mpsList = sd.readMetricProfile(config.mps);
-			ArrayList<GroupEndpoint> egpListFull = sd.readGroupEndpoint(config.egp);
+	
 
+			ApiResourceManager amr = new ApiResourceManager(config.apiEndpoint,config.apiToken);
+			
+			if (config.apiProxy != null) {
+				amr.setProxy(config.apiProxy);
+			}
+			
+			amr.setReportID(config.reportID);
+			amr.getRemoteAll();	
+			
+			String opsJSON = amr.getResourceJSON(ApiResource.OPS);
+			String apsJSON = amr.getResourceJSON(ApiResource.AGGREGATION);
+			ArrayList<Downtime> downList = (ArrayList<Downtime>)(Arrays.asList(amr.getListDowntimes()));
+			ArrayList<MetricProfile> mpsList = (ArrayList<MetricProfile>)(Arrays.asList(amr.getListMetrics()));
+			ArrayList<GroupEndpoint> egpListFull = (ArrayList<GroupEndpoint>)(Arrays.asList(amr.getListGroupEndpoints()));
+			
 			// create a new status manager
 			sm = new StatusManager();
 			sm.setTimeout(config.timeout);
@@ -534,32 +557,20 @@ public class AmsStreamStatus {
 			}
 		}
 
-		public void flatMap2(String value, Collector<String> out) throws IOException, ParseException {
+		public void flatMap2(Tuple2<String,String> value, Collector<String> out) throws IOException, ParseException {
 
-			JsonParser jsonParser = new JsonParser();
-			// parse the json root object
-			JsonElement jRoot = jsonParser.parse(value);
-			// parse the json field "data" and read it as string
-			// this is the base64 string payload
-			String data = jRoot.getAsJsonObject().get("data").getAsString();
-			// Decode from base64
-			byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
-			JsonElement jAttr = jRoot.getAsJsonObject().get("attributes");
 			
-			Map<String, String> attr = SyncParse.parseAttributes(jAttr);
-			// The sync dataset should have a type and report attribute and report should be the job's report
-			if (attr.containsKey("type") && attr.containsKey("report") && attr.get("report").equals(config.report) ) {
+			
 				
-				String sType = attr.get("type");
-				LOG.info("Accepted " + sType + " for report: " + attr.get("report"));
-				if (sType.equalsIgnoreCase("metric_profile")) {
+			
+				if (value.f0.equalsIgnoreCase("metric_profile")) {
 					// Update mps
-					ArrayList<MetricProfile> mpsList = SyncParse.parseMetricProfile(decoded64);
+					ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
 					sm.mps = new MetricProfileManager();
 					sm.mps.loadFromList(mpsList);
-				} else if (sType.equals("group_endpoints")) {
+				} else if (value.f0.equals("group_endpoints")) {
 					// Update egp
-					ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpoint(decoded64);
+					ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpointJSON(value.f1);
 
 					String validMetricProfile = sm.mps.getProfiles().get(0);
 					ArrayList<String> validServices = sm.mps.getProfileServices(validMetricProfile);
@@ -582,15 +593,13 @@ public class AmsStreamStatus {
 					sm.updateTopology(egpNext);
 					
 					
-				} else if (sType.equals("downtimes") && attr.containsKey("partition_date")) {
-					String pDate = attr.get("partition_date");
-					ArrayList<Downtime> downList = SyncParse.parseDowntimes(decoded64);
+				} else if (value.f0.equalsIgnoreCase("downtimes")) {
+					String pDate = Instant.now().toString().split("T")[0];
+					ArrayList<Downtime> downList = SyncParse.parseDowntimesJSON(value.f1);
 					// Update downtime cache in status manager
 					sm.addDowntimeSet(pDate, downList);
 				}
-			} else {
-				LOG.info("Declined " + attr.get("type") + "for report: " + attr.get("report"));
-			}
+			
 
 		}
 
