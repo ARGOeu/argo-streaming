@@ -368,3 +368,16 @@ Ingest Sync | Ingesting sync data from `{{ams-endpoint}}`/v1/projects/`{{project
 Batch AR | Ar Batch job for tenant:`{{tenant}}` on day:`{{day}}` using report:`{{report}}`
 Batch Status | Status Batch job for tenant:`{{tenant}}` on day:`{{day}}` using report:`{{report}}`
 Streaming Status | Streaming status using data from `{{ams-endpoint}}`/v1/projects/`{{project}}`/subscriptions/`[`{{metric_subscription}}`,`{{sync_subscription}}`]
+
+## Status Trends
+Flink batch Job that calculate status trends for critical,warning,unknown status
+Job requires parameters:
+
+`--yesterdayData`               :file location of previous day's data
+`--todayData`                 :file location of today day's data
+`--metricDataPath`            :file location of  metric profile data
+`--groupEndpointsPath`        :file location of topology information
+`--N`              		 :(optional) number of displayed top results
+`--criticalResults`           :file location of critical status results
+`--warningResults`            :file location of warning status results
+`--unknownStatus`             :file location of unknown status results
