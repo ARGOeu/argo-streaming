@@ -11,10 +11,11 @@ import java.util.HashMap;
 import argo.utils.Utils;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RichFilterFunction;
-import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.configuration.ConfigOptions;
+import org.apache.flink.api.java.utils.ParameterTool;
 
 import org.apache.flink.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 //import org.apache.flink.api.common.functions.RichFilterFunction;
 
 /**
@@ -26,26 +27,27 @@ import org.apache.flink.configuration.Configuration;
  */
 public class TopologyMetricFilter extends RichFilterFunction<MetricData> {
 
+    static Logger LOG = LoggerFactory.getLogger(TopologyMetricFilter.class);
+    
     private transient HashMap<String, String> groupEndpoints;
     private transient HashMap<String, ArrayList<String>> metricProfileData;
+    private String groupEndpointsPath;
+    private String metricDataPath;
+
+    public TopologyMetricFilter(ParameterTool params) {
+        groupEndpointsPath = params.getRequired("groupEndpointsPath");
+        metricDataPath = params.getRequired("metricDataPath");
+    }
 
     @Override
     public void open(Configuration config) throws Exception {
-        super.open(config);
-        ExecutionConfig configure=getRuntimeContext().getExecutionConfig();
-        
-        ExecutionConfig.GlobalJobParameters globalParams = configure.getGlobalJobParameters();
-        Configuration globConf = (Configuration) globalParams;
-        String groupEndpointsPath = globConf.getString("groupEndpointsPath",null);
-        String metricDataPath = globConf.getString("metricDataPath",null);
-
         groupEndpoints = Utils.readGroupEndpointJson(groupEndpointsPath); //contains the information of the (group, service) matches
         metricProfileData = Utils.readMetricDataJson(metricDataPath); //contains the information of the (service, metrics) matches
     }
 
     @Override
     public boolean filter(MetricData t) throws Exception {
-        String group = groupEndpoints.get(t.getHostname().toString() + "-") + t.getService().toString(); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
+        String group = groupEndpoints.get(t.getHostname().toString() + "-" + t.getService().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
         boolean hasGroup = false, hasMetric = false;
         if (group != null) {
             hasGroup = true;
