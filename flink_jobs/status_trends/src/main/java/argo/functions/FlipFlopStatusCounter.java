@@ -12,13 +12,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import org.apache.flink.api.common.functions.RichGroupReduceFunction;
-import org.apache.flink.api.java.tuple.Tuple5;
+
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.flink.api.common.functions.RichGroupReduceFunction;
+import org.apache.flink.api.java.tuple.Tuple5;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.util.Collector;
 
 /**
  *
@@ -95,7 +96,6 @@ public class FlipFlopStatusCounter extends RichGroupReduceFunction<MetricData, T
         return map;
     }
 // calculate status changes
-
     private int calcFlipFlops(TreeMap<String, String> map) {
 
         String previousStatus = null;
