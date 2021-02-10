@@ -7,6 +7,8 @@ package argo.functions;
 
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.java.tuple.Tuple6;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -16,6 +18,7 @@ import org.apache.flink.api.java.tuple.Tuple6;
  */
 public class StatusFilter implements FilterFunction<Tuple6<String, String, String, String, String, Integer>> {
 
+    static Logger LOG = LoggerFactory.getLogger(StatusFilter.class);
     private String status;
 
     public StatusFilter(String status) {
