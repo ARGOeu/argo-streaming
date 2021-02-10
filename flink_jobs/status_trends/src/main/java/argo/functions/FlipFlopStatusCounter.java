@@ -16,6 +16,7 @@ import java.util.TreeMap;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.configuration.Configuration;
