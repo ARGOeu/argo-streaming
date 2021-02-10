@@ -17,17 +17,16 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
-import argo.functions.TopologyMetricFilter;
-import argo.functions.TimelineStatusCounter;
+
+import argo.functions.FlipFlopStatusCounter;
 import argo.functions.LastTimeStampGroupReduce;
-import argo.functions.StatusFilter;
+import argo.functions.TopologyMetricFilter;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
-import org.apache.flink.api.java.tuple.Tuple6;
+import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
@@ -48,21 +47,22 @@ import org.slf4j.LoggerFactory;
  *
  * http://flink.apache.org/docs/latest/apis/cli.html
  */
-public class BatchStatusTrends {
+public class BatchFlipFlopTrends {
 
-    static Logger LOG = LoggerFactory.getLogger(BatchStatusTrends.class);
+    static Logger LOG = LoggerFactory.getLogger(BatchFlipFlopTrends.class);
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         final ParameterTool params = ParameterTool.fromArgs(args);
-
-        if (params.getRequired("yesterdayData") == null || params.getRequired("todayData") == null || params.getRequired("groupEndpointsPath") == null || params.getRequired("metricDataPath") == null) {
+        if (params.getRequired("yesterdayData") == null || params.getRequired("todayData") == null || params.getRequired("groupEndpointsPath") == null
+                || params.getRequired("metricDataPath") == null || params.getRequired("flipflopResults") == null) {
             LOG.info("Program ended due to not found required parameters");
             System.exit(0);
         }
         env.setParallelism(1);
+
         Integer rankNum = null;
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
@@ -70,43 +70,33 @@ public class BatchStatusTrends {
         DataSet<MetricData> yesterdayData = readInputData(env, params, "yesterdayData");
         DataSet<MetricData> todayData = readInputData(env, params, "todayData");
 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus(params, todayData, yesterdayData);
-        filterByStatusAndWrite(rankedData, "critical", rankNum, params.getRequired("criticalResults"));
-        filterByStatusAndWrite(rankedData, "warning", rankNum, params.getRequired("warningResults"));
-        filterByStatusAndWrite(rankedData, "unknown", rankNum, params.getRequired("unknownResults"));
+        DataSet<Tuple5<String, String, String, String, Integer>> criticalData = calcFlipFlops(params, rankNum, todayData, yesterdayData);
+        criticalData.writeAsText(params.getRequired("flipflopResults"), FileSystem.WriteMode.OVERWRITE);
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
     }
 
-    //filters the yesterdayData and exclude the ones not in topology and metric profile data and keeps the last timestamp for each service endpoint metric
-    //filters the todayData and exclude the ones not in topology and metric profile data, union with yesterdayData and calculates the times each status (CRITICAL,WARNING.UNKNOW) appears
-    private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus(ParameterTool params, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData) {
+    // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
+    // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
+    // rank results
+    private static DataSet<Tuple5<String, String, String, String, Integer>> calcFlipFlops(ParameterTool params, Integer rankNum, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData) {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(params)).groupBy("hostname", "service", "metric").reduceGroup(new LastTimeStampGroupReduce());
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(params));
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new TimelineStatusCounter(params));
-        return rankedData;
-    }
-
-    // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
-    private static void filterByStatusAndWrite(DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, Integer rankNum, String path) {
-        if (path == null) {
-            return;
-        }
-        DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
-
+        DataSet<Tuple5<String, String, String, String, Integer>> reducedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new FlipFlopStatusCounter(params));
         if (rankNum != null) {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING).first(rankNum);
+            reducedData = reducedData.sortPartition(4, Order.DESCENDING).first(rankNum);
         } else {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING);
+            reducedData = reducedData.sortPartition(4, Order.DESCENDING);
 
         }
-        filteredData.writeAsText(path, FileSystem.WriteMode.OVERWRITE);
-    }
+        return reducedData;
 
-    // reads input from file
+    }
+    //read input from file
+
     private static DataSet<MetricData> readInputData(ExecutionEnvironment env, ParameterTool params, String path) {
         DataSet<MetricData> inputData;
         Path input = new Path(params.getRequired(path));
@@ -115,5 +105,4 @@ public class BatchStatusTrends {
         inputData = env.createInput(inputAvroFormat);
         return inputData;
     }
-
 }
