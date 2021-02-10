@@ -5,6 +5,7 @@
  */
 package argo.utils;
 
+import argo.functions.FlipFlopStatusCounter;
 import java.io.FileReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -17,19 +18,20 @@ import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author cthermolia
  */
 public class Utils {
+    static Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     public static String createDate(String dateStr, int hour, int min, int sec) throws ParseException {
 
-//        Calendar cal = Calendar.getInstance();
         String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         SimpleDateFormat sdf = new SimpleDateFormat(format);
-//        cal.setTime(sdf.parse(dateStr));
         Calendar newCalendar = Calendar.getInstance();
         newCalendar.set(2021, 0,15, hour, min, sec);
 
@@ -90,10 +92,11 @@ public class Utils {
             Object obj = iterator.next();
             if (obj instanceof JSONObject) {
                 JSONObject jsonObject = new JSONObject((Map) obj);
-                String hostname = (String) jsonObject.get("hostname");
-                String group = (String) jsonObject.get("group");
+               String hostname = (String) jsonObject.get("hostname");
+               String service = (String) jsonObject.get("service");
+               String group = (String) jsonObject.get("group");
 
-                jsonDataMap.put(hostname, group);
+                jsonDataMap.put(hostname+"-"+service, group);
             }
         }
         return jsonDataMap;
