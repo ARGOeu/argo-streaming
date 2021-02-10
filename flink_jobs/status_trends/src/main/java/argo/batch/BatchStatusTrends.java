@@ -81,9 +81,9 @@ public class BatchStatusTrends {
         DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus(params, todayData, yesterdayData);
 
 
-        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical", rankNum, params.getRequired("criticalResults"));
-        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning", rankNum, params.getRequired("warningResults"));
-        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown", rankNum, params.getRequired("unknownResults"));
+        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical", rankNum);
+        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning", rankNum);
+        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown", rankNum);
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
@@ -101,7 +101,7 @@ public class BatchStatusTrends {
     }
 
     // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
-    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, Integer rankNum, String path) {
+    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, Integer rankNum) {
         DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
 
         if (rankNum != null) {

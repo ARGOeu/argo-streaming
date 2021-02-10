@@ -42,6 +42,15 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.flink.api.common.operators.Order;
+import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.api.java.io.AvroInputFormat;
+import org.apache.flink.api.java.tuple.Tuple5;
+import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.core.fs.Path;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -94,7 +103,6 @@ public class BatchFlipFlopTrends {
         DataSet<Tuple5<String, String, String, String, Integer>> criticalData = calcFlipFlops(params,rankNum, todayData, yesterdayData);
      
         writeToMongo(path, criticalData);
-//    criticalData.writeAsText(path, FileSystem.WriteMode.OVERWRITE);
 
     }
 

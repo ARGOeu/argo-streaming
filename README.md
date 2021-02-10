@@ -373,6 +373,7 @@ Streaming Status | Streaming status using data from `{{ams-endpoint}}`/v1/projec
 Flink batch Job that calculate status trends for critical,warning,unknown status
 Job requires parameters:
 
+<
 `--yesterdayData`             : file location of previous day's data
 `--todayData`                 : file location of today day's data
 `--metricDataPath`            : file location of  metric profile data
@@ -381,7 +382,6 @@ Job requires parameters:
 `--criticaluri`               : uri to the mongo db collection, to store critical status results
 `--warninguri`                : uri to the mongo db collection, to store warning status results
 `--unknownuri`                : uri to the mongo db collection, to store unknown status results
-
 Flink batch Job that calculate flip flop trends for service endpoints metrics
 Job requires parameters:
 
@@ -391,3 +391,4 @@ Job requires parameters:
 `--groupEndpointsPath`         : file location of topology information
 `--N`              		: (optional) number of displayed top results
 `--flipflopuri`                : uri to the mongo db , to store flip flop results
+
