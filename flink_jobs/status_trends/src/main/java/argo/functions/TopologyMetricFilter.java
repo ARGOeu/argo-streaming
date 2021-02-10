@@ -9,7 +9,6 @@ import argo.avro.MetricData;
 import java.util.ArrayList;
 import java.util.HashMap;
 import argo.utils.Utils;
-import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RichFilterFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
 
@@ -28,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public class TopologyMetricFilter extends RichFilterFunction<MetricData> {
 
     static Logger LOG = LoggerFactory.getLogger(TopologyMetricFilter.class);
-    
+
     private transient HashMap<String, String> groupEndpoints;
     private transient HashMap<String, ArrayList<String>> metricProfileData;
     private String groupEndpointsPath;
