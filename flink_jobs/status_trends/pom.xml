@@ -33,6 +33,8 @@ under the License.
         <slf4j.version>1.7.7</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <scala.binary.version>2.10</scala.binary.version>
+        <mongodb.hadoop.version>1.3.0</mongodb.hadoop.version>
+        <hadoop.version>2.6.0</hadoop.version>
     </properties>
 
     <repositories>
@@ -74,6 +76,23 @@ under the License.
     -->
 
     <dependencies>
+<!--        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <version>${hadoop.version}</version>
+        </dependency>-->
+        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-hadoop-compatibility -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-hadoop-compatibility_2.10</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+             
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-hadoop-core</artifactId>
+            <version>${mongodb.hadoop.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>

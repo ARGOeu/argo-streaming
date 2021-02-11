@@ -21,17 +21,25 @@ import argo.functions.TopologyMetricFilter;
 import argo.functions.TimelineStatusCounter;
 import argo.functions.LastTimeStampGroupReduce;
 import argo.functions.StatusFilter;
+import com.mongodb.BasicDBObject;
+import com.mongodb.hadoop.io.BSONWritable;
+import com.mongodb.hadoop.mapred.MongoOutputFormat;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
 import org.apache.flink.api.java.io.AvroInputFormat;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobConf;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -71,9 +79,11 @@ public class BatchStatusTrends {
         DataSet<MetricData> todayData = readInputData(env, params, "todayData");
 
         DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus(params, todayData, yesterdayData);
-        filterByStatusAndWrite(rankedData, "critical", rankNum, params.getRequired("criticalResults"));
-        filterByStatusAndWrite(rankedData, "warning", rankNum, params.getRequired("warningResults"));
-        filterByStatusAndWrite(rankedData, "unknown", rankNum, params.getRequired("unknownResults"));
+
+
+        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical", rankNum, params.getRequired("criticalResults"));
+        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning", rankNum, params.getRequired("warningResults"));
+        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown", rankNum, params.getRequired("unknownResults"));
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
@@ -91,19 +101,17 @@ public class BatchStatusTrends {
     }
 
     // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
-    private static void filterByStatusAndWrite(DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, Integer rankNum, String path) {
-        if (path == null) {
-            return;
-        }
+    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, Integer rankNum, String path) {
         DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
 
         if (rankNum != null) {
             filteredData = filteredData.sortPartition(5, Order.DESCENDING).first(rankNum);
         } else {
             filteredData = filteredData.sortPartition(5, Order.DESCENDING);
-
         }
-        filteredData.writeAsText(path, FileSystem.WriteMode.OVERWRITE);
+
+        writeToMongo(uri, filteredData);
+        //   filteredData.writeAsText(path, FileSystem.WriteMode.OVERWRITE);
     }
 
     // reads input from file
@@ -114,6 +122,39 @@ public class BatchStatusTrends {
         AvroInputFormat<MetricData> inputAvroFormat = new AvroInputFormat<MetricData>(input, MetricData.class);
         inputData = env.createInput(inputAvroFormat);
         return inputData;
+    }
+
+    //convert the result in bson format
+    public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<Tuple6<String, String, String, String, String, Integer>> in) {
+
+        return in.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Tuple2<Text, BSONWritable>>() {
+            int i = 0;
+
+            @Override
+            public Tuple2<Text, BSONWritable> map(Tuple6<String, String, String, String, String, Integer> in) throws Exception {
+                BasicDBObject dbObject = new BasicDBObject();
+                dbObject.put("group", in.f0.toString());
+                dbObject.put("service", in.f1.toString());
+                dbObject.put("hostname", in.f2.toString());
+                dbObject.put("metric", in.f3.toString());
+                dbObject.put("status", in.f4.toString());
+                dbObject.put("trend", in.f5.toString());
+
+                BSONWritable bson = new BSONWritable(dbObject);
+                i++;
+                return new Tuple2<Text, BSONWritable>(new Text(String.valueOf(i)), bson);
+                /* TODO */
+            }
+        });
+    }
+    //write to mongo db
+    public static void writeToMongo(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data) {
+        DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
+        JobConf conf = new JobConf();
+        conf.set("mongo.output.uri", uri);
+
+        MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
+        result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
     }
 
 }
