@@ -21,10 +21,16 @@ import argo.avro.MetricData;
 import argo.functions.FlipFlopStatusCounter;
 import argo.functions.LastTimeStampGroupReduce;
 import argo.functions.TopologyMetricFilter;
+import com.mongodb.BasicDBObject;
+import com.mongodb.hadoop.io.BSONWritable;
+import com.mongodb.hadoop.mapred.MongoOutputFormat;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
 import org.apache.flink.api.java.io.AvroInputFormat;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.api.java.utils.ParameterTool;
 
@@ -33,8 +39,9 @@ import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobConf;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -74,11 +81,21 @@ public class BatchFlipFlopTrends {
         DataSet<MetricData> yesterdayData = readInputData(env, params, "yesterdayData");
         DataSet<MetricData> todayData = readInputData(env, params, "todayData");
 
-        DataSet<Tuple5<String, String, String, String, Integer>> criticalData = calcFlipFlops(params, rankNum, todayData, yesterdayData);
-        criticalData.writeAsText(params.getRequired("flipflopResults"), FileSystem.WriteMode.OVERWRITE);
+
+        calcFlipFlopsAndWriteOutput(params,params.getRequired("flipflopsuri"), todayData, yesterdayData, rankNum);
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
+    }
+
+    //calculate status changes for each service endpoint metric and write top N in file
+    private static void calcFlipFlopsAndWriteOutput(ParameterTool params,String path, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData, int rankNum) {
+
+        DataSet<Tuple5<String, String, String, String, Integer>> criticalData = calcFlipFlops(params,rankNum, todayData, yesterdayData);
+     
+        writeToMongo(path, criticalData);
+//    criticalData.writeAsText(path, FileSystem.WriteMode.OVERWRITE);
+
     }
 
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
@@ -110,5 +127,36 @@ public class BatchFlipFlopTrends {
         return inputData;
     }
 
+    //convert the result in bson format
+    public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<Tuple5<String, String, String, String, Integer>> in) {
+
+        return in.map(new MapFunction<Tuple5<String, String, String, String, Integer>, Tuple2<Text, BSONWritable>>() {
+            int i = 0;
+
+            @Override
+            public Tuple2<Text, BSONWritable> map(Tuple5<String, String, String, String, Integer> in) throws Exception {
+                BasicDBObject dbObject = new BasicDBObject();
+                dbObject.put("group", in.f0.toString());
+                dbObject.put("service", in.f1.toString());
+                dbObject.put("hostname", in.f2.toString());
+                dbObject.put("metric", in.f3.toString());
+                dbObject.put("trend", in.f4.toString());
+
+                BSONWritable bson = new BSONWritable(dbObject);
+                i++;
+                return new Tuple2<Text, BSONWritable>(new Text(String.valueOf(i)), bson);
+                /* TODO */
+            }
+        });
+    }
+    //write to mongo db
+    public static void writeToMongo(String uri, DataSet<Tuple5<String, String, String, String, Integer>> data) {
+        DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
+        JobConf conf = new JobConf();
+        conf.set("mongo.output.uri", uri);
+
+        MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
+        result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
+    }
 
 }
