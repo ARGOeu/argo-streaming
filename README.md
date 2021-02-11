@@ -373,7 +373,7 @@ Streaming Status | Streaming status using data from `{{ams-endpoint}}`/v1/projec
 Flink batch Job that calculate status trends for critical,warning,unknown status
 Job requires parameters:
 
-<
+
 `--yesterdayData`             : file location of previous day's data
 `--todayData`                 : file location of today day's data
 `--metricDataPath`            : file location of  metric profile data
