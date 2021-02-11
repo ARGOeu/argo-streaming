@@ -95,5 +95,6 @@ public class TimelineStatusCounter extends RichGroupReduceFunction<MetricData, T
                     group, service, hostname, metric, "UNKNOWN", unknownSum);
             out.collect(tupleUnknown);
         }
-    }
+    }        
+
 }
