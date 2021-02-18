@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package argo.functions;
+package argo.functions.timeline;
 
 import argo.avro.MetricData;
 import java.util.ArrayList;
