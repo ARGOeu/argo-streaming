@@ -1,4 +1,4 @@
-package argo.functions;
+package argo.functions.statustrends;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -24,7 +24,7 @@ import org.apache.flink.util.Collector;
  * for each status (CRITICAL,WARNING,UNKNOW) appearance and returns the group
  * information (group, service,hostname, metric, status, statuscounter)
  */
-public class TimelineStatusCounter extends RichGroupReduceFunction<MetricData, Tuple6<String, String, String, String, String, Integer>> {
+public class CalcServiceEnpointMetricStatus extends RichGroupReduceFunction<MetricData, Tuple6<String, String, String, String, String, Integer>> {
 
     private transient HashMap<String, String> groupEndpoints;
 

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package argo.functions;
+package argo.functions.timeline;
 
 import argo.avro.MetricData;
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public class TopologyMetricFilter extends RichFilterFunction<MetricData> {
 
     @Override
     public boolean filter(MetricData t) throws Exception {
-        String group = groupEndpoints.get(t.getHostname().toString() + "-") + t.getService().toString(); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
+        String group = groupEndpoints.get(t.getHostname().toString() + "-" + t.getService().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
         boolean hasGroup = false, hasMetric = false;
         if (group != null) {
             hasGroup = true;

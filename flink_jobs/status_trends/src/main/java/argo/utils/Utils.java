@@ -10,6 +10,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -24,14 +25,66 @@ import org.json.simple.parser.JSONParser;
  */
 public class Utils {
 
-    public static String createDate(String dateStr, int hour, int min, int sec) throws ParseException {
+    public static  HashMap<String, String> opAndTruthTable() {
+        
+        HashMap<String, String> truthTable = new HashMap<String, String>();
+        truthTable.put("OK-OK", "OK");
+        truthTable.put("OK-WARNING", "WARNING");
+        truthTable.put("OK-UNKNOWN", "UNKNOWN");
+        truthTable.put("OK-MISSING", "MISSING");
+        truthTable.put("OK-CRITICAL", "CRITICAL");
+        truthTable.put("OK-DOWNTIME", "DOWNTIME");
 
-//        Calendar cal = Calendar.getInstance();
+        truthTable.put("WARNING-WARNING", "WARNING");
+        truthTable.put("WARNING-UNKNOWN", "UNKNOWN");
+        truthTable.put("WARNING-MISSING", "MISSING");
+        truthTable.put("WARNING-CRITICAL", "CRITICAL");
+        truthTable.put("WARNING-DOWNTIME", "DOWNTIME");
+
+        truthTable.put("UNKNOWN-UNKNOWN", "UNKNOWN");
+        truthTable.put("UNKNOWN-MISSING", "MISSING");
+        truthTable.put("UNKNOWN-CRITICAL", "CRITICAL");
+        truthTable.put("UNKNOWN-DOWNTIME", "DOWNTIME");
+
+        truthTable.put("MISSING-MISSING", "MISSING");
+        truthTable.put("MISSING-CRITICAL", "CRITICAL");
+        truthTable.put("MISSING-DOWNTIME", "DOWNTIME");
+
+        truthTable.put("CRITICAL-CRITICAL", "CRITICAL");
+
+        truthTable.put("CRITICAL-DOWNTIME", "CRITICAL");
+        truthTable.put("DOWNTIME-DOWNTIME", "DOWNTIME");
+        
+        return truthTable;
+
+    }
+
+    public static String convertDateToString(Date date) throws ParseException {
+
         String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         SimpleDateFormat sdf = new SimpleDateFormat(format);
-//        cal.setTime(sdf.parse(dateStr));
         Calendar newCalendar = Calendar.getInstance();
-        newCalendar.set(2021, 0,15, hour, min, sec);
+        newCalendar.setTime(date);
+
+        return sdf.format(newCalendar.getTime());
+    }
+   
+    public static Date convertStringtoDate(String dateStr) throws ParseException {
+
+        String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(sdf.parse(dateStr));
+
+        return cal.getTime();
+    }
+
+    public static String createDate(String dateStr, int hour, int min, int sec) throws ParseException {
+
+        String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        Calendar newCalendar = Calendar.getInstance();
+        newCalendar.set(2021, 0, 15, hour, min, sec);
 
         return sdf.format(newCalendar.getTime());
     }
@@ -91,9 +144,10 @@ public class Utils {
             if (obj instanceof JSONObject) {
                 JSONObject jsonObject = new JSONObject((Map) obj);
                 String hostname = (String) jsonObject.get("hostname");
+                String service = (String) jsonObject.get("service");
                 String group = (String) jsonObject.get("group");
 
-                jsonDataMap.put(hostname, group);
+                jsonDataMap.put(hostname+"-"+service, group);
             }
         }
         return jsonDataMap;

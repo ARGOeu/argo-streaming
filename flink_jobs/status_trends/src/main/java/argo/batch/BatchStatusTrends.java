@@ -17,10 +17,10 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
-import argo.functions.TopologyMetricFilter;
-import argo.functions.TimelineStatusCounter;
-import argo.functions.LastTimeStampGroupReduce;
-import argo.functions.StatusFilter;
+import argo.functions.timeline.TopologyMetricFilter;
+import argo.functions.statustrends.CalcServiceEnpointMetricStatus;
+import argo.functions.timeline.CalcLastTimeStatus;
+import argo.functions.timeline.StatusFilter;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
@@ -86,10 +86,10 @@ public class BatchStatusTrends {
     //filters the todayData and exclude the ones not in topology and metric profile data, union with yesterdayData and calculates the times each status (CRITICAL,WARNING.UNKNOW) appears
     private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus(ExecutionEnvironment env, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData) {
 
-        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter()).groupBy("hostname", "service", "metric").reduceGroup(new LastTimeStampGroupReduce());
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter()).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter());
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new TimelineStatusCounter());
+        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricStatus());
         return rankedData;
     }
 

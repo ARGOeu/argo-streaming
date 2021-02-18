@@ -1,4 +1,4 @@
-package argo.functions;
+package argo.functions.timeline;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -17,7 +17,7 @@ import org.apache.flink.util.Collector;
  * LastTimeStampGroupReduce keeps data of the latest time entry
 */
 
-public class LastTimeStampGroupReduce implements GroupReduceFunction<MetricData, MetricData> {
+public class CalcLastTimeStatus implements GroupReduceFunction<MetricData, MetricData> {
 
  /**
  * 
