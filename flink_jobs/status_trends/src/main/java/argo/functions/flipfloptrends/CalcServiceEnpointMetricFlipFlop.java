@@ -1,4 +1,4 @@
-package argo.functions;
+package argo.functions.flipfloptrends;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -22,9 +22,9 @@ import org.apache.flink.util.Collector;
  *
  * @author cthermolia
  *
- * FlipFlopStatusCounter, count status changes for each service endpoint metric
+ * CalcServiceEnpointMetricFlipFlop, count status changes for each service endpoint metric
  */
-public class FlipFlopStatusCounter extends RichGroupReduceFunction<MetricData, Tuple5<String, String, String, String, Integer>> {
+public class CalcServiceEnpointMetricFlipFlop extends RichGroupReduceFunction<MetricData, Tuple5<String, String, String, String, Integer>> {
 
     private transient HashMap<String, String> groupEndpoints;
 
