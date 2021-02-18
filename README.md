@@ -392,3 +392,15 @@ Job requires parameters:
 `--N`              		: (optional) number of displayed top results
 `--flipflopuri`                : uri to the mongo db , to store flip flop results
 
+Flink batch Job that calculate flip flop trends for service endpoints 
+Job requires parameters:
+
+`--yesterdayData`              : file location of previous day's data
+`--todayData`                  : file location of today day's data
+`--metricDataPath`             : file location of  metric profile data
+`--groupEndpointsPath`         : file location of topology information
+`--N`              		: (optional) number of displayed top results
+`--flipflopuri`                : uri to the mongo db , to store flip flop results
+`--op`                         : the name of the operation that will apply on the timeline
+
+

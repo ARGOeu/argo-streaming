@@ -17,10 +17,10 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
-import argo.functions.TopologyMetricFilter;
-import argo.functions.TimelineStatusCounter;
-import argo.functions.LastTimeStampGroupReduce;
-import argo.functions.StatusFilter;
+import argo.functions.timeline.TopologyMetricFilter;
+import argo.functions.statustrends.TimelineStatusCounter;
+import argo.functions.timeline.LastTimeStampGroupReduce;
+import argo.functions.timeline.StatusFilter;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
@@ -33,10 +33,7 @@ import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobConf;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,11 +91,11 @@ public class BatchStatusTrends {
     //filters the yesterdayData and exclude the ones not in topology and metric profile data and keeps the last timestamp for each service endpoint metric
     //filters the todayData and exclude the ones not in topology and metric profile data, union with yesterdayData and calculates the times each status (CRITICAL,WARNING.UNKNOW) appears
     private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus(ParameterTool params, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData) {
-
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(params)).groupBy("hostname", "service", "metric").reduceGroup(new LastTimeStampGroupReduce());
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(params));
         DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new TimelineStatusCounter(params));
+
         return rankedData;
     }
 
