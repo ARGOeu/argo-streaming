@@ -120,6 +120,7 @@ public class BatchServEndpFlipFlopTrends {
 
     }
     //read input from file
+
     private static DataSet<MetricData> readInputData(ExecutionEnvironment env, ParameterTool params, String path) {
         DataSet<MetricData> inputData;
         Path input = new Path(params.getRequired(path));

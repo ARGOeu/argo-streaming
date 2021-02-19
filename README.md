@@ -400,6 +400,6 @@ Job requires parameters:
 `--metricDataPath`             : file location of  metric profile data
 `--groupEndpointsPath`         : file location of topology information
 `--N`              		: (optional) number of displayed top results
-`--flipflopuri`                : uri to the mongo db , to store flip flop results
+`--servendpflipflopsuri`       : uri to the mongo db , to store flip flop results
 `--op`                         : the name of the operation that will apply on the timeline
 
