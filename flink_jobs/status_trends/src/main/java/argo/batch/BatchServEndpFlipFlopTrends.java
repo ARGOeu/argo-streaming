@@ -59,7 +59,7 @@ import org.apache.hadoop.mapred.JobConf;
  */
 public class BatchServEndpFlipFlopTrends {
 
-    public static HashMap<String, HashMap<String, String>> opTruthTableMap=new HashMap<>(); // the truth table for the operations to be applied on timeline
+    public static HashMap<String, HashMap<String, String>> opTruthTableMap = new HashMap<>(); // the truth table for the operations to be applied on timeline
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -68,31 +68,26 @@ public class BatchServEndpFlipFlopTrends {
         final ParameterTool params = ParameterTool.fromArgs(args);
         env.setParallelism(1);
 
-        createOpTruthTables(); // build the truth table hardcode now -fix later....
-        initializeConfigurationParameters(params, env);
+        createOpTruthTables(params); // build the truth table hardcode now -fix later....
+        DataSet<ServEndpFlipFlopPojo> resultData = null;
+        if (getOpTruthTables(params) != null) {
+            initializeConfigurationParameters(params, env);
 
-        Integer rankNum = null;
-        if (params.get("N") != null) {
-            rankNum = params.getInt("N");
-        }
-        //read the data from input
-        DataSet<MetricData> yesterdayData = readInputData(env, params, "yesterdayData");
-        DataSet<MetricData> todayData = readInputData(env, params, "todayData");
-        
-        // calculate on data 
-        calcFlipFlopsAndWriteOutput(params, params.getRequired("servendpflipflopsuri"), todayData, yesterdayData, rankNum);
+            Integer rankNum = null;
+            if (params.get("N") != null) {
+                rankNum = params.getInt("N");
+            }
+            //read the data from input
+            DataSet<MetricData> yesterdayData = readInputData(env, params, "yesterdayData");
+            DataSet<MetricData> todayData = readInputData(env, params, "todayData");
+
+            // calculate on data 
+            resultData = calcFlipFlops(params, rankNum, todayData, yesterdayData);
+            writeToMongo(params.getRequired("servendpflipflopsuri"), resultData);
 
 // execute program
-        env.execute("Flink Batch Java API Skeleton");
-    }
-
-    //calculate status changes for each service endpoint metric and write top N in file
-    private static void calcFlipFlopsAndWriteOutput(ParameterTool params, String path, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData, int rankNum) {
-
-        DataSet<ServEndpFlipFlopPojo> resultData = calcFlipFlops(params, rankNum, todayData, yesterdayData);
-
-        writeToMongo(path, resultData);
-
+            env.execute("Flink Batch Java API Skeleton");
+        } 
     }
 
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
@@ -108,7 +103,7 @@ public class BatchServEndpFlipFlopTrends {
         DataSet<MetricTimelinePojo> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricTimelineStatus());
 
         //group data by service endpoint  and count flip flops
-        DataSet<ServEndpFlipFlopPojo> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group","endpoint","service").reduceGroup(new CalcServiceEndpointFlipFlop(getOpTruthTables(params)));
+        DataSet<ServEndpFlipFlopPojo> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcServiceEndpointFlipFlop(getOpTruthTables(params)));
 
         if (rankNum != null) { //sort and rank data
             serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
@@ -172,9 +167,10 @@ public class BatchServEndpFlipFlopTrends {
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
     }
 
-    public static void createOpTruthTables() {
-     
-        opTruthTableMap.put("andOp", Utils.opAndTruthTable());
+    public static void createOpTruthTables(ParameterTool params) {
+        String path = params.getRequired("opProfilePath");
+        opTruthTableMap = Utils.readOperationProfileJson(path);
+
     }
 
     public static HashMap<String, String> getOpTruthTables(ParameterTool param) {

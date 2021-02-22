@@ -154,11 +154,11 @@ public class CalcServiceEndpointFlipFlop implements GroupReduceFunction< MetricT
                 } else {
                     String status = iter.next();
                     String key = finalStatus + "-" + status;
-                    if (opTruthTable.containsKey(key)) { 
+                    if (this.opTruthTable.containsKey(key)) { 
                         finalStatus = opTruthTable.get(key);
                     } else { //reverse status combination
                         key = status + "-" + finalStatus;
-                        finalStatus = opTruthTable.get(key);
+                        finalStatus = this.opTruthTable.get(key);
                     }
                 }
                 pos++;

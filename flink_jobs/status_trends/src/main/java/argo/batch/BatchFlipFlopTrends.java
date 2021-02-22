@@ -140,7 +140,6 @@ public class BatchFlipFlopTrends {
                 dbObject.put("hostname", in.f2.toString());
                 dbObject.put("metric", in.f3.toString());
                 dbObject.put("trend", in.f4.toString());
-
                 BSONWritable bson = new BSONWritable(dbObject);
                 i++;
                 return new Tuple2<Text, BSONWritable>(new Text(String.valueOf(i)), bson);
@@ -153,6 +152,7 @@ public class BatchFlipFlopTrends {
         DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
         JobConf conf = new JobConf();
         conf.set("mongo.output.uri", uri);
+        System.out.println("uri--- "+uri);
 
         MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
