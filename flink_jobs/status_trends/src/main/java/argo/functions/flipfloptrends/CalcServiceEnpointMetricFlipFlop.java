@@ -58,11 +58,12 @@ public class CalcServiceEnpointMetricFlipFlop extends RichGroupReduceFunction<Me
             hostname = md.getHostname().toString();
             service = md.getService().toString();
             metric = md.getMetric().toString();
-            group = groupEndpoints.get(md.getHostname().toString()); //retrieve the group for the service, as contained in file
+            group = groupEndpoints.get(md.getHostname().toString()+"-"+md.getService()); //retrieve the group for the service, as contained in file
             timeStatusMap.put(md.getTimestamp().toString(), md.getStatus().toString());
         }
         timeStatusMap = handleFirstLastTimestamps(timeStatusMap);
         int flipflop = calcFlipFlops(timeStatusMap);
+        
         if (group != null && service != null && hostname != null && metric != null) {
             Tuple5<String, String, String, String, Integer> tuple = new Tuple5<String, String, String, String, Integer>(
                     group, service, hostname, metric, flipflop
@@ -93,7 +94,6 @@ public class CalcServiceEnpointMetricFlipFlop extends RichGroupReduceFunction<Me
     }
 // calculate status changes
     private int calcFlipFlops(TreeMap<String, String> map) {
-
         String previousStatus = null;
         int flipflop = 0;
         for (Entry<String, String> entry : map.entrySet()) {

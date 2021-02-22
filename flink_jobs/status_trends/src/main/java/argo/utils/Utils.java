@@ -5,7 +5,9 @@
  */
 package argo.utils;
 
+import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -25,8 +28,8 @@ import org.json.simple.parser.JSONParser;
  */
 public class Utils {
 
-    public static  HashMap<String, String> opAndTruthTable() {
-        
+    public static HashMap<String, String> opAndTruthTable() {
+
         HashMap<String, String> truthTable = new HashMap<String, String>();
         truthTable.put("OK-OK", "OK");
         truthTable.put("OK-WARNING", "WARNING");
@@ -54,7 +57,7 @@ public class Utils {
 
         truthTable.put("CRITICAL-DOWNTIME", "CRITICAL");
         truthTable.put("DOWNTIME-DOWNTIME", "DOWNTIME");
-        
+
         return truthTable;
 
     }
@@ -68,7 +71,7 @@ public class Utils {
 
         return sdf.format(newCalendar.getTime());
     }
-   
+
     public static Date convertStringtoDate(String dateStr) throws ParseException {
 
         String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -147,7 +150,7 @@ public class Utils {
                 String service = (String) jsonObject.get("service");
                 String group = (String) jsonObject.get("group");
 
-                jsonDataMap.put(hostname+"-"+service, group);
+                jsonDataMap.put(hostname + "-" + service, group);
             }
         }
         return jsonDataMap;
@@ -176,4 +179,55 @@ public class Utils {
         return jsonDataMap;
     }
 
+    public static HashMap<String, HashMap<String, String>> readOperationProfileJson(String path) {
+
+        JSONParser parser = new JSONParser();
+        try {
+            Object obj = parser.parse(new FileReader(path));
+
+            // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
+            JSONObject jsonObject = (JSONObject) obj;
+
+            // A JSON array. JSONObject supports java.util.List interface.
+            JSONArray dataList = (JSONArray) jsonObject.get("data");
+
+            // An iterator over a collection. Iterator takes the place of Enumeration in the Java Collections Framework.
+            // Iterators differ from enumerations in two ways:
+            // 1. Iterators allow the caller to remove elements from the underlying collection during the iteration with well-defined semantics.
+            // 2. Method names have been improved.
+            Iterator<JSONObject> iterator = dataList.iterator();
+            HashMap<String, HashMap<String, String>> opTruthTable = new HashMap<>();
+            while (iterator.hasNext()) {
+                JSONObject dataObject = (JSONObject) iterator.next();
+                JSONArray operationList = (JSONArray) dataObject.get("operations");
+                Iterator<JSONObject> opIterator = operationList.iterator();
+                while (opIterator.hasNext()) {
+                    JSONObject operationObject = (JSONObject) opIterator.next();
+                    String opName = (String) operationObject.get("name");
+                    JSONArray truthtable = (JSONArray) operationObject.get("truth_table");
+                    Iterator<JSONObject> truthTableIter = truthtable.iterator();
+                    HashMap<String, String> truthTable = new HashMap<>();
+                    while (truthTableIter.hasNext()) {
+                        JSONObject truthEntry = (JSONObject) truthTableIter.next();
+                        String a = (String) truthEntry.get("a");
+                        String b = (String) truthEntry.get("b");
+                        String x = (String) truthEntry.get("x");
+
+                        truthTable.put(a + "-" + b, x);
+                    }
+                    opTruthTable.put(opName, truthTable);
+                }
+            }
+            return opTruthTable;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private void buildTruthTable() {
+
+    }
 }
