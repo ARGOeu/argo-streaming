@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 
@@ -27,14 +28,15 @@ import org.apache.flink.util.Collector;
 public class CalcMetricTimelineStatus extends RichGroupReduceFunction<MetricData,MetricTimelinePojo> {
 
     private transient HashMap<String, String> groupEndpoints;
+    private String groupEndpointsPath;
+
+    public CalcMetricTimelineStatus(String groupEndpointsPath) {
+        this.groupEndpointsPath = groupEndpointsPath;
+    }   
+    
 
     @Override
     public void open(Configuration config) throws Exception {
-        super.open(config);
-        ExecutionConfig.GlobalJobParameters globalParams = getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
-        Configuration globConf = (Configuration) globalParams;
-        String groupEndpointsPath = globConf.getString("groupEndpointsPath", null);
-
         groupEndpoints = Utils.readGroupEndpointJson(groupEndpointsPath); //contains the information of the (group, service) matches
     }
 

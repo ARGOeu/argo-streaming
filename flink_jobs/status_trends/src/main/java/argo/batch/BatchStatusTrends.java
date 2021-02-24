@@ -21,9 +21,14 @@ import argo.functions.timeline.TopologyMetricFilter;
 import argo.functions.statustrends.CalcServiceEnpointMetricStatus;
 import argo.functions.timeline.CalcLastTimeStatus;
 import argo.functions.timeline.StatusFilter;
+import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
@@ -55,25 +60,26 @@ import org.apache.hadoop.mapred.JobConf;
  */
 public class BatchStatusTrends {
 
-    // public static String metricDataPath;
-    //public static String groupEndpointsPath;
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         final ParameterTool params = ParameterTool.fromArgs(args);
+        //check if all required parameters exist and if not exit program
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "criticaluri", "warninguri", "unknownuri", "baseUri", "metricProfileUUID", "key", "groupEndpointsPath")) {
+            System.exit(0);
+        }
+
         env.setParallelism(1);
-        //  metricDataPath = params.get("metricDataPath");
-        //groupEndpointsPath = params.get("groupEndpointsPath");
-        initializeConfigurationParameters(params, env);
         Integer rankNum = null;
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
+        HashMap<String, ArrayList<String>> metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key")); //contains the information of the (service, metrics) matches
         DataSet<MetricData> yesterdayData = readInputData(env, params, "yesterdayData");
         DataSet<MetricData> todayData = readInputData(env, params, "todayData");
 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus(env, todayData, yesterdayData);
+        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus(todayData, yesterdayData, metricProfileData, params.getRequired("groupEndpointsPath"));
         filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical", rankNum, params.getRequired("criticalResults"));
         filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning", rankNum, params.getRequired("warningResults"));
         filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown", rankNum, params.getRequired("unknownResults"));
@@ -84,12 +90,12 @@ public class BatchStatusTrends {
 
     //filters the yesterdayData and exclude the ones not in topology and metric profile data and keeps the last timestamp for each service endpoint metric
     //filters the todayData and exclude the ones not in topology and metric profile data, union with yesterdayData and calculates the times each status (CRITICAL,WARNING.UNKNOW) appears
-    private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus(ExecutionEnvironment env, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData) {
+    private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus(DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData, HashMap<String, ArrayList<String>> metricProfileData, String groupEndpointsPath) {
 
-        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter()).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointsPath)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
-        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter());
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricStatus());
+        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointsPath));
+        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricStatus(groupEndpointsPath));
         return rankedData;
     }
 
@@ -104,7 +110,6 @@ public class BatchStatusTrends {
         }
 
         writeToMongo(uri, filteredData);
-        //   filteredData.writeAsText(path, FileSystem.WriteMode.OVERWRITE);
     }
 
     // reads input from file
@@ -116,15 +121,7 @@ public class BatchStatusTrends {
         inputData = env.createInput(inputAvroFormat);
         return inputData;
     }
-    //initialize configuaration parameters to be used from functions
-    private static void initializeConfigurationParameters(ParameterTool params, ExecutionEnvironment env) {
 
-        Configuration conf = new Configuration();
-        conf.setString("groupEndpointsPath", params.get("groupEndpointsPath"));
-        conf.setString("metricDataPath", params.get("metricDataPath"));
-        env.getConfig().setGlobalJobParameters(conf);
-
-    }
     //convert the result in bson format
     public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<Tuple6<String, String, String, String, String, Integer>> in) {
 
@@ -148,6 +145,7 @@ public class BatchStatusTrends {
             }
         });
     }
+
     //write to mongo db
     public static void writeToMongo(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data) {
         DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
@@ -157,4 +155,5 @@ public class BatchStatusTrends {
         MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
     }
+
 }

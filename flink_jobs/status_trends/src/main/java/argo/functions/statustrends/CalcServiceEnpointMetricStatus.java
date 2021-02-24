@@ -10,9 +10,11 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.TreeMap;
 import argo.utils.Utils;
+import java.lang.reflect.Parameter;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple6;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 
@@ -20,23 +22,23 @@ import org.apache.flink.util.Collector;
  *
  * @author cthermolia
  *
- * CalcServiceEnpointMetricStatus, for each service endpoint metric group , keeps count
- * for each status (CRITICAL,WARNING,UNKNOW) appearance and returns the group
- * information (group, service,hostname, metric, status, statuscounter)
+ * CalcServiceEnpointMetricStatus, for each service endpoint metric group ,
+ * keeps count for each status (CRITICAL,WARNING,UNKNOW) appearance and returns
+ * the group information (group, service,hostname, metric, status,
+ * statuscounter)
  */
 public class CalcServiceEnpointMetricStatus extends RichGroupReduceFunction<MetricData, Tuple6<String, String, String, String, String, Integer>> {
 
     private transient HashMap<String, String> groupEndpoints;
+    private String groupEndpointsPath;
+
+    public CalcServiceEnpointMetricStatus(String groupEndpointsPath) {
+        this.groupEndpointsPath = groupEndpointsPath;
+    }
 
     @Override
     public void open(Configuration config) throws Exception {
-        super.open(config);
-        ExecutionConfig.GlobalJobParameters globalParams = getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
-        Configuration globConf = (Configuration) globalParams;
-        String groupEndpointsPath = globConf.getString("groupEndpointsPath", null);
-
         groupEndpoints = Utils.readGroupEndpointJson(groupEndpointsPath); //contains the information of the (group, service) matches
-        //   metricProfileData = Utils.readMetricDataJson(metricDataPath, env); //contains the information of the (service, metrics) matches
     }
 
     /**
@@ -62,7 +64,7 @@ public class CalcServiceEnpointMetricStatus extends RichGroupReduceFunction<Metr
 
         //for each MetricData in group check the status and increase counter accordingly
         for (MetricData md : in) {
-            group = groupEndpoints.get(md.getHostname().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
+            group = groupEndpoints.get(md.getHostname().toString()+"-"+md.getService().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
             hostname = md.getHostname().toString();
             service = md.getService().toString();
             status = md.getStatus().toString();
@@ -95,6 +97,6 @@ public class CalcServiceEnpointMetricStatus extends RichGroupReduceFunction<Metr
                     group, service, hostname, metric, "UNKNOWN", unknownSum);
             out.collect(tupleUnknown);
         }
-    }        
+    }
 
 }

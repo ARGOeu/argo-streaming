@@ -6,6 +6,7 @@
 package argo.utils;
 
 import java.io.FileReader;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,15 +16,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author cthermolia
  */
 public class Utils {
+
+    static Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     public static String convertDateToString(Date date) throws ParseException {
 
@@ -87,19 +93,41 @@ public class Utils {
         return null;
     }
 
-    public static HashMap<String, ArrayList<String>> readMetricDataJson(String path) {
+    public static HashMap<String, ArrayList<String>> readMetricDataJson(String baseUri, String metricProfileUUID, String key) throws IOException, org.json.simple.parser.ParseException {
+        JSONObject jsonObject = RequestManager.getMetricProfileRequest(baseUri, metricProfileUUID, key);
+        HashMap<String, ArrayList<String>> jsonDataMap = new HashMap<String, ArrayList<String>>();
 
-        JSONParser parser = new JSONParser();
-        try {
-            JSONArray jsonArray = new JSONArray();
-            HashMap<String, ArrayList<String>> jsonDataMap = new HashMap<String, ArrayList<String>>();
-            jsonArray.addAll((List) parser.parse(new FileReader(path)));
-            jsonDataMap = convertMetricDataJson(jsonArray);
-            return jsonDataMap;
-        } catch (Exception e) {
-            e.printStackTrace();
+        JSONArray data = (JSONArray) jsonObject.get("data");
+
+        Iterator<Object> dataIter = data.iterator();
+        while (dataIter.hasNext()) {
+            Object dataobj = dataIter.next();
+            if (dataobj instanceof JSONObject) {
+                JSONObject jsonDataObj = new JSONObject((Map) dataobj);
+
+                JSONArray services = (JSONArray) jsonDataObj.get("services");
+
+                Iterator<Object> iterator = services.iterator();
+
+                while (iterator.hasNext()) {
+                    Object obj = iterator.next();
+                    if (obj instanceof JSONObject) {
+                        JSONObject servObj = new JSONObject((Map) obj);
+                        String service = (String) servObj.get("service");
+                        JSONArray metrics = (JSONArray) servObj.get("metrics");
+                        Iterator<Object> metrIter = metrics.iterator();
+                        ArrayList<String> metricList = new ArrayList<>();
+
+                        while (metrIter.hasNext()) {
+                            Object metrObj = metrIter.next();
+                            metricList.add(metrObj.toString());
+                        }
+                        jsonDataMap.put(service, metricList);
+                    }
+                }
+            }
         }
-        return null;
+        return jsonDataMap;
     }
 
     public static HashMap<String, String> convertGroupEndpointsJson(JSONArray jsonArray) {
@@ -120,28 +148,6 @@ public class Utils {
 
     }
 
-    public static HashMap<String, ArrayList<String>> convertMetricDataJson(JSONArray jsonArray) {
-        HashMap<String, ArrayList<String>> jsonDataMap = new HashMap<>();
-        Iterator<Object> iterator = jsonArray.iterator();
-        while (iterator.hasNext()) {
-            Object obj = iterator.next();
-            if (obj instanceof JSONObject) {
-                JSONObject jsonObject = new JSONObject((Map) obj);
-                String service = (String) jsonObject.get("service");
-                String metric = (String) jsonObject.get("metric");
-                ArrayList<String> metricList;
-                if (jsonDataMap.get(service) != null) {
-                    metricList = jsonDataMap.get(service);
-                } else {
-                    metricList = new ArrayList<String>();
-                }
-                metricList.add(metric);
-                jsonDataMap.put(service, metricList);
-            }
-        }
-        return jsonDataMap;
-    }
-
     public static HashMap<String, HashMap<String, String>> readOperationProfileJson(String path) {
 
         JSONParser parser = new JSONParser();
@@ -151,13 +157,8 @@ public class Utils {
             // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
             JSONObject jsonObject = (JSONObject) obj;
 
-            // A JSON array. JSONObject supports java.util.List interface.
             JSONArray dataList = (JSONArray) jsonObject.get("data");
 
-            // An iterator over a collection. Iterator takes the place of Enumeration in the Java Collections Framework.
-            // Iterators differ from enumerations in two ways:
-            // 1. Iterators allow the caller to remove elements from the underlying collection during the iteration with well-defined semantics.
-            // 2. Method names have been improved.
             Iterator<JSONObject> iterator = dataList.iterator();
             HashMap<String, HashMap<String, String>> opTruthTable = new HashMap<>();
             while (iterator.hasNext()) {
@@ -190,7 +191,16 @@ public class Utils {
         return null;
     }
 
-    private void buildTruthTable() {
+    public static boolean checkParameters(ParameterTool params, String... vars) {
+
+        for (String var : vars) {
+
+            if (params.get(var) == null) {
+                LOG.error(var + " is required but is missing!\n Program exits!");
+                return false;
+            }
+        }
+        return true;
 
     }
 }
