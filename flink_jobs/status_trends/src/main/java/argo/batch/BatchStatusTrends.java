@@ -17,10 +17,10 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
-import argo.functions.TopologyMetricFilter;
-import argo.functions.TimelineStatusCounter;
-import argo.functions.LastTimeStampGroupReduce;
-import argo.functions.StatusFilter;
+import argo.functions.timeline.TopologyMetricFilter;
+import argo.functions.statustrends.TimelineStatusCounter;
+import argo.functions.timeline.LastTimeStampGroupReduce;
+import argo.functions.timeline.StatusFilter;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
@@ -33,7 +33,6 @@ import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 
 import org.slf4j.Logger;
@@ -81,9 +80,9 @@ public class BatchStatusTrends {
         DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus(params, todayData, yesterdayData);
 
 
-        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical", rankNum, params.getRequired("criticalResults"));
-        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning", rankNum, params.getRequired("warningResults"));
-        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown", rankNum, params.getRequired("unknownResults"));
+        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical", rankNum);
+        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning", rankNum);
+        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown", rankNum);
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
@@ -92,16 +91,16 @@ public class BatchStatusTrends {
     //filters the yesterdayData and exclude the ones not in topology and metric profile data and keeps the last timestamp for each service endpoint metric
     //filters the todayData and exclude the ones not in topology and metric profile data, union with yesterdayData and calculates the times each status (CRITICAL,WARNING.UNKNOW) appears
     private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus(ParameterTool params, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData) {
-
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(params)).groupBy("hostname", "service", "metric").reduceGroup(new LastTimeStampGroupReduce());
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(params));
         DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new TimelineStatusCounter(params));
+
         return rankedData;
     }
 
     // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
-    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, Integer rankNum, String path) {
+    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, Integer rankNum) {
         DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
 
         if (rankNum != null) {
@@ -123,6 +122,7 @@ public class BatchStatusTrends {
         inputData = env.createInput(inputAvroFormat);
         return inputData;
     }
+
 
     //convert the result in bson format
     public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<Tuple6<String, String, String, String, String, Integer>> in) {
@@ -156,5 +156,4 @@ public class BatchStatusTrends {
         MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
     }
-
 }

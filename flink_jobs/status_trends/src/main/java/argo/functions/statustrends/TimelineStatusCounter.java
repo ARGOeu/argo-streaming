@@ -1,4 +1,4 @@
-package argo.functions;
+package argo.functions.statustrends;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author cthermolia
  *
- * TimelineStatusCounter, for each service endpoint metric group , keeps count
+ * CalcServiceEnpointMetricStatus, for each service endpoint metric group , keeps count
  * for each status (CRITICAL,WARNING,UNKNOW) appearance and returns the group
  * information (group, service,hostname, metric, status, statuscounter)
  */

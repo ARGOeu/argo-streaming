@@ -1,4 +1,4 @@
-package argo.functions;
+package argo.functions.flipfloptrends;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -16,6 +16,7 @@ import java.util.TreeMap;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.configuration.Configuration;
@@ -25,7 +26,7 @@ import org.apache.flink.util.Collector;
  *
  * @author cthermolia
  *
- * FlipFlopStatusCounter, count status changes for each service endpoint metric
+ * CalcServiceEnpointMetricFlipFlop, count status changes for each service endpoint metric
  */
 public class FlipFlopStatusCounter extends RichGroupReduceFunction<MetricData, Tuple5<String, String, String, String, Integer>> {
 
