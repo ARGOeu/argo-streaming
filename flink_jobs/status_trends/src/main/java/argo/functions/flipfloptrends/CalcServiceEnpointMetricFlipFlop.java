@@ -12,11 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RichGroupReduceFunction;
+import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple5;
-import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 
 /**
@@ -26,19 +23,12 @@ import org.apache.flink.util.Collector;
  * CalcServiceEnpointMetricFlipFlop, count status changes for each service
  * endpoint metric
  */
-public class CalcServiceEnpointMetricFlipFlop extends RichGroupReduceFunction<MetricData, Tuple5<String, String, String, String, Integer>> {
+public class CalcServiceEnpointMetricFlipFlop implements GroupReduceFunction<MetricData, Tuple5<String, String, String, String, Integer>> {
 
-    private transient HashMap<String, String> groupEndpoints;
-    private String groupEndpointsPath;
+    private  HashMap<String, String> groupEndpoints;
 
-    public CalcServiceEnpointMetricFlipFlop(ParameterTool params) {
-        this.groupEndpointsPath = params.getRequired("groupEndpointsPath");
-
-    }
-
-    @Override
-    public void open(Configuration config) throws Exception {
-        groupEndpoints = Utils.readGroupEndpointJson(groupEndpointsPath); //contains the information of the (group, service) matches
+    public CalcServiceEnpointMetricFlipFlop(HashMap<String, String> groupEndpoints) {
+        this.groupEndpoints = groupEndpoints;
     }
 
     /**

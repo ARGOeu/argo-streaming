@@ -375,7 +375,6 @@ Job requires parameters:
 
 `--yesterdayData`             : file location of previous day's data
 `--todayData`                 : file location of today day's data
-`--groupEndpointsPath`        : file location of topology information
 `--N`              	       : (optional) number of displayed top results
 `--criticaluri`               : uri to the mongo db collection, to store critical status results
 `--warninguri`                : uri to the mongo db collection, to store warning status results
@@ -391,7 +390,6 @@ Job requires parameters:
 
 `--yesterdayData`              : file location of previous day's data
 `--todayData`                  : file location of today day's data
-`--groupEndpointsPath`         : file location of topology information
 `--N`              		: (optional) number of displayed top results
 `--flipflopuri`                : uri to the mongo db , to store flip flop results
 `--baseuri`                   : uri to the web-api
@@ -404,7 +402,6 @@ Job requires parameters:
 `--yesterdayData`              : file location of previous day's data
 `--todayData`                  : file location of today day's data
 `--opProfilePath`              : file location of operations' profile truth tables
-`--groupEndpointsPath`         : file location of topology information
 `--N`              		: (optional) number of displayed top results
 `--servendpflipflopsuri`       : uri to the mongo db , to store flip flop results
 `--op`                         : the name of the operation that will apply on the timeline

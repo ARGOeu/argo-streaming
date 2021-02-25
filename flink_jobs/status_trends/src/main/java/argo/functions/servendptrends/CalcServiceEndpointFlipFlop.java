@@ -27,7 +27,7 @@ import org.apache.flink.util.Collector;
  */
 public class CalcServiceEndpointFlipFlop implements GroupReduceFunction< MetricTimelinePojo, ServEndpFlipFlopPojo> {
 
-    private HashMap<String, String> opTruthTable;
+    private  HashMap<String, String> opTruthTable;
 
     public CalcServiceEndpointFlipFlop(HashMap<String, String> opTruthTable) {
         this.opTruthTable = opTruthTable;
@@ -55,10 +55,8 @@ public class CalcServiceEndpointFlipFlop implements GroupReduceFunction< MetricT
 
         TreeMap<String, String> resultMap = operateStatus(statusMap);
         int flipflops = calcFlipFlops(resultMap);
-
+       
         ServEndpFlipFlopPojo servEndpFlipFlop = new ServEndpFlipFlopPojo(group, service, hostname, flipflops);
-
-        //Tuple4<String, String, String, Integer> tuple = new Tuple4<String, String, String, Integer>(group, service, hostname, flipflops);
         out.collect(servEndpFlipFlop);
 
     }

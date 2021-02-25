@@ -25,7 +25,6 @@ import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -40,7 +39,6 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
-import org.json.simple.parser.ParseException;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -58,31 +56,36 @@ import org.json.simple.parser.ParseException;
  * http://flink.apache.org/docs/latest/apis/cli.html
  */
 public class BatchFlipFlopTrends {
-    
+
+    private static HashMap<String, ArrayList<String>> metricProfileData;
+    private static HashMap<String, String> groupEndpointData;
+    private static DataSet<MetricData> yesterdayData;
+    private static DataSet<MetricData> todayData;
+    private static Integer rankNum;
+
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-        
+
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params,"yesterdayData","todayData","flipflopResults","baseUri", "metricProfileUUID","key","groupEndpointsPath")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "flipflopResults", "baseUri", "metricProfileUUID", "key")) {
             System.exit(0);
         }
-        
+
         env.setParallelism(1);
 
-        Integer rankNum = null;
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
-        
-        HashMap<String, ArrayList<String>> metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key")); //contains the information of the (service, metrics) matches
 
-        DataSet<MetricData> yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
-        DataSet<MetricData> todayData = readInputData(env, params.getRequired("todayData"));
-        
-        DataSet<Tuple5<String, String, String, String, Integer>> criticalData = calcFlipFlops(params, rankNum, todayData, yesterdayData, metricProfileData, params.getRequired("groupEndpointsPath"));
-        
+        metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+        groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+        yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
+        todayData = readInputData(env, params.getRequired("todayData"));
+
+        DataSet<Tuple5<String, String, String, String, Integer>> criticalData = calcFlipFlops();
+
         writeToMongo(params.getRequired("flipflopResults"), criticalData);
 // execute program
         env.execute("Flink Batch Java API Skeleton");
@@ -91,17 +94,17 @@ public class BatchFlipFlopTrends {
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
     // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
     // rank results
-    private static DataSet<Tuple5<String, String, String, String, Integer>> calcFlipFlops(ParameterTool params, Integer rankNum, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData, HashMap<String, ArrayList<String>> metricProfileData, String groupEndpointsPath) {
-        
-        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointsPath)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
-        
-        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointsPath));
-        DataSet<Tuple5<String, String, String, String, Integer>> reducedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricFlipFlop(params));
+    private static DataSet<Tuple5<String, String, String, String, Integer>> calcFlipFlops() {
+
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
+
+        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
+        DataSet<Tuple5<String, String, String, String, Integer>> reducedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricFlipFlop(groupEndpointData));
         if (rankNum != null) {
             reducedData = reducedData.sortPartition(4, Order.DESCENDING).first(rankNum);
         } else {
             reducedData = reducedData.sortPartition(4, Order.DESCENDING);
-            
+
         }
         return reducedData;
     }
@@ -110,7 +113,7 @@ public class BatchFlipFlopTrends {
     private static DataSet<MetricData> readInputData(ExecutionEnvironment env, String path) {
         DataSet<MetricData> inputData;
         Path input = new Path(path);
-        
+
         AvroInputFormat<MetricData> inputAvroFormat = new AvroInputFormat<MetricData>(input, MetricData.class);
         inputData = env.createInput(inputAvroFormat);
         return inputData;
@@ -118,10 +121,10 @@ public class BatchFlipFlopTrends {
 
     //convert the result in bson format
     public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<Tuple5<String, String, String, String, Integer>> in) {
-        
+
         return in.map(new MapFunction<Tuple5<String, String, String, String, Integer>, Tuple2<Text, BSONWritable>>() {
             int i = 0;
-            
+
             @Override
             public Tuple2<Text, BSONWritable> map(Tuple5<String, String, String, String, Integer> in) throws Exception {
                 BasicDBObject dbObject = new BasicDBObject();
@@ -143,10 +146,9 @@ public class BatchFlipFlopTrends {
         DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
         JobConf conf = new JobConf();
         conf.set("mongo.output.uri", uri);
-        
+
         MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
     }
-    
-  
+
 }

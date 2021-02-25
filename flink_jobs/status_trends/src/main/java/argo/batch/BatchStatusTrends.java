@@ -25,8 +25,6 @@ import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -38,7 +36,6 @@ import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
@@ -60,29 +57,35 @@ import org.apache.hadoop.mapred.JobConf;
  */
 public class BatchStatusTrends {
 
+    private static HashMap<String, ArrayList<String>> metricProfileData;
+    private static HashMap<String, String> groupEndpointData;
+    private static DataSet<MetricData> yesterdayData;
+    private static DataSet<MetricData> todayData;
+    private static Integer rankNum;
+
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "criticaluri", "warninguri", "unknownuri", "baseUri", "metricProfileUUID", "key", "groupEndpointsPath")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "criticaluri", "warninguri", "unknownuri", "baseUri", "metricProfileUUID", "key")) {
             System.exit(0);
         }
 
         env.setParallelism(1);
-        Integer rankNum = null;
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
-        HashMap<String, ArrayList<String>> metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key")); //contains the information of the (service, metrics) matches
-        DataSet<MetricData> yesterdayData = readInputData(env, params, "yesterdayData");
-        DataSet<MetricData> todayData = readInputData(env, params, "todayData");
+        metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+        groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+        yesterdayData = readInputData(env, params, "yesterdayData");
+        todayData = readInputData(env, params, "todayData");
 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus(todayData, yesterdayData, metricProfileData, params.getRequired("groupEndpointsPath"));
-        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical", rankNum, params.getRequired("criticalResults"));
-        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning", rankNum, params.getRequired("warningResults"));
-        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown", rankNum, params.getRequired("unknownResults"));
+        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus();
+        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical", params.getRequired("criticalResults"));
+        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning", params.getRequired("warningResults"));
+        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown", params.getRequired("unknownResults"));
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
@@ -90,17 +93,17 @@ public class BatchStatusTrends {
 
     //filters the yesterdayData and exclude the ones not in topology and metric profile data and keeps the last timestamp for each service endpoint metric
     //filters the todayData and exclude the ones not in topology and metric profile data, union with yesterdayData and calculates the times each status (CRITICAL,WARNING.UNKNOW) appears
-    private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus(DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData, HashMap<String, ArrayList<String>> metricProfileData, String groupEndpointsPath) {
+    private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus() {
 
-        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointsPath)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
-        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointsPath));
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricStatus(groupEndpointsPath));
+        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
+        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricStatus(groupEndpointData));
         return rankedData;
     }
 
     // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
-    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, Integer rankNum, String path) {
+    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, String path) {
         DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
 
         if (rankNum != null) {

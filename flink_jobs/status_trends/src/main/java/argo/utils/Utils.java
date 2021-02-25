@@ -77,22 +77,6 @@ public class Utils {
             return false;
         }
     }
-
-    public static HashMap<String, String> readGroupEndpointJson(String path) {
-
-        JSONParser parser = new JSONParser();
-        try {
-            JSONArray jsonArray = new JSONArray();
-            HashMap<String, String> jsonDataMap = new HashMap<String, String>();
-            jsonArray.addAll((List) parser.parse(new FileReader(path)));
-            jsonDataMap = convertGroupEndpointsJson(jsonArray);
-            return jsonDataMap;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public static HashMap<String, ArrayList<String>> readMetricDataJson(String baseUri, String metricProfileUUID, String key) throws IOException, org.json.simple.parser.ParseException {
         JSONObject jsonObject = RequestManager.getMetricProfileRequest(baseUri, metricProfileUUID, key);
         HashMap<String, ArrayList<String>> jsonDataMap = new HashMap<String, ArrayList<String>>();
@@ -128,24 +112,6 @@ public class Utils {
             }
         }
         return jsonDataMap;
-    }
-
-    public static HashMap<String, String> convertGroupEndpointsJson(JSONArray jsonArray) {
-        HashMap<String, String> jsonDataMap = new HashMap<>();
-        Iterator<Object> iterator = jsonArray.iterator();
-        while (iterator.hasNext()) {
-            Object obj = iterator.next();
-            if (obj instanceof JSONObject) {
-                JSONObject jsonObject = new JSONObject((Map) obj);
-                String hostname = (String) jsonObject.get("hostname");
-                String service = (String) jsonObject.get("service");
-                String group = (String) jsonObject.get("group");
-
-                jsonDataMap.put(hostname + "-" + service, group);
-            }
-        }
-        return jsonDataMap;
-
     }
 
     public static HashMap<String, HashMap<String, String>> readOperationProfileJson(String path) {
@@ -196,11 +162,33 @@ public class Utils {
         for (String var : vars) {
 
             if (params.get(var) == null) {
-                LOG.error(var + " is required but is missing!\n Program exits!");
+                LOG.error("Parameter : "+var + " is required but is missing!\n Program exits!");
                 return false;
             }
         }
         return true;
 
     }
+
+    public static HashMap<String, String> readGroupEndpointJson(String baseUri, String key) throws IOException, org.json.simple.parser.ParseException {
+        JSONObject jsonObject = RequestManager.getTopologyEndpointRequest(baseUri, key);
+        HashMap<String, String> jsonDataMap = new HashMap<>();
+
+        JSONArray data = (JSONArray) jsonObject.get("data");
+
+        Iterator<Object> dataIter = data.iterator();
+        while (dataIter.hasNext()) {
+            Object dataobj = dataIter.next();
+            if (dataobj instanceof JSONObject) {
+                JSONObject jsonDataObj = new JSONObject((Map) dataobj);
+                String hostname = (String) jsonDataObj.get("hostname");
+                String service = (String) jsonDataObj.get("service");
+                String group = (String) jsonDataObj.get("group");
+                jsonDataMap.put(hostname + "-" + service, group);
+            }
+        }
+
+        return jsonDataMap;
+    }
+
 }
