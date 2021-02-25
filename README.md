@@ -381,3 +381,13 @@ Job requires parameters:
 `--criticalResults`           :file location of critical status results
 `--warningResults`            :file location of warning status results
 `--unknownStatus`             :file location of unknown status results
+
+Flink batch Job that calculate flip flop trends for service endpoints metrics
+Job requires parameters:
+
+`--yesterdayData`               :file location of previous day's data
+`--todayData`                 :file location of today day's data
+`--metricDataPath`            :file location of  metric profile data
+`--groupEndpointsPath`        :file location of topology information
+`--N`              		 :(optional) number of displayed top results
+`--flipflopResults`           :file location of flip flop results
