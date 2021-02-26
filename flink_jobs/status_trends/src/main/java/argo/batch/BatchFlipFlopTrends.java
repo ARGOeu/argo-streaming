@@ -17,13 +17,16 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
-import argo.functions.flipfloptrends.FlipFlopStatusCounter;
-import argo.functions.timeline.LastTimeStampGroupReduce;
+import argo.functions.flipfloptrends.CalcServiceEnpointMetricFlipFlop;
+import argo.functions.timeline.CalcLastTimeStatus;
 
 import argo.functions.timeline.TopologyMetricFilter;
+import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,49 +61,50 @@ public class BatchFlipFlopTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchFlipFlopTrends.class);
 
+      private static HashMap<String, ArrayList<String>> metricProfileData;
+    private static HashMap<String, String> groupEndpointData;
+    private static DataSet<MetricData> yesterdayData;
+    private static DataSet<MetricData> todayData;
+    private static Integer rankNum;
+
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         final ParameterTool params = ParameterTool.fromArgs(args);
-        if (params.getRequired("yesterdayData") == null || params.getRequired("todayData") == null || params.getRequired("groupEndpointsPath") == null
-                || params.getRequired("metricDataPath") == null || params.getRequired("flipflopResults") == null) {
-            LOG.info("Program ended due to not found required parameters");
+        //check if all required parameters exist and if not exit program
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "flipflopsuri", "baseUri", "metricProfileUUID", "key")) {
             System.exit(0);
         }
+
         env.setParallelism(1);
 
-        Integer rankNum = null;
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
-        DataSet<MetricData> yesterdayData = readInputData(env, params, "yesterdayData");
-        DataSet<MetricData> todayData = readInputData(env, params, "todayData");
 
-        calcFlipFlopsAndWriteOutput(params, params.getRequired("flipflopsuri"), todayData, yesterdayData, rankNum);
+        metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+        groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+        yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
+        todayData = readInputData(env, params.getRequired("todayData"));
 
+        DataSet<Tuple5<String, String, String, String, Integer>> criticalData = calcFlipFlops();
+
+        writeToMongo(params.getRequired("flipflopsuri"), criticalData);
 // execute program
         env.execute("Flink Batch Java API Skeleton");
     }
 
-    //calculate status changes for each service endpoint metric and write top N in file
-    private static void calcFlipFlopsAndWriteOutput(ParameterTool params, String path, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData, int rankNum) {
-
-        DataSet<Tuple5<String, String, String, String, Integer>> criticalData = calcFlipFlops(params, rankNum, todayData, yesterdayData);
-
-        writeToMongo(path, criticalData);
-
-    }
-
+    
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
     // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
     // rank results
-    private static DataSet<Tuple5<String, String, String, String, Integer>> calcFlipFlops(ParameterTool params, Integer rankNum, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData) {
+   private static DataSet<Tuple5<String, String, String, String, Integer>> calcFlipFlops() {
 
-        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(params)).groupBy("hostname", "service", "metric").reduceGroup(new LastTimeStampGroupReduce());
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
-        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(params));
-        DataSet<Tuple5<String, String, String, String, Integer>> reducedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new FlipFlopStatusCounter(params));
+        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
+        DataSet<Tuple5<String, String, String, String, Integer>> reducedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricFlipFlop(groupEndpointData));
         if (rankNum != null) {
             reducedData = reducedData.sortPartition(4, Order.DESCENDING).first(rankNum);
         } else {
@@ -108,13 +112,12 @@ public class BatchFlipFlopTrends {
 
         }
         return reducedData;
-
     }
     //read input from file
 
-    private static DataSet<MetricData> readInputData(ExecutionEnvironment env, ParameterTool params, String path) {
+    private static DataSet<MetricData> readInputData(ExecutionEnvironment env, String path) {
         DataSet<MetricData> inputData;
-        Path input = new Path(params.getRequired(path));
+        Path input = new Path(path);
 
         AvroInputFormat<MetricData> inputAvroFormat = new AvroInputFormat<MetricData>(input, MetricData.class);
         inputData = env.createInput(inputAvroFormat);
