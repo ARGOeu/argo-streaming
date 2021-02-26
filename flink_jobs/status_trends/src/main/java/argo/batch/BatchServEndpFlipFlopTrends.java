@@ -20,7 +20,7 @@ import argo.avro.MetricData;
 
 import argo.functions.timeline.CalcMetricTimelineStatus;
 import argo.functions.servendptrends.CalcServiceEndpointFlipFlop;
-import argo.functions.timeline.LastTimeStampGroupReduce;
+import argo.functions.timeline.CalcLastTimeStatus;
 import argo.functions.timeline.TopologyMetricFilter;
 import argo.pojos.MetricTimelinePojo;
 import argo.pojos.ServEndpFlipFlopPojo;
@@ -28,6 +28,7 @@ import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
+import java.util.ArrayList;
 
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -60,67 +61,72 @@ import org.apache.hadoop.mapred.JobConf;
  */
 public class BatchServEndpFlipFlopTrends {
 
-    public static HashMap<String, HashMap<String, String>> opTruthTableMap=new HashMap<>(); // the truth table for the operations to be applied on timeline
+    private static HashMap<String, HashMap<String, String>> opTruthTableMap = new HashMap<>(); // the truth table for the operations to be applied on timeline
+    private static HashMap<String, ArrayList<String>> metricProfileData;
+    private static HashMap<String, String> groupEndpointData;
+    private static DataSet<MetricData> yesterdayData;
+    private static DataSet<MetricData> todayData;
+    private static Integer rankNum;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         final ParameterTool params = ParameterTool.fromArgs(args);
+        //check if all required parameters exist and if not exit program
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "servendpflipflopsuri", "opProfilePath", "op", "baseUri", "metricProfileUUID", "key")) {
+            System.exit(0);
+        }
+
         env.setParallelism(1);
 
-        createOpTruthTables(); // build the truth table hardcode now -fix later....
-        initializeConfigurationParameters(params, env);
+        createOpTruthTables(params.getRequired("opProfilePath")); // build the truth table hardcode now -fix later....
+        HashMap<String, String> truthTable = opTruthTableMap.get(params.getRequired("op"));
+        DataSet<ServEndpFlipFlopPojo> resultData = null;
 
-        Integer rankNum = null;
-        if (params.get("N") != null) {
-            rankNum = params.getInt("N");
-        }
-        //read the data from input
-        DataSet<MetricData> yesterdayData = readInputData(env, params, "yesterdayData");
-        DataSet<MetricData> todayData = readInputData(env, params, "todayData");
-        
-        // calculate on data 
-        calcFlipFlopsAndWriteOutput(params, params.getRequired("servendpflipflopsuri"), todayData, yesterdayData, rankNum);
+        if (truthTable != null) {
+            if (params.get("N") != null) {
+                rankNum = params.getInt("N");
+            }
+            //read the data from input
+            metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+            groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+
+            yesterdayData = readInputData(env, params, "yesterdayData");
+            todayData = readInputData(env, params, "todayData");
+
+            // calculate on data 
+            resultData = calcFlipFlops(truthTable);
+            writeToMongo(params.getRequired("servendpflipflopsuri"), resultData);
 
 // execute program
-        env.execute("Flink Batch Java API Skeleton");
-    }
-
-    //calculate status changes for each service endpoint metric and write top N in file
-    private static void calcFlipFlopsAndWriteOutput(ParameterTool params, String path, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData, int rankNum) {
-
-        DataSet<ServEndpFlipFlopPojo> resultData = calcFlipFlops(params, rankNum, todayData, yesterdayData);
-
-        writeToMongo(path, resultData);
-
+            env.execute("Flink Batch Java API Skeleton");
+        }
     }
 
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
     // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
     // rank results
-    private static DataSet<ServEndpFlipFlopPojo> calcFlipFlops(ParameterTool params, Integer rankNum, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData) {
+    private static DataSet<ServEndpFlipFlopPojo> calcFlipFlops(HashMap<String, String> truthTable) {
 
-        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(params)).groupBy("hostname", "service", "metric").reduceGroup(new LastTimeStampGroupReduce());
-
-        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(params));
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
+        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
-        DataSet<MetricTimelinePojo> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricTimelineStatus());
+        DataSet<MetricTimelinePojo> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricTimelineStatus(groupEndpointData));
 
         //group data by service endpoint  and count flip flops
-        DataSet<ServEndpFlipFlopPojo> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group","endpoint","service").reduceGroup(new CalcServiceEndpointFlipFlop(getOpTruthTables(params)));
+        DataSet<ServEndpFlipFlopPojo> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcServiceEndpointFlipFlop(truthTable));
 
         if (rankNum != null) { //sort and rank data
             serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
         } else {
             serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING);
         }
-
         return serviceEndpointGroupData;
 
-    }
-    //read input from file
+    }    //read input from file
+
     private static DataSet<MetricData> readInputData(ExecutionEnvironment env, ParameterTool params, String path) {
         DataSet<MetricData> inputData;
         Path input = new Path(params.getRequired(path));
@@ -172,14 +178,8 @@ public class BatchServEndpFlipFlopTrends {
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
     }
 
-    public static void createOpTruthTables() {
-     
-        opTruthTableMap.put("andOp", Utils.opAndTruthTable());
-    }
-
-    public static HashMap<String, String> getOpTruthTables(ParameterTool param) {
-        String operation = param.getRequired("op");
-        HashMap<String, String> truthTable = opTruthTableMap.get(operation);
-        return truthTable;
+    public static void createOpTruthTables(String opProfilePath) {
+        String path = opProfilePath;
+        opTruthTableMap = Utils.readOperationProfileJson(path);
     }
 }
