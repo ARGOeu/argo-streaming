@@ -9,37 +9,25 @@ import argo.avro.MetricData;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.TreeMap;
-import argo.utils.Utils;
-import org.apache.flink.api.common.functions.RichGroupReduceFunction;
+import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple6;
-import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author cthermolia
  *
- * CalcServiceEnpointMetricStatus, for each service endpoint metric group , keeps count
- * for each status (CRITICAL,WARNING,UNKNOW) appearance and returns the group
- * information (group, service,hostname, metric, status, statuscounter)
+ * CalcServiceEnpointMetricStatus, for each service endpoint metric group ,
+ * keeps count for each status (CRITICAL,WARNING,UNKNOW) appearance and returns
+ * the group information (group, service,hostname, metric, status,
+ * statuscounter)
  */
-public class TimelineStatusCounter extends RichGroupReduceFunction<MetricData, Tuple6<String, String, String, String, String, Integer>> {
+public class CalcServiceEnpointMetricStatus implements GroupReduceFunction<MetricData, Tuple6<String, String, String, String, String, Integer>> {
 
-    private transient HashMap<String, String> groupEndpoints;
-    private String groupEndpointsPath;
-    static Logger LOG = LoggerFactory.getLogger(TimelineStatusCounter.class);
+    private  HashMap<String, String> groupEndpoints;
 
-    public TimelineStatusCounter(ParameterTool params) {
-        this.groupEndpointsPath = params.getRequired("groupEndpointsPath");
-    }
-
-    @Override
-    public void open(Configuration config) throws Exception {
-        super.open(config);
-        groupEndpoints = Utils.readGroupEndpointJson(groupEndpointsPath); //contains the information of the (group, service) matches
+    public CalcServiceEnpointMetricStatus(HashMap<String, String> groupEndpoints) {
+        this.groupEndpoints = groupEndpoints;
     }
 
     /**
@@ -98,6 +86,6 @@ public class TimelineStatusCounter extends RichGroupReduceFunction<MetricData, T
                     group, service, hostname, metric, "UNKNOWN", unknownSum);
             out.collect(tupleUnknown);
         }
-    }        
+    }
 
 }

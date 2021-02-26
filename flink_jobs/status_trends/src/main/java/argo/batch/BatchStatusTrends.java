@@ -17,13 +17,16 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
+import argo.functions.statustrends.CalcServiceEnpointMetricStatus;
 import argo.functions.timeline.TopologyMetricFilter;
-import argo.functions.statustrends.TimelineStatusCounter;
-import argo.functions.timeline.LastTimeStampGroupReduce;
+import argo.functions.timeline.CalcLastTimeStatus;
 import argo.functions.timeline.StatusFilter;
+import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
@@ -59,30 +62,35 @@ public class BatchStatusTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchStatusTrends.class);
 
+    private static HashMap<String, ArrayList<String>> metricProfileData;
+    private static HashMap<String, String> groupEndpointData;
+    private static DataSet<MetricData> yesterdayData;
+    private static DataSet<MetricData> todayData;
+    private static Integer rankNum;
+
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         final ParameterTool params = ParameterTool.fromArgs(args);
-
-        if (params.getRequired("yesterdayData") == null || params.getRequired("todayData") == null || params.getRequired("groupEndpointsPath") == null || params.getRequired("metricDataPath") == null) {
-            LOG.info("Program ended due to not found required parameters");
+        //check if all required parameters exist and if not exit program
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "criticaluri", "warninguri", "unknownuri", "baseUri", "metricProfileUUID", "key")) {
             System.exit(0);
         }
+
         env.setParallelism(1);
-        Integer rankNum = null;
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
-        DataSet<MetricData> yesterdayData = readInputData(env, params, "yesterdayData");
-        DataSet<MetricData> todayData = readInputData(env, params, "todayData");
+        metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+        groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+        yesterdayData = readInputData(env, params, "yesterdayData");
+        todayData = readInputData(env, params, "todayData");
 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus(params, todayData, yesterdayData);
-
-
-        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical", rankNum);
-        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning", rankNum);
-        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown", rankNum);
+        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus();
+        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical");
+        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning");
+        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown");
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
@@ -90,17 +98,17 @@ public class BatchStatusTrends {
 
     //filters the yesterdayData and exclude the ones not in topology and metric profile data and keeps the last timestamp for each service endpoint metric
     //filters the todayData and exclude the ones not in topology and metric profile data, union with yesterdayData and calculates the times each status (CRITICAL,WARNING.UNKNOW) appears
-    private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus(ParameterTool params, DataSet<MetricData> todayData, DataSet<MetricData> yesterdayData) {
-        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(params)).groupBy("hostname", "service", "metric").reduceGroup(new LastTimeStampGroupReduce());
+    private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus() {
 
-        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(params));
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new TimelineStatusCounter(params));
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
+        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
+        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricStatus(groupEndpointData));
         return rankedData;
     }
 
     // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
-    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status, Integer rankNum) {
+    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status) {
         DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
 
         if (rankNum != null) {
@@ -110,7 +118,6 @@ public class BatchStatusTrends {
         }
 
         writeToMongo(uri, filteredData);
-        //   filteredData.writeAsText(path, FileSystem.WriteMode.OVERWRITE);
     }
 
     // reads input from file
