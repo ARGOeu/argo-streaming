@@ -12,36 +12,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-
-import org.apache.flink.api.java.utils.ParameterTool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RichGroupReduceFunction;
+import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple5;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 
 /**
  *
  * @author cthermolia
  *
- * CalcServiceEnpointMetricFlipFlop, count status changes for each service endpoint metric
+ * CalcServiceEnpointMetricFlipFlop, count status changes for each service
+ * endpoint metric
  */
-public class FlipFlopStatusCounter extends RichGroupReduceFunction<MetricData, Tuple5<String, String, String, String, Integer>> {
+public class CalcServiceEnpointMetricFlipFlop implements GroupReduceFunction<MetricData, Tuple5<String, String, String, String, Integer>> {
 
-    static Logger LOG = LoggerFactory.getLogger(FlipFlopStatusCounter.class);
+    private  HashMap<String, String> groupEndpoints;
 
-    private transient HashMap<String, String> groupEndpoints;
-    private String groupEndpointsPath;
-
-    public FlipFlopStatusCounter(ParameterTool params) {
-        this.groupEndpointsPath = params.getRequired("groupEndpointsPath");
-    }
-
-    @Override
-    public void open(Configuration config) throws Exception {
-        groupEndpoints = Utils.readGroupEndpointJson(groupEndpointsPath); //contains the information of the (group, service) matches
+    public CalcServiceEnpointMetricFlipFlop(HashMap<String, String> groupEndpoints) {
+        this.groupEndpoints = groupEndpoints;
     }
 
     /**
@@ -63,11 +50,12 @@ public class FlipFlopStatusCounter extends RichGroupReduceFunction<MetricData, T
             hostname = md.getHostname().toString();
             service = md.getService().toString();
             metric = md.getMetric().toString();
-            group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService().toString()); //retrieve the group for the service, as contained in file
+            group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService()); //retrieve the group for the service, as contained in file
             timeStatusMap.put(md.getTimestamp().toString(), md.getStatus().toString());
         }
         timeStatusMap = handleFirstLastTimestamps(timeStatusMap);
         int flipflop = calcFlipFlops(timeStatusMap);
+
         if (group != null && service != null && hostname != null && metric != null) {
             Tuple5<String, String, String, String, Integer> tuple = new Tuple5<String, String, String, String, Integer>(
                     group, service, hostname, metric, flipflop
@@ -97,8 +85,8 @@ public class FlipFlopStatusCounter extends RichGroupReduceFunction<MetricData, T
         return map;
     }
 // calculate status changes
-    private int calcFlipFlops(TreeMap<String, String> map) {
 
+    private int calcFlipFlops(TreeMap<String, String> map) {
         String previousStatus = null;
         int flipflop = 0;
         for (Entry<String, String> entry : map.entrySet()) {
