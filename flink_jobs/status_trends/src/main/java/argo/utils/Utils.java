@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
  * @author cthermolia
  */
 public class Utils {
+
     static Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     public static String convertDateToString(Date date) throws ParseException {
@@ -38,7 +39,7 @@ public class Utils {
 
         return sdf.format(newCalendar.getTime());
     }
-   
+
     public static Date convertStringtoDate(String dateStr) throws ParseException {
 
         String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -76,9 +77,7 @@ public class Utils {
         }
     }
 
-
-    
-     public static HashMap<String, ArrayList<String>> readMetricDataJson(String baseUri, String metricProfileUUID, String key) throws IOException, org.json.simple.parser.ParseException {
+    public static HashMap<String, ArrayList<String>> readMetricDataJson(String baseUri, String metricProfileUUID, String key) throws IOException, org.json.simple.parser.ParseException {
         JSONObject jsonObject = RequestManager.getMetricProfileRequest(baseUri, metricProfileUUID, key);
         HashMap<String, ArrayList<String>> jsonDataMap = new HashMap<String, ArrayList<String>>();
 
@@ -115,47 +114,37 @@ public class Utils {
         return jsonDataMap;
     }
 
-    public static HashMap<String, HashMap<String, String>> readOperationProfileJson(String path) {
+    public static HashMap<String, HashMap<String, String>> readOperationProfileJson(String baseUri, String key) throws IOException, org.json.simple.parser.ParseException {
+        JSONObject jsonObject = RequestManager.getOperationProfileRequest(baseUri, key);
 
-        JSONParser parser = new JSONParser();
-        try {
-            Object obj = parser.parse(new FileReader(path));
+        // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
+        JSONArray dataList = (JSONArray) jsonObject.get("data");
 
-            // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
-            JSONObject jsonObject = (JSONObject) obj;
+        Iterator<JSONObject> iterator = dataList.iterator();
+        HashMap<String, HashMap<String, String>> opTruthTable = new HashMap<>();
+        while (iterator.hasNext()) {
+            JSONObject dataObject = (JSONObject) iterator.next();
+            JSONArray operationList = (JSONArray) dataObject.get("operations");
+            Iterator<JSONObject> opIterator = operationList.iterator();
+            while (opIterator.hasNext()) {
+                JSONObject operationObject = (JSONObject) opIterator.next();
+                String opName = (String) operationObject.get("name");
+                JSONArray truthtable = (JSONArray) operationObject.get("truth_table");
+                Iterator<JSONObject> truthTableIter = truthtable.iterator();
+                HashMap<String, String> truthTable = new HashMap<>();
+                while (truthTableIter.hasNext()) {
+                    JSONObject truthEntry = (JSONObject) truthTableIter.next();
+                    String a = (String) truthEntry.get("a");
+                    String b = (String) truthEntry.get("b");
+                    String x = (String) truthEntry.get("x");
 
-            JSONArray dataList = (JSONArray) jsonObject.get("data");
-
-            Iterator<JSONObject> iterator = dataList.iterator();
-            HashMap<String, HashMap<String, String>> opTruthTable = new HashMap<>();
-            while (iterator.hasNext()) {
-                JSONObject dataObject = (JSONObject) iterator.next();
-                JSONArray operationList = (JSONArray) dataObject.get("operations");
-                Iterator<JSONObject> opIterator = operationList.iterator();
-                while (opIterator.hasNext()) {
-                    JSONObject operationObject = (JSONObject) opIterator.next();
-                    String opName = (String) operationObject.get("name");
-                    JSONArray truthtable = (JSONArray) operationObject.get("truth_table");
-                    Iterator<JSONObject> truthTableIter = truthtable.iterator();
-                    HashMap<String, String> truthTable = new HashMap<>();
-                    while (truthTableIter.hasNext()) {
-                        JSONObject truthEntry = (JSONObject) truthTableIter.next();
-                        String a = (String) truthEntry.get("a");
-                        String b = (String) truthEntry.get("b");
-                        String x = (String) truthEntry.get("x");
-
-                        truthTable.put(a + "-" + b, x);
-                    }
-                    opTruthTable.put(opName, truthTable);
+                    truthTable.put(a + "-" + b, x);
                 }
+                opTruthTable.put(opName, truthTable);
             }
-            return opTruthTable;
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+        return opTruthTable;
 
-        return null;
     }
 
     public static boolean checkParameters(ParameterTool params, String... vars) {
@@ -163,7 +152,7 @@ public class Utils {
         for (String var : vars) {
 
             if (params.get(var) == null) {
-                LOG.error("Parameter : "+var + " is required but is missing!\n Program exits!");
+                LOG.error("Parameter : " + var + " is required but is missing!\n Program exits!");
                 return false;
             }
         }
@@ -191,6 +180,5 @@ public class Utils {
 
         return jsonDataMap;
     }
-
 
 }
