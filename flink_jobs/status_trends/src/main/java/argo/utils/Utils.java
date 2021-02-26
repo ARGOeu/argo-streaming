@@ -77,8 +77,8 @@ public class Utils {
         }
     }
 
-    public static HashMap<String, ArrayList<String>> readMetricDataJson(String baseUri, String metricProfileUUID, String key) throws IOException, org.json.simple.parser.ParseException {
-        JSONObject jsonObject = RequestManager.getMetricProfileRequest(baseUri, metricProfileUUID, key);
+    public static HashMap<String, ArrayList<String>> readMetricDataJson(String baseUri, String metricProfileUUID, String key,String proxy) throws IOException, org.json.simple.parser.ParseException {
+        JSONObject jsonObject = RequestManager.getMetricProfileRequest(baseUri, metricProfileUUID, key, proxy);
         HashMap<String, ArrayList<String>> jsonDataMap = new HashMap<String, ArrayList<String>>();
 
         JSONArray data = (JSONArray) jsonObject.get("data");
@@ -114,8 +114,8 @@ public class Utils {
         return jsonDataMap;
     }
 
-    public static HashMap<String, HashMap<String, String>> readOperationProfileJson(String baseUri, String key) throws IOException, org.json.simple.parser.ParseException {
-        JSONObject jsonObject = RequestManager.getOperationProfileRequest(baseUri, key);
+    public static HashMap<String, HashMap<String, String>> readOperationProfileJson(String baseUri, String key,String proxy) throws IOException, org.json.simple.parser.ParseException {
+        JSONObject jsonObject = RequestManager.getOperationProfileRequest(baseUri, key, proxy);
 
         // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
         JSONArray dataList = (JSONArray) jsonObject.get("data");
@@ -160,8 +160,8 @@ public class Utils {
 
     }
 
-    public static HashMap<String, String> readGroupEndpointJson(String baseUri, String key) throws IOException, org.json.simple.parser.ParseException {
-        JSONObject jsonObject = RequestManager.getTopologyEndpointRequest(baseUri, key);
+    public static HashMap<String, String> readGroupEndpointJson(String baseUri, String key,String proxy) throws IOException, org.json.simple.parser.ParseException {
+        JSONObject jsonObject = RequestManager.getTopologyEndpointRequest(baseUri, key,proxy);
         HashMap<String, String> jsonDataMap = new HashMap<>();
 
         JSONArray data = (JSONArray) jsonObject.get("data");
