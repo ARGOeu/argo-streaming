@@ -93,4 +93,41 @@ public class RequestManager {
         return jsonresult;
 
     }
+    
+    
+      public static JSONObject getOperationProfileRequest(String baseUri, String key) throws IOException, ParseException {
+        JSONObject jsonresult = null;
+        String uri = baseUri + "/operations_profiles";
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        try {
+
+            HttpGet request = new HttpGet(uri);
+            // add request headers
+            request.addHeader("x-api-key", key);
+            request.addHeader(HttpHeaders.ACCEPT, "application/json");
+
+            CloseableHttpResponse response = httpClient.execute(request);
+            try {
+
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    // return it as a String
+                    String result = EntityUtils.toString(entity);
+
+                    JSONParser parser = new JSONParser();
+                    jsonresult = (JSONObject) parser.parse(result);
+                }
+
+            } finally {
+                response.close();
+
+            }
+        } finally {
+            httpClient.close();
+
+        }
+        return jsonresult;
+
+    }
+  
 }

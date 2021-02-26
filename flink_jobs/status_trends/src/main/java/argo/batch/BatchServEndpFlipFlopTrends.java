@@ -28,6 +28,7 @@ import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
+import org.json.simple.parser.ParseException;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -74,13 +76,13 @@ public class BatchServEndpFlipFlopTrends {
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "servendpflipflopsuri", "opProfilePath", "op", "baseUri", "metricProfileUUID", "key")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "servendpflipflopsuri", "op", "baseUri", "metricProfileUUID", "key")) {
             System.exit(0);
         }
 
         env.setParallelism(1);
 
-        createOpTruthTables(params.getRequired("opProfilePath")); // build the truth table hardcode now -fix later....
+        createOpTruthTables(params.getRequired("baseUri"),params.getRequired("key")); // build the truth table hardcode now -fix later....
         HashMap<String, String> truthTable = opTruthTableMap.get(params.getRequired("op"));
         DataSet<ServEndpFlipFlopPojo> resultData = null;
 
@@ -178,8 +180,8 @@ public class BatchServEndpFlipFlopTrends {
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
     }
 
-    public static void createOpTruthTables(String opProfilePath) {
-        String path = opProfilePath;
-        opTruthTableMap = Utils.readOperationProfileJson(path);
+    public static void createOpTruthTables(String baseUri, String key) throws IOException, ParseException {
+        
+        opTruthTableMap = Utils.readOperationProfileJson(baseUri,key);
     }
 }
