@@ -82,7 +82,7 @@ public class BatchServEndpFlipFlopTrends {
 
         env.setParallelism(1);
 
-        createOpTruthTables(params.getRequired("baseUri"),params.getRequired("key")); // build the truth table hardcode now -fix later....
+        createOpTruthTables(params.getRequired("baseUri"),params.getRequired("key"),params.get("proxy")); // build the truth table hardcode now -fix later....
         HashMap<String, String> truthTable = opTruthTableMap.get(params.getRequired("op"));
         DataSet<ServEndpFlipFlopPojo> resultData = null;
 
@@ -91,8 +91,8 @@ public class BatchServEndpFlipFlopTrends {
                 rankNum = params.getInt("N");
             }
             //read the data from input
-            metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key")); //contains the information of the (service, metrics) matches
-            groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key")); //contains the information of the (service, metrics) matches
+            metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
+            groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
 
             yesterdayData = readInputData(env, params, "yesterdayData");
             todayData = readInputData(env, params, "todayData");
@@ -180,8 +180,8 @@ public class BatchServEndpFlipFlopTrends {
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
     }
 
-    public static void createOpTruthTables(String baseUri, String key) throws IOException, ParseException {
+    public static void createOpTruthTables(String baseUri, String key,String proxy) throws IOException, ParseException {
         
-        opTruthTableMap = Utils.readOperationProfileJson(baseUri,key);
+        opTruthTableMap = Utils.readOperationProfileJson(baseUri,key,proxy);
     }
 }

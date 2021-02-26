@@ -7,12 +7,10 @@ package argo.utils;
 
 import com.google.common.net.HttpHeaders;
 import java.io.IOException;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.fluent.Executor;
+import org.apache.http.client.fluent.Request;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -23,111 +21,90 @@ import org.json.simple.parser.ParseException;
  */
 public class RequestManager {
 
-    public static JSONObject getMetricProfileRequest(String baseUri, String uid, String key) throws IOException, ParseException {
+    public static JSONObject getMetricProfileRequest(String baseUri, String uid, String key, String proxy) throws IOException, ParseException {
         JSONObject jsonresult = null;
         String uri = baseUri + "/metric_profiles/" + uid;
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        try {
-
-            HttpGet request = new HttpGet(uri);
-            // add request headers
-            request.addHeader("x-api-key", key);
-            request.addHeader(HttpHeaders.ACCEPT, "application/json");
-
-            CloseableHttpResponse response = httpClient.execute(request);
-            try {
-
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    // return it as a String
-                    String result = EntityUtils.toString(entity);
-
-                    JSONParser parser = new JSONParser();
-                    jsonresult = (JSONObject) parser.parse(result);
-                }
-
-            } finally {
-                response.close();
-
-            }
-        } finally {
-            httpClient.close();
-
+        Request request = Request.Get(uri);
+        // add request headers
+        request.addHeader("x-api-key", key);
+        request.addHeader(HttpHeaders.ACCEPT, "application/json");
+        if (proxy!=null) {
+            request = request.viaProxy(proxy);
         }
+        String content = "{}";
+        try {
+            CloseableHttpClient httpClient = HttpClients.custom().build();
+            Executor executor = Executor.newInstance(httpClient);
+            content = executor.execute(request).returnContent().asString();
+
+            JSONParser parser = new JSONParser();
+            jsonresult = (JSONObject) parser.parse(content);
+
+//
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
         return jsonresult;
 
     }
-    
-    
-    public static JSONObject getTopologyEndpointRequest(String baseUri, String key) throws IOException, ParseException {
+
+    public static JSONObject getTopologyEndpointRequest(String baseUri, String key, String proxy) throws IOException, ParseException {
         JSONObject jsonresult = null;
         String uri = baseUri + "/topology/endpoints";
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        try {
-
-            HttpGet request = new HttpGet(uri);
-            // add request headers
-            request.addHeader("x-api-key", key);
-            request.addHeader(HttpHeaders.ACCEPT, "application/json");
-
-            CloseableHttpResponse response = httpClient.execute(request);
-            try {
-
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    // return it as a String
-                    String result = EntityUtils.toString(entity);
-
-                    JSONParser parser = new JSONParser();
-                    jsonresult = (JSONObject) parser.parse(result);
-                }
-
-            } finally {
-                response.close();
-
-            }
-        } finally {
-            httpClient.close();
-
+        Request request = Request.Get(uri);
+        // add request headers
+        request.addHeader("x-api-key", key);
+        request.addHeader(HttpHeaders.ACCEPT, "application/json");
+        if (proxy!=null) {
+            request = request.viaProxy(proxy);
         }
+        String content = "{}";
+        try {
+            CloseableHttpClient httpClient = HttpClients.custom().build();
+            Executor executor = Executor.newInstance(httpClient);
+            content = executor.execute(request).returnContent().asString();
+
+            JSONParser parser = new JSONParser();
+            jsonresult = (JSONObject) parser.parse(content);
+
+//
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
         return jsonresult;
 
     }
-    
-    
-      public static JSONObject getOperationProfileRequest(String baseUri, String key) throws IOException, ParseException {
+
+    public static JSONObject getOperationProfileRequest(String baseUri, String key, String proxy) throws IOException, ParseException {
         JSONObject jsonresult = null;
         String uri = baseUri + "/operations_profiles";
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        try {
-
-            HttpGet request = new HttpGet(uri);
-            // add request headers
-            request.addHeader("x-api-key", key);
-            request.addHeader(HttpHeaders.ACCEPT, "application/json");
-
-            CloseableHttpResponse response = httpClient.execute(request);
-            try {
-
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    // return it as a String
-                    String result = EntityUtils.toString(entity);
-
-                    JSONParser parser = new JSONParser();
-                    jsonresult = (JSONObject) parser.parse(result);
-                }
-
-            } finally {
-                response.close();
-
-            }
-        } finally {
-            httpClient.close();
-
+        Request request = Request.Get(uri);
+        // add request headers
+        request.addHeader("x-api-key", key);
+        request.addHeader(HttpHeaders.ACCEPT, "application/json");
+        if (proxy!=null) {
+            request = request.viaProxy(proxy);
         }
-        return jsonresult;
+        String content = "{}";
+        try {
+            CloseableHttpClient httpClient = HttpClients.custom().build();
+            Executor executor = Executor.newInstance(httpClient);
+            content = executor.execute(request).returnContent().asString();
 
-    }
-  
+            JSONParser parser = new JSONParser();
+            jsonresult = (JSONObject) parser.parse(content);
+
+//
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+return jsonresult;
+
+
+}
 }
