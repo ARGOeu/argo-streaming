@@ -383,7 +383,7 @@ Job requires parameters:
 `--baseuri`                   : uri to the web-api
 `--metricProfileUUID`         : uuid of the metric_profile report, to be retrieved from the api request
 `--key`                       : users's token, used for authentication
-
+`--proxy`                     : (optional) proxy url 
 
 Flink batch Job that calculate flip flop trends for service endpoints metrics
 Job requires parameters:
@@ -395,6 +395,7 @@ Job requires parameters:
 `--baseuri`                   : uri to the web-api
 `--metricProfileUUID`         : uuid of the metric_profile report, to be retrieved from the api request
 `--key`                       : users's token, used for authentication
+`--proxy`                     : (optional) proxy url 
 
 Flink batch Job that calculate flip flop trends for service endpoints 
 Job requires parameters:
@@ -407,3 +408,4 @@ Job requires parameters:
 `--baseuri`                   : uri to the web-api
 `--metricProfileUUID`         : uuid of the metric_profile report, to be retrieved from the api request
 `--key`                       : users's token, used for authentication
+`--proxy`                     : (optional) proxy url 
