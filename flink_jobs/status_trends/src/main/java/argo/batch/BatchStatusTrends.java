@@ -37,11 +37,11 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
+import parsers.AggregationProfileParser;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -82,6 +82,8 @@ public class BatchStatusTrends {
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
+        AggregationProfileParser.loadAggrProfileInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"));
+       
         metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
         groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
         yesterdayData = readInputData(env, params, "yesterdayData");
