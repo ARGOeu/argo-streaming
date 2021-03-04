@@ -41,6 +41,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
+import parsers.AggregationProfileParser;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -83,6 +84,7 @@ public class BatchFlipFlopTrends {
             rankNum = params.getInt("N");
         }
 
+        AggregationProfileParser.loadAggrProfileInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"));
         metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
         groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
         yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
