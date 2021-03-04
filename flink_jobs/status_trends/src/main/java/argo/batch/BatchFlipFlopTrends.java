@@ -42,6 +42,7 @@ import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import parsers.AggregationProfileParser;
+import parsers.ReportParser;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -74,7 +75,7 @@ public class BatchFlipFlopTrends {
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "flipflopsuri", "baseUri", "metricProfileUUID", "key")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "flipflopsuri", "baseUri", "metricProfileUUID", "key", "reportId")) {
             System.exit(0);
         }
 
@@ -83,7 +84,7 @@ public class BatchFlipFlopTrends {
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
-
+        ReportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
         AggregationProfileParser.loadAggrProfileInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"));
         metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
         groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches

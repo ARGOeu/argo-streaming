@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import parsers.AggregationProfileParser;
+import parsers.ReportParser;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -82,6 +83,7 @@ public class BatchStatusTrends {
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
+        ReportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
         AggregationProfileParser.loadAggrProfileInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"));
        
         metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
