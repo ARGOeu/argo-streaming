@@ -46,6 +46,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.json.simple.parser.ParseException;
 import parsers.AggregationProfileParser;
+import parsers.ReportParser;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -82,6 +83,7 @@ public class BatchServEndpFlipFlopTrends {
         }
 
         env.setParallelism(1);
+        ReportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
         AggregationProfileParser.loadAggrProfileInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"));
 
         createOpTruthTables(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy")); // build the truth table hardcode now -fix later....
