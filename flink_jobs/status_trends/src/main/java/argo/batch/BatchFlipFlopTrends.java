@@ -41,8 +41,15 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
-import parsers.AggregationProfileParser;
+import parsers.MetricProfileParser;
+import parsers.OperationsParser;
 import parsers.ReportParser;
+import parsers.ReportParser.Topology;
+
+import parsers.TopologyEndpointParser;
+import parsers.TopologyEndpointParser.EndpointGroup;
+import parsers.TopologyGroupParser;
+import parsers.TopologyGroupParser.TopologyGroup;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -63,7 +70,7 @@ public class BatchFlipFlopTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchFlipFlopTrends.class);
 
-      private static HashMap<String, ArrayList<String>> metricProfileData;
+    private static HashMap<String, ArrayList<String>> metricProfileData;
     private static HashMap<String, String> groupEndpointData;
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
@@ -84,10 +91,28 @@ public class BatchFlipFlopTrends {
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
-        ReportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
-        AggregationProfileParser.loadAggrProfileInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"));
-        metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
-        groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
+        ReportParser reportParser = new ReportParser();
+        reportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
+        Topology topology = reportParser.getTenantReport().getGroup();
+
+        TopologyGroupParser topolGroupParser = new TopologyGroupParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.get("date"));
+        ArrayList<TopologyGroup> groupsList = topolGroupParser.getTopologyGroups().get(topology);
+
+        TopologyEndpointParser topolEndpointParser = new TopologyEndpointParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.get("date"));
+        ArrayList<EndpointGroup> endpointList = topolEndpointParser.getEndpointGroups().get(topology);
+
+        String aggregationId = reportParser.getProfileId(ReportParser.ProfileType.AGGREGATION.name());
+        String metricId = reportParser.getProfileId(ReportParser.ProfileType.METRIC.name());
+        String operationsId = reportParser.getProfileId(ReportParser.ProfileType.OPERATIONS.name());
+
+//        AggregationProfileParser aggregationProfileParser = new AggregationProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), aggregationId, params.get("date"));
+
+        MetricProfileParser metricProfileParser = new MetricProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), metricId, params.get("date"));
+        metricProfileData = metricProfileParser.getMetricData();
+
+        OperationsParser operationParser = new OperationsParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), operationsId, params.get("date"));
+
+        groupEndpointData = topolEndpointParser.getTopologyEndpoint();
         yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
         todayData = readInputData(env, params.getRequired("todayData"));
 
@@ -98,11 +123,10 @@ public class BatchFlipFlopTrends {
         env.execute("Flink Batch Java API Skeleton");
     }
 
-    
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
     // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
     // rank results
-   private static DataSet<Tuple5<String, String, String, String, Integer>> calcFlipFlops() {
+    private static DataSet<Tuple5<String, String, String, String, Integer>> calcFlipFlops() {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 

@@ -20,19 +20,24 @@ import org.json.simple.parser.ParseException;
  */
 public class AggregationProfileParser {
 
-    public static String id;
-    public static String date;
-    public static String name;
-    public static String namespace;
-    public static String endpointGroup;
-    public static String metricOp;
-    public static String profileOp;
-    public static String[] metricProfile = new String[2];
-    public static ArrayList<GroupOps> groups = new ArrayList<>();
+    public String id;
+    public String date;
+    public String name;
+    public String namespace;
+    public String endpointGroup;
+    public String metricOp;
+    public String profileOp;
+    public String[] metricProfile = new String[2];
+    public ArrayList<GroupOps> groups = new ArrayList<>();
 
-    public static void loadAggrProfileInfo(String baseUri, String key, String proxy) throws IOException, ParseException {
+    public AggregationProfileParser(String baseUri, String key, String proxy, String aggregationId, String dateStr) throws IOException, ParseException {
 
-        JSONObject jsonObject = RequestManager.getAggregationProfileRequest(baseUri, key, proxy);
+        loadAggrProfileInfo(baseUri, key, proxy, aggregationId, dateStr);
+    }
+
+    public void loadAggrProfileInfo(String baseUri, String key, String proxy, String aggregationId, String dateStr) throws IOException, ParseException {
+
+        JSONObject jsonObject = RequestManager.getAggregationProfileRequest(baseUri, key, proxy, aggregationId, dateStr);
 
         JSONArray dataList = (JSONArray) jsonObject.get("data");
 
@@ -82,16 +87,65 @@ public class AggregationProfileParser {
         }
     }
 
-    private static class GroupOps {
+    public String getId() {
+        return id;
+    }
 
-        public String name;
-        public String operation;
-        public HashMap<String, String> services;
+    public String getDate() {
+        return date;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public String getEndpointGroup() {
+        return endpointGroup;
+    }
+
+    public String getMetricOp() {
+        return metricOp;
+    }
+
+    public String getProfileOp() {
+        return profileOp;
+    }
+
+    public String[] getMetricProfile() {
+        return metricProfile;
+    }
+
+    public ArrayList<GroupOps> getGroups() {
+        return groups;
+    }
+    
+
+    public static class GroupOps {
+
+        private String name;
+        private String operation;
+        private HashMap<String, String> services;
 
         public GroupOps(String name, String operation, HashMap<String, String> services) {
             this.name = name;
             this.operation = operation;
             this.services = services;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getOperation() {
+            return operation;
+        }
+
+        public HashMap<String, String> getServices() {
+            return services;
         }
 
     }

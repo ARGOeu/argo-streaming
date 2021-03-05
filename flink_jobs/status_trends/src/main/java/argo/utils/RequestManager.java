@@ -55,36 +55,71 @@ public class RequestManager {
 
     }
 
-    public static JSONObject getAggregationProfileRequest(String baseUri, String key, String proxy) throws IOException, ParseException {
+    public static JSONObject getAggregationProfileRequest(String baseUri, String key, String proxy, String aggregationId,String date) throws IOException, ParseException {
         JSONObject jsonresult = null;
         String uri = baseUri + "/aggregation_profiles";
+        if(date==null){
+            uri=uri+"/"+aggregationId;
+        }else{
+            uri=uri+"?date="+date;
+        }
         jsonresult = request(uri, key, proxy);
         return jsonresult;
 
     }
 
-    public static JSONObject getMetricProfileRequest(String baseUri, String uid, String key, String proxy) throws IOException, ParseException {
+    public static JSONObject getMetricProfileRequest(String baseUri, String key, String proxy, String metricId,String date) throws IOException, ParseException {
         JSONObject jsonresult = null;
-        String uri = baseUri + "/metric_profiles/" + uid;
+        String uri = baseUri + "/metric_profiles" ;
+        System.out.println("date --" +date);
+        if(date==null){
+            uri=uri+ "/"+metricId;
+        }else{
+            uri=uri+"?date="+date;
+        }
+        System.out.println("uri--- "+uri);
         jsonresult = request(uri, key, proxy);
         return jsonresult;
 
     }
 
-    public static JSONObject getTopologyEndpointRequest(String baseUri, String key, String proxy) throws IOException, ParseException {
+    public static JSONObject getTopologyEndpointRequest(String baseUri, String key, String proxy, String date) throws IOException, ParseException {
         JSONObject jsonresult = null;
         String uri = baseUri + "/topology/endpoints";
+        if (date != null) {
+            uri = uri + "?date=" + date;
+        }
         jsonresult = request(uri, key, proxy);
 
         return jsonresult;
 
     }
 
-    public static JSONObject getOperationProfileRequest(String baseUri, String key, String proxy) throws IOException, ParseException {
+    public static JSONObject getOperationProfileRequest(String baseUri, String key, String proxy, String operationsId, String date) throws IOException, ParseException {
         JSONObject jsonresult = null;
+        String url = null;
+
         String uri = baseUri + "/operations_profiles";
+        if (date == null) {
+            uri = uri + operationsId;
+        } else {
+            uri = uri + "?date=" + date;
+        }
         jsonresult = request(uri, key, proxy);
         return jsonresult;
 
     }
+
+    public static JSONObject getTopologyGroupRequest(String baseUri, String key, String proxy, String date) throws IOException, ParseException {
+        JSONObject jsonresult = null;
+        String uri = baseUri + "/topology/groups";
+        if (date != null) {
+            uri = uri + "?date=" + date;
+        }
+        jsonresult = request(uri, key, proxy);
+
+        return jsonresult;
+
+    }
+
 }

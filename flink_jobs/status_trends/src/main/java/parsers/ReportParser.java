@@ -19,9 +19,9 @@ import org.json.simple.parser.ParseException;
  */
 public class ReportParser {
 
-    public static TenantReport tenantReport;
+    private TenantReport tenantReport;
 
-    public static void loadReportInfo(String baseUri, String key, String proxy, String reportId) throws IOException, ParseException {
+    public void loadReportInfo(String baseUri, String key, String proxy, String reportId) throws IOException, ParseException {
 
         JSONObject jsonObject = RequestManager.getReportRequest(baseUri, key, proxy, reportId);
 
@@ -51,8 +51,8 @@ public class ReportParser {
 
             String grouptype = (String) subGroupObject.get("type");
 
-            TopologyGroup group = new TopologyGroup(grouptype,null);
-            TopologyGroup topologyGroup = new TopologyGroup(type, group);
+            Topology group = new Topology(grouptype, null);
+            Topology topologyGroup = new Topology(type, group);
 
             JSONObject thresholdsObject = (JSONObject) dataObject.get("thresholds");
 
@@ -64,6 +64,7 @@ public class ReportParser {
             Iterator<JSONObject> profileIter = profiles.iterator();
             ArrayList<Profiles> profileList = new ArrayList<>();
             while (profileIter.hasNext()) {
+                System.out.println("prifies");
                 JSONObject profileObject = (JSONObject) profileIter.next();
                 Profiles profile = new Profiles((String) profileObject.get("id"), (String) profileObject.get("name"), (String) profileObject.get("type"));
                 profileList.add(profile);
@@ -83,13 +84,29 @@ public class ReportParser {
 
     }
 
-    public static class Threshold {
+    public String getProfileId(String profileName) {
+        ArrayList<Profiles> profiles = tenantReport.getProfiles();
+        if (profiles != null) {
+            for (Profiles profile : profiles) {
+                if (profile.getType().equalsIgnoreCase(profileName)) {
+                    return profile.id;
+                }
+            }
+        }
+        return null;
+    }
 
-        public Long availability;
-        public Long reliability;
-        public Double uptime;
-        public Double unknown;
-        public Double downtime;
+    public TenantReport getTenantReport() {
+        return tenantReport;
+    }
+
+    public class Threshold {
+
+        private Long availability;
+        private Long reliability;
+        private Double uptime;
+        private Double unknown;
+        private Double downtime;
 
         public Threshold(Long availability, Long reliability, Double uptime, Double unknown, Double downtime) {
             this.availability = availability;
@@ -99,26 +116,59 @@ public class ReportParser {
             this.downtime = downtime;
         }
 
+        public Long getAvailability() {
+            return availability;
+        }
+
+        public Long getReliability() {
+            return reliability;
+        }
+
+        public Double getUptime() {
+            return uptime;
+        }
+
+        public Double getUnknown() {
+            return unknown;
+        }
+
+        public Double getDowntime() {
+            return downtime;
+        }
+
     }
 
-    public static class Profiles {
+    private class Profiles {
 
-        public String id;
-        public String name;
-        public String type;
+        private String id;
+        private String name;
+        private String type;
 
         public Profiles(String id, String name, String type) {
             this.id = id;
             this.name = name;
             this.type = type;
         }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getType() {
+            return type;
+        }
+
     }
 
-    public static class FilterTags {
+    private class FilterTags {
 
-        public String name;
-        public String value;
-        public String context;
+        private String name;
+        private String value;
+        private String context;
 
         public FilterTags(String name, String value, String context) {
             this.name = name;
@@ -126,30 +176,52 @@ public class ReportParser {
             this.context = context;
         }
 
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public String getContext() {
+            return context;
+        }
+
     }
 
-    public static class TopologyGroup {
+    public class Topology {
 
-        public String type;
-        public TopologyGroup group;
+        private String type;
+        private Topology group;
 
-        public TopologyGroup(String type, TopologyGroup group) {
+        public Topology(String type, Topology group) {
             this.type = type;
             this.group = group;
         }
+
+        public String getType() {
+            return type;
+        }
+
+        public Topology getGroup() {
+            return group;
+        }
+
     }
 
-    public static class TenantReport {
-        public  String id;
-        public   String tenant;
-        public  boolean disabled;
-        public  String[] info;
-        public  TopologyGroup group;
-        public  Threshold threshold;
-        public  ArrayList<Profiles> profiles;
-        public  ArrayList<FilterTags> filterTags;
+    public class TenantReport {
 
-        public TenantReport(String id, String tenant, boolean disabled, String[] info, TopologyGroup group, Threshold threshold, ArrayList<Profiles> profiles, ArrayList<FilterTags> filterTags) {
+        private String id;
+        private String tenant;
+        private boolean disabled;
+        private String[] info;
+        private Topology group;
+        private Threshold threshold;
+        private ArrayList<Profiles> profiles;
+        private ArrayList<FilterTags> filterTags;
+
+        public TenantReport(String id, String tenant, boolean disabled, String[] info, Topology group, Threshold threshold, ArrayList<Profiles> profiles, ArrayList<FilterTags> filterTags) {
             this.id = id;
             this.tenant = tenant;
             this.disabled = disabled;
@@ -158,7 +230,49 @@ public class ReportParser {
             this.threshold = threshold;
             this.profiles = profiles;
             this.filterTags = filterTags;
+            
+            System.out.println("size profile---"+this.profiles.size());
         }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getTenant() {
+            return tenant;
+        }
+
+        public boolean isDisabled() {
+            return disabled;
+        }
+
+        public String[] getInfo() {
+            return info;
+        }
+
+        public Topology getGroup() {
+            return group;
+        }
+
+        public Threshold getThreshold() {
+            return threshold;
+        }
+
+        public ArrayList<Profiles> getProfiles() {
+            return profiles;
+        }
+
+        public ArrayList<FilterTags> getFilterTags() {
+            return filterTags;
+        }
+
+    }
+
+    public enum ProfileType {
+
+        METRIC,
+        AGGREGATION,
+        OPERATIONS
 
     }
 }

@@ -42,7 +42,11 @@ import org.slf4j.LoggerFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import parsers.AggregationProfileParser;
+import parsers.MetricProfileParser;
+import parsers.OperationsParser;
 import parsers.ReportParser;
+import parsers.TopologyEndpointParser;
+import parsers.TopologyGroupParser;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -83,11 +87,30 @@ public class BatchStatusTrends {
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
-        ReportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
-        AggregationProfileParser.loadAggrProfileInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"));
+
+        ReportParser reportParser = new ReportParser();
+        reportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
+        ReportParser.Topology topology = reportParser.getTenantReport().getGroup();
+
+        TopologyGroupParser topolGroupParser = new TopologyGroupParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"),params.getRequired("date"));
+        ArrayList<TopologyGroupParser.TopologyGroup> groupsList = topolGroupParser.getTopologyGroups().get(topology);
+
+        TopologyEndpointParser topolEndpointParser = new TopologyEndpointParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"),params.getRequired("date"));
+        ArrayList<TopologyEndpointParser.EndpointGroup> endpointList = topolEndpointParser.getEndpointGroups().get(topology);
+
+        String aggregationId = reportParser.getProfileId(ReportParser.ProfileType.AGGREGATION.name());
+        String metricId = reportParser.getProfileId(ReportParser.ProfileType.METRIC.name());
+        String operationsId = reportParser.getProfileId(ReportParser.ProfileType.OPERATIONS.name());
+
+        // AggregationProfileParser aggregationProfileParser=new AggregationProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), aggregationId,params.get("date"));
        
-        metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
-        groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
+        MetricProfileParser metricProfileParser = new MetricProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), metricId,params.get("date"));
+        metricProfileData = metricProfileParser.getMetricData();
+
+        OperationsParser operationParser = new OperationsParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), operationsId,params.get("date"));
+
+        groupEndpointData = topolEndpointParser.getTopologyEndpoint();
+
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
 
@@ -134,7 +157,6 @@ public class BatchStatusTrends {
         return inputData;
     }
 
-
     //convert the result in bson format
     public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<Tuple6<String, String, String, String, String, Integer>> in) {
 
@@ -158,6 +180,7 @@ public class BatchStatusTrends {
             }
         });
     }
+
     //write to mongo db
     public static void writeToMongo(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data) {
         DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
