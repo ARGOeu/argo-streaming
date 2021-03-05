@@ -5,26 +5,31 @@
  */
 package argo.pojos;
 
+import java.util.Date;
+import java.util.TreeMap;
+
 /**
  *
  * @author cthermolia
+ * 
+ * EndpointTrends, describes the computed trend information extracted from the timelines at the level of group service endpoints groups 
  */
-public class ServEndpFlipFlopPojo {
+public class EndpointTrends {
 
     String group;
     String service;
-
-    String hostname;
+    String endpoint;
+    Timeline timeline;
     Integer flipflops;
 
-    public ServEndpFlipFlopPojo() {
+    public EndpointTrends() {
     }
 
-    
-    public ServEndpFlipFlopPojo(String group, String service, String hostname, Integer flipflops) {
+    public EndpointTrends(String group, String service, String endpoint, Timeline timeline, Integer flipflops) {
         this.group = group;
         this.service = service;
-        this.hostname = hostname;
+        this.endpoint = endpoint;
+        this.timeline = timeline;
         this.flipflops = flipflops;
     }
 
@@ -44,12 +49,20 @@ public class ServEndpFlipFlopPojo {
         this.service = service;
     }
 
-    public String getHostname() {
-        return hostname;
+    public String getEndpoint() {
+        return endpoint;
     }
 
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    public Timeline getTimeline() {
+        return timeline;
+    }
+
+    public void setTimeline(Timeline timeline) {
+        this.timeline = timeline;
     }
 
     public Integer getFlipflops() {
@@ -59,5 +72,7 @@ public class ServEndpFlipFlopPojo {
     public void setFlipflops(Integer flipflops) {
         this.flipflops = flipflops;
     }
+
+  
 
 }
