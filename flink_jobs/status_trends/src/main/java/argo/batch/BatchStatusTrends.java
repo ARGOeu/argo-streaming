@@ -17,10 +17,10 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
-import argo.functions.statustrends.CalcServiceEnpointMetricStatus;
-import argo.functions.timeline.TopologyMetricFilter;
-import argo.functions.timeline.CalcLastTimeStatus;
-import argo.functions.timeline.StatusFilter;
+import argo.functions.calctrends.CalcStatusTrends;
+import argo.functions.calctimelines.TopologyMetricFilter;
+import argo.functions.calctimelines.CalcLastTimeStatus;
+import argo.functions.calctimelines.StatusFilter;
 import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
@@ -41,8 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
-import parsers.AggregationProfileParser;
-import parsers.ReportParser;
+import argo.profiles.ProfilesLoader;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -69,13 +68,19 @@ public class BatchStatusTrends {
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
 
+    private static final String criticalStatusTrends = "criticalStatusTrends";
+    private static final String warningStatusTrends = "warningStatusTrends";
+    private static final String unknownStatusTrends = "unknownStatusTrends";
+
+    private static String mongoUri;
+
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "criticaluri", "warninguri", "unknownuri", "baseUri", "metricProfileUUID", "key")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "apiUri", "key")) {
             System.exit(0);
         }
 
@@ -83,18 +88,18 @@ public class BatchStatusTrends {
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
-        ReportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
-        AggregationProfileParser.loadAggrProfileInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"));
-       
-        metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
-        groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
+        mongoUri = params.get("mongoUri");
+        ProfilesLoader profilesLoader = new ProfilesLoader(params);
+        metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
+        groupEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
+
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
 
         DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus();
-        filterByStatusAndWrite(params.getRequired("criticaluri"), rankedData, "critical");
-        filterByStatusAndWrite(params.getRequired("warninguri"), rankedData, "warning");
-        filterByStatusAndWrite(params.getRequired("unknownuri"), rankedData, "unknown");
+        filterByStatusAndWrite(criticalStatusTrends, rankedData, "critical");
+        filterByStatusAndWrite(warningStatusTrends, rankedData, "warning");
+        filterByStatusAndWrite(unknownStatusTrends, rankedData, "unknown");
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
@@ -107,12 +112,13 @@ public class BatchStatusTrends {
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricStatus(groupEndpointData));
+        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcStatusTrends(groupEndpointData));
         return rankedData;
     }
 
     // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
     private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status) {
+        String collectionUri = mongoUri + "." + uri;
         DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
 
         if (rankNum != null) {
@@ -121,7 +127,7 @@ public class BatchStatusTrends {
             filteredData = filteredData.sortPartition(5, Order.DESCENDING);
         }
 
-        writeToMongo(uri, filteredData);
+        writeToMongo(collectionUri, filteredData);
     }
 
     // reads input from file
@@ -133,7 +139,6 @@ public class BatchStatusTrends {
         inputData = env.createInput(inputAvroFormat);
         return inputData;
     }
-
 
     //convert the result in bson format
     public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<Tuple6<String, String, String, String, String, Integer>> in) {
@@ -158,6 +163,7 @@ public class BatchStatusTrends {
             }
         });
     }
+
     //write to mongo db
     public static void writeToMongo(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data) {
         DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
