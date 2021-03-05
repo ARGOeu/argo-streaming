@@ -21,7 +21,7 @@ import org.json.simple.parser.ParseException;
  */
 public class RequestManager {
 
-    private static JSONObject request(String uri, String key, String proxy) throws ParseException {
+    public static JSONObject request(String uri, String key, String proxy) throws ParseException {
         JSONObject jsonresult = null;
 
         Request request = Request.Get(uri);
@@ -46,45 +46,4 @@ public class RequestManager {
         return jsonresult;
     }
 
-    public static JSONObject getReportRequest(String baseUri, String key, String proxy, String reportId) throws IOException, ParseException {
-        JSONObject jsonresult = null;
-        String uri = baseUri + "/reports/" + reportId;
-
-        jsonresult = request(uri, key, proxy);
-        return jsonresult;
-
-    }
-
-    public static JSONObject getAggregationProfileRequest(String baseUri, String key, String proxy) throws IOException, ParseException {
-        JSONObject jsonresult = null;
-        String uri = baseUri + "/aggregation_profiles";
-        jsonresult = request(uri, key, proxy);
-        return jsonresult;
-
-    }
-
-    public static JSONObject getMetricProfileRequest(String baseUri, String uid, String key, String proxy) throws IOException, ParseException {
-        JSONObject jsonresult = null;
-        String uri = baseUri + "/metric_profiles/" + uid;
-        jsonresult = request(uri, key, proxy);
-        return jsonresult;
-
-    }
-
-    public static JSONObject getTopologyEndpointRequest(String baseUri, String key, String proxy) throws IOException, ParseException {
-        JSONObject jsonresult = null;
-        String uri = baseUri + "/topology/endpoints";
-        jsonresult = request(uri, key, proxy);
-
-        return jsonresult;
-
-    }
-
-    public static JSONObject getOperationProfileRequest(String baseUri, String key, String proxy) throws IOException, ParseException {
-        JSONObject jsonresult = null;
-        String uri = baseUri + "/operations_profiles";
-        jsonresult = request(uri, key, proxy);
-        return jsonresult;
-
-    }
 }

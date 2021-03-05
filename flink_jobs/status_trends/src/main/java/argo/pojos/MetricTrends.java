@@ -5,31 +5,31 @@
  */
 package argo.pojos;
 
-import java.util.Date;
-import java.util.TreeMap;
-
 /**
  *
  * @author cthermolia
+ * MetricTrends, describes the computed trend information extracted from the set of the timelines at the level of group service endpoints metrics groups 
+
  */
-public class MetricTimelinePojo {
+public class MetricTrends {
 
     String group;
     String service;
     String endpoint;
     String metric;
-    TreeMap<Date, String> timelineMap;
+    Timeline timeline;
+    Integer flipflops;
 
-    public MetricTimelinePojo() {
+    public MetricTrends() {
     }
 
-    
-    public MetricTimelinePojo(String group, String service, String endpoint, String metric, TreeMap<Date, String> timelineMap) {
+    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops) {
         this.group = group;
         this.service = service;
         this.endpoint = endpoint;
         this.metric = metric;
-        this.timelineMap = timelineMap;
+        this.timeline = timeline;
+        this.flipflops = flipflops;
     }
 
     public String getGroup() {
@@ -64,12 +64,20 @@ public class MetricTimelinePojo {
         this.metric = metric;
     }
 
-    public TreeMap<Date, String> getTimelineMap() {
-        return timelineMap;
+    public Timeline getTimeline() {
+        return timeline;
     }
 
-    public void setTimelineMap(TreeMap<Date, String> timelineMap) {
-        this.timelineMap = timelineMap;
+    public void setTimeline(Timeline timeline) {
+        this.timeline = timeline;
+    }
+
+    public Integer getFlipflops() {
+        return flipflops;
+    }
+
+    public void setFlipflops(Integer flipflops) {
+        this.flipflops = flipflops;
     }
 
 }

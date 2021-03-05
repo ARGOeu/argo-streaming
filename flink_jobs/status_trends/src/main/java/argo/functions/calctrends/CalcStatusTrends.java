@@ -1,4 +1,4 @@
-package argo.functions.statustrends;
+package argo.functions.calctrends;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -22,11 +22,11 @@ import org.apache.flink.util.Collector;
  * the group information (group, service,hostname, metric, status,
  * statuscounter)
  */
-public class CalcServiceEnpointMetricStatus implements GroupReduceFunction<MetricData, Tuple6<String, String, String, String, String, Integer>> {
+public class CalcStatusTrends implements GroupReduceFunction<MetricData, Tuple6<String, String, String, String, String, Integer>> {
 
     private  HashMap<String, String> groupEndpoints;
 
-    public CalcServiceEnpointMetricStatus(HashMap<String, String> groupEndpoints) {
+    public CalcStatusTrends(HashMap<String, String> groupEndpoints) {
         this.groupEndpoints = groupEndpoints;
     }
 
