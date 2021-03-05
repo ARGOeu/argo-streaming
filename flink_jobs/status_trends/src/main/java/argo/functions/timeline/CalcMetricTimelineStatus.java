@@ -6,7 +6,7 @@
 package argo.functions.timeline;
 
 import argo.avro.MetricData;
-import argo.pojos.MetricTimelinePojo;
+import argo.pojos.TimelineTrends;
 import argo.utils.Utils;
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,7 +21,7 @@ import org.apache.flink.util.Collector;
  * CalcMetricTimelineStatus calculates the timeline for each group, service,
  * endpoint , metric
  */
-public class CalcMetricTimelineStatus implements GroupReduceFunction<MetricData, MetricTimelinePojo> {
+public class CalcMetricTimelineStatus implements GroupReduceFunction<MetricData, TimelineTrends> {
 
     private HashMap<String, String> groupEndpoints;
 
@@ -30,7 +30,7 @@ public class CalcMetricTimelineStatus implements GroupReduceFunction<MetricData,
     }
 
     @Override
-    public void reduce(Iterable<MetricData> in, Collector<MetricTimelinePojo> out) throws Exception {
+    public void reduce(Iterable<MetricData> in, Collector<TimelineTrends> out) throws Exception {
 
         String group = null;
         String service = null;
@@ -47,7 +47,7 @@ public class CalcMetricTimelineStatus implements GroupReduceFunction<MetricData,
             Date timestamp = Utils.convertStringtoDate(md.getTimestamp().toString());
             mapTimeline.put(timestamp, md.getStatus().toString());
         }
-        MetricTimelinePojo mt = new MetricTimelinePojo(group, service, metric, metric, mapTimeline);
+        TimelineTrends mt = new TimelineTrends(group, service, metric, metric, mapTimeline,0);
         out.collect(mt);
     }
 

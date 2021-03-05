@@ -12,24 +12,46 @@ import java.util.TreeMap;
  *
  * @author cthermolia
  */
-public class MetricTimelinePojo {
+public class TimelineTrends {
 
     String group;
     String service;
     String endpoint;
     String metric;
     TreeMap<Date, String> timelineMap;
+    Integer flipflops;
 
-    public MetricTimelinePojo() {
+    public TimelineTrends() {
     }
 
-    
-    public MetricTimelinePojo(String group, String service, String endpoint, String metric, TreeMap<Date, String> timelineMap) {
+    public TimelineTrends(String group, TreeMap<Date, String> timelineMap, Integer flipflops) {
+        this.group = group;
+        this.timelineMap = timelineMap;
+        this.flipflops = flipflops;
+    }
+
+    public TimelineTrends(String group, String service, TreeMap<Date, String> timelineMap, Integer flipflops) {
+        this.group = group;
+        this.service = service;
+        this.timelineMap = timelineMap;
+        this.flipflops = flipflops;
+    }
+
+    public TimelineTrends(String group, String service, String endpoint, TreeMap<Date, String> timelineMap, Integer flipflops) {
+        this.group = group;
+        this.service = service;
+        this.endpoint = endpoint;
+        this.timelineMap = timelineMap;
+        this.flipflops = flipflops;
+    }
+
+    public TimelineTrends(String group, String service, String endpoint, String metric, TreeMap<Date, String> timelineMap, Integer flipflops) {
         this.group = group;
         this.service = service;
         this.endpoint = endpoint;
         this.metric = metric;
         this.timelineMap = timelineMap;
+        this.flipflops = flipflops;
     }
 
     public String getGroup() {
@@ -71,5 +93,15 @@ public class MetricTimelinePojo {
     public void setTimelineMap(TreeMap<Date, String> timelineMap) {
         this.timelineMap = timelineMap;
     }
+
+    public Integer getFlipflops() {
+        return flipflops;
+    }
+
+    public void setFlipflops(Integer flipflops) {
+        this.flipflops = flipflops;
+    }
+
+    
 
 }

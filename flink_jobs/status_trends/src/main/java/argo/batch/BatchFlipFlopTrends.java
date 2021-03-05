@@ -41,8 +41,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
-import parsers.AggregationProfileParser;
-import parsers.ReportParser;
+import argo.profileparsers.ProfilesLoader;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -63,46 +62,48 @@ public class BatchFlipFlopTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchFlipFlopTrends.class);
 
-      private static HashMap<String, ArrayList<String>> metricProfileData;
+    private static HashMap<String, ArrayList<String>> metricProfileData;
     private static HashMap<String, String> groupEndpointData;
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-
+ private static final String servEndpointMetricFlipFlopTrends="servEndpointMetricFlipFlopTrends";
+    private static String mongoUri;
+    
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "flipflopsuri", "baseUri", "metricProfileUUID", "key", "reportId")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData","mongoUri", "apiUri", "key", "reportId")) {
             System.exit(0);
         }
 
         env.setParallelism(1);
-
+        mongoUri=params.getRequired("mongoUri");
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
-        ReportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
-        AggregationProfileParser.loadAggrProfileInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"));
-        metricProfileData = Utils.readMetricDataJson(params.getRequired("baseUri"), params.getRequired("metricProfileUUID"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
-        groupEndpointData = Utils.readGroupEndpointJson(params.getRequired("baseUri"), params.getRequired("key"),params.get("proxy")); //contains the information of the (service, metrics) matches
+       
+        ProfilesLoader profilesLoader=new ProfilesLoader(params);
+        metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
+        groupEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
+      
         yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
         todayData = readInputData(env, params.getRequired("todayData"));
 
         DataSet<Tuple5<String, String, String, String, Integer>> criticalData = calcFlipFlops();
 
-        writeToMongo(params.getRequired("flipflopsuri"), criticalData);
+        writeToMongo( criticalData);
 // execute program
         env.execute("Flink Batch Java API Skeleton");
     }
 
-    
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
     // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
     // rank results
-   private static DataSet<Tuple5<String, String, String, String, Integer>> calcFlipFlops() {
+    private static DataSet<Tuple5<String, String, String, String, Integer>> calcFlipFlops() {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
@@ -151,10 +152,11 @@ public class BatchFlipFlopTrends {
     }
 
     //write to mongo db
-    public static void writeToMongo(String uri, DataSet<Tuple5<String, String, String, String, Integer>> data) {
+    public static void writeToMongo( DataSet<Tuple5<String, String, String, String, Integer>> data) {
+        String collectionUri=mongoUri+"."+servEndpointMetricFlipFlopTrends;
         DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
         JobConf conf = new JobConf();
-        conf.set("mongo.output.uri", uri);
+        conf.set("mongo.output.uri", collectionUri);
 
         MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package parsers;
+package argo.profileparsers;
 
 import argo.utils.RequestManager;
 import java.io.IOException;
@@ -20,24 +20,38 @@ import org.json.simple.parser.ParseException;
  */
 public class AggregationProfileParser {
 
-    public static String id;
-    public static String date;
-    public static String name;
-    public static String namespace;
-    public static String endpointGroup;
-    public static String metricOp;
-    public static String profileOp;
-    public static String[] metricProfile = new String[2];
-    public static ArrayList<GroupOps> groups = new ArrayList<>();
+    private String id;
+    private String date;
+    private String name;
+    private String namespace;
+    private String endpointGroup;
+    private String metricOp;
+    private String profileOp;
+    private String[] metricProfile = new String[2];
+    private ArrayList<GroupOps> groups = new ArrayList<>();
 
-    public static void loadAggrProfileInfo(String baseUri, String key, String proxy) throws IOException, ParseException {
+    private HashMap<String,String> serviceOperations=new HashMap<>();
+    private final String url="/aggregation_profiles";
+    public AggregationProfileParser(String apiUri, String key, String proxy, String aggregationId, String dateStr) throws IOException, ParseException {
 
-        JSONObject jsonObject = RequestManager.getAggregationProfileRequest(baseUri, key, proxy);
+        String uri = apiUri + url;
+        if(dateStr==null){
+            uri=uri+"/"+aggregationId;
+        }else{
+            uri=uri+"?date="+dateStr;
+        }
+        
+        loadAggrProfileInfo(uri, key, proxy);
+    }
+
+    public void loadAggrProfileInfo(String uri, String key, String proxy) throws IOException, ParseException {
+
+        JSONObject jsonObject = RequestManager.request(uri, key, proxy);
 
         JSONArray dataList = (JSONArray) jsonObject.get("data");
 
         Iterator<JSONObject> iterator = dataList.iterator();
-
+        
         while (iterator.hasNext()) {
             if (iterator.next() instanceof JSONObject) {
                 JSONObject dataObject = (JSONObject) iterator.next();
@@ -57,7 +71,7 @@ public class AggregationProfileParser {
 
                 JSONArray groupArray = (JSONArray) dataObject.get("groups");
                 Iterator<JSONObject> groupiterator = groupArray.iterator();
-
+                
                 while (groupiterator.hasNext()) {
                     if (groupiterator.next() instanceof JSONObject) {
                         JSONObject groupObject = (JSONObject) groupiterator.next();
@@ -71,6 +85,7 @@ public class AggregationProfileParser {
                             JSONObject servObject = (JSONObject) serviceiterator.next();
                             String servicename = (String) servObject.get("name");
                             String serviceoperation = (String) servObject.get("operation");
+                            serviceOperations.put(servicename,serviceoperation);
                             services.put(servicename, serviceoperation);
 
                         }
@@ -82,16 +97,73 @@ public class AggregationProfileParser {
         }
     }
 
-    private static class GroupOps {
+    public String getId() {
+        return id;
+    }
 
-        public String name;
-        public String operation;
-        public HashMap<String, String> services;
+    public String getDate() {
+        return date;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public String getEndpointGroup() {
+        return endpointGroup;
+    }
+
+    public String getMetricOp() {
+        return metricOp;
+    }
+
+    public String getProfileOp() {
+        return profileOp;
+    }
+
+    public String[] getMetricProfile() {
+        return metricProfile;
+    }
+
+    public ArrayList<GroupOps> getGroups() {
+        return groups;
+    }
+
+    public HashMap<String, String> getServiceOperations() {
+        return serviceOperations;
+    }
+
+    public void setServiceOperations(HashMap<String, String> serviceOperations) {
+        this.serviceOperations = serviceOperations;
+    }
+    
+
+    public static class GroupOps {
+
+        private String name;
+        private String operation;
+        private HashMap<String, String> services;
 
         public GroupOps(String name, String operation, HashMap<String, String> services) {
             this.name = name;
             this.operation = operation;
             this.services = services;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getOperation() {
+            return operation;
+        }
+
+        public HashMap<String, String> getServices() {
+            return services;
         }
 
     }

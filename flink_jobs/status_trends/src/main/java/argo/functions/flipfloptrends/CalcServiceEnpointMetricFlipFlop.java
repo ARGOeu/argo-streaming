@@ -57,7 +57,7 @@ public class CalcServiceEnpointMetricFlipFlop implements GroupReduceFunction<Met
         int flipflop = calcFlipFlops(timeStatusMap);
 
         if (group != null && service != null && hostname != null && metric != null) {
-            Tuple5<String, String, String, String, Integer> tuple = new Tuple5<String, String, String, String, Integer>(
+           Tuple5<String, String, String, String, Integer> tuple = new Tuple5<String, String, String, String, Integer>(
                     group, service, hostname, metric, flipflop
             );
             out.collect(tuple);

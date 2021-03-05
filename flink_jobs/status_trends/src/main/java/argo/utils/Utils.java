@@ -21,13 +21,13 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import argo.profileparsers.TopologyEndpointParser;
 
 /**
  *
  * @author cthermolia
  */
 public class Utils {
-
     static Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     public static String convertDateToString(Date date) throws ParseException {
@@ -77,75 +77,75 @@ public class Utils {
         }
     }
 
-    public static HashMap<String, ArrayList<String>> readMetricDataJson(String baseUri, String metricProfileUUID, String key,String proxy) throws IOException, org.json.simple.parser.ParseException {
-        JSONObject jsonObject = RequestManager.getMetricProfileRequest(baseUri, metricProfileUUID, key, proxy);
-        HashMap<String, ArrayList<String>> jsonDataMap = new HashMap<String, ArrayList<String>>();
+//    public static HashMap<String, ArrayList<String>> readMetricDataJson(String baseUri, String metricProfileUUID, String key,String proxy) throws IOException, org.json.simple.parser.ParseException {
+//        JSONObject jsonObject = RequestManager.getMetricProfileRequest(baseUri, metricProfileUUID, key, proxy);
+//        HashMap<String, ArrayList<String>> jsonDataMap = new HashMap<String, ArrayList<String>>();
+//
+//        JSONArray data = (JSONArray) jsonObject.get("data");
+//
+//        Iterator<Object> dataIter = data.iterator();
+//        while (dataIter.hasNext()) {
+//            Object dataobj = dataIter.next();
+//            if (dataobj instanceof JSONObject) {
+//                JSONObject jsonDataObj = new JSONObject((Map) dataobj);
+//
+//                JSONArray services = (JSONArray) jsonDataObj.get("services");
+//
+//                Iterator<Object> iterator = services.iterator();
+//
+//                while (iterator.hasNext()) {
+//                    Object obj = iterator.next();
+//                    if (obj instanceof JSONObject) {
+//                        JSONObject servObj = new JSONObject((Map) obj);
+//                        String service = (String) servObj.get("service");
+//                        JSONArray metrics = (JSONArray) servObj.get("metrics");
+//                        Iterator<Object> metrIter = metrics.iterator();
+//                        ArrayList<String> metricList = new ArrayList<>();
+//
+//                        while (metrIter.hasNext()) {
+//                            Object metrObj = metrIter.next();
+//                            metricList.add(metrObj.toString());
+//                        }
+//                        jsonDataMap.put(service, metricList);
+//                    }
+//                }
+//            }
+//        }
+//        return jsonDataMap;
+//    }
 
-        JSONArray data = (JSONArray) jsonObject.get("data");
-
-        Iterator<Object> dataIter = data.iterator();
-        while (dataIter.hasNext()) {
-            Object dataobj = dataIter.next();
-            if (dataobj instanceof JSONObject) {
-                JSONObject jsonDataObj = new JSONObject((Map) dataobj);
-
-                JSONArray services = (JSONArray) jsonDataObj.get("services");
-
-                Iterator<Object> iterator = services.iterator();
-
-                while (iterator.hasNext()) {
-                    Object obj = iterator.next();
-                    if (obj instanceof JSONObject) {
-                        JSONObject servObj = new JSONObject((Map) obj);
-                        String service = (String) servObj.get("service");
-                        JSONArray metrics = (JSONArray) servObj.get("metrics");
-                        Iterator<Object> metrIter = metrics.iterator();
-                        ArrayList<String> metricList = new ArrayList<>();
-
-                        while (metrIter.hasNext()) {
-                            Object metrObj = metrIter.next();
-                            metricList.add(metrObj.toString());
-                        }
-                        jsonDataMap.put(service, metricList);
-                    }
-                }
-            }
-        }
-        return jsonDataMap;
-    }
-
-    public static HashMap<String, HashMap<String, String>> readOperationProfileJson(String baseUri, String key,String proxy) throws IOException, org.json.simple.parser.ParseException {
-        JSONObject jsonObject = RequestManager.getOperationProfileRequest(baseUri, key, proxy);
-
-        // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
-        JSONArray dataList = (JSONArray) jsonObject.get("data");
-
-        Iterator<JSONObject> iterator = dataList.iterator();
-        HashMap<String, HashMap<String, String>> opTruthTable = new HashMap<>();
-        while (iterator.hasNext()) {
-            JSONObject dataObject = (JSONObject) iterator.next();
-            JSONArray operationList = (JSONArray) dataObject.get("operations");
-            Iterator<JSONObject> opIterator = operationList.iterator();
-            while (opIterator.hasNext()) {
-                JSONObject operationObject = (JSONObject) opIterator.next();
-                String opName = (String) operationObject.get("name");
-                JSONArray truthtable = (JSONArray) operationObject.get("truth_table");
-                Iterator<JSONObject> truthTableIter = truthtable.iterator();
-                HashMap<String, String> truthTable = new HashMap<>();
-                while (truthTableIter.hasNext()) {
-                    JSONObject truthEntry = (JSONObject) truthTableIter.next();
-                    String a = (String) truthEntry.get("a");
-                    String b = (String) truthEntry.get("b");
-                    String x = (String) truthEntry.get("x");
-
-                    truthTable.put(a + "-" + b, x);
-                }
-                opTruthTable.put(opName, truthTable);
-            }
-        }
-        return opTruthTable;
-
-    }
+//    public static HashMap<String, HashMap<String, String>> readOperationProfileJson(String baseUri, String key,String proxy,String operationsId) throws IOException, org.json.simple.parser.ParseException {
+//        JSONObject jsonObject = RequestManager.getOperationProfileRequest(baseUri, key, proxy, operationsId);
+//
+//        // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
+//        JSONArray dataList = (JSONArray) jsonObject.get("data");
+//
+//        Iterator<JSONObject> iterator = dataList.iterator();
+//        HashMap<String, HashMap<String, String>> opTruthTable = new HashMap<>();
+//        while (iterator.hasNext()) {
+//            JSONObject dataObject = (JSONObject) iterator.next();
+//            JSONArray operationList = (JSONArray) dataObject.get("operations");
+//            Iterator<JSONObject> opIterator = operationList.iterator();
+//            while (opIterator.hasNext()) {
+//                JSONObject operationObject = (JSONObject) opIterator.next();
+//                String opName = (String) operationObject.get("name");
+//                JSONArray truthtable = (JSONArray) operationObject.get("truth_table");
+//                Iterator<JSONObject> truthTableIter = truthtable.iterator();
+//                HashMap<String, String> truthTable = new HashMap<>();
+//                while (truthTableIter.hasNext()) {
+//                    JSONObject truthEntry = (JSONObject) truthTableIter.next();
+//                    String a = (String) truthEntry.get("a");
+//                    String b = (String) truthEntry.get("b");
+//                    String x = (String) truthEntry.get("x");
+//
+//                    truthTable.put(a + "-" + b, x);
+//                }
+//                opTruthTable.put(opName, truthTable);
+//            }
+//        }
+//        return opTruthTable;
+//
+//    }
 
     public static boolean checkParameters(ParameterTool params, String... vars) {
 
@@ -160,22 +160,25 @@ public class Utils {
 
     }
 
-    public static HashMap<String, String> readGroupEndpointJson(String baseUri, String key,String proxy) throws IOException, org.json.simple.parser.ParseException {
-        JSONObject jsonObject = RequestManager.getTopologyEndpointRequest(baseUri, key,proxy);
+    
+    
+    
+    public static HashMap<String, String> getEndpoints(ArrayList<TopologyEndpointParser.EndpointGroup> endpointList) throws IOException, org.json.simple.parser.ParseException {
+      
+        
+        
         HashMap<String, String> jsonDataMap = new HashMap<>();
 
-        JSONArray data = (JSONArray) jsonObject.get("data");
-
-        Iterator<Object> dataIter = data.iterator();
+      
+        Iterator<TopologyEndpointParser.EndpointGroup> dataIter = endpointList.iterator();
         while (dataIter.hasNext()) {
-            Object dataobj = dataIter.next();
-            if (dataobj instanceof JSONObject) {
-                JSONObject jsonDataObj = new JSONObject((Map) dataobj);
-                String hostname = (String) jsonDataObj.get("hostname");
-                String service = (String) jsonDataObj.get("service");
-                String group = (String) jsonDataObj.get("group");
+            TopologyEndpointParser.EndpointGroup dataobj = dataIter.next();
+            
+            String hostname = dataobj.getHostname();
+                String service = dataobj.getService();
+                String group = dataobj.getGroup();
                 jsonDataMap.put(hostname + "-" + service, group);
-            }
+            
         }
 
         return jsonDataMap;
