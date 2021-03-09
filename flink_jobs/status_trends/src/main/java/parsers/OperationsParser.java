@@ -25,48 +25,24 @@ public class OperationsParser {
     private ArrayList<String> states;
     private DefaultStatus defaults;
     private HashMap<String, HashMap<String, String>> opTruthTable;
-    
-    public class DefaultStatus{
-    
-        private String down;
-        private String missing;
-        private String unknown;
 
-        public DefaultStatus(String down, String missing, String unknown) {
-            this.down = down;
-            this.missing = missing;
-            this.unknown = unknown;
-        }
-
-        public String getDown() {
-            return down;
-        }
-
-        public String getMissing() {
-            return missing;
-        }
-
-        public String getUnknown() {
-            return unknown;
-        }
-
-        
+    public OperationsParser() {
     }
 
-    public OperationsParser(String baseUri, String key, String proxy, String operationsId,String date) throws IOException, ParseException {
-    
+    public OperationsParser(String baseUri, String key, String proxy, String operationsId, String date) throws IOException, ParseException {
+
         loadOperationProfile(baseUri, key, proxy, operationsId, date);
     }
 
-    private HashMap<String, HashMap<String, String>> loadOperationProfile(String baseUri, String key, String proxy, String operationsId,String date) throws IOException, org.json.simple.parser.ParseException {
-        JSONObject jsonObject = RequestManager.getOperationProfileRequest(baseUri, key, proxy, operationsId,date);
+    private HashMap<String, HashMap<String, String>> loadOperationProfile(String baseUri, String key, String proxy, String operationsId, String date) throws IOException, org.json.simple.parser.ParseException {
+        JSONObject jsonObject = RequestManager.getOperationProfileRequest(baseUri, key, proxy, operationsId, date);
 
         // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
         JSONArray dataList = (JSONArray) jsonObject.get("data");
 
         Iterator<JSONObject> iterator = dataList.iterator();
-         opTruthTable = new HashMap<>();
-         states=new ArrayList<>();
+        opTruthTable = new HashMap<>();
+        states = new ArrayList<>();
         while (iterator.hasNext()) {
             JSONObject dataObject = (JSONObject) iterator.next();
             id = (String) dataObject.get("id");
@@ -75,17 +51,16 @@ public class OperationsParser {
             JSONArray stateList = (JSONArray) dataObject.get("available_states");
             Iterator<String> stateIter = stateList.iterator();
             while (stateIter.hasNext()) {
-                String state =  stateIter.next();
+                String state = stateIter.next();
                 states.add(state);
             }
-            
+
             JSONObject defaultObject = (JSONObject) dataObject.get("defaults");
-            String down=(String)defaultObject.get("down");
-            String missing=(String)defaultObject.get("missing");
-            String unknown=(String)defaultObject.get("unknown");
-             defaults=new DefaultStatus(down, missing, unknown);
-            
-           
+            String down = (String) defaultObject.get("down");
+            String missing = (String) defaultObject.get("missing");
+            String unknown = (String) defaultObject.get("unknown");
+            //        defaults=new DefaultStatus(down, missing, unknown);
+
             JSONArray operationList = (JSONArray) dataObject.get("operations");
             Iterator<JSONObject> opIterator = operationList.iterator();
             while (opIterator.hasNext()) {
@@ -113,22 +88,83 @@ public class OperationsParser {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public ArrayList<String> getStates() {
         return states;
     }
 
-    public DefaultStatus getDefaults() {
-        return defaults;
+    public void setStates(ArrayList<String> states) {
+        this.states = states;
     }
 
     public HashMap<String, HashMap<String, String>> getOpTruthTable() {
         return opTruthTable;
     }
 
+    public void setOpTruthTable(HashMap<String, HashMap<String, String>> opTruthTable) {
+        this.opTruthTable = opTruthTable;
+    }
+
+    public DefaultStatus getDefaults() {
+        return defaults;
+    }
+
+    public void setDefaults(DefaultStatus defaults) {
+        this.defaults = defaults;
+    }
     
     
+
+    public class DefaultStatus {
+
+        private String down;
+        private String missing;
+        private String unknown;
+
+        public DefaultStatus() {
+        }
+
+        public DefaultStatus(String down, String missing, String unknown) {
+            this.down = down;
+            this.missing = missing;
+            this.unknown = unknown;
+        }
+
+        public String getDown() {
+            return down;
+        }
+
+        public String getMissing() {
+            return missing;
+        }
+
+        public String getUnknown() {
+            return unknown;
+        }
+
+        public void setDown(String down) {
+            this.down = down;
+        }
+
+        public void setMissing(String missing) {
+            this.missing = missing;
+        }
+
+        public void setUnknown(String unknown) {
+            this.unknown = unknown;
+        }
+
+    }
+
 }

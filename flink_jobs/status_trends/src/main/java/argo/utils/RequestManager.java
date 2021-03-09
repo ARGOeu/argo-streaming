@@ -71,13 +71,11 @@ public class RequestManager {
     public static JSONObject getMetricProfileRequest(String baseUri, String key, String proxy, String metricId,String date) throws IOException, ParseException {
         JSONObject jsonresult = null;
         String uri = baseUri + "/metric_profiles" ;
-        System.out.println("date --" +date);
         if(date==null){
             uri=uri+ "/"+metricId;
         }else{
             uri=uri+"?date="+date;
         }
-        System.out.println("uri--- "+uri);
         jsonresult = request(uri, key, proxy);
         return jsonresult;
 

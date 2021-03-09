@@ -69,6 +69,7 @@ public class TopologyGroupParser {
                     groupList = topologyGroups.get(type);
                 }
                 groupList.add(topologyGroup);
+                topologyGroups.put(type, groupList);
 
             }
 

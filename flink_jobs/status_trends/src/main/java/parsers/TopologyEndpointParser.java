@@ -23,28 +23,15 @@ public class TopologyEndpointParser {
 
     private HashMap<String, ArrayList<EndpointGroup>> endpointGroups;
 
-    private HashMap<String, String> topologyEndpoint;
+    private HashMap<String, HashMap<String,String>> topologyEndpoint;
 
     public TopologyEndpointParser(String baseUri, String key, String proxy,String date) throws IOException, ParseException {
         loadTopologyEndpoints(baseUri, key, proxy,date);
     }
 
-    public static HashMap<String, String> getEndpoints(ArrayList<TopologyEndpointParser.EndpointGroup> endpointList) throws IOException, org.json.simple.parser.ParseException {
+    public  HashMap<String, String> getTopology(String type) throws IOException, org.json.simple.parser.ParseException {
 
-        HashMap<String, String> jsonDataMap = new HashMap<>();
-
-        Iterator<TopologyEndpointParser.EndpointGroup> dataIter = endpointList.iterator();
-        while (dataIter.hasNext()) {
-            TopologyEndpointParser.EndpointGroup dataobj = dataIter.next();
-
-            String hostname = dataobj.getHostname();
-            String service = dataobj.getService();
-            String group = dataobj.getGroup();
-            jsonDataMap.put(hostname + "-" + service, group);
-
-        }
-
-        return jsonDataMap;
+       return  topologyEndpoint.get(type);
     }
 
     private void loadTopologyEndpoints(String baseUri, String key, String proxy,String date) throws IOException, ParseException {
@@ -72,7 +59,14 @@ public class TopologyEndpointParser {
                 Tags tag = new Tags(scope, production, monitored);
 
                 String topologyEndpointKey = hostname + "-" + service;
-                topologyEndpoint.put(topologyEndpointKey, group);
+                
+                  HashMap<String,String> endpMap = new HashMap<String,String>();
+                if (topologyEndpoint.get(type) != null) {
+                    endpMap = topologyEndpoint.get(type);
+                }
+                
+                endpMap.put(topologyEndpointKey, group);
+                topologyEndpoint.put(type, endpMap);
 
                 EndpointGroup endpointGroup = new EndpointGroup(group, hostname, service, key, tag);
 
@@ -86,9 +80,6 @@ public class TopologyEndpointParser {
 
     }
 
-    public HashMap<String, String> getTopologyEndpoint() {
-        return topologyEndpoint;
-    }
     
 
     public HashMap<String, ArrayList<EndpointGroup>> getEndpointGroups() {

@@ -64,7 +64,6 @@ public class ReportParser {
             Iterator<JSONObject> profileIter = profiles.iterator();
             ArrayList<Profiles> profileList = new ArrayList<>();
             while (profileIter.hasNext()) {
-                System.out.println("prifies");
                 JSONObject profileObject = (JSONObject) profileIter.next();
                 Profiles profile = new Profiles((String) profileObject.get("id"), (String) profileObject.get("name"), (String) profileObject.get("type"));
                 profileList.add(profile);
@@ -79,7 +78,7 @@ public class ReportParser {
                 filtersList.add(filter);
             }
 
-            tenantReport = new TenantReport(id, tenant, disabled, info, group, threshold, profileList, filtersList);
+            tenantReport = new TenantReport(id, tenant, disabled, info, topologyGroup, threshold, profileList, filtersList);
         }
 
     }
@@ -230,8 +229,7 @@ public class ReportParser {
             this.threshold = threshold;
             this.profiles = profiles;
             this.filterTags = filterTags;
-            
-            System.out.println("size profile---"+this.profiles.size());
+
         }
 
         public String getId() {

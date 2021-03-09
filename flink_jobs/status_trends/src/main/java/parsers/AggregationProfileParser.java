@@ -20,15 +20,15 @@ import org.json.simple.parser.ParseException;
  */
 public class AggregationProfileParser {
 
-    public String id;
-    public String date;
-    public String name;
-    public String namespace;
-    public String endpointGroup;
-    public String metricOp;
-    public String profileOp;
-    public String[] metricProfile = new String[2];
-    public ArrayList<GroupOps> groups = new ArrayList<>();
+    private String id;
+    private String date;
+    private String name;
+    private String namespace;
+    private String endpointGroup;
+    private String metricOp;
+    private String profileOp;
+    private String[] metricProfile = new String[2];
+    private ArrayList<GroupOps> groups = new ArrayList<>();
 
     public AggregationProfileParser(String baseUri, String key, String proxy, String aggregationId, String dateStr) throws IOException, ParseException {
 

@@ -25,6 +25,7 @@ import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -41,6 +42,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
+import parsers.AggregationProfileParser;
 import parsers.MetricProfileParser;
 import parsers.OperationsParser;
 import parsers.ReportParser;
@@ -82,7 +84,7 @@ public class BatchFlipFlopTrends {
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "flipflopsuri", "baseUri", "metricProfileUUID", "key", "reportId")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "flipflopsuri", "baseUri", "key", "reportId")) {
             System.exit(0);
         }
 
@@ -93,26 +95,23 @@ public class BatchFlipFlopTrends {
         }
         ReportParser reportParser = new ReportParser();
         reportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
-        Topology topology = reportParser.getTenantReport().getGroup();
-
-        TopologyGroupParser topolGroupParser = new TopologyGroupParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.get("date"));
-        ArrayList<TopologyGroup> groupsList = topolGroupParser.getTopologyGroups().get(topology);
+   //   Topology topology = reportParser.getTenantReport().getGroup();
+  //        TopologyGroupParser topolGroupParser = new TopologyGroupParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.get("date"));
 
         TopologyEndpointParser topolEndpointParser = new TopologyEndpointParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.get("date"));
-        ArrayList<EndpointGroup> endpointList = topolEndpointParser.getEndpointGroups().get(topology);
 
         String aggregationId = reportParser.getProfileId(ReportParser.ProfileType.AGGREGATION.name());
         String metricId = reportParser.getProfileId(ReportParser.ProfileType.METRIC.name());
         String operationsId = reportParser.getProfileId(ReportParser.ProfileType.OPERATIONS.name());
 
-//        AggregationProfileParser aggregationProfileParser = new AggregationProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), aggregationId, params.get("date"));
+        AggregationProfileParser aggregationProfileParser = new AggregationProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), aggregationId, params.get("date"));
 
         MetricProfileParser metricProfileParser = new MetricProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), metricId, params.get("date"));
         metricProfileData = metricProfileParser.getMetricData();
 
         OperationsParser operationParser = new OperationsParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), operationsId, params.get("date"));
 
-        groupEndpointData = topolEndpointParser.getTopologyEndpoint();
+        groupEndpointData = topolEndpointParser.getTopology(aggregationProfileParser.getEndpointGroup().toUpperCase());
         yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
         todayData = readInputData(env, params.getRequired("todayData"));
 
