@@ -92,10 +92,10 @@ public class BatchStatusTrends {
         reportParser.loadReportInfo(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
         ReportParser.Topology topology = reportParser.getTenantReport().getGroup();
 
-        TopologyGroupParser topolGroupParser = new TopologyGroupParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"),params.getRequired("date"));
+        TopologyGroupParser topolGroupParser = new TopologyGroupParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("date"));
         ArrayList<TopologyGroupParser.TopologyGroup> groupsList = topolGroupParser.getTopologyGroups().get(topology);
 
-        TopologyEndpointParser topolEndpointParser = new TopologyEndpointParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"),params.getRequired("date"));
+        TopologyEndpointParser topolEndpointParser = new TopologyEndpointParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("date"));
         ArrayList<TopologyEndpointParser.EndpointGroup> endpointList = topolEndpointParser.getEndpointGroups().get(topology);
 
         String aggregationId = reportParser.getProfileId(ReportParser.ProfileType.AGGREGATION.name());
@@ -103,13 +103,12 @@ public class BatchStatusTrends {
         String operationsId = reportParser.getProfileId(ReportParser.ProfileType.OPERATIONS.name());
 
         // AggregationProfileParser aggregationProfileParser=new AggregationProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), aggregationId,params.get("date"));
-       
-        MetricProfileParser metricProfileParser = new MetricProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), metricId,params.get("date"));
+        MetricProfileParser metricProfileParser = new MetricProfileParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), metricId, params.get("date"));
         metricProfileData = metricProfileParser.getMetricData();
 
-        OperationsParser operationParser = new OperationsParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), operationsId,params.get("date"));
+        OperationsParser operationParser = new OperationsParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), operationsId, params.get("date"));
 
-        groupEndpointData = topolEndpointParser.getTopologyEndpoint();
+        groupEndpointData = topolEndpointParser.getTopology(topology.getGroup().getType());
 
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");

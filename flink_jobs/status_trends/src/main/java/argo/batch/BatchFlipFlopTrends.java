@@ -25,6 +25,7 @@ import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -112,7 +113,7 @@ public class BatchFlipFlopTrends {
 
         OperationsParser operationParser = new OperationsParser(params.getRequired("baseUri"), params.getRequired("key"), params.get("proxy"), operationsId, params.get("date"));
 
-        groupEndpointData = topolEndpointParser.getTopologyEndpoint();
+        groupEndpointData = topolEndpointParser.getTopology(topology.getGroup().getType());
         yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
         todayData = readInputData(env, params.getRequired("todayData"));
 

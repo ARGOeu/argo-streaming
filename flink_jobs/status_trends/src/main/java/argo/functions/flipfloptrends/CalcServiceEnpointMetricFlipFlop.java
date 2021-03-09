@@ -25,6 +25,7 @@ import org.apache.flink.util.Collector;
  */
 public class CalcServiceEnpointMetricFlipFlop implements GroupReduceFunction<MetricData, Tuple5<String, String, String, String, Integer>> {
 
+
     private  HashMap<String, String> groupEndpoints;
 
     public CalcServiceEnpointMetricFlipFlop(HashMap<String, String> groupEndpoints) {

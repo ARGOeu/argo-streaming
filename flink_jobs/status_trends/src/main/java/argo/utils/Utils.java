@@ -50,6 +50,17 @@ public class Utils {
         return cal.getTime();
     }
 
+    public static Date convertStringToDate(String dateStr) throws ParseException {
+
+//        Calendar cal = Calendar.getInstance();
+        String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(sdf.parse(dateStr));
+
+        return cal.getTime();
+    }
+
     public static String createDate(String dateStr, int hour, int min, int sec) throws ParseException {
 
         String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
