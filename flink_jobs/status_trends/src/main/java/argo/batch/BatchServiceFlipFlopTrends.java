@@ -17,15 +17,20 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
-import argo.functions.calculations.CalcServiceEnpointMetricStatus;
-import argo.functions.timeline.TopologyMetricFilter;
+
+import argo.functions.timeline.CalcMetricTimelineStatus;
+import argo.functions.calculations.CalcServiceEndpointFlipFlop;
+import argo.functions.calculations.CalcServiceFlipFlop;
 import argo.functions.timeline.CalcLastTimeStatus;
-import argo.functions.timeline.StatusFilter;
+import argo.functions.timeline.ServiceFilter;
+import argo.functions.timeline.TopologyMetricFilter;
+import argo.pojos.TimelineTrends;
 import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
 import java.util.ArrayList;
+
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
@@ -34,11 +39,8 @@ import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
 import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import argo.profileparsers.ProfilesLoader;
@@ -58,21 +60,17 @@ import argo.profileparsers.ProfilesLoader;
  *
  * http://flink.apache.org/docs/latest/apis/cli.html
  */
-public class BatchStatusTrends {
+public class BatchServiceFlipFlopTrends {
 
-    static Logger LOG = LoggerFactory.getLogger(BatchStatusTrends.class);
-
+    private static HashMap<String, HashMap<String, String>> opTruthTableMap = new HashMap<>(); // the truth table for the operations to be applied on timeline
     private static HashMap<String, ArrayList<String>> metricProfileData;
     private static HashMap<String, String> groupEndpointData;
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-
-    private static final String criticalStatusTrends = "criticalStatusTrends";
-    private static final String warningStatusTrends = "warningStatusTrends";
-    private static final String unknownStatusTrends = "unknownStatusTrends";
-
+    private static final String serviceFlipFlopTrends = "serviceFlipFlopTrends";
     private static String mongoUri;
+    private static ProfilesLoader profilesLoader;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -80,7 +78,7 @@ public class BatchStatusTrends {
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "apiUri", "key")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri","apiUri", "key")) {
             System.exit(0);
         }
 
@@ -89,72 +87,82 @@ public class BatchStatusTrends {
             rankNum = params.getInt("N");
         }
         mongoUri = params.get("mongoUri");
-        ProfilesLoader profilesLoader = new ProfilesLoader(params);
+        profilesLoader = new ProfilesLoader(params);
         metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
         groupEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
 
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
+        String metricOperation = profilesLoader.getAggregationProfileParser().getMetricOp();
 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus();
-        filterByStatusAndWrite(criticalStatusTrends, rankedData, "critical");
-        filterByStatusAndWrite(warningStatusTrends, rankedData, "warning");
-        filterByStatusAndWrite(unknownStatusTrends, rankedData, "unknown");
+        // calculate on data 
+        DataSet<TimelineTrends> resultData = calcFlipFlops(profilesLoader.getOperationParser().getOpTruthTable().get(metricOperation));
+        writeToMongo(resultData);
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
+
     }
 
-    //filters the yesterdayData and exclude the ones not in topology and metric profile data and keeps the last timestamp for each service endpoint metric
-    //filters the todayData and exclude the ones not in topology and metric profile data, union with yesterdayData and calculates the times each status (CRITICAL,WARNING.UNKNOW) appears
-    private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus() {
+// filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
+// filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
+// rank results
+    private static DataSet<TimelineTrends> calcFlipFlops(HashMap<String, String> truthTable) {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
-
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcServiceEnpointMetricStatus(groupEndpointData));
-        return rankedData;
-    }
 
-    // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
-    private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status) {
-        String collectionUri = mongoUri + "." + uri;
-        DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
+        //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
+        DataSet<TimelineTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricTimelineStatus(groupEndpointData));
 
-        if (rankNum != null) {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING).first(rankNum);
+        //group data by service endpoint  and count flip flops
+        DataSet<TimelineTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcServiceEndpointFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser().getMetricOp()));
+
+        //group data by service   and count flip flops
+        DataSet<TimelineTrends> serviceGroupData = serviceEndpointGroupData.filter(new ServiceFilter(profilesLoader.getAggregationProfileParser().getServiceOperations())).groupBy("group", "service").reduceGroup(new CalcServiceFlipFlop(profilesLoader.getOperationParser().getOpTruthTable(), profilesLoader.getAggregationProfileParser().getServiceOperations()));
+
+        
+        if (rankNum != null) { //sort and rank data
+            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
         } else {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING);
+            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING);
         }
+        return serviceGroupData;
 
-        writeToMongo(collectionUri, filteredData);
-    }
+    }    //read input from file
 
-    // reads input from file
     private static DataSet<MetricData> readInputData(ExecutionEnvironment env, ParameterTool params, String path) {
         DataSet<MetricData> inputData;
         Path input = new Path(params.getRequired(path));
 
-        AvroInputFormat<MetricData> inputAvroFormat = new AvroInputFormat<MetricData>(input, MetricData.class);
+        AvroInputFormat<MetricData> inputAvroFormat = new AvroInputFormat<MetricData>(input, MetricData.class
+        );
         inputData = env.createInput(inputAvroFormat);
         return inputData;
     }
 
-    //convert the result in bson format
-    public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<Tuple6<String, String, String, String, String, Integer>> in) {
+//    //initialize configuaration parameters to be used from functions
+//    private static void initializeConfigurationParameters(ParameterTool params, ExecutionEnvironment env) {
+//
+//        Configuration conf = new Configuration();
+//        conf.setString("groupEndpointsPath", params.get("groupEndpointsPath"));
+//        conf.setString("metricDataPath", params.get("metricDataPath"));
+//        env.getConfig().setGlobalJobParameters(conf);
+//
+//    }
 
-        return in.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Tuple2<Text, BSONWritable>>() {
+    //convert the result in bson format
+    public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<TimelineTrends> in) {
+
+        return in.map(new MapFunction<TimelineTrends, Tuple2<Text, BSONWritable>>() {
             int i = 0;
 
             @Override
-            public Tuple2<Text, BSONWritable> map(Tuple6<String, String, String, String, String, Integer> in) throws Exception {
+            public Tuple2<Text, BSONWritable> map(TimelineTrends in) throws Exception {
                 BasicDBObject dbObject = new BasicDBObject();
-                dbObject.put("group", in.f0.toString());
-                dbObject.put("service", in.f1.toString());
-                dbObject.put("hostname", in.f2.toString());
-                dbObject.put("metric", in.f3.toString());
-                dbObject.put("status", in.f4.toString());
-                dbObject.put("trend", in.f5.toString());
+                dbObject.put("group", in.getGroup().toString());
+                dbObject.put("service", in.getService().toString());
+                dbObject.put("trend", in.getFlipflops());
 
                 BSONWritable bson = new BSONWritable(dbObject);
                 i++;
@@ -165,12 +173,18 @@ public class BatchStatusTrends {
     }
 
     //write to mongo db
-    public static void writeToMongo(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data) {
+    public static void writeToMongo(DataSet<TimelineTrends> data) {
+        String collectionUri = mongoUri + "." + serviceFlipFlopTrends;
         DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
         JobConf conf = new JobConf();
-        conf.set("mongo.output.uri", uri);
+        conf.set("mongo.output.uri", collectionUri);
 
         MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
         result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
     }
+
+//    public static void createOpTruthTables(String baseUri, String key, String proxy, String operationsId) throws IOException, ParseException {
+//        
+//        opTruthTableMap = Utils.readOperationProfileJson(baseUri, key, proxy, operationsId);
+//    }
 }

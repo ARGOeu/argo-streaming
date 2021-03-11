@@ -1,11 +1,10 @@
-package argo.functions.servendptrends;
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import argo.functions.timeline.TimelineBuilder;
+package argo.utils;
+
 import argo.pojos.TimelineTrends;
 import argo.utils.Utils;
 import java.text.ParseException;
@@ -15,50 +14,34 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
-import org.apache.flink.api.common.functions.GroupReduceFunction;
-import org.apache.flink.util.Collector;
 
 /**
  *
  * @author cthermolia
- *
- * CalcServiceEndpointFlipFlop, count status changes for each service endpoint
- * group
  */
-public class CalcServiceEndpointFlipFlop implements GroupReduceFunction< TimelineTrends, TimelineTrends> {
+public class TimelineBuilder {
 
-    private HashMap<String, String> opTruthTable;
+    public TreeMap<Date, String> buildStatusTimeline(ArrayList<TimelineTrends> timelist, HashMap<String, String> opTruthTable) throws ParseException {
 
-    public CalcServiceEndpointFlipFlop(HashMap<String, String> opTruthTable) {
-        this.opTruthTable = opTruthTable;
+        ArrayList<Date> timeline = collectTimestampsInTimeline(timelist);
+
+        TreeMap<Date, ArrayList<String>> statusMap = mergeTimelines(timeline, timelist);
+
+        TreeMap<Date, String> resultMap = operateStatusTimeline(statusMap, opTruthTable);
+        return resultMap;
     }
 
-    @Override
-    public void reduce(Iterable<TimelineTrends> in, Collector< TimelineTrends> out) throws Exception {
-        String group = null;
-        String service = null;
-        String hostname = null;
-        ArrayList<TimelineTrends> list = new ArrayList<>();
-        //construct a timeline containing all the timestamps of each metric timeline
-
-        TimelineBuilder timebuilder = new TimelineBuilder();
-
+    public ArrayList<Date> collectTimestampsInTimeline(ArrayList<TimelineTrends> in) {
         ArrayList<TimelineTrends> timelist = new ArrayList<>();
-        for (TimelineTrends time : in) {
-            group = time.getGroup();
-            service = time.getService();
-            hostname = time.getEndpoint();
-            timelist.add(time);
+        ArrayList<Date> timeline = new ArrayList<>();
+
+        for (TimelineTrends t : in) {
+            TreeMap<Date, String> metricTimeline = t.getTimelineMap();
+            for (Date time : metricTimeline.keySet()) {
+                timeline.add(time);
+            }
         }
-
-        TreeMap<Date, String> resultMap = timebuilder.buildStatusTimeline(timelist, opTruthTable);
-        int flipflops = calcFlipFlops(resultMap);
-
-        TimelineTrends servEndpFlipFlop = new TimelineTrends(group, service, hostname, resultMap, flipflops);
-
-        //Tuple4<String, String, String, Integer> tuple = new Tuple4<String, String, String, Integer>(group, service, hostname, flipflops);
-        out.collect(servEndpFlipFlop);
-
+        return timeline;
     }
 
     /**
@@ -70,7 +53,7 @@ public class CalcServiceEndpointFlipFlop implements GroupReduceFunction< Timelin
      * @param in
      * @return
      */
-    private TreeMap<Date, ArrayList<String>> createStatusTimeline(ArrayList<Date> timeline, ArrayList<TimelineTrends> in) {
+    private TreeMap<Date, ArrayList<String>> mergeTimelines(ArrayList<Date> timeline, ArrayList<TimelineTrends> in) {
         TreeMap<Date, ArrayList<String>> statusMap = new TreeMap<>();
 
         for (Date time : timeline) { //for each timestamp  T in the overall timeline
@@ -135,9 +118,9 @@ public class CalcServiceEndpointFlipFlop implements GroupReduceFunction< Timelin
      * operation's truth table
      * @throws ParseException
      */
-    private TreeMap<String, String> operateStatus(TreeMap<Date, ArrayList<String>> timelineStatusMap) throws ParseException {
+    private TreeMap<Date, String> operateStatusTimeline(TreeMap<Date, ArrayList<String>> timelineStatusMap, HashMap<String, String> opTruthTable) throws ParseException {
 
-        TreeMap<String, String> result = new TreeMap<String, String>();
+        TreeMap<Date, String> result = new TreeMap<Date, String>();
 
         for (Date dt : timelineStatusMap.keySet()) {
             String dateStr = Utils.convertDateToString(dt);
@@ -163,12 +146,12 @@ public class CalcServiceEndpointFlipFlop implements GroupReduceFunction< Timelin
                 }
                 pos++;
             }
-            result.put(dateStr, finalStatus);
+            result.put(dt, finalStatus);
         }
         return result;
     }
 
-    private int calcFlipFlops(TreeMap<Date, String> map) {
+    public int calcFlipFlops(TreeMap<Date, String> map) {
 
         String previousStatus = null;
         int flipflop = 0;

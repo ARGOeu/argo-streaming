@@ -19,7 +19,7 @@ package argo.batch;
 import argo.avro.MetricData;
 
 import argo.functions.timeline.CalcMetricTimelineStatus;
-import argo.functions.servendptrends.CalcServiceEndpointFlipFlop;
+import argo.functions.calculations.CalcServiceEndpointFlipFlop;
 import argo.functions.timeline.CalcLastTimeStatus;
 import argo.functions.timeline.TopologyMetricFilter;
 import argo.pojos.TimelineTrends;
@@ -68,7 +68,7 @@ public class BatchServEndpFlipFlopTrends {
     private static Integer rankNum;
     private static final String servEndpointFlipFlopTrends = "servEndpointFlipFlopTrends";
     private static String mongoUri;
-
+    private static  ProfilesLoader profilesLoader ;
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
@@ -84,16 +84,15 @@ public class BatchServEndpFlipFlopTrends {
             rankNum = params.getInt("N");
         }
         mongoUri = params.get("mongoUri");
-        ProfilesLoader profilesLoader = new ProfilesLoader(params);
+        profilesLoader = new ProfilesLoader(params);
         metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
         groupEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
 
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
-        String metricOperation = profilesLoader.getAggregationProfileParser().getMetricOp();
-
+      
         // calculate on data 
-        DataSet<TimelineTrends> resultData = calcFlipFlops(profilesLoader.getOperationParser().getOpTruthTable().get(metricOperation));
+        DataSet<TimelineTrends> resultData = calcFlipFlops();
         writeToMongo(resultData);
 
 // execute program
@@ -104,7 +103,7 @@ public class BatchServEndpFlipFlopTrends {
 // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
 // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
 // rank results
-    private static DataSet<TimelineTrends> calcFlipFlops(HashMap<String, String> truthTable) {
+    private static DataSet<TimelineTrends> calcFlipFlops() {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
@@ -113,7 +112,7 @@ public class BatchServEndpFlipFlopTrends {
         DataSet<TimelineTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricTimelineStatus(groupEndpointData));
 
         //group data by service endpoint  and count flip flops
-        DataSet<TimelineTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcServiceEndpointFlipFlop(truthTable));
+        DataSet<TimelineTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcServiceEndpointFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser().getMetricOp()));
 
         if (rankNum != null) { //sort and rank data
             serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
