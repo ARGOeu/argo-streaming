@@ -13,7 +13,7 @@ import java.util.TreeMap;
  * @author cthermolia
  */
 public class TimelineTrends {
-
+    String function;
     String group;
     String service;
     String endpoint;
@@ -24,6 +24,18 @@ public class TimelineTrends {
     public TimelineTrends() {
     }
 
+    public TimelineTrends(String function, String group, String service, String endpoint, String metric, TreeMap<Date, String> timelineMap, Integer flipflops) {
+        this.function = function;
+        this.group = group;
+        this.service = service;
+        this.endpoint = endpoint;
+        this.metric = metric;
+        this.timelineMap = timelineMap;
+        this.flipflops = flipflops;
+    }
+
+    
+    
     public TimelineTrends(String group, TreeMap<Date, String> timelineMap, Integer flipflops) {
         this.group = group;
         this.timelineMap = timelineMap;
@@ -100,6 +112,14 @@ public class TimelineTrends {
 
     public void setFlipflops(Integer flipflops) {
         this.flipflops = flipflops;
+    }
+
+    public String getFunction() {
+        return function;
+    }
+
+    public void setFunction(String function) {
+        this.function = function;
     }
 
     

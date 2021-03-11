@@ -17,11 +17,14 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
+import argo.functions.calculations.CalcGroupFlipFlop;
+import argo.functions.calculations.CalcGroupFunctionFlipFlop;
 
 import argo.functions.timeline.CalcMetricTimelineStatus;
 import argo.functions.calculations.CalcServiceEndpointFlipFlop;
 import argo.functions.calculations.CalcServiceFlipFlop;
 import argo.functions.timeline.CalcLastTimeStatus;
+import argo.functions.timeline.MapServices;
 import argo.functions.timeline.ServiceFilter;
 import argo.functions.timeline.TopologyMetricFilter;
 import argo.pojos.TimelineTrends;
@@ -60,7 +63,7 @@ import argo.profileparsers.ProfilesLoader;
  *
  * http://flink.apache.org/docs/latest/apis/cli.html
  */
-public class BatchServiceFlipFlopTrends {
+public class BatchGroupFlipFlopTrends {
 
     private static HashMap<String, HashMap<String, String>> opTruthTableMap = new HashMap<>(); // the truth table for the operations to be applied on timeline
     private static HashMap<String, ArrayList<String>> metricProfileData;
@@ -68,7 +71,7 @@ public class BatchServiceFlipFlopTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-    private static final String serviceFlipFlopTrends = "serviceFlipFlopTrends";
+    private static final String groupFlipFlopTrends = "groupFlipFlopTrends";
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
 
@@ -78,7 +81,7 @@ public class BatchServiceFlipFlopTrends {
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri","apiUri", "key")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key")) {
             System.exit(0);
         }
 
@@ -120,14 +123,21 @@ public class BatchServiceFlipFlopTrends {
 
         //group data by service   and count flip flops
         DataSet<TimelineTrends> serviceGroupData = serviceEndpointGroupData.filter(new ServiceFilter(profilesLoader.getAggregationProfileParser().getServiceOperations())).groupBy("group", "service").reduceGroup(new CalcServiceFlipFlop(profilesLoader.getOperationParser().getOpTruthTable(), profilesLoader.getAggregationProfileParser().getServiceOperations()));
+        //flat map data to add function as described in aggregation profile groups
+        serviceGroupData = serviceGroupData.flatMap(new MapServices(profilesLoader.getAggregationProfileParser().getServiceFunctions()));
 
-        
+        //group data by group,function   and count flip flops
+        DataSet<TimelineTrends> groupData = serviceGroupData.groupBy("group", "function").reduceGroup(new CalcGroupFunctionFlipFlop(profilesLoader.getOperationParser().getOpTruthTable(), profilesLoader.getAggregationProfileParser().getFunctionOperations()));
+
+        //group data by group   and count flip flops
+        groupData = groupData.groupBy("group").reduceGroup(new CalcGroupFlipFlop(profilesLoader.getOperationParser().getOpTruthTable(), profilesLoader.getAggregationProfileParser().getProfileOp()));
+
         if (rankNum != null) { //sort and rank data
-            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            groupData = groupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
         } else {
-            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING);
+            groupData = groupData.sortPartition("flipflops", Order.DESCENDING);
         }
-        return serviceGroupData;
+        return groupData;
 
     }    //read input from file
 
@@ -150,7 +160,6 @@ public class BatchServiceFlipFlopTrends {
 //        env.getConfig().setGlobalJobParameters(conf);
 //
 //    }
-
     //convert the result in bson format
     public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<TimelineTrends> in) {
 
@@ -161,7 +170,6 @@ public class BatchServiceFlipFlopTrends {
             public Tuple2<Text, BSONWritable> map(TimelineTrends in) throws Exception {
                 BasicDBObject dbObject = new BasicDBObject();
                 dbObject.put("group", in.getGroup().toString());
-                dbObject.put("service", in.getService().toString());
                 dbObject.put("trend", in.getFlipflops());
 
                 BSONWritable bson = new BSONWritable(dbObject);
@@ -174,7 +182,7 @@ public class BatchServiceFlipFlopTrends {
 
     //write to mongo db
     public static void writeToMongo(DataSet<TimelineTrends> data) {
-        String collectionUri = mongoUri + "." + serviceFlipFlopTrends;
+        String collectionUri = mongoUri + "." + groupFlipFlopTrends;
         DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
         JobConf conf = new JobConf();
         conf.set("mongo.output.uri", collectionUri);

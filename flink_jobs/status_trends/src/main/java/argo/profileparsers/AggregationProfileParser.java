@@ -30,17 +30,21 @@ public class AggregationProfileParser {
     private String[] metricProfile = new String[2];
     private ArrayList<GroupOps> groups = new ArrayList<>();
 
-    private HashMap<String,String> serviceOperations=new HashMap<>();
-    private final String url="/aggregation_profiles";
+    private HashMap<String, String> serviceOperations = new HashMap<>();
+    private HashMap<String, String> functionOperations = new HashMap<>();
+  
+    private HashMap<String, ArrayList<String>> serviceFunctions = new HashMap<>();
+    private final String url = "/aggregation_profiles";
+
     public AggregationProfileParser(String apiUri, String key, String proxy, String aggregationId, String dateStr) throws IOException, ParseException {
 
         String uri = apiUri + url;
-        if(dateStr==null){
-            uri=uri+"/"+aggregationId;
-        }else{
-            uri=uri+"?date="+dateStr;
+        if (dateStr == null) {
+            uri = uri + "/" + aggregationId;
+        } else {
+            uri = uri + "?date=" + dateStr;
         }
-        
+
         loadAggrProfileInfo(uri, key, proxy);
     }
 
@@ -51,7 +55,7 @@ public class AggregationProfileParser {
         JSONArray dataList = (JSONArray) jsonObject.get("data");
 
         Iterator<JSONObject> iterator = dataList.iterator();
-        
+
         while (iterator.hasNext()) {
             if (iterator.next() instanceof JSONObject) {
                 JSONObject dataObject = (JSONObject) iterator.next();
@@ -71,7 +75,7 @@ public class AggregationProfileParser {
 
                 JSONArray groupArray = (JSONArray) dataObject.get("groups");
                 Iterator<JSONObject> groupiterator = groupArray.iterator();
-                
+
                 while (groupiterator.hasNext()) {
                     if (groupiterator.next() instanceof JSONObject) {
                         JSONObject groupObject = (JSONObject) groupiterator.next();
@@ -85,10 +89,18 @@ public class AggregationProfileParser {
                             JSONObject servObject = (JSONObject) serviceiterator.next();
                             String servicename = (String) servObject.get("name");
                             String serviceoperation = (String) servObject.get("operation");
-                            serviceOperations.put(servicename,serviceoperation);
+                            serviceOperations.put(servicename, serviceoperation);
                             services.put(servicename, serviceoperation);
+                            ArrayList<String> servFunctionList = new ArrayList();
+                            if (serviceFunctions.get(servicename) != null) {
+                                servFunctionList = serviceFunctions.get(servicename);
+                            }
+                            servFunctionList.add(groupname);
+                            serviceFunctions.put(servicename, servFunctionList);
 
                         }
+                        functionOperations.put(groupname,groupoperation);
+                        
                         groups.add(new GroupOps(groupname, groupoperation, services));
 
                     }
@@ -140,7 +152,14 @@ public class AggregationProfileParser {
     public void setServiceOperations(HashMap<String, String> serviceOperations) {
         this.serviceOperations = serviceOperations;
     }
-    
+
+    public HashMap<String, ArrayList<String>> getServiceFunctions() {
+        return serviceFunctions;
+    }
+
+    public void setServiceFunctions(HashMap<String, ArrayList<String>> serviceFunctions) {
+        this.serviceFunctions = serviceFunctions;
+    }
 
     public static class GroupOps {
 
@@ -166,6 +185,14 @@ public class AggregationProfileParser {
             return services;
         }
 
+    }
+
+    public HashMap<String, String> getFunctionOperations() {
+        return functionOperations;
+    }
+
+    public void setFunctionOperations(HashMap<String, String> functionOperations) {
+        this.functionOperations = functionOperations;
     }
 
 }
