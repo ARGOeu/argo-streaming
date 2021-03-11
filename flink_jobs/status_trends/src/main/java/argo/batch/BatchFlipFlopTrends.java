@@ -17,7 +17,7 @@ package argo.batch;
  * the License.
  */
 import argo.avro.MetricData;
-import argo.functions.flipfloptrends.CalcServiceEnpointMetricFlipFlop;
+import argo.functions.calculations.CalcServiceEnpointMetricFlipFlop;
 import argo.functions.timeline.CalcLastTimeStatus;
 
 import argo.functions.timeline.TopologyMetricFilter;

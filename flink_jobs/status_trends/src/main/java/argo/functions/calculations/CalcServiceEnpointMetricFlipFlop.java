@@ -1,4 +1,4 @@
-package argo.functions.flipfloptrends;
+package argo.functions.calculations;
 
 /*
  * To change this license header, choose License Headers in Project Properties.

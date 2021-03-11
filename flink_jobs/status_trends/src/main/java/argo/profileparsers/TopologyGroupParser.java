@@ -26,12 +26,11 @@ public class TopologyGroupParser {
     private final String url = "/topology/groups";
 
     public TopologyGroupParser(String apiUri, String key, String proxy, String date, String reportname) throws IOException, ParseException {
-        //    String uri = apiUri + url + "/" + reportname;
+     //       String uri = apiUri + url + "/" + reportname;
         String uri = apiUri + url;
         if (date != null) {
             uri = uri + "?date=" + date;
         }
-        System.out.println("uri ---- " + uri);
         loadTopologyGroups(uri, key, proxy);
 
     }
