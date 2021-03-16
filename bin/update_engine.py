@@ -52,6 +52,8 @@ def main(args):
     tenants = config.get("API","tenants")
     profile_type_checklist = ["operations", "aggregations", "reports", "thresholds", "recomputations"]
     for tenant in tenants:
+        if args.tenant and tenant != args.tenant:
+            continue
         reports = config.get("TENANTS:"+tenant,"reports")
         for report in reports:
             for profile_type in profile_type_checklist:
@@ -65,6 +67,8 @@ def main(args):
     ams = ArgoAmsClient(ams_host, ams_token)
 
     for tenant in tenants:
+        if args.tenant and tenant != args.tenant:
+            continue
         ams.check_project_exists(tenant)
         missing = ams.check_tenant(tenant)
         if is_tenant_complete(missing):
@@ -109,6 +113,8 @@ def tenant_ok_reports(status):
 if __name__ == "__main__":
 
     parser = ArgumentParser(description="Update engine")
+    parser.add_argument(
+        "-t", "--tenant", help="tenant owner ", dest="tenant", metavar="STRING", required=False, default=None)
     parser.add_argument(
         "-b", "--backup-conf", help="backup current configuration", action="store_true", dest="backup")
     parser.add_argument(
