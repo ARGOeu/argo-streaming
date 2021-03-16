@@ -24,6 +24,14 @@ public class StatusConfig implements Serializable {
 	
 	public String report;
 	
+	public String apiEndpoint;
+	public String apiToken;
+	public String apiProxy;
+	public Boolean apiVerify = false;
+	public int hourCheck = 24;
+	public String reportID;
+	public long interval = 100L;
+	
 	// Sync files
 	public String aps;
 	public String mps;
@@ -46,6 +54,8 @@ public class StatusConfig implements Serializable {
 	   this.amsPort = pt.getRequired("ams.port");
 	   this.amsToken = pt.getRequired("ams.token");
 	   this.amsProject = pt.getRequired("ams.project");
+	   this.apiEndpoint = pt.getRequired("api.endpoint");
+	   
 	   
 	   this.aps = pt.getRequired("sync.apr");
 	   this.mps = pt.getRequired("sync.mps");
@@ -70,6 +80,16 @@ public class StatusConfig implements Serializable {
 	   }
 	   
 	   // Optional set daily parameter
+	   
+	   this.apiEndpoint = pt.getRequired("api.endpoint");
+	   this.apiToken = pt.getRequired("apiToken");
+	   this.reportID = pt.getRequired("reportID");
+	   
+	   if (pt.has("api.proxy")) this.apiProxy = pt.get("api.proxy","");
+	   if (pt.has("api.verify")) this.apiVerify = pt.getBoolean("api.verify",false);
+	   if (pt.has("api.interval")) this.hourCheck = pt.getInt("api.interval",24);
+	   if (pt.has("ams.interval")) this.interval = pt.getLong("interval",100L);
+	   
 	   this.daily = pt.getBoolean("daily",false);
 	   
 	  }
