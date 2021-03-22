@@ -375,30 +375,77 @@ Job requires parameters:
 
 `--yesterdayData`             : file location of previous day's data
 `--todayData`                 : file location of today day's data
+`--reportId`              	: the id of the tenant's report to be used in calls from 					  argo-web-api
 `--N`              	       : (optional) number of displayed top results
 `--mongoUri`                  : uri to the mongo db , to store results
 `--apiUri`                    : uri to the web-api
 `--key`                       : users's token, used for authentication
 `--proxy`                     : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be cleared from previous documents or not. if false or is missing collection will remain as it is 
+
 
 Flink batch Job that calculate flip flop trends for service endpoints metrics
 Job requires parameters:
 
 `--yesterdayData`              : file location of previous day's data
 `--todayData`                  : file location of today day's data
+`--reportId`              	: the id of the tenant's report to be used in calls from 					  argo-web-api
 `--N`              		: (optional) number of displayed top results
 `--mongoUri`                   : uri to the mongo db , to store results
 `--apiUri`                     : uri to the web-api
 `--key`                        : users's token, used for authentication
 `--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be cleared from previous documents or not. if false or is missing collection will remain as it is 
 
-Flink batch Job that calculate flip flop trends for service endpoints 
+Flink batch Job that calculate flip flop trends for service endpoints
 Job requires parameters:
 
 `--yesterdayData`              : file location of previous day's data
 `--todayData`                  : file location of today day's data
+`--reportId`              	: the id of the tenant's report to be used in calls from 					  argo-web-api
 `--N`              		: (optional) number of displayed top results
 `--mongoUri`                   : uri to the mongo db , to store results
 `--apiUri`                     : uri to the web-api
 `--key`                        : users's token, used for authentication
 `--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be cleared from previous documents or not. if false or is missing collection will remain as it is 
+
+Flink batch Job that calculate flip flop trends for service  
+Job requires parameters:
+
+`--yesterdayData`              : file location of previous day's data
+`--todayData`                  : file location of today day's data
+`--reportId`              	: the id of the tenant's report to be used in calls from 					  argo-web-api
+`--N`              		: (optional) number of displayed top results
+`--mongoUri`                   : uri to the mongo db , to store results
+`--apiUri`                     : uri to the web-api
+`--key`                        : users's token, used for authentication
+`--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be cleared from previous documents or not. if false or is missing collection will remain as it is 
+
+Flink batch Job that calculate flip flop trends for groups 
+Job requires parameters:
+
+`--yesterdayData`              : file location of previous day's data
+`--todayData`                  : file location of today day's data
+`--reportId`              	: the id of the tenant's report to be used in calls from 					  argo-web-api
+`--N`              		: (optional) number of displayed top results
+`--mongoUri`                   : uri to the mongo db , to store results
+`--apiUri`                     : uri to the web-api
+`--key`                        : users's token, used for authentication
+`--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be cleared from previous documents or not. if false or is missing collection will remain as it is 
+
+Flink batch Job that calculate flip flop trends for all levels of groups
+Job requires parameters:
+
+`--yesterdayData`              : file location of previous day's data
+`--todayData`                  : file location of today day's data
+`--reportId`              	: the id of the tenant's report to be used in calls from 					  argo-web-api
+`--N`              		: (optional) number of displayed top results
+`--mongoUri`                   : uri to the mongo db , to store results
+`--apiUri`                     : uri to the web-api
+`--key`                        : users's token, used for authentication
+`--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be cleared from previous documents or not. if false or is missing collection will remain as it is 
+

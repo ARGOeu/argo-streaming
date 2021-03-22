@@ -158,7 +158,7 @@ public class TimelineMergerTest {
 
         TreeMap<Date, String> testTimelines = new TreeMap<>();
         //   String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-        testTimelines.put(Utils.createDate(format, 2021, 0, 15, 0, 0, 0), EnumStatus.OK.name());
+          testTimelines.put(Utils.createDate(format, 2021, 0, 15, 0, 0, 0), EnumStatus.OK.name());
         testTimelines.put(Utils.createDate(format, 2021, 0, 15, 0, 12, 23), EnumStatus.CRITICAL.name());
         testTimelines.put(Utils.createDate(format, 2021, 0, 15, 1, 5, 10), EnumStatus.CRITICAL.name());
         testTimelines.put(Utils.createDate(format, 2021, 0, 15, 5, 20, 15), EnumStatus.CRITICAL.name());

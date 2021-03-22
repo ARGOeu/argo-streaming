@@ -8,7 +8,6 @@ package argo.functions.calctimelines;
 import argo.pojos.EndpointTrends;
 import argo.profiles.AggregationProfileParser;
 import java.util.ArrayList;
-import java.util.HashMap;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,12 +21,8 @@ import org.slf4j.LoggerFactory;
 public class ServiceFilter implements FilterFunction<EndpointTrends> {
 
     static Logger LOG = LoggerFactory.getLogger(ServiceFilter.class);
-    //   private HashMap<String, String> serviceOperations;
     private AggregationProfileParser aggregationProfileParser;
 
-//    public ServiceFilter(HashMap<String, String> serviceOperations) {
-//        this.serviceOperations = serviceOperations;
-//    }
     public ServiceFilter(AggregationProfileParser aggregationProfileParser) {
         this.aggregationProfileParser = aggregationProfileParser;
     }

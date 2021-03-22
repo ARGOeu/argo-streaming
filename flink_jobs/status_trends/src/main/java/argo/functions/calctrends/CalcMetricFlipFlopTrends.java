@@ -12,7 +12,6 @@ import argo.profiles.AggregationProfileParser;
 import argo.profiles.TopologyEndpointParser;
 import argo.utils.Utils;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.util.Collector;

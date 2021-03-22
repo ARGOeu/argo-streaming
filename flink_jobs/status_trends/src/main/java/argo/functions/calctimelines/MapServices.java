@@ -8,7 +8,6 @@ package argo.functions.calctimelines;
 import argo.pojos.ServiceTrends;
 import argo.profiles.AggregationProfileParser;
 import java.util.ArrayList;
-import java.util.HashMap;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.util.Collector;
 
@@ -20,12 +19,8 @@ import org.apache.flink.util.Collector;
  */
 public class MapServices implements FlatMapFunction<ServiceTrends, ServiceTrends> {
 
-    private HashMap<String, ArrayList<String>> serviceFunctions;
     private AggregationProfileParser aggregationProfileParser;
 
-//    public MapServices(HashMap<String, ArrayList<String>> serviceFunctions) {
-//        this.serviceFunctions = serviceFunctions;
-//    }
     public MapServices(AggregationProfileParser aggregationProfileParser) {
         this.aggregationProfileParser = aggregationProfileParser;
     }
@@ -43,8 +38,7 @@ public class MapServices implements FlatMapFunction<ServiceTrends, ServiceTrends
     public void flatMap(ServiceTrends t, Collector<ServiceTrends> out) throws Exception {
         String service = t.getService();
 
-       // ArrayList<String> functionList = serviceFunctions.get(service);
-        ArrayList<String> functionList =aggregationProfileParser.retrieveServiceFunctions(service);
+        ArrayList<String> functionList = aggregationProfileParser.retrieveServiceFunctions(service);
         if (functionList != null) {
             for (String f : functionList) {
                 ServiceTrends newT = t;

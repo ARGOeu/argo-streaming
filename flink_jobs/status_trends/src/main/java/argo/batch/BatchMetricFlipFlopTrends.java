@@ -22,26 +22,16 @@ import argo.functions.calctimelines.CalcLastTimeStatus;
 import argo.functions.calctimelines.TopologyMetricFilter;
 import argo.pojos.MetricTrends;
 import argo.utils.Utils;
-import com.mongodb.BasicDBObject;
-import com.mongodb.hadoop.io.BSONWritable;
-import com.mongodb.hadoop.mapred.MongoOutputFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
 import org.apache.flink.api.java.io.AvroInputFormat;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobConf;
 import argo.profiles.ProfilesLoader;
-import java.util.Date;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -58,20 +48,20 @@ import java.util.Date;
  *
  * http://flink.apache.org/docs/latest/apis/cli.html
  */
-public class BatchFlipFlopTrends {
+public class BatchMetricFlipFlopTrends {
 
-    static Logger LOG = LoggerFactory.getLogger(BatchFlipFlopTrends.class);
+    static Logger LOG = LoggerFactory.getLogger(BatchMetricFlipFlopTrends.class);
 
-//    private static HashMap<String, ArrayList<String>> metricProfileData;
-//    private static HashMap<String, String> topologyEndpointData;
-//    private static ArrayList<String> topologyGroupData;
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-    private static final String metricTrends = "metricTrends";
+    private static final String metricTrends = "flipflop_trends_metrics";
     private static String mongoUri;
-    private static Date profilesDate;
     private static ProfilesLoader profilesLoader;
+    private static String profilesDate;
+    private static final String format = "yyyy-MM-dd";
+    private static boolean clearMongo = false;
+    private static String reportId;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -79,27 +69,30 @@ public class BatchFlipFlopTrends {
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "reportId")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "reportId", "date")) {
             System.exit(0);
         }
-
         env.setParallelism(1);
+
+        if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
+            clearMongo = true;
+        }
+        reportId = params.getRequired("reportId");
+
+        profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
+
+        profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
         mongoUri = params.getRequired("mongoUri");
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
 
         profilesLoader = new ProfilesLoader(params);
-//        metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
-//        topologyEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
-//        topologyGroupData = profilesLoader.getTopolGroupParser().getTopologyGroups();
-//        
         yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
         todayData = readInputData(env, params.getRequired("todayData"));
 
-        DataSet<MetricTrends> criticalData = calcFlipFlops();
+        calcFlipFlops();
 
-        writeToMongo(criticalData);
 // execute program
         env.execute("Flink Batch Java API Skeleton");
     }
@@ -107,19 +100,28 @@ public class BatchFlipFlopTrends {
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
     // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
     // rank results
-    private static DataSet<MetricTrends> calcFlipFlops() {
+    private static void calcFlipFlops() {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
-        DataSet<MetricTrends> reducedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(),profilesLoader.getAggregationProfileParser()));
+        DataSet<MetricTrends> metricData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
         if (rankNum != null) {
-            reducedData = reducedData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            metricData = metricData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
         } else {
-            reducedData = reducedData.sortPartition("flipflops", Order.DESCENDING);
+            metricData = metricData.sortPartition("flipflops", Order.DESCENDING);
 
         }
-        return reducedData;
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate, clearMongo);
+        DataSet<Trends> trends = metricData.map(new MapFunction<MetricTrends, Trends>() {
+
+            @Override
+            public Trends map(MetricTrends in) throws Exception {
+                return new Trends(in.getGroup(), in.getService(), in.getEndpoint(), in.getMetric(), in.getFlipflops());
+            }
+        });
+        trends.output(metricMongoOut);
+        // return reducedData;
     }
     //read input from file
 
@@ -132,39 +134,4 @@ public class BatchFlipFlopTrends {
         return inputData;
     }
 
-    //convert the result in bson format
-    public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<MetricTrends> in) {
-
-        return in.map(new MapFunction<MetricTrends, Tuple2<Text, BSONWritable>>() {
-            int i = 0;
-
-            @Override
-            public Tuple2<Text, BSONWritable> map(MetricTrends in) throws Exception {
-                BasicDBObject dbObject = new BasicDBObject();
-                dbObject.put("group", in.getGroup());
-                dbObject.put("service", in.getService());
-                dbObject.put("hostname", in.getEndpoint());
-                dbObject.put("metric", in.getMetric());
-                dbObject.put("trend", in.getFlipflops().toString());
-
-                BSONWritable bson = new BSONWritable(dbObject);
-                i++;
-                return new Tuple2<Text, BSONWritable>(new Text(String.valueOf(i)), bson);
-                /* TODO */
-            }
-        });
-    }
-
-    //write to mongo db
-    public static void writeToMongo(DataSet<MetricTrends> data) {
-        String collectionUri = mongoUri + "." + metricTrends;
-        DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
-        JobConf conf = new JobConf();
-        conf.set("mongo.output.uri", collectionUri);
-
-        MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
-        result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
-    }
-
-    //convert the result in bson format
 }

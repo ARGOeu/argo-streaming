@@ -23,7 +23,7 @@ import org.json.simple.parser.ParseException;
  * * TopologyEndpointParser, collects data as described in the json received
  * from web api topology endpoint request
  */
-public class TopologyEndpointParser implements Serializable{
+public class TopologyEndpointParser implements Serializable {
 
     private HashMap<String, ArrayList<EndpointGroup>> topologyEndPointsPerType;
 
@@ -34,11 +34,9 @@ public class TopologyEndpointParser implements Serializable{
     public TopologyEndpointParser() {
     }
 
-    
     public TopologyEndpointParser(String apiUri, String key, String proxy, String date, String reportname) throws IOException, ParseException {
         // by_report/{report-name}?date=YYYY-MM-DD
         String uri = apiUri + url + "/" + reportname;
-        // String uri = apiUri + url;
 
         if (date != null) {
             uri = uri + "?date=" + date;
@@ -95,10 +93,12 @@ public class TopologyEndpointParser implements Serializable{
         }
 
     }
-    public String retrieveGroup(String type, String serviceEndpoint){
-       return  topologyEndpoint.get(type).get(serviceEndpoint);
-    
+
+    public String retrieveGroup(String type, String serviceEndpoint) {
+        return topologyEndpoint.get(type).get(serviceEndpoint);
+
     }
+
     public HashMap<String, ArrayList<EndpointGroup>> getTopologyEndPointsPerType() {
         return topologyEndPointsPerType;
     }
@@ -115,7 +115,7 @@ public class TopologyEndpointParser implements Serializable{
         this.topologyEndpoint = topologyEndpoint;
     }
 
-    public class EndpointGroup  implements Serializable{
+    public class EndpointGroup implements Serializable {
 
         private String group;
 
