@@ -40,9 +40,7 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
     public void reduce(Iterable<MetricTrends> in, Collector< EndpointTrends> out) throws Exception {
         String group = null;
         String service = null;
-        String hostname = null;
-        ArrayList<EndpointTrends> list = new ArrayList<>();
-       
+        String hostname = null;    
        //store the necessary info
        //collect all timelines in a list
         ArrayList<Timeline> timelinelist = new ArrayList<>();

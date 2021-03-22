@@ -7,6 +7,7 @@ package argo.profiles;
 
 import argo.utils.RequestManager;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,14 +20,20 @@ import org.json.simple.parser.ParseException;
  *
  * @author cthermolia
  *
- * TopologyGroupParser, collects data as described in the json received from web api topology group request
+ * TopologyGroupParser, collects data as described in the json received from web
+ * api topology group request
  */
-public class TopologyGroupParser {
+public class TopologyGroupParser implements Serializable{
 
-    private HashMap<String, ArrayList<TopologyGroup>> topologyGroups = new HashMap<>();
+    private HashMap<String, ArrayList<TopologyGroup>> topologyGroupsPerType = new HashMap<>();
+    private ArrayList<String> topologyGroups = new ArrayList<>();
     private final String url = "/topology/groups/by_report";
     //private final String url = "/topology/groups";
 
+    public TopologyGroupParser() {
+    }
+
+    
     public TopologyGroupParser(String apiUri, String key, String proxy, String date, String reportname) throws IOException, ParseException {
         String uri = apiUri + url + "/" + reportname;
         // String uri = apiUri + url;
@@ -50,6 +57,7 @@ public class TopologyGroupParser {
                 String group = (String) jsonDataObj.get("group");
                 String type = (String) jsonDataObj.get("type");
                 String subgroup = (String) jsonDataObj.get("subgroup");
+                topologyGroups.add(subgroup);
                 JSONObject tagsObj = (JSONObject) jsonDataObj.get("tags");
                 Tags tag = null;
                 if (tagsObj != null) {
@@ -70,22 +78,40 @@ public class TopologyGroupParser {
 
                 TopologyGroup topologyGroup = new TopologyGroup(group, type, subgroup, tag, notification);
                 ArrayList<TopologyGroup> groupList = new ArrayList<>();
-                if (topologyGroups.get(type) != null) {
-                    groupList = topologyGroups.get(type);
+                if (topologyGroupsPerType.get(type) != null) {
+                    groupList = topologyGroupsPerType.get(type);
                 }
                 groupList.add(topologyGroup);
-                topologyGroups.put(type, groupList);
+                topologyGroupsPerType.put(type, groupList);
 
             }
 
         }
     }
 
-    public HashMap<String, ArrayList<TopologyGroup>> getTopologyGroups() {
+    public boolean containsGroup(String group){
+        if(topologyGroups.contains(group)){
+            return true;
+        }
+        return false;
+    }
+    public HashMap<String, ArrayList<TopologyGroup>> getTopologyGroupsPerType() {
+        return topologyGroupsPerType;
+    }
+
+    public void setTopologyGroupsPerType(HashMap<String, ArrayList<TopologyGroup>> topologyGroupsPerType) {
+        this.topologyGroupsPerType = topologyGroupsPerType;
+    }
+
+    public ArrayList<String> getTopologyGroups() {
         return topologyGroups;
     }
 
-    public class TopologyGroup {
+    public void setTopologyGroups(ArrayList<String> topologyGroups) {
+        this.topologyGroups = topologyGroups;
+    }
+
+    public class TopologyGroup implements Serializable{
 
         private String group;
         private String type;
@@ -124,7 +150,7 @@ public class TopologyGroupParser {
 
     }
 
-    public class Tags {
+    public class Tags implements Serializable{
 
         private String scope;
         private String infrastructure;
@@ -150,7 +176,7 @@ public class TopologyGroupParser {
 
     }
 
-    public class Notifications {
+    public class Notifications implements Serializable{
 
         private String contacts;
         private String enabled;

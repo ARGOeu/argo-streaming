@@ -84,4 +84,13 @@ public class ProfilesLoader {
         this.aggregationProfileParser = aggregationProfileParser;
     }
 
+    public TopologyGroupParser getTopolGroupParser() {
+        return topolGroupParser;
+    }
+
+    public void setTopolGroupParser(TopologyGroupParser topolGroupParser) {
+        this.topolGroupParser = topolGroupParser;
+    }
+    
+
 }

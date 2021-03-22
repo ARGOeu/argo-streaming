@@ -25,8 +25,6 @@ import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
@@ -62,8 +60,6 @@ public class BatchStatusTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchStatusTrends.class);
 
-    private static HashMap<String, ArrayList<String>> metricProfileData;
-    private static HashMap<String, String> groupEndpointData;
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
@@ -73,6 +69,7 @@ public class BatchStatusTrends {
     private static final String unknownStatusTrends = "unknownStatusTrends";
 
     private static String mongoUri;
+    private static ProfilesLoader profilesLoader;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -89,10 +86,7 @@ public class BatchStatusTrends {
             rankNum = params.getInt("N");
         }
         mongoUri = params.get("mongoUri");
-        ProfilesLoader profilesLoader = new ProfilesLoader(params);
-        metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
-        groupEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
-
+        profilesLoader = new ProfilesLoader(params);
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
 
@@ -109,10 +103,10 @@ public class BatchStatusTrends {
     //filters the todayData and exclude the ones not in topology and metric profile data, union with yesterdayData and calculates the times each status (CRITICAL,WARNING.UNKNOW) appears
     private static DataSet<Tuple6<String, String, String, String, String, Integer>> rankByStatus() {
 
-        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
-        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
-        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcStatusTrends(groupEndpointData));
+        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
+        DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcStatusTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
         return rankedData;
     }
 
