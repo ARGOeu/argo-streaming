@@ -62,9 +62,6 @@ public class BatchFlipFlopTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchFlipFlopTrends.class);
 
-//    private static HashMap<String, ArrayList<String>> metricProfileData;
-//    private static HashMap<String, String> topologyEndpointData;
-//    private static ArrayList<String> topologyGroupData;
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
@@ -90,10 +87,6 @@ public class BatchFlipFlopTrends {
         }
 
         profilesLoader = new ProfilesLoader(params);
-//        metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
-//        topologyEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
-//        topologyGroupData = profilesLoader.getTopolGroupParser().getTopologyGroups();
-//        
         yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
         todayData = readInputData(env, params.getRequired("todayData"));
 

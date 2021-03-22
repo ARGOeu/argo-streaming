@@ -57,7 +57,7 @@ import org.apache.hadoop.mapred.JobConf;
  */
 public class BatchServEndpFlipFlopTrends {
 
-    private static DataSet<MetricData> yesterdayData;
+   private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
     private static final String endpointTrends = "endpointTrends";

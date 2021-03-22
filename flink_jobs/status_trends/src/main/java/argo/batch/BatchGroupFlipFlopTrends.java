@@ -25,8 +25,6 @@ import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
 import com.mongodb.hadoop.mapred.MongoOutputFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
@@ -69,7 +67,10 @@ public class BatchGroupFlipFlopTrends {
         profilesLoader = new ProfilesLoader(params);
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
-
+        yesterdayData = readInputData(env, params, "yesterdayData");
+        todayData = readInputData(env, params, "todayData");
+       
+        
         // calculate on data 
         DataSet<GroupTrends> resultData = calcFlipFlops();
         writeToMongo(resultData);
@@ -97,7 +98,6 @@ public class BatchGroupFlipFlopTrends {
         DataSet<ServiceTrends> serviceGroupData = serviceEndpointGroupData.filter(new ServiceFilter(profilesLoader.getAggregationProfileParser())).groupBy("group", "service").reduceGroup(new CalcServiceFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
         //flat map data to add function as described in aggregation profile groups
         serviceGroupData = serviceGroupData.flatMap(new MapServices(profilesLoader.getAggregationProfileParser()));
-
         //group data by group,function   and count flip flops
         DataSet<GroupFunctionTrends> groupFunction = serviceGroupData.groupBy("group", "function").reduceGroup(new CalcGroupFunctionFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
 

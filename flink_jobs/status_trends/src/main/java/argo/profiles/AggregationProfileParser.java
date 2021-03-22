@@ -95,7 +95,6 @@ public class AggregationProfileParser implements Serializable {
                     serviceFunctionList.add(groupname);
                     serviceFunctions.put(servicename, serviceFunctionList);
                 }
-
                 groups.add(new GroupOps(groupname, groupoperation, services));
 
             }
@@ -167,7 +166,6 @@ public class AggregationProfileParser implements Serializable {
     public void setFunctionOperations(HashMap<String, String> functionOperations) {
         this.functionOperations = functionOperations;
     }
-
 
     public HashMap<String, ArrayList<String>> getServiceFunctions() {
         return serviceFunctions;
