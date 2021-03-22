@@ -8,6 +8,8 @@ package argo.functions.calctrends;
 import argo.avro.MetricData;
 import argo.pojos.Timeline;
 import argo.pojos.MetricTrends;
+import argo.profiles.AggregationProfileParser;
+import argo.profiles.TopologyEndpointParser;
 import argo.utils.Utils;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,22 +21,29 @@ import org.apache.flink.util.Collector;
  *
  * @author cthermolia
  *
- * CalcMetricTrends, count status changes for each service
- * endpoint metric
+ * CalcMetricTrends, count status changes for each service endpoint metric
  */
 public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData, MetricTrends> {
 
-    private HashMap<String, String> groupEndpoints;
+    //private HashMap<String, String> groupEndpoints;
     private final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-  
-    public CalcMetricFlipFlopTrends(HashMap<String, String> groupEndpoints) {
-        this.groupEndpoints = groupEndpoints;
+    private TopologyEndpointParser topologyEndpointParser;
+    private AggregationProfileParser aggregationProfileParser;
+//
+//    public CalcMetricFlipFlopTrends(HashMap<String, String> groupEndpoints) {
+//        this.groupEndpoints = groupEndpoints;
+//    }
+
+    public CalcMetricFlipFlopTrends(TopologyEndpointParser topologyEndpointParser, AggregationProfileParser aggregationProfileParser) {
+        this.topologyEndpointParser = topologyEndpointParser;
+        this.aggregationProfileParser = aggregationProfileParser;
     }
 
     /**
      *
      * @param in, the MetricData dataset
-     * @param out, the collection of MetricTrends, containing the information of the computations on group, service, endpoint, metric groups
+     * @param out, the collection of MetricTrends, containing the information of
+     * the computations on group, service, endpoint, metric groups
      * @throws Exception
      */
     @Override
@@ -49,7 +58,8 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
             hostname = md.getHostname().toString();
             service = md.getService().toString();
             metric = md.getMetric().toString();
-            group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService()); //retrieve the group for the service, as contained in file
+            //      group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService()); //retrieve the group for the service, as contained in file
+            group = topologyEndpointParser.retrieveGroup(aggregationProfileParser.getEndpointGroup().toUpperCase(), md.getHostname().toString() + "-" + md.getService().toString());
             timeStatusMap.put(Utils.convertStringtoDate(format, md.getTimestamp().toString()), md.getStatus().toString());
         }
         Timeline timeline = new Timeline(timeStatusMap);

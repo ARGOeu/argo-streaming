@@ -62,14 +62,16 @@ public class BatchFlipFlopTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchFlipFlopTrends.class);
 
-    private static HashMap<String, ArrayList<String>> metricProfileData;
-    private static HashMap<String, String> groupEndpointData;
+//    private static HashMap<String, ArrayList<String>> metricProfileData;
+//    private static HashMap<String, String> topologyEndpointData;
+//    private static ArrayList<String> topologyGroupData;
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
     private static final String metricTrends = "metricTrends";
     private static String mongoUri;
     private static Date profilesDate;
+    private static ProfilesLoader profilesLoader;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -80,7 +82,6 @@ public class BatchFlipFlopTrends {
         if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "reportId")) {
             System.exit(0);
         }
-        
 
         env.setParallelism(1);
         mongoUri = params.getRequired("mongoUri");
@@ -88,10 +89,11 @@ public class BatchFlipFlopTrends {
             rankNum = params.getInt("N");
         }
 
-        ProfilesLoader profilesLoader = new ProfilesLoader(params);
-        metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
-        groupEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
-
+        profilesLoader = new ProfilesLoader(params);
+//        metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
+//        topologyEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
+//        topologyGroupData = profilesLoader.getTopolGroupParser().getTopologyGroups();
+//        
         yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
         todayData = readInputData(env, params.getRequired("todayData"));
 
@@ -107,10 +109,10 @@ public class BatchFlipFlopTrends {
     // rank results
     private static DataSet<MetricTrends> calcFlipFlops() {
 
-        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
-        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
-        DataSet<MetricTrends> reducedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(groupEndpointData));
+        DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
+        DataSet<MetricTrends> reducedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(),profilesLoader.getAggregationProfileParser()));
         if (rankNum != null) {
             reducedData = reducedData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
         } else {

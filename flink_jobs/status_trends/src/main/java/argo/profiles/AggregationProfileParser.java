@@ -7,6 +7,7 @@ package argo.profiles;
 
 import argo.utils.RequestManager;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,7 +20,7 @@ import org.json.simple.parser.ParseException;
  * @author cthermolia AggregationProfileParser, collects data as described in
  * the json received from web api aggregation profiles request
  */
-public class AggregationProfileParser {
+public class AggregationProfileParser implements Serializable{
 
     private String id;
     private String date;
@@ -30,11 +31,11 @@ public class AggregationProfileParser {
     private String profileOp;
     private String[] metricProfile = new String[2];
     private ArrayList<GroupOps> groups = new ArrayList<>();
-
     private HashMap<String, String> serviceOperations = new HashMap<>();
     private HashMap<String, String> functionOperations = new HashMap<>();
     private HashMap<String, ArrayList<String>> serviceFunctions = new HashMap<>();
     private final String url = "/aggregation_profiles";
+
 
     public AggregationProfileParser(String apiUri, String key, String proxy, String aggregationId, String dateStr) throws IOException, ParseException {
 
@@ -52,9 +53,7 @@ public class AggregationProfileParser {
 
         JSONArray dataList = (JSONArray) jsonObject.get("data");
 
-        //Iterator<JSONObject> iterator = dataList.iterator();
-        // while (iterator.hasNext()) {
-        //   if (iterator.next() instanceof JSONObject) {
+
         JSONObject dataObject = (JSONObject) dataList.get(0);
 
         id = (String) dataObject.get("id");
@@ -93,6 +92,7 @@ public class AggregationProfileParser {
                     ArrayList<String> serviceFunctionList=new ArrayList<>();
                     if(serviceFunctions.get(servicename)!=null){
                         serviceFunctionList=serviceFunctions.get(servicename);
+
                     }
                     serviceFunctionList.add(groupname);
                     serviceFunctions.put(servicename, serviceFunctionList);
@@ -106,10 +106,16 @@ public class AggregationProfileParser {
         //}
     }
 
+
+    public ArrayList<String> retrieveServiceFunctions(String service){
+        return serviceFunctions.get(service);
+    
+    }
     public String getServiceOperation(String service) {
         return serviceOperations.get(service);
 
     }
+
 
     public String getFunctionOperation(String function) {
         return functionOperations.get(function);
@@ -160,6 +166,8 @@ public class AggregationProfileParser {
         this.serviceOperations = serviceOperations;
     }
 
+   
+
     public HashMap<String, String> getFunctionOperations() {
         return functionOperations;
     }
@@ -175,10 +183,10 @@ public class AggregationProfileParser {
     public void setServiceFunctions(HashMap<String, ArrayList<String>> serviceFunctions) {
         this.serviceFunctions = serviceFunctions;
     }
-
   
-   
-    public static class GroupOps {
+
+    public static class GroupOps implements Serializable {
+
 
         private String name;
         private String operation;
