@@ -82,7 +82,6 @@ public class BatchServEndpFlipFlopTrends {
         profilesLoader = new ProfilesLoader(params);
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
-
         // calculate on data 
         DataSet<EndpointTrends> resultData = calcFlipFlops();
         writeToMongo(resultData);

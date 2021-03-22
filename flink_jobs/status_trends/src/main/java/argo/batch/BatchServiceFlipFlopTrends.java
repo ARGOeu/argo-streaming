@@ -64,10 +64,6 @@ import org.apache.hadoop.mapred.JobConf;
  */
 public class BatchServiceFlipFlopTrends {
 
-    private static HashMap<String, HashMap<String, String>> opTruthTableMap = new HashMap<>(); // the truth table for the operations to be applied on timeline
-    //private static HashMap<String, ArrayList<String>> metricProfileData;
-    //private static HashMap<String, String> topologyEndpointData;
-   // private static ArrayList<String> topologyGroupData;
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
@@ -91,13 +87,8 @@ public class BatchServiceFlipFlopTrends {
         }
         mongoUri = params.get("mongoUri");
          profilesLoader = new ProfilesLoader(params);
-      //  metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
-       //topologyEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
-//        topologyGroupData = profilesLoader.getTopolGroupParser().getTopologyGroups();
-//       
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
-       
         
         // calculate on data 
         DataSet<ServiceTrends> resultData = calcFlipFlops();
@@ -126,7 +117,6 @@ public class BatchServiceFlipFlopTrends {
       //group data by service   and count flip flops
         DataSet<ServiceTrends> serviceGroupData = serviceEndpointGroupData.filter(new ServiceFilter(profilesLoader.getAggregationProfileParser())).groupBy("group", "service").reduceGroup(new CalcServiceFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
         //flat map data to add function as described in aggregation profile groups
-      //  serviceGroupData = serviceGroupData.flatMap(new MapServices(profilesLoader.getAggregationProfileParser().getFunctionServices()));
 
         if (rankNum != null) { //sort and rank data
             serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
@@ -146,16 +136,6 @@ public class BatchServiceFlipFlopTrends {
         inputData = env.createInput(inputAvroFormat);
         return inputData;
     }
-
-////    //initialize configuaration parameters to be used from functions
-  //  private static void initializeConfigurationParameters(ParameterTool params, ExecutionEnvironment env) {
-//
-//        Configuration conf = new Configuration();
-//        conf.setClass("opParser", OperationsParser.class);
-//      
-//        env.getConfig().setGlobalJobParameters(conf);
-//
-  // }
 
     //convert the result in bson format
     public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<ServiceTrends> in) {
