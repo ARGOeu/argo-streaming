@@ -89,7 +89,6 @@ public class BatchServiceFlipFlopTrends {
          profilesLoader = new ProfilesLoader(params);
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
-        
         // calculate on data 
         DataSet<ServiceTrends> resultData = calcFlipFlops();
         writeToMongo(resultData);
@@ -109,7 +108,6 @@ public class BatchServiceFlipFlopTrends {
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
         DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
-
         //group data by service endpoint  and count flip flops
         DataSet<EndpointTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcEndpointFlipFlopTrends(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser()));
 

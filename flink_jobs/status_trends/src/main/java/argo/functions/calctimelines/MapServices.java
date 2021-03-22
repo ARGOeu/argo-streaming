@@ -8,13 +8,13 @@ package argo.functions.calctimelines;
 import argo.pojos.ServiceTrends;
 import argo.profiles.AggregationProfileParser;
 import java.util.ArrayList;
-import java.util.HashMap;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.util.Collector;
 
 /**
  * @author cthermolia
  *
+<<<<<<< HEAD
  * MapServices produces TimelineTrends for each service,that maps to the groups
  * of functions as described in aggregation profile groups endpoint , metric
  */

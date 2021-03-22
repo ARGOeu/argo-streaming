@@ -5,10 +5,9 @@ package argo.functions.calctimelines;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import argo.pojos.EndpointTrends;
 import argo.profiles.AggregationProfileParser;
+import argo.pojos.EndpointTrends;
 import java.util.ArrayList;
-import java.util.HashMap;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
