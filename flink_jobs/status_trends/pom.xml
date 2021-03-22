@@ -97,9 +97,11 @@ under the License.
              
         <dependency>
             <groupId>org.mongodb</groupId>
-            <artifactId>mongo-hadoop-core</artifactId>
-            <version>${mongodb.hadoop.version}</version>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>3.2.2</version>
+            <scope>compile</scope>
         </dependency>
+		
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>

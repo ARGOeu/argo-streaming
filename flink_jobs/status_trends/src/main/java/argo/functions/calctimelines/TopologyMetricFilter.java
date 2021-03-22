@@ -33,18 +33,18 @@ public class TopologyMetricFilter implements FilterFunction<MetricData> {
         this.metricProfileParser = metricProfileParser;
         this.topologyEndpointParser = topologyEndpointParser;
         this.topologyGroupParser = topologyGroupParser;
-        this.aggregationProfileParser=aggregationProfileParser;
+        this.aggregationProfileParser = aggregationProfileParser;
     }
 
     @Override
     public boolean filter(MetricData t) throws Exception {
 
-        String group=topologyEndpointParser.retrieveGroup(aggregationProfileParser.getEndpointGroup().toUpperCase(), t.getHostname() + "-" + t.getService());
+        String group = topologyEndpointParser.retrieveGroup(aggregationProfileParser.getEndpointGroup().toUpperCase(), t.getHostname() + "-" + t.getService());
         boolean hasGroup = false;
-         if (topologyGroupParser.containsGroup(group) && group != null) {
+        if (topologyGroupParser.containsGroup(group) && group != null) {
             hasGroup = true;
         }
-        if (hasGroup && metricProfileParser.containsMetric(t.getService().toString(),t.getMetric().toString())){
+        if (hasGroup && metricProfileParser.containsMetric(t.getService().toString(), t.getMetric().toString())) {
 
             return true;
         }

@@ -5,8 +5,8 @@ package argo.functions.calctimelines;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import argo.profiles.AggregationProfileParser;
 import argo.pojos.EndpointTrends;
+import argo.profiles.AggregationProfileParser;
 import java.util.ArrayList;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.slf4j.Logger;
@@ -22,6 +22,7 @@ public class ServiceFilter implements FilterFunction<EndpointTrends> {
 
     static Logger LOG = LoggerFactory.getLogger(ServiceFilter.class);
     private AggregationProfileParser aggregationProfileParser;
+
     public ServiceFilter(AggregationProfileParser aggregationProfileParser) {
         this.aggregationProfileParser = aggregationProfileParser;
     }

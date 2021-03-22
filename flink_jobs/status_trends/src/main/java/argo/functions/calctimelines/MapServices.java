@@ -16,6 +16,12 @@ import org.apache.flink.util.Collector;
  *
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ARGO-2985 Calculate flip flops for group of endpoints
+=======
+>>>>>>> ARGO-2985 Calculate flip flops for group of endpoints
 =======
 >>>>>>> ARGO-2985 Calculate flip flops for group of endpoints
  * MapServices produces TimelineTrends for each service,that maps to the groups
