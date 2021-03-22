@@ -7,6 +7,7 @@ package argo.profiles;
 
 import argo.utils.RequestManager;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -18,23 +19,28 @@ import org.json.simple.parser.ParseException;
 /**
  *
  * @author cthermolia
- * 
- * * TopologyEndpointParser, collects data as described in the json received from web api topology endpoint request
+ *
+ * * TopologyEndpointParser, collects data as described in the json received
+ * from web api topology endpoint request
  */
-public class TopologyEndpointParser {
+public class TopologyEndpointParser implements Serializable{
 
-    private HashMap<String, ArrayList<EndpointGroup>> endpointGroups;
+    private HashMap<String, ArrayList<EndpointGroup>> topologyEndPointsPerType;
 
     private HashMap<String, HashMap<String, String>> topologyEndpoint;
     private final String url = "/topology/endpoints/by_report";
 // private final String url = "/topology/endpoints";
 
+    public TopologyEndpointParser() {
+    }
+
+    
     public TopologyEndpointParser(String apiUri, String key, String proxy, String date, String reportname) throws IOException, ParseException {
         // by_report/{report-name}?date=YYYY-MM-DD
         String uri = apiUri + url + "/" + reportname;
-             // String uri = apiUri + url;
- 
-       if (date != null) {
+        // String uri = apiUri + url;
+
+        if (date != null) {
             uri = uri + "?date=" + date;
         }
         loadTopologyEndpoints(uri, key, proxy);
@@ -46,7 +52,7 @@ public class TopologyEndpointParser {
     }
 
     private void loadTopologyEndpoints(String uri, String key, String proxy) throws IOException, ParseException {
-        endpointGroups = new HashMap<>();
+        topologyEndPointsPerType = new HashMap<>();
         topologyEndpoint = new HashMap<>();
         JSONObject jsonObject = RequestManager.request(uri, key, proxy);
 
@@ -81,20 +87,35 @@ public class TopologyEndpointParser {
                 EndpointGroup endpointGroup = new EndpointGroup(group, hostname, service, key, tag);
 
                 ArrayList<EndpointGroup> topologies = new ArrayList<>();
-                if (endpointGroups.get(type) != null) {
-                    topologies = endpointGroups.get(type);
+                if (topologyEndPointsPerType.get(type) != null) {
+                    topologies = topologyEndPointsPerType.get(type);
                 }
                 topologies.add(endpointGroup);
             }
         }
 
     }
-
-    public HashMap<String, ArrayList<EndpointGroup>> getEndpointGroups() {
-        return endpointGroups;
+    public String retrieveGroup(String type, String serviceEndpoint){
+       return  topologyEndpoint.get(type).get(serviceEndpoint);
+    
+    }
+    public HashMap<String, ArrayList<EndpointGroup>> getTopologyEndPointsPerType() {
+        return topologyEndPointsPerType;
     }
 
-    public class EndpointGroup {
+    public void setTopologyEndPointsPerType(HashMap<String, ArrayList<EndpointGroup>> topologyEndPointsPerType) {
+        this.topologyEndPointsPerType = topologyEndPointsPerType;
+    }
+
+    public HashMap<String, HashMap<String, String>> getTopologyEndpoint() {
+        return topologyEndpoint;
+    }
+
+    public void setTopologyEndpoint(HashMap<String, HashMap<String, String>> topologyEndpoint) {
+        this.topologyEndpoint = topologyEndpoint;
+    }
+
+    public class EndpointGroup  implements Serializable{
 
         private String group;
 
