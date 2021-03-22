@@ -94,12 +94,7 @@ under the License.
             <artifactId>flink-hadoop-compatibility_2.10</artifactId>
             <version>${flink.version}</version>
         </dependency>
-             
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongo-hadoop-core</artifactId>
-            <version>${mongodb.hadoop.version}</version>
-        </dependency>
+     
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>

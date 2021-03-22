@@ -5,6 +5,7 @@ package argo.functions.calctimelines;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 import argo.pojos.ServiceTrends;
 import argo.profiles.AggregationProfileParser;
 import java.util.ArrayList;
@@ -18,9 +19,14 @@ import org.apache.flink.util.Collector;
  * MapServices produces TimelineTrends for each service,that maps to the groups
  * of functions as described in aggregation profile groups endpoint , metric
  */
+
+
 public class MapServices implements FlatMapFunction<ServiceTrends, ServiceTrends> {
 
     private AggregationProfileParser aggregationProfileParser;
+
+    private HashMap<String, ArrayList<String>> serviceFunctions;
+
     public MapServices(AggregationProfileParser aggregationProfileParser) {
         this.aggregationProfileParser = aggregationProfileParser;
     }
@@ -38,7 +44,7 @@ public class MapServices implements FlatMapFunction<ServiceTrends, ServiceTrends
     public void flatMap(ServiceTrends t, Collector<ServiceTrends> out) throws Exception {
         String service = t.getService();
 
-        ArrayList<String> functionList =aggregationProfileParser.retrieveServiceFunctions(service);
+        ArrayList<String> functionList = aggregationProfileParser.retrieveServiceFunctions(service);
         if (functionList != null) {
             for (String f : functionList) {
                 ServiceTrends newT = t;
@@ -47,5 +53,4 @@ public class MapServices implements FlatMapFunction<ServiceTrends, ServiceTrends
             }
         }
     }
-
 }
