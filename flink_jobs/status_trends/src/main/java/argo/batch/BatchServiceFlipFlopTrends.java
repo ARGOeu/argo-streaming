@@ -18,11 +18,15 @@ package argo.batch;
  */
 import argo.avro.MetricData;
 import argo.functions.calctimelines.CalcLastTimeStatus;
+import argo.functions.calctimelines.MapServices;
+import argo.functions.calctimelines.ServiceFilter;
 import argo.functions.calctimelines.TopologyMetricFilter;
 import argo.functions.calctrends.CalcEndpointFlipFlopTrends;
 import argo.functions.calctrends.CalcMetricFlipFlopTrends;
+import argo.functions.calctrends.CalcServiceFlipFlop;
 import argo.pojos.EndpointTrends;
 import argo.pojos.MetricTrends;
+import argo.pojos.ServiceTrends;
 import argo.utils.Utils;
 import com.mongodb.hadoop.io.BSONWritable;
 import java.util.ArrayList;
@@ -58,7 +62,7 @@ import org.apache.hadoop.mapred.JobConf;
  *
  * http://flink.apache.org/docs/latest/apis/cli.html
  */
-public class BatchServEndpFlipFlopTrends {
+public class BatchServiceFlipFlopTrends {
 
     private static HashMap<String, HashMap<String, String>> opTruthTableMap = new HashMap<>(); // the truth table for the operations to be applied on timeline
     private static HashMap<String, ArrayList<String>> metricProfileData;
@@ -66,7 +70,7 @@ public class BatchServEndpFlipFlopTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-    private static final String endpointTrends = "endpointTrends";
+    private static final String serviceTrends = "serviceTrends";
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
 
@@ -92,8 +96,9 @@ public class BatchServEndpFlipFlopTrends {
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
        
+        
         // calculate on data 
-        DataSet<EndpointTrends> resultData = calcFlipFlops();
+        DataSet<ServiceTrends> resultData = calcFlipFlops();
         writeToMongo(resultData);
 
 // execute program
@@ -104,7 +109,7 @@ public class BatchServEndpFlipFlopTrends {
 // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
 // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
 // rank results
-    private static DataSet<EndpointTrends> calcFlipFlops() {
+    private static DataSet<ServiceTrends> calcFlipFlops() {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData)).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(metricProfileData, groupEndpointData));
@@ -115,12 +120,18 @@ public class BatchServEndpFlipFlopTrends {
         //group data by service endpoint  and count flip flops
         DataSet<EndpointTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcEndpointFlipFlopTrends(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser()));
 
+
+      //group data by service   and count flip flops
+        DataSet<ServiceTrends> serviceGroupData = serviceEndpointGroupData.filter(new ServiceFilter(profilesLoader.getAggregationProfileParser().getServiceOperations())).groupBy("group", "service").reduceGroup(new CalcServiceFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
+        //flat map data to add function as described in aggregation profile groups
+      //  serviceGroupData = serviceGroupData.flatMap(new MapServices(profilesLoader.getAggregationProfileParser().getFunctionServices()));
+
         if (rankNum != null) { //sort and rank data
-            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
         } else {
-            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING);
+            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING);
         }
-        return serviceEndpointGroupData;
+        return serviceGroupData;
 
     }    //read input from file
 
@@ -145,17 +156,16 @@ public class BatchServEndpFlipFlopTrends {
   // }
 
     //convert the result in bson format
-    public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<EndpointTrends> in) {
+    public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<ServiceTrends> in) {
 
-        return in.map(new MapFunction<EndpointTrends, Tuple2<Text, BSONWritable>>() {
+        return in.map(new MapFunction<ServiceTrends, Tuple2<Text, BSONWritable>>() {
             int i = 0;
 
             @Override
-            public Tuple2<Text, BSONWritable> map(EndpointTrends in) throws Exception {
+            public Tuple2<Text, BSONWritable> map(ServiceTrends in) throws Exception {
                 BasicDBObject dbObject = new BasicDBObject();
                 dbObject.put("group", in.getGroup().toString());
                 dbObject.put("service", in.getService().toString());
-                dbObject.put("hostname", in.getEndpoint().toString());
                 dbObject.put("trend", in.getFlipflops());
 
                 BSONWritable bson = new BSONWritable(dbObject);
@@ -167,8 +177,8 @@ public class BatchServEndpFlipFlopTrends {
     }
 
     //write to mongo db
-    public static void writeToMongo(DataSet<EndpointTrends> data) {
-        String collectionUri = mongoUri + "." + endpointTrends;
+    public static void writeToMongo(DataSet<ServiceTrends> data) {
+        String collectionUri = mongoUri + "." + serviceTrends;
         DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
         JobConf conf = new JobConf();
         conf.set("mongo.output.uri", collectionUri);
