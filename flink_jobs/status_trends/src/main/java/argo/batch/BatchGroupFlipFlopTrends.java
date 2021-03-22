@@ -44,11 +44,6 @@ import org.apache.hadoop.mapred.JobConf;
  * @author cthermolia
  */
 public class BatchGroupFlipFlopTrends {
-//     private static HashMap<String, HashMap<String, String>> opTruthTableMap = new HashMap<>(); // the truth table for the operations to be applied on timeline
-//    private static HashMap<String, ArrayList<String>> metricProfileData;
-//    private static HashMap<String, String> topologyEndpointData;
-//    private static ArrayList<String> topologyGroupData;
-
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
@@ -72,10 +67,6 @@ public class BatchGroupFlipFlopTrends {
         }
         mongoUri = params.get("mongoUri");
         profilesLoader = new ProfilesLoader(params);
-//        metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
-//       topologyEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
-//        topologyGroupData = profilesLoader.getTopolGroupParser().getTopologyGroups();
-//       
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
 
