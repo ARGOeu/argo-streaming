@@ -35,9 +35,7 @@ public class AggregationProfileParser implements Serializable{
     private HashMap<String, String> functionOperations = new HashMap<>();
     private HashMap<String, ArrayList<String>> serviceFunctions = new HashMap<>();
     private final String url = "/aggregation_profiles";
-
-
-    public AggregationProfileParser(String apiUri, String key, String proxy, String aggregationId, String dateStr) throws IOException, ParseException {
+   public AggregationProfileParser(String apiUri, String key, String proxy, String aggregationId, String dateStr) throws IOException, ParseException {
 
         String uri = apiUri + url + "/" + aggregationId;
         if (dateStr != null) {
@@ -52,7 +50,6 @@ public class AggregationProfileParser implements Serializable{
         JSONObject jsonObject = RequestManager.request(uri, key, proxy);
 
         JSONArray dataList = (JSONArray) jsonObject.get("data");
-
 
         JSONObject dataObject = (JSONObject) dataList.get(0);
 
@@ -102,8 +99,6 @@ public class AggregationProfileParser implements Serializable{
 
             }
         }
-        // }
-        //}
     }
 
 
@@ -186,8 +181,6 @@ public class AggregationProfileParser implements Serializable{
   
 
     public static class GroupOps implements Serializable {
-
-
         private String name;
         private String operation;
         private HashMap<String, String> services;
