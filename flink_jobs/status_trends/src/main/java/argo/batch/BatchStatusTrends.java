@@ -21,6 +21,7 @@ import argo.functions.calctrends.CalcStatusTrends;
 import argo.functions.calctimelines.TopologyMetricFilter;
 import argo.functions.calctimelines.CalcLastTimeStatus;
 import argo.functions.calctimelines.StatusFilter;
+import argo.pojos.ServiceTrends;
 import argo.utils.Utils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.hadoop.io.BSONWritable;
@@ -40,6 +41,8 @@ import org.slf4j.LoggerFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import argo.profiles.ProfilesLoader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -69,7 +72,11 @@ public class BatchStatusTrends {
     private static final String unknownStatusTrends = "unknownStatusTrends";
 
     private static String mongoUri;
+    private static String reportId;
+    private static String profilesDate;
+    private static String format = "yyyy-MM-dd";
     private static ProfilesLoader profilesLoader;
+    private static boolean clearMongo = false;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -77,14 +84,19 @@ public class BatchStatusTrends {
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "apiUri", "key")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "apiUri", "key", "date", "reportId")) {
             System.exit(0);
         }
 
         env.setParallelism(1);
+        if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
+            clearMongo = true;
+        }
+        profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
+        reportId = params.getRequired("reportId");
         mongoUri = params.get("mongoUri");
         profilesLoader = new ProfilesLoader(params);
         yesterdayData = readInputData(env, params, "yesterdayData");
@@ -121,7 +133,18 @@ public class BatchStatusTrends {
             filteredData = filteredData.sortPartition(5, Order.DESCENDING);
         }
 
-        writeToMongo(collectionUri, filteredData);
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, MongoTrendsOutput.TrendsType.TRENDS_STATUS, reportId, profilesDate, clearMongo);
+
+        DataSet<Trends> trends = filteredData.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Trends>() {
+
+            @Override
+            public Trends map(Tuple6<String, String, String, String, String, Integer> in) throws Exception {
+                return new Trends(in.f0.toString(), in.f1.toString(), in.f2.toString(), in.f3.toString(), in.f4.toString(), in.f5);
+            }
+        });
+        trends.output(metricMongoOut);
+
+        //   writeToMongo(collectionUri, filteredData);
     }
 
     // reads input from file
@@ -143,12 +166,13 @@ public class BatchStatusTrends {
             @Override
             public Tuple2<Text, BSONWritable> map(Tuple6<String, String, String, String, String, Integer> in) throws Exception {
                 BasicDBObject dbObject = new BasicDBObject();
-                dbObject.put("group", in.f0.toString());
-                dbObject.put("service", in.f1.toString());
-                dbObject.put("hostname", in.f2.toString());
-                dbObject.put("metric", in.f3.toString());
-                dbObject.put("status", in.f4.toString());
-                dbObject.put("trend", in.f5.toString());
+                dbObject.put("date", profilesDate);
+                dbObject.put("group", in.f0);
+                dbObject.put("service", in.f1);
+                dbObject.put("hostname", in.f2);
+                dbObject.put("metric", in.f3);
+                dbObject.put("status", in.f4);
+                dbObject.put("trend", in.f5);
 
                 BSONWritable bson = new BSONWritable(dbObject);
                 i++;
