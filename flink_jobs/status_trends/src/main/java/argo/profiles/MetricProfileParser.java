@@ -7,6 +7,7 @@ package argo.profiles;
 
 import argo.utils.RequestManager;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -22,7 +23,7 @@ import org.json.simple.parser.ParseException;
  * MetricProfileParser, collects data as described in the json received from web
  * api metric profiles request
  */
-public class MetricProfileParser {
+public class MetricProfileParser implements Serializable{
 
     private String id;
     private String date;
@@ -32,7 +33,10 @@ public class MetricProfileParser {
     private HashMap<String, ArrayList<String>> metricData;
     private final String url = "/metric_profiles";
 
-    public class Services {
+    public MetricProfileParser() {
+    }
+
+    public class Services implements Serializable{
 
         private String service;
         private ArrayList<String> metrics;
@@ -101,6 +105,14 @@ public class MetricProfileParser {
                 }
             }
         }
+    }
+    
+    public boolean containsMetric(String service, String metric){
+    
+        if(metricData.get(service)!=null && metricData.get(service).contains(metric)){
+            return true;
+        }
+        return false;
     }
 
     public String getId() {

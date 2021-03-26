@@ -6,6 +6,8 @@ package argo.functions.calctrends;
  * and open the template in the editor.
  */
 import argo.avro.MetricData;
+import argo.profiles.AggregationProfileParser;
+import argo.profiles.TopologyEndpointParser;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -24,12 +26,19 @@ import org.apache.flink.util.Collector;
  */
 public class CalcStatusTrends implements GroupReduceFunction<MetricData, Tuple6<String, String, String, String, String, Integer>> {
 
-    private  HashMap<String, String> groupEndpoints;
+    //private  HashMap<String, String> groupEndpoints;
+    private TopologyEndpointParser topologyEndpointParser;
+    private AggregationProfileParser aggregationProfileParser;
+//    public CalcStatusTrends(HashMap<String, String> groupEndpoints) {
+//        this.groupEndpoints = groupEndpoints;
+//    }
 
-    public CalcStatusTrends(HashMap<String, String> groupEndpoints) {
-        this.groupEndpoints = groupEndpoints;
+    public CalcStatusTrends(TopologyEndpointParser topologyEndpointParser,AggregationProfileParser aggregationProfileParser) {
+        this.topologyEndpointParser = topologyEndpointParser;
+        this.aggregationProfileParser=aggregationProfileParser;
     }
 
+    
     /**
      * for each service endpoint metric Iterable check the MetricData status ,
      * keep counter for each status(CRITICAL, WARNING,UNKNOWN) and provide
@@ -53,8 +62,9 @@ public class CalcStatusTrends implements GroupReduceFunction<MetricData, Tuple6<
 
         //for each MetricData in group check the status and increase counter accordingly
         for (MetricData md : in) {
-            group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
-            hostname = md.getHostname().toString();
+           // group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
+            group=topologyEndpointParser.retrieveGroup(aggregationProfileParser.getEndpointGroup().toUpperCase(), md.getHostname().toString() + "-" + md.getService().toString());
+           hostname = md.getHostname().toString();
             service = md.getService().toString();
             status = md.getStatus().toString();
             metric = md.getMetric().toString();
