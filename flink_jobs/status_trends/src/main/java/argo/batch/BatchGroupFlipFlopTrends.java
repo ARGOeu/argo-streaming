@@ -28,6 +28,7 @@ import com.mongodb.hadoop.mapred.MongoOutputFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -44,12 +45,17 @@ import org.apache.hadoop.mapred.JobConf;
  * @author cthermolia
  */
 public class BatchGroupFlipFlopTrends {
+
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
     private static final String groupTrends = "groupTrends";
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
+    private static String profilesDate;
+    private static String format = "yyyy-MM-dd";
+    private static String reportId;
+   private static boolean clearMongo=false;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -57,11 +63,16 @@ public class BatchGroupFlipFlopTrends {
 
         ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "date", "reportId")) {
             System.exit(0);
         }
 
         env.setParallelism(1);
+         if(params.get("clearMongo")!=null && params.getBoolean("clearMongo")==true){
+            clearMongo=true;
+        }
+        reportId = params.getRequired("reportId");
+        profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
@@ -71,8 +82,9 @@ public class BatchGroupFlipFlopTrends {
         todayData = readInputData(env, params, "todayData");
 
         // calculate on data 
-        DataSet<GroupTrends> resultData = calcFlipFlops();
-        writeToMongo(resultData);
+        //DataSet<GroupTrends> resultData = 
+        calcFlipFlops();
+        //writeToMongo(resultData);
 
 // execute program
         env.execute("Flink Batch Java API Skeleton");
@@ -82,7 +94,8 @@ public class BatchGroupFlipFlopTrends {
 // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
 // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
 // rank results
-    private static DataSet<GroupTrends> calcFlipFlops() {
+//    private static DataSet<GroupTrends> calcFlipFlops() {
+    private static void calcFlipFlops() {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
@@ -109,7 +122,18 @@ public class BatchGroupFlipFlopTrends {
         } else {
             groupData = groupData.sortPartition("flipflops", Order.DESCENDING);
         }
-        return groupData;
+
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate, clearMongo);
+
+        DataSet<Trends> trends = groupData.map(new MapFunction<GroupTrends, Trends>() {
+
+            @Override
+            public Trends map(GroupTrends in) throws Exception {
+                return new Trends(in.getGroup(), in.getFlipflops());
+            }
+        });
+        trends.output(metricMongoOut);
+        //  return groupData;
 
     }    //read input from file
 
@@ -132,6 +156,7 @@ public class BatchGroupFlipFlopTrends {
             @Override
             public Tuple2<Text, BSONWritable> map(GroupTrends in) throws Exception {
                 BasicDBObject dbObject = new BasicDBObject();
+                dbObject.put("date", profilesDate);
                 dbObject.put("group", in.getGroup());
                 dbObject.put("trend", in.getFlipflops());
 

@@ -62,16 +62,16 @@ public class BatchFlipFlopTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchFlipFlopTrends.class);
 
-//    private static HashMap<String, ArrayList<String>> metricProfileData;
-//    private static HashMap<String, String> topologyEndpointData;
-//    private static ArrayList<String> topologyGroupData;
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
     private static final String metricTrends = "metricTrends";
     private static String mongoUri;
-    private static Date profilesDate;
+    private static String profilesDate;
+    private static String reportId;
+    private static final String format = "yyyy-MM-dd";
     private static ProfilesLoader profilesLoader;
+   private static boolean clearMongo=false;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -79,27 +79,28 @@ public class BatchFlipFlopTrends {
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "reportId")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "reportId", "date")) {
             System.exit(0);
         }
-
+         if(params.get("clearMongo")!=null && params.getBoolean("clearMongo")==true){
+            clearMongo=true;
+        }
+        profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
         env.setParallelism(1);
         mongoUri = params.getRequired("mongoUri");
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
+        reportId = params.getRequired("reportId");
 
         profilesLoader = new ProfilesLoader(params);
-//        metricProfileData = profilesLoader.getMetricProfileParser().getMetricData();
-//        topologyEndpointData = profilesLoader.getTopologyEndpointParser().getTopology(profilesLoader.getAggregationProfileParser().getEndpointGroup().toUpperCase());
-//        topologyGroupData = profilesLoader.getTopolGroupParser().getTopologyGroups();
-//        
         yesterdayData = readInputData(env, params.getRequired("yesterdayData"));
         todayData = readInputData(env, params.getRequired("todayData"));
 
-        DataSet<MetricTrends> criticalData = calcFlipFlops();
+        //DataSet<MetricTrends> criticalData = 
+        calcFlipFlops();
 
-        writeToMongo(criticalData);
+        //writeToMongo(criticalData);
 // execute program
         env.execute("Flink Batch Java API Skeleton");
     }
@@ -107,19 +108,29 @@ public class BatchFlipFlopTrends {
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
     // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
     // rank results
-    private static DataSet<MetricTrends> calcFlipFlops() {
+//    private static DataSet<MetricTrends> calcFlipFlops() {
+    private static void calcFlipFlops() {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
-        DataSet<MetricTrends> reducedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(),profilesLoader.getAggregationProfileParser()));
+        DataSet<MetricTrends> metricData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
         if (rankNum != null) {
-            reducedData = reducedData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            metricData = metricData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
         } else {
-            reducedData = reducedData.sortPartition("flipflops", Order.DESCENDING);
+            metricData = metricData.sortPartition("flipflops", Order.DESCENDING);
 
         }
-        return reducedData;
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate, clearMongo);
+        DataSet<Trends> trends = metricData.map(new MapFunction<MetricTrends, Trends>() {
+
+            @Override
+            public Trends map(MetricTrends in) throws Exception {
+                return new Trends(in.getGroup(), in.getService(), in.getEndpoint(), in.getMetric(), in.getFlipflops());
+            }
+        });
+        trends.output(metricMongoOut);
+        // return reducedData;
     }
     //read input from file
 
@@ -141,6 +152,7 @@ public class BatchFlipFlopTrends {
             @Override
             public Tuple2<Text, BSONWritable> map(MetricTrends in) throws Exception {
                 BasicDBObject dbObject = new BasicDBObject();
+                dbObject.put("date", profilesDate);
                 dbObject.put("group", in.getGroup());
                 dbObject.put("service", in.getService());
                 dbObject.put("hostname", in.getEndpoint());

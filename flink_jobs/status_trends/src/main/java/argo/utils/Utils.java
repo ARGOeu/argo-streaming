@@ -28,6 +28,16 @@ public class Utils {
     static Logger LOG = LoggerFactory.getLogger(Utils.class);
     String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
+    public static String getParameterDate(String format, String paramDate) throws ParseException {
+        Date date = convertStringtoDate(format, paramDate);
+
+        SimpleDateFormat formatter = new SimpleDateFormat(format);
+        String profileDate = formatter.format(date);
+
+        return profileDate;
+
+    }
+
     public static String convertDateToString(String format, Date date) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
