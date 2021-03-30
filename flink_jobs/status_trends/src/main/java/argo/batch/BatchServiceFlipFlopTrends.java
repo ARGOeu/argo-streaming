@@ -18,6 +18,7 @@ package argo.batch;
  */
 import argo.avro.MetricData;
 import argo.functions.calctimelines.CalcLastTimeStatus;
+import argo.functions.calctimelines.MapServices;
 import argo.functions.calctimelines.ServiceFilter;
 import argo.functions.calctimelines.TopologyMetricFilter;
 import argo.functions.calctrends.CalcEndpointFlipFlopTrends;
@@ -63,14 +64,13 @@ public class BatchServiceFlipFlopTrends {
     private static String format = "yyyy-MM-dd";
     private static boolean clearMongo = false;
     private static String reportId;
-
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "date")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "date", "reportId")) {
             System.exit(0);
         }
 
@@ -106,6 +106,7 @@ public class BatchServiceFlipFlopTrends {
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
         DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
+
         //group data by service endpoint  and count flip flops
         DataSet<EndpointTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcEndpointFlipFlopTrends(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser()));
 

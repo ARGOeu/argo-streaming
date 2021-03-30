@@ -125,6 +125,7 @@ Job required cli parameters:
 
 `--ams.batch`         : num of messages to be retrieved per request to AMS service
 
+
 `--ams.interval`      : interval (in ms) between AMS service requests
 
 `--ams.proxy`         : optional http proxy url to be used for AMS requests
@@ -381,8 +382,6 @@ Job requires parameters:
 `--key`                       : users's token, used for authentication
 `--proxy`                     : (optional) proxy url 
 `--clearMongo`                 : (optional) defines if the collections in mongo will be cleared from previous documents or not. if false or is missing collection will remain as it is 
-
-
 Flink batch Job that calculate flip flop trends for service endpoints metrics
 Job requires parameters:
 
@@ -442,4 +441,3 @@ Job requires parameters:
 `--key`                        : users's token, used for authentication
 `--proxy`                      : (optional) proxy url 
 `--clearMongo`                 : (optional) defines if the collections in mongo will be cleared from previous documents or not. if false or is missing collection will remain as it is 
-

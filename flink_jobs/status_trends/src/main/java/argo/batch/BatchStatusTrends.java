@@ -56,7 +56,6 @@ public class BatchStatusTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-
     private static final String criticalStatusTrends = "status_trends_critical";
     private static final String warningStatusTrends = "status_trends_warning";
     private static final String unknownStatusTrends = "status_trends_unknown";
@@ -74,7 +73,7 @@ public class BatchStatusTrends {
 
         final ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "apiUri", "key", "date")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "apiUri", "key", "date", "reportId")) {
             System.exit(0);
         }
 
@@ -134,7 +133,7 @@ public class BatchStatusTrends {
         });
         trends.output(metricMongoOut);
 
-    }
+   }
 
     // reads input from file
     private static DataSet<MetricData> readInputData(ExecutionEnvironment env, ParameterTool params, String path) {

@@ -67,13 +67,13 @@ public class BatchServEndpFlipFlopTrends {
 
         ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "date")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "reportId", "date")) {
             System.exit(0);
         }
-        env.setParallelism(1);
 
-        if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
-            clearMongo = true;
+        env.setParallelism(1);
+         if(params.get("clearMongo")!=null && params.getBoolean("clearMongo")==true){
+            clearMongo=true;
         }
         profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
         if (params.get("N") != null) {
@@ -86,7 +86,6 @@ public class BatchServEndpFlipFlopTrends {
         todayData = readInputData(env, params, "todayData");
         // calculate on data 
         calcFlipFlops();
-
 // execute program
         env.execute("Flink Batch Java API Skeleton");
 

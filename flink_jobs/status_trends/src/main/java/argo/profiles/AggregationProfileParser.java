@@ -20,7 +20,7 @@ import org.json.simple.parser.ParseException;
  * @author cthermolia AggregationProfileParser, collects data as described in
  * the json received from web api aggregation profiles request
  */
-public class AggregationProfileParser implements Serializable {
+public class AggregationProfileParser implements Serializable{
 
     private String id;
     private String date;

@@ -52,7 +52,7 @@ public class BatchGroupFlipFlopTrends {
 
         ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
-        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "date")) {
+        if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "date", "reportId")) {
             System.exit(0);
         }
 
@@ -134,4 +134,4 @@ public class BatchGroupFlipFlopTrends {
         return inputData;
     }
 
-   }
+  }
