@@ -21,28 +21,18 @@ import argo.functions.calctrends.CalcStatusTrends;
 import argo.functions.calctimelines.TopologyMetricFilter;
 import argo.functions.calctimelines.CalcLastTimeStatus;
 import argo.functions.calctimelines.StatusFilter;
-import argo.pojos.ServiceTrends;
 import argo.utils.Utils;
-import com.mongodb.BasicDBObject;
-import com.mongodb.hadoop.io.BSONWritable;
-import com.mongodb.hadoop.mapred.MongoOutputFormat;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
 import org.apache.flink.api.java.io.AvroInputFormat;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobConf;
 import argo.profiles.ProfilesLoader;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -67,15 +57,17 @@ public class BatchStatusTrends {
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
 
-    private static final String criticalStatusTrends = "criticalStatusTrends";
-    private static final String warningStatusTrends = "warningStatusTrends";
-    private static final String unknownStatusTrends = "unknownStatusTrends";
+    private static final String criticalStatusTrends = "status_trends_critical";
+    private static final String warningStatusTrends = "status_trends_warning";
+    private static final String unknownStatusTrends = "status_trends_unknown";
 
     private static String mongoUri;
+    private static ProfilesLoader profilesLoader;
+
     private static String reportId;
     private static String profilesDate;
     private static String format = "yyyy-MM-dd";
-    private static ProfilesLoader profilesLoader;
+
     private static boolean clearMongo = false;
 
     public static void main(String[] args) throws Exception {
@@ -98,6 +90,7 @@ public class BatchStatusTrends {
         }
         reportId = params.getRequired("reportId");
         mongoUri = params.get("mongoUri");
+
         profilesLoader = new ProfilesLoader(params);
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
@@ -119,6 +112,7 @@ public class BatchStatusTrends {
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
         DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcStatusTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
+
         return rankedData;
     }
 
@@ -157,38 +151,5 @@ public class BatchStatusTrends {
         return inputData;
     }
 
-    //convert the result in bson format
-    public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<Tuple6<String, String, String, String, String, Integer>> in) {
 
-        return in.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Tuple2<Text, BSONWritable>>() {
-            int i = 0;
-
-            @Override
-            public Tuple2<Text, BSONWritable> map(Tuple6<String, String, String, String, String, Integer> in) throws Exception {
-                BasicDBObject dbObject = new BasicDBObject();
-                dbObject.put("date", profilesDate);
-                dbObject.put("group", in.f0);
-                dbObject.put("service", in.f1);
-                dbObject.put("hostname", in.f2);
-                dbObject.put("metric", in.f3);
-                dbObject.put("status", in.f4);
-                dbObject.put("trend", in.f5);
-
-                BSONWritable bson = new BSONWritable(dbObject);
-                i++;
-                return new Tuple2<Text, BSONWritable>(new Text(String.valueOf(i)), bson);
-                /* TODO */
-            }
-        });
-    }
-
-    //write to mongo db
-    public static void writeToMongo(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data) {
-        DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
-        JobConf conf = new JobConf();
-        conf.set("mongo.output.uri", uri);
-
-        MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
-        result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
-    }
 }

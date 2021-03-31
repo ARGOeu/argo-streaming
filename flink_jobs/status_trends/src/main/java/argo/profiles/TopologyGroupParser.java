@@ -89,7 +89,7 @@ public class TopologyGroupParser implements Serializable{
         }
     }
 
-    public boolean containsGroup(String group){
+   public boolean containsGroup(String group){
         if(topologyGroups.contains(group)){
             return true;
         }
@@ -111,8 +111,7 @@ public class TopologyGroupParser implements Serializable{
         this.topologyGroups = topologyGroups;
     }
 
-    public class TopologyGroup implements Serializable{
-
+  public class TopologyGroup implements Serializable{
         private String group;
         private String type;
         private String subgroup;

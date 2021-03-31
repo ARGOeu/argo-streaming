@@ -18,7 +18,6 @@ package argo.batch;
  */
 import argo.avro.MetricData;
 import argo.functions.calctimelines.CalcLastTimeStatus;
-import argo.functions.calctimelines.MapServices;
 import argo.functions.calctimelines.ServiceFilter;
 import argo.functions.calctimelines.TopologyMetricFilter;
 import argo.functions.calctrends.CalcEndpointFlipFlopTrends;
@@ -28,25 +27,14 @@ import argo.pojos.EndpointTrends;
 import argo.pojos.MetricTrends;
 import argo.pojos.ServiceTrends;
 import argo.utils.Utils;
-import com.mongodb.hadoop.io.BSONWritable;
-import java.util.ArrayList;
-
-import java.util.HashMap;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.hadoop.io.Text;
 import argo.profiles.ProfilesLoader;
-import com.mongodb.BasicDBObject;
-import com.mongodb.hadoop.mapred.MongoOutputFormat;
-import java.util.Date;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
-import org.apache.flink.api.java.hadoop.mapred.HadoopOutputFormat;
 import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.core.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -68,13 +56,16 @@ public class BatchServiceFlipFlopTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-    private static final String serviceTrends = "serviceTrends";
+    private static final String serviceTrends = "flipflop_trends_services";
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
     private static String profilesDate;
+
     private static String reportId;
     private static String format = "yyyy-MM-dd";
-   private static boolean clearMongo=false;
+
+    private static boolean clearMongo = false;
+
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -83,11 +74,12 @@ public class BatchServiceFlipFlopTrends {
         ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
         if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "date", "reportId")) {
-            System.exit(0);
+          System.exit(0);
         }
 
         env.setParallelism(1);
-         if(params.get("clearMongo")!=null && params.getBoolean("clearMongo")==true){
+
+        if(params.get("clearMongo")!=null && params.getBoolean("clearMongo")==true){
             clearMongo=true;
         }
         profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
@@ -96,6 +88,7 @@ public class BatchServiceFlipFlopTrends {
         }
         reportId = params.getRequired("reportId");
         mongoUri = params.get("mongoUri");
+
         profilesLoader = new ProfilesLoader(params);
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
@@ -156,50 +149,4 @@ public class BatchServiceFlipFlopTrends {
         return inputData;
     }
 
-////    //initialize configuaration parameters to be used from functions
-    //  private static void initializeConfigurationParameters(ParameterTool params, ExecutionEnvironment env) {
-//
-//        Configuration conf = new Configuration();
-//        conf.setClass("opParser", OperationsParser.class);
-//      
-//        env.getConfig().setGlobalJobParameters(conf);
-//
-    // }
-    //convert the result in bson format
-    public static DataSet<Tuple2<Text, BSONWritable>> convertResultToBSON(DataSet<ServiceTrends> in) {
-
-        return in.map(new MapFunction<ServiceTrends, Tuple2<Text, BSONWritable>>() {
-            int i = 0;
-
-            @Override
-            public Tuple2<Text, BSONWritable> map(ServiceTrends in) throws Exception {
-                BasicDBObject dbObject = new BasicDBObject();
-                dbObject.put("date", profilesDate);
-                dbObject.put("group", in.getGroup());
-                dbObject.put("service", in.getService());
-                dbObject.put("trend", in.getFlipflops());
-
-                BSONWritable bson = new BSONWritable(dbObject);
-                i++;
-                return new Tuple2<Text, BSONWritable>(new Text(String.valueOf(i)), bson);
-                /* TODO */
-            }
-        });
-    }
-
-    //write to mongo db
-    public static void writeToMongo(DataSet<ServiceTrends> data) {
-        String collectionUri = mongoUri + "." + serviceTrends;
-        DataSet<Tuple2<Text, BSONWritable>> result = convertResultToBSON(data);
-        JobConf conf = new JobConf();
-        conf.set("mongo.output.uri", collectionUri);
-
-        MongoOutputFormat<Text, BSONWritable> mongoOutputFormat = new MongoOutputFormat<Text, BSONWritable>();
-        result.output(new HadoopOutputFormat<Text, BSONWritable>(mongoOutputFormat, conf));
-    }
-
-//    public static void createOpTruthTables(String baseUri, String key, String proxy, String operationsId) throws IOException, ParseException {
-//        
-//        opTruthTableMap = Utils.readOperationProfileJson(baseUri, key, proxy, operationsId);
-//    }
 }

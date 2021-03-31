@@ -5,7 +5,6 @@
  */
 package argo.utils;
 
-import com.google.common.net.HttpHeaders;
 import java.io.IOException;
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
@@ -27,7 +26,7 @@ public class RequestManager {
         Request request = Request.Get(uri);
         // add request headers
         request.addHeader("x-api-key", key);
-        request.addHeader(HttpHeaders.ACCEPT, "application/json");
+        request.addHeader("Accept", "application/json");
         if (proxy != null) {
             request = request.viaProxy(proxy);
         }
