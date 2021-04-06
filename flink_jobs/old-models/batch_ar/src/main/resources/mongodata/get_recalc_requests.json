@@ -1,0 +1,13 @@
+{
+  "NGI_GRNET": {
+    "exclude": [
+      "GR-01-AUTH",
+      "HG-03-AUTH"
+    ],
+    "data": {
+      "key": 0,
+      "value": 287
+    }
+  }
+}
+
