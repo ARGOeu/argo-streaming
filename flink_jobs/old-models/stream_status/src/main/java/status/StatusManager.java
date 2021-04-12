@@ -537,7 +537,7 @@ public class StatusManager {
 						Date metricTs = metricNode.item.timestamp;
 						// Generate metric status event
 						evtMetric = genEvent("metric", groupName, serviceName, endpointName, metricName, metricStatus,
-								"", metricTs, metricStatus, metricTs, true,"","");
+								"", metricTs, metricStatus, metricTs, true,"","", "");
 						
 						statusMetric = new String[]{evtMetric.getStatus(),evtMetric.getPrevStatus(),evtMetric.getTsProcessed(),evtMetric.getPrevTs()};
 						evtMetric.setStatusMetric(statusMetric);
@@ -547,7 +547,7 @@ public class StatusManager {
 					}
 					// Generate endpoint status event
 					evtEndpoint = genEvent("endpoint", groupName, serviceName, endpointName, "", endpointStatus, "", ts,
-							endpointStatus, endpointTs, true,"","");
+							endpointStatus, endpointTs, true,"","", "");
 					
 					statusEndpoint = new String[] {evtEndpoint.getStatus(),evtEndpoint.getPrevStatus(),evtEndpoint.getTsMonitored(),evtEndpoint.getPrevTs()};
 					evtEndpoint.setStatusMetric(statusMetric);
@@ -557,7 +557,7 @@ public class StatusManager {
 				}
 				// Generate service status event
 				evtService = genEvent("service", groupName, serviceName, "", "", serviceStatus, "", ts, serviceStatus,
-						serviceTs, true,"","");
+						serviceTs, true,"","", "");
 				
 				statusService = new String[] {evtService.getStatus(),evtService.getPrevStatus(),evtService.getTsMonitored(),evtService.getPrevTs()};
 				evtService.setStatusMetric(statusMetric);
@@ -567,7 +567,7 @@ public class StatusManager {
 				results.add(eventToString(evtService));
 			}
 			// Generate endpoint group status event
-			evtEgroup = genEvent("grpoup", groupName, "", "", "", groupStatus, "", ts, groupStatus, groupTs, true,"","");
+			evtEgroup = genEvent("grpoup", groupName, "", "", "", groupStatus, "", ts, groupStatus, groupTs, true,"","", "");
 			statusEgroup = new String[] {evtEgroup.getStatus(),evtEgroup.getPrevStatus(),evtEgroup.getTsMonitored(),evtEgroup.getPrevTs()};
 			evtEgroup.setStatusMetric(statusMetric);
 			evtEgroup.setStatusEndpoint(statusEndpoint);
@@ -632,10 +632,9 @@ public class StatusManager {
 	 * @return List of generated events in string json format
 	 */
 	public ArrayList<String> setStatus(String group, String service, String hostname, String metric, String statusStr, String monHost,
-			String tsStr, String summary, String message) throws ParseException {
+			String tsStr, String summary, String message, String url) throws ParseException {
 		ArrayList<String> results = new ArrayList<String>();
-
-		// prepare status events might come up
+            	// prepare status events might come up
 		StatusEvent evtEgroup = new StatusEvent();
 		StatusEvent evtService = new StatusEvent();
 		StatusEvent evtEndpoint = new StatusEvent();
@@ -723,9 +722,8 @@ public class StatusManager {
 							if (metricNode.item.status != status || repeat ) {
 								// generate event
 								evtMetric = genEvent("metric", group, service, hostname, metric, ops.getStrStatus(status),
-										monHost, ts, ops.getStrStatus(oldMetricStatus), oldMetricTS, repeat, summary, message);
+										monHost, ts, ops.getStrStatus(oldMetricStatus), oldMetricTS, repeat, summary, message, url);
 										
-								
 								// Create metric status level object
 								statusMetric = new String[] {evtMetric.getStatus(),evtMetric.getPrevStatus(),evtMetric.getTsMonitored(),evtMetric.getPrevTs()};
 								evtMetric.setStatusMetric(statusMetric);
@@ -756,7 +754,7 @@ public class StatusManager {
 							// generate event
 							evtEndpoint = genEvent("endpoint", group, service, hostname, metric,
 									ops.getStrStatus(endpNewStatus), monHost, ts,
-									ops.getStrStatus(oldEndpointStatus), oldEndpointTS,repeat,summary,message);
+									ops.getStrStatus(oldEndpointStatus), oldEndpointTS,repeat,summary,message, url);
 							
 							// Create metric,endpoint status level object
 							statusEndpoint = new String[] {evtEndpoint.getStatus(),evtEndpoint.getPrevStatus(), evtEndpoint.getTsMonitored(), evtEndpoint.getPrevTs()};
@@ -782,7 +780,7 @@ public class StatusManager {
 
 						// generate event
 						evtService = genEvent("service", group, service, hostname, metric, ops.getStrStatus(servNewStatus),
-								monHost, ts, ops.getStrStatus(oldServiceStatus), oldServiceTS,repeat,summary,message);
+								monHost, ts, ops.getStrStatus(oldServiceStatus), oldServiceTS,repeat,summary,message, url);
 						
 						
 						// Create metric, endpoint, service status metric objects
@@ -813,7 +811,7 @@ public class StatusManager {
 					// generate event
 					
 					evtEgroup = genEvent("endpoint_group", group, service, hostname, metric, ops.getStrStatus(groupNewStatus),
-							monHost, ts, ops.getStrStatus(oldGroupStatus), oldGroupTS,repeat,summary,message);
+							monHost, ts, ops.getStrStatus(oldGroupStatus), oldGroupTS,repeat,summary,message,"");
 					
 					// Create metric, endpoint, service, egroup status metric objects
 					statusEgroup = new String[] {evtEgroup.getStatus(),evtEgroup.getPrevStatus(), evtEgroup.getTsMonitored(), evtEgroup.getPrevTs()};
@@ -866,7 +864,7 @@ public class StatusManager {
 	 * @return A string containing the event in json format
 	 */
 	private StatusEvent genEvent(String type, String group, String service, String hostname, String metric, String status,
-			String monHost, Date ts, String prevStatus, Date prevTs, boolean repeat, String summary, String message) throws ParseException {
+			String monHost, Date ts, String prevStatus, Date prevTs, boolean repeat, String summary, String message, String url) throws ParseException {
 		String tsStr = toZulu(ts);
 		String dt = tsStr.split("T")[0].replaceAll("-", "");
 		String tsProc = toZulu(new Date());
@@ -877,9 +875,9 @@ public class StatusManager {
 		if (message==null) {
 			message="";
 		}
-		
+               
 		StatusEvent evnt = new StatusEvent(this.report, type, dt, group, service, hostname, metric, status, monHost,
-				toZulu(ts), tsProc, prevStatus, toZulu(prevTs), new Boolean(repeat).toString(),summary, message );
+				toZulu(ts), tsProc, prevStatus, toZulu(prevTs), new Boolean(repeat).toString(),summary, message,url );
 		
 
 		return evnt;
