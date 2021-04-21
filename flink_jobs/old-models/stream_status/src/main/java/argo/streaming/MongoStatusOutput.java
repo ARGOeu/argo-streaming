@@ -215,7 +215,8 @@ public class MongoStatusOutput implements OutputFormat<String> {
 		String repeat = extractJson("repeat",jRoot);
 		String message = extractJson("message",jRoot);
 		String summary = extractJson("summary",jRoot);
-		return new StatusEvent(rep,tp,dt,eGroup,service,hostname,metric,status,monHost,tsm,tsp,prevStatus,prevTs,repeat,summary,message);
+                String url=extractJson("url", jRoot);
+		return new StatusEvent(rep,tp,dt,eGroup,service,hostname,metric,status,monHost,tsm,tsp,prevStatus,prevTs,repeat,summary,message, url);
 	}
 
 	/**

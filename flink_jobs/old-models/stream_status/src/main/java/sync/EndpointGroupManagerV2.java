@@ -137,6 +137,21 @@ public class EndpointGroupManagerV2 {
 		return new ArrayList<String>();
 		
 	}
+        
+        public String getTagUrl(String group, String hostname, String service) {
+		
+		String key = defaultType + "|" + hostname + "|" + service;
+		Map<String,EndpointItem> sublist = list.get(key);
+                
+                EndpointItem item=sublist.get(group);
+                String url ="";
+                if(item.tags.get("info.URL")!=null){
+                    url=item.tags.get("info.URL");
+                }
+		
+		return url;
+		
+	}
 
 
 	/**

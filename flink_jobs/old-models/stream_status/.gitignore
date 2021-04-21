@@ -3,3 +3,5 @@
 .settings/
 .classpath/
 .classpath
+flink_jobs/old-models/stream_status/nbactions.xml
+
