@@ -28,10 +28,11 @@ import org.slf4j.LoggerFactory;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.io.AvroInputFormat;
+
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import argo.profiles.ProfilesLoader;
+import org.apache.flink.formats.avro.AvroInputFormat;
 
 /**
  * Skeleton for a Flink Batch Job.

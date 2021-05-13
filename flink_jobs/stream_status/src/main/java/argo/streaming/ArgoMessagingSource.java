@@ -105,9 +105,9 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 		rateLck = new Object();
 		// init client
 		String fendpoint = this.endpoint;
-		if (this.port != null && !this.port.isEmpty()) {
-			fendpoint = this.endpoint + ":" + port;
-		}
+//		if (this.port != null && !this.port.isEmpty()) {
+//			fendpoint = this.endpoint + ":" + port;
+//		}
 		try {
 			client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.sub, this.batch, this.verify);
 			if (this.useProxy) {

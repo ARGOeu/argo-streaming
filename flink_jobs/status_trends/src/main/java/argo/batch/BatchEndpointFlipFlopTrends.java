@@ -30,8 +30,9 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import argo.profiles.ProfilesLoader;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
-import org.apache.flink.api.java.io.AvroInputFormat;
+
 import org.apache.flink.core.fs.Path;
+import org.apache.flink.formats.avro.AvroInputFormat;
 
 /**
  * Skeleton for a Flink Batch Job.

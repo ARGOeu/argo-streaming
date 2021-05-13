@@ -21,7 +21,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -210,7 +210,7 @@ public class AmsStreamStatus {
             String kafkaTopic = parameterTool.get("kafka.topic");
             Properties kafkaProps = new Properties();
             kafkaProps.setProperty("bootstrap.servers", kafkaServers);
-            FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic, new SimpleStringSchema(),
+            FlinkKafkaProducer<String> kSink = new FlinkKafkaProducer<String>(kafkaTopic, new SimpleStringSchema(),
                     kafkaProps);
 
             events.addSink(kSink);

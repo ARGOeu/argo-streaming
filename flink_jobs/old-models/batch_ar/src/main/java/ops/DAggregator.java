@@ -95,6 +95,9 @@ public class DAggregator {
 
 	public void aggregate(String opType, OpsManager opsMgr) {
 
+                if(opType==null){
+                    return;
+                }
 		int opTypeInt = opsMgr.getIntOperation(opType);
 
 		for (int i = 0; i < this.aggregation.samples.length; i++) {

@@ -25,3 +25,8 @@ conf.cfg
 .settings/
 /flink_jobs/status_trends/nbproject/
 /flink_jobs/old-models/stream_status/nbactions.xml
+flink_jobs/batch_ar/nbactions.xml
+flink_jobs/old-models/batch_ar/nbactions.xml
+flink_jobs/stream_status/nbactions.xml
+flink_jobs/status_trends/nbactions.xml
+

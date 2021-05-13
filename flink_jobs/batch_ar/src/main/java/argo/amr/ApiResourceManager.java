@@ -236,7 +236,11 @@ public class ApiResourceManager {
 	 */
 	public void getRemoteMetric()  {
 
-		String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
+		//String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
+                String path = "https://%s/api/v2/metric_profiles/%s";
+                if(!this.date.equals("")){
+                    path=path+"?date=%s";
+                }                
 		String fullURL = String.format(path, this.endpoint, this.metricID, this.date);
 		String content = getResource(fullURL);
 		this.data.put(ApiResource.METRIC, getJsonData(content, false));
@@ -338,6 +342,8 @@ public class ApiResourceManager {
 	public void getRemoteWeights()  {
 		String path = "https://%s/api/v2/weights/%s?date=%s";
 		String fullURL = String.format(path, this.endpoint, this.weightsID, this.date);
+                System.out.println(fullURL);
+                
 		String content = getResource(fullURL);
 		this.data.put(ApiResource.WEIGHTS, getJsonData(content, false));
 	}
@@ -399,7 +405,8 @@ public class ApiResourceManager {
 		this.getRemoteTopoEndpoints();
 		this.getRemoteTopoGroups();
 		// get weights
-		if (!this.weightsID.equals(""))	this.getRemoteWeights();
+		if (!this.weightsID.equals(""))	{this.getRemoteWeights();}
+                else{this.data.put(ApiResource.WEIGHTS, "{}");} 
 		// get downtimes
 		this.getRemoteDowntimes();
 		// get recomptations
@@ -566,6 +573,8 @@ public class ApiResourceManager {
 		JsonParser jsonParser = new JsonParser();
 		JsonElement jElement = jsonParser.parse(content);
 		JsonObject jRoot = jElement.getAsJsonObject();
+                if(jRoot.has("weight_type")){
+                                 
 		String wType = jRoot.get("weight_type").getAsString();
 		JsonArray jElements = jRoot.get("groups").getAsJsonArray();
 		for (int i = 0; i < jElements.size(); i++) {
@@ -576,6 +585,7 @@ public class ApiResourceManager {
 			Weight w = new Weight(wType,group,weight);
 			results.add(w);
 		}
+                }
 		
 		Weight[] rArr = new Weight[results.size()]; 
 		rArr = results.toArray(rArr);
@@ -634,6 +644,9 @@ public class ApiResourceManager {
 		JsonObject jRoot = jElement.getAsJsonObject();
 		// Get the data array and the first item
 		if (asArray) {
+                    if(jRoot.get("data")==null){
+                        return "[]";
+                    }
 			return jRoot.get("data").toString();
 		}
 		JsonArray jData = jRoot.get("data").getAsJsonArray();

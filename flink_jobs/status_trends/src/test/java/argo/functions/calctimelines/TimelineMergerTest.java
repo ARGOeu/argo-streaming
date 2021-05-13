@@ -64,7 +64,7 @@ public class TimelineMergerTest {
         map.put("N", "10");
         map.put("mongoUri", "mongodb://localhost:27017/trendsdb");
         map.put("apiUri", "https://api.devel.argo.grnet.gr/api/v2");
-        map.put("key", "1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f");
+        map.put("key", "");
         map.put("reportId", "04edb428-01e6-4286-87f1-050546736f7c");
         map.put("date", "2021-01-15");
         ParameterTool params = ParameterTool.fromMap(map);
@@ -99,7 +99,7 @@ public class TimelineMergerTest {
         map.put("N", "10");
         map.put("mongoUri", "mongodb://localhost:27017/trendsdb");
         map.put("apiUri", "https://api.devel.argo.grnet.gr/api/v2");
-        map.put("key", "1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f");
+        map.put("key", "");
         map.put("reportId", "04edb428-01e6-4286-87f1-050546736f7c");
         map.put("date", "2021-01-15");
         ParameterTool params = ParameterTool.fromMap(map);
@@ -134,7 +134,7 @@ public class TimelineMergerTest {
         map.put("N", "10");
         map.put("mongoUri", "mongodb://localhost:27017/trendsdb");
         map.put("apiUri", "https://api.devel.argo.grnet.gr/api/v2");
-        map.put("key", "1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f");
+        map.put("key", "");
         map.put("reportId", "04edb428-01e6-4286-87f1-050546736f7c");
         map.put("date", "2021-01-15");
         ParameterTool params = ParameterTool.fromMap(map);

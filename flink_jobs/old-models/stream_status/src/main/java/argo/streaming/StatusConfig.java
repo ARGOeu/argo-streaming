@@ -66,7 +66,7 @@ public class StatusConfig implements Serializable {
 		   this.initStatus = pt.get("init.status");
 	   } else {
 		   // by default, default initial status should be optimistically OK
-		   this.initStatus = "OK";
+		   this.initStatus ="OK";
 	   }
 	   
 	   // Optional set daily parameter

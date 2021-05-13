@@ -88,7 +88,7 @@ public class EndpointGroupManager {
 	public boolean checkEndpoint(String hostname, String service) {
 
 		for (EndpointItem item : fList) {
-			if (item.hostname.equals(hostname) && item.service.equals(service)) {
+			if (item.hostname!=null && item.service!=null && item.hostname.equals(hostname) && item.service.equals(service)) {
 				return true;
 			}
 		}
@@ -101,7 +101,7 @@ public class EndpointGroupManager {
 		ArrayList<String> results = new ArrayList<String>();
 		
 		for (EndpointItem item : fList) {
-			if (item.type.equals(type) && item.hostname.equals(hostname) && item.service.equals(service)) {
+			if (item.type!=null && item.hostname!=null && item.service!=null && item.type.equals(type) && item.hostname.equals(hostname) && item.service.equals(service)) {
 				results.add(item.group);
 			}
 		}
@@ -112,7 +112,7 @@ public class EndpointGroupManager {
 	public HashMap<String, String> getGroupTags(String group, String type, String hostname, String service) {
 
 		for (EndpointItem item : fList) {
-			if (item.group.equals(group) && item.type.equals(type) && item.hostname.equals(hostname) && item.service.equals(service)) {
+			if (item.group!=null && item.type!=null && item.hostname!=null && item.service!=null && item.group.equals(group) && item.type.equals(type) && item.hostname.equals(hostname) && item.service.equals(service)) {
 				return item.tags;
 			}
 		}
