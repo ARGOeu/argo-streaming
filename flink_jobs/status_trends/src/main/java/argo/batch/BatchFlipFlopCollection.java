@@ -95,6 +95,11 @@ public class BatchFlipFlopCollection {
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
         DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
+        if (rankNum != null) { //sort and rank data
+            serviceEndpointMetricGroupData = serviceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+        } else {
+            serviceEndpointMetricGroupData = serviceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING);
+        }
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate, clearMongo);
 
         DataSet<Trends> trends = serviceEndpointMetricGroupData.map(new MapFunction<MetricTrends, Trends>() {
@@ -108,7 +113,11 @@ public class BatchFlipFlopCollection {
 
         //group data by service endpoint  and count flip flops
         DataSet<EndpointTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcEndpointFlipFlopTrends(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser()));
-
+        if (rankNum != null) { //sort and rank data
+            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+        } else {
+            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING);
+        }
         metricMongoOut = new MongoTrendsOutput(mongoUri, endpointTrends, MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportId, profilesDate, clearMongo);
 
         trends = serviceEndpointGroupData.map(new MapFunction<EndpointTrends, Trends>() {
@@ -122,6 +131,11 @@ public class BatchFlipFlopCollection {
 
         //group data by service   and count flip flops
         DataSet<ServiceTrends> serviceGroupData = serviceEndpointGroupData.filter(new ServiceFilter(profilesLoader.getAggregationProfileParser())).groupBy("group", "service").reduceGroup(new CalcServiceFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
+         if (rankNum != null) { //sort and rank data
+            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+        } else {
+            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING);
+        }
         metricMongoOut = new MongoTrendsOutput(mongoUri, serviceTrends, MongoTrendsOutput.TrendsType.TRENDS_SERVICE, reportId, profilesDate, clearMongo);
 
         trends = serviceGroupData.map(new MapFunction<ServiceTrends, Trends>() {
@@ -147,8 +161,7 @@ public class BatchFlipFlopCollection {
         } else {
             groupData = groupData.sortPartition("flipflops", Order.DESCENDING);
         }
-
-        metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate, clearMongo);
+         metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate, clearMongo);
 
         trends = groupData.map(new MapFunction<GroupTrends, Trends>() {
 
@@ -158,8 +171,10 @@ public class BatchFlipFlopCollection {
             }
         });
         trends.output(metricMongoOut);
-     
-    }  
+
+    }
+
+   
 
     //read input from file
     private static DataSet<MetricData> readInputData(ExecutionEnvironment env, ParameterTool params, String path) {
