@@ -64,7 +64,7 @@ class TestClass(unittest.TestCase):
             actual = hdfs.gen_profile_path(
                 test_case_date["tenant"], test_case_date["report"], test_case_date["profile_type"], test_case_date["date"])
             expected = test_case_date["expected"]
-            self.assertEquals(expected, actual)
+            self.assertEqual(expected, actual)
 
     def test_api(self):
 
