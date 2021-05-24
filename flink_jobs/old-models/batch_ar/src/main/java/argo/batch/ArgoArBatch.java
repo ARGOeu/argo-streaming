@@ -14,18 +14,18 @@ import org.slf4j.Logger;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.io.AvroInputFormat;
+//import org.apache.flink.api.java.io.AvroInputFormat;
 
 import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
-
+import org.apache.flink.formats.avro.AvroInputFormat;
 
 /**
  * Represents an ARGO A/R Batch Job in flink
  * <p>
- * The specific batch job calculates the availability and reliability results based on the input metric data
- * and sync files
+ * The specific batch job calculates the availability and reliability results
+ * based on the input metric data and sync files
  * </p>
  * Required arguments:
  * <ul>
@@ -50,174 +50,163 @@ import org.apache.flink.core.fs.Path;
  * <ul>
  */
 public class ArgoArBatch {
-	// setup logger
-	static Logger LOG = LoggerFactory.getLogger(ArgoArBatch.class);
+    // setup logger
 
-	public static void main(String[] args) throws Exception {
+    static Logger LOG = LoggerFactory.getLogger(ArgoArBatch.class);
 
-		final ParameterTool params = ParameterTool.fromArgs(args);
+    public static void main(String[] args) throws Exception {
 
-		// set up the execution environment
-		final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+        final ParameterTool params = ParameterTool.fromArgs(args);
 
-		// make parameters available in the web interface
-		env.getConfig().setGlobalJobParameters(params);
-		env.setParallelism(1);
-		// sync data for input
+        // set up the execution environment
+        final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
-		Path mps = new Path(params.getRequired("mps"));
-		Path egp = new Path(params.getRequired("egp"));
-		Path ggp = new Path(params.getRequired("ggp"));
-		Path down = new Path(params.getRequired("downtimes"));
-		Path weight = new Path(params.getRequired("weights"));
-		
+        // make parameters available in the web interface
+        env.getConfig().setGlobalJobParameters(params);
+        env.setParallelism(1);
+        // sync data for input
 
-		DataSource<String> confDS = env.readTextFile(params.getRequired("conf"));
-		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
-		DataSource<String> aprDS = env.readTextFile(params.getRequired("apr"));
-		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
-		
-		// begin with empty threshold datasource
-		DataSource<String> thrDS = env.fromElements("");
-		// if threshold filepath has been defined in cli parameters
-		if (params.has("thr")){
-			// read file and update threshold datasource
-			thrDS = env.readTextFile(params.getRequired("thr"));
-		}
-		
-		
-		
-		ConfigManager confMgr = new ConfigManager();
-		confMgr.loadJsonString(confDS.collect());
+        Path mps = new Path(params.getRequired("mps"));
+        Path egp = new Path(params.getRequired("egp"));
+        Path ggp = new Path(params.getRequired("ggp"));
+        Path down = new Path(params.getRequired("downtimes"));
+        Path weight = new Path(params.getRequired("weights"));
 
-		// sync data input: metric profile in avro format
-		AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);
-		DataSet<MetricProfile> mpsDS = env.createInput(mpsAvro);
+        DataSource<String> confDS = env.readTextFile(params.getRequired("conf"));
+        DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
+        DataSource<String> aprDS = env.readTextFile(params.getRequired("apr"));
+        DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
 
-		// sync data input: endpoint group topology data in avro format
-		AvroInputFormat<GroupEndpoint> egpAvro = new AvroInputFormat<GroupEndpoint>(egp, GroupEndpoint.class);
-		DataSet<GroupEndpoint> egpDS = env.createInput(egpAvro);
+        // begin with empty threshold datasource
+        DataSource<String> thrDS = env.fromElements("");
+        // if threshold filepath has been defined in cli parameters
+        if (params.has("thr")) {
+            // read file and update threshold datasource
+            thrDS = env.readTextFile(params.getRequired("thr"));
+        }
 
-		// sync data input: group of group topology data in avro format
-		AvroInputFormat<GroupGroup> ggpAvro = new AvroInputFormat<GroupGroup>(ggp, GroupGroup.class);
-		DataSet<GroupGroup> ggpDS = env.createInput(ggpAvro);
+        // sync data input: metric profile in avro format
+        AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);
+        DataSet<MetricProfile> mpsDS = env.createInput(mpsAvro);
 
-		// sync data input: downtime data in avro format
-		AvroInputFormat<Downtime> downAvro = new AvroInputFormat<Downtime>(down, Downtime.class);
-		DataSet<Downtime> downDS = env.createInput(downAvro);
+        // sync data input: endpoint group topology data in avro format
+        AvroInputFormat<GroupEndpoint> egpAvro = new AvroInputFormat<GroupEndpoint>(egp, GroupEndpoint.class);
+        DataSet<GroupEndpoint> egpDS = env.createInput(egpAvro);
 
-		// sync data input: weight data in avro format
-		AvroInputFormat<Weight> weightAvro = new AvroInputFormat<Weight>(weight, Weight.class);
-		DataSet<Weight> weightDS = env.createInput(weightAvro);
+        // sync data input: group of group topology data in avro format
+        AvroInputFormat<GroupGroup> ggpAvro = new AvroInputFormat<GroupGroup>(ggp, GroupGroup.class);
+        DataSet<GroupGroup> ggpDS = env.createInput(ggpAvro);
 
-		// todays metric data
-		Path in = new Path(params.getRequired("mdata"));
-		AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat<MetricData>(in, MetricData.class);
-		DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
+        // sync data input: downtime data in avro format
+        AvroInputFormat<Downtime> downAvro = new AvroInputFormat<Downtime>(down, Downtime.class);
+        DataSet<Downtime> downDS = env.createInput(downAvro);
 
-		// previous metric data
-		Path pin = new Path(params.getRequired("pdata"));
-		AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
-		DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
+        // sync data input: weight data in avro format
+        AvroInputFormat<Weight> weightAvro = new AvroInputFormat<Weight>(weight, Weight.class);
+        DataSet<Weight> weightDS = env.createInput(weightAvro);
 
-		// Find the latest day
-		DataSet<MetricData> pdataMin = pdataDS.groupBy("service", "hostname", "metric")
-				.sortGroup("timestamp", Order.DESCENDING).first(1);
+        // todays metric data
+        Path in = new Path(params.getRequired("mdata"));
+        AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat<MetricData>(in, MetricData.class);
+        DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
 
-		DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
+        // previous metric data
+        Path pin = new Path(params.getRequired("pdata"));
+        AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
+        DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
+        ConfigManager confMgr = new ConfigManager();
+        confMgr.loadJsonString(confDS.collect());
 
-		// Generate Full Missing dataset for the given topology
-		DataSet<MonData> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
-				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(confDS, "conf");
+        // Find the latest day
+        DataSet<MetricData> pdataMin = pdataDS.groupBy("service", "hostname", "metric")
+                .sortGroup("timestamp", Order.DESCENDING).first(1);
 
-		// Discard unused data and attach endpoint group as information
-		DataSet<MonData> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
-				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(confDS, "conf")
-				.withBroadcastSet(opsDS, "ops").withBroadcastSet(thrDS, "thr");
+        DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
 
-		// Combine prev and todays metric data with the generated missing metric
-		// data
-		DataSet<MonData> mdataTotalDS = mdataTrimDS.union(fillMissDS);
-		
-		// Create a dataset of metric timelines
-		DataSet<MonTimeline> metricTimelinesDS = mdataTotalDS.groupBy("group","service", "hostname", "metric")
-				.sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CreateMetricTimeline(params))
-				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(confDS, "conf");
+        // Generate Full Missing dataset for the given topology
+        DataSet<MonData> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(confDS, "conf");
 
-		// Create a dataset of endpoint timelines
-		DataSet<MonTimeline> endpointTimelinesDS = metricTimelinesDS.groupBy("group", "service", "hostname")
-				.sortGroup("metric", Order.ASCENDING).reduceGroup(new CreateEndpointTimeline(params))
-				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(downDS, "down");
+        // Discard unused data and attach endpoint group as information
+        DataSet<MonData> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(confDS, "conf")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(thrDS, "thr");
 
-		// Create a dataset of service timelines
-		DataSet<MonTimeline> serviceTimelinesDS = endpointTimelinesDS.groupBy("group", "service")
-				.sortGroup("hostname", Order.ASCENDING).reduceGroup(new CreateServiceTimeline(params))
-				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps");
+        // Combine prev and todays metric data with the generated missing metric
+        // data
+        DataSet<MonData> mdataTotalDS = mdataTrimDS.union(fillMissDS);
 
-		// Create a dataset of endpoint group timelines
-		DataSet<MonTimeline> groupTimelinesDS = serviceTimelinesDS.groupBy("group")
-				.sortGroup("service", Order.ASCENDING).reduceGroup(new CreateEndpointGroupTimeline(params))
-				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(recDS, "rec");
+        // Create a dataset of metric timelines
+        DataSet<MonTimeline> metricTimelinesDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
+                .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CreateMetricTimeline(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(confDS, "conf");
 
-		// Calculate endpoint ar from endpoint timelines
-		DataSet<EndpointAR> endpointResultDS = endpointTimelinesDS.flatMap(new CalcEndpointAR(params))
-				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops")
-						.withBroadcastSet(confDS, "conf");
-		
-		// Calculate service ar from service timelines
-		DataSet<ServiceAR> serviceResultDS = serviceTimelinesDS.flatMap(new CalcServiceAR(params))
-				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops")
-				.withBroadcastSet(confDS, "conf");
+        // Create a dataset of endpoint timelines
+        DataSet<MonTimeline> endpointTimelinesDS = metricTimelinesDS.groupBy("group", "service", "hostname")
+                .sortGroup("metric", Order.ASCENDING).reduceGroup(new CreateEndpointTimeline(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(downDS, "down");
 
-		// Calculate endpoint group ar from endpoint group timelines
-		DataSet<EndpointGroupAR> groupResultDS = groupTimelinesDS.flatMap(new CalcEndpointGroupAR(params))
-				.withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-				.withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops")
-				.withBroadcastSet(weightDS, "weight").withBroadcastSet(confDS, "conf");
+        // Create a dataset of service timelines
+        DataSet<MonTimeline> serviceTimelinesDS = endpointTimelinesDS.groupBy("group", "service")
+                .sortGroup("hostname", Order.ASCENDING).reduceGroup(new CreateServiceTimeline(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps");
 
-		
-		String dbURI = params.getRequired("mongo.uri");
-		String dbMethod = params.getRequired("mongo.method");
+        // Create a dataset of endpoint group timelines
+        DataSet<MonTimeline> groupTimelinesDS = serviceTimelinesDS.groupBy("group")
+                .sortGroup("service", Order.ASCENDING).reduceGroup(new CreateEndpointGroupTimeline(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(aprDS, "aps").withBroadcastSet(recDS, "rec");
 
-		// Initialize endpoint ar mongo output 
-		MongoEndpointArOutput endpointMongoOut = new MongoEndpointArOutput(dbURI,"endpoint_ar",dbMethod);
-	    // Initialize service ar mongo output
-		MongoServiceArOutput serviceMongoOut = new MongoServiceArOutput(dbURI,"service_ar",dbMethod);
-		 // Initialize endpoint group ar mongo output
-		MongoEndGroupArOutput egroupMongoOut = new MongoEndGroupArOutput(dbURI,"endpoint_group_ar",dbMethod);
-		
-		
-		endpointResultDS.output(endpointMongoOut);
-		serviceResultDS.output(serviceMongoOut);
-		groupResultDS.output(egroupMongoOut);
-		
-		
-		String runDate = params.getRequired("run.date");
-		
-		// Create a job title message to discern job in flink dashboard/cli
-		StringBuilder jobTitleSB = new StringBuilder();
-		jobTitleSB.append("Ar Batch job for tenant:");
-		jobTitleSB.append(confMgr.getTenant());
-		jobTitleSB.append("on day:");
-		jobTitleSB.append(runDate);
-		jobTitleSB.append("using report:");
-		jobTitleSB.append(confMgr.getReport());
-			
-		env.execute(jobTitleSB.toString());
-	
+        // Calculate endpoint ar from endpoint timelines
+        DataSet<EndpointAR> endpointResultDS = endpointTimelinesDS.flatMap(new CalcEndpointAR(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops")
+                .withBroadcastSet(confDS, "conf");
 
-	}
+        // Calculate service ar from service timelines
+        DataSet<ServiceAR> serviceResultDS = serviceTimelinesDS.flatMap(new CalcServiceAR(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops")
+                .withBroadcastSet(confDS, "conf");
 
-	
+        // Calculate endpoint group ar from endpoint group timelines
+        DataSet<EndpointGroupAR> groupResultDS = groupTimelinesDS.flatMap(new CalcEndpointGroupAR(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(aprDS, "apr").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops")
+                .withBroadcastSet(weightDS, "weight").withBroadcastSet(confDS, "conf");
 
-	
+        String dbURI = params.getRequired("mongo.uri");
+        String dbMethod = params.getRequired("mongo.method");
+
+        // Initialize endpoint ar mongo output 
+        MongoEndpointArOutput endpointMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
+        // Initialize service ar mongo output
+        MongoServiceArOutput serviceMongoOut = new MongoServiceArOutput(dbURI, "service_ar", dbMethod);
+        // Initialize endpoint group ar mongo output
+        MongoEndGroupArOutput egroupMongoOut = new MongoEndGroupArOutput(dbURI, "endpoint_group_ar", dbMethod);
+
+        endpointResultDS.output(endpointMongoOut);
+        serviceResultDS.output(serviceMongoOut);
+        groupResultDS.output(egroupMongoOut);
+
+        String runDate = params.getRequired("run.date");
+
+        // Create a job title message to discern job in flink dashboard/cli
+        StringBuilder jobTitleSB = new StringBuilder();
+        jobTitleSB.append("Ar Batch job for tenant:");
+        jobTitleSB.append(confMgr.getTenant());
+        jobTitleSB.append("on day:");
+        jobTitleSB.append(runDate);
+        jobTitleSB.append("using report:");
+        jobTitleSB.append(confMgr.getReport());
+
+        env.execute(jobTitleSB.toString());
+
+    }
 
 }

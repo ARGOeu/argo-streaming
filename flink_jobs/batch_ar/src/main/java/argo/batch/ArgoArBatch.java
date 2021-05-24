@@ -10,17 +10,22 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import java.util.HashMap;
 import ops.ConfigManager;
 
 import org.slf4j.Logger;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.io.AvroInputFormat;
+//import org.apache.flink.api.java.io.AvroInputFormat;
+
 
 import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
+import org.apache.flink.formats.avro.AvroInputFormat;
+//import org.apache.flink.formats.avro.AvroInputFormat;
+
 
 
 /**
@@ -115,27 +120,32 @@ public class ArgoArBatch {
 		}
 		
 		
-		DataSet<Downtime> downDS = env.fromElements(new Downtime());
-		DataSet<Weight> weightDS = env.fromElements(new Weight());
-		DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
+
+		DataSet<Weight> weightDS = env.fromElements(new Weight("","",""));
+		DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup("","","",new HashMap()));
+		DataSet<Downtime> downDS = env.fromElements(new Downtime("","","",""));
 		
 		ConfigManager confMgr = new ConfigManager();
 		confMgr.loadJsonString(confDS.collect());
 
 		// Get the sync datasets directly from the web-api data
-		DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
-		DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
+		DataSet<MetricProfile> mpsDS = env.fromElements(new MetricProfile("","","",new HashMap()));
+		DataSet<GroupEndpoint> egpDS = env.fromElements(new GroupEndpoint("","","","",new HashMap()));
 		
 		
 		Downtime[] listDowntimes = amr.getListDowntimes();
 		Weight[] listWeights = amr.getListWeights();
 		GroupGroup[] listGroups = amr.getListGroupGroups();
-		
+		MetricProfile[] listMetrics=amr.getListMetrics();
+                GroupEndpoint[] listGroupEndp=amr.getListGroupEndpoints();
+                
 		if (listDowntimes.length > 0) downDS = env.fromElements(amr.getListDowntimes());
 		if (listWeights.length > 0) weightDS = env.fromElements(amr.getListWeights());
 		if (listGroups.length > 0) ggpDS = env.fromElements(amr.getListGroupGroups());
 		
-
+	        if(listMetrics.length>0) mpsDS = env.fromElements(amr.getListMetrics());
+		if(listGroupEndp.length>0)egpDS = env.fromElements(amr.getListGroupEndpoints());
+	
 
 		// todays metric data
 		Path in = new Path(params.getRequired("mdata"));
@@ -220,7 +230,7 @@ public class ArgoArBatch {
 		MongoServiceArOutput serviceMongoOut = new MongoServiceArOutput(dbURI,"service_ar",dbMethod);
 		 // Initialize endpoint group ar mongo output
 		MongoEndGroupArOutput egroupMongoOut = new MongoEndGroupArOutput(dbURI,"endpoint_group_ar",dbMethod);
-		
+	
 		
 		endpointResultDS.output(endpointMongoOut);
 		serviceResultDS.output(serviceMongoOut);
@@ -228,7 +238,6 @@ public class ArgoArBatch {
 		
 		
 		String runDate = params.getRequired("run.date");
-		
 		// Create a job title message to discern job in flink dashboard/cli
 		StringBuilder jobTitleSB = new StringBuilder();
 		jobTitleSB.append("Ar Batch job for tenant:");

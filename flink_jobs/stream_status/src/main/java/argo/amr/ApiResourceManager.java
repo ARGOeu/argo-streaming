@@ -634,6 +634,9 @@ public class ApiResourceManager {
 		JsonObject jRoot = jElement.getAsJsonObject();
 		// Get the data array and the first item
 		if (asArray) {
+                    if(jRoot.get("data")==null){
+                            return "[]";
+                    }
 			return jRoot.get("data").toString();
 		}
 		JsonArray jData = jRoot.get("data").getAsJsonArray();
