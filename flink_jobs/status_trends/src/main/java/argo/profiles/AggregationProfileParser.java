@@ -36,7 +36,7 @@ public class AggregationProfileParser implements Serializable {
     private HashMap<String, String> functionOperations = new HashMap<>();
     private HashMap<String, ArrayList<String>> serviceFunctions = new HashMap<>();
     private final String url = "/aggregation_profiles";
-
+    private JSONObject jsonObject;
     public AggregationProfileParser() {
     }
 
@@ -51,10 +51,17 @@ public class AggregationProfileParser implements Serializable {
         loadAggrProfileInfo(uri, key, proxy);
     }
 
+    public AggregationProfileParser(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+        readApiRequestResult();
+    }
+    
+
     public void loadAggrProfileInfo(String uri, String key, String proxy) throws IOException, ParseException {
-
-        JSONObject jsonObject = RequestManager.request(uri, key, proxy);
-
+           jsonObject = RequestManager.request(uri, key, proxy);
+           readApiRequestResult();
+    }
+       public void readApiRequestResult(){
         JSONArray dataList = (JSONArray) jsonObject.get("data");
 
        JSONObject dataObject = (JSONObject) dataList.get(0);
@@ -104,6 +111,15 @@ public class AggregationProfileParser implements Serializable {
             }
         }
     }
+
+    public JSONObject getJsonObject() {
+        return jsonObject;
+    }
+
+    public void setJsonObject(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+    }
+       
 
     public ArrayList<String> retrieveServiceFunctions(String service) {
         return serviceFunctions.get(service);

@@ -29,12 +29,18 @@ public class MetricProfileParser implements Serializable{
     private String date;
     private String name;
     private String description;
-    private ArrayList<Services> services;
-    private HashMap<String, ArrayList<String>> metricData;
+    private ArrayList<Services> services=new ArrayList<>();
+    private HashMap<String, ArrayList<String>> metricData=new HashMap<>();
     private final String url = "/metric_profiles";
-
+    private JSONObject jsonObject;
     public MetricProfileParser() {
     }
+
+    public MetricProfileParser(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+        readApiRequestResult();
+    }
+    
 
     public class Services implements Serializable{
 
@@ -64,10 +70,11 @@ public class MetricProfileParser implements Serializable{
     }
 
     private void loadMetricProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
-        JSONObject jsonObject = RequestManager.request(uri, key, proxy);
-
-        services = new ArrayList<>();
-        metricData = new HashMap<>();
+         jsonObject = RequestManager.request(uri, key, proxy);
+         readApiRequestResult();
+    }
+         public void readApiRequestResult(){
+             
         JSONArray data = (JSONArray) jsonObject.get("data");
         id = (String) jsonObject.get("id");
         date = (String) jsonObject.get("date");
@@ -113,6 +120,14 @@ public class MetricProfileParser implements Serializable{
             return true;
         }
         return false;
+    }
+
+    public JSONObject getJsonObject() {
+        return jsonObject;
+    }
+
+    public void setJsonObject(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
     }
 
     public String getId() {

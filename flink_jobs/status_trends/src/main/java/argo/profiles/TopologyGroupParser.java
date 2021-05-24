@@ -29,7 +29,7 @@ public class TopologyGroupParser implements Serializable{
     private ArrayList<String> topologyGroups = new ArrayList<>();
     private final String url = "/topology/groups/by_report";
     //private final String url = "/topology/groups";
-
+    private JSONObject jsonObject;
     public TopologyGroupParser() {
     }
 
@@ -44,9 +44,18 @@ public class TopologyGroupParser implements Serializable{
 
     }
 
+    public TopologyGroupParser(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+        readApiRequestResult();
+    }
+    
+
     public void loadTopologyGroups(String uri, String key, String proxy) throws IOException, ParseException {
 
-        JSONObject jsonObject = RequestManager.request(uri, key, proxy);
+        jsonObject = RequestManager.request(uri, key, proxy);
+        readApiRequestResult();
+    }
+      public void readApiRequestResult(){
         JSONArray data = (JSONArray) jsonObject.get("data");
 
         Iterator<Object> dataIter = data.iterator();
@@ -109,6 +118,14 @@ public class TopologyGroupParser implements Serializable{
 
     public void setTopologyGroups(ArrayList<String> topologyGroups) {
         this.topologyGroups = topologyGroups;
+    }
+
+    public JSONObject getJsonObject() {
+        return jsonObject;
+    }
+
+    public void setJsonObject(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
     }
 
   public class TopologyGroup implements Serializable{

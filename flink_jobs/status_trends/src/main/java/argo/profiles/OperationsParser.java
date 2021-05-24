@@ -26,13 +26,19 @@ public class OperationsParser implements Serializable {
 
     private String id;
     private String name;
-    private ArrayList<String> states;
+    private ArrayList<String> states=new ArrayList<>();
     private DefaultStatus defaults;
-    private HashMap<String, HashMap<String, String>> opTruthTable;
+    private HashMap<String, HashMap<String, String>> opTruthTable=new HashMap<>();
     private final String url = "/operations_profiles";
-
+    private JSONObject jsonObject;
     public OperationsParser() {
     }
+
+    public OperationsParser(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+        readApiRequestResult();
+    }
+    
 
     private class DefaultStatus implements Serializable {
 
@@ -85,15 +91,17 @@ public class OperationsParser implements Serializable {
         loadOperationProfile(uri, key, proxy);
     }
 
-    private HashMap<String, HashMap<String, String>> loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
-        JSONObject jsonObject = RequestManager.request(uri, key, proxy);
-
+    private void loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
+       jsonObject = RequestManager.request(uri, key, proxy);
+        readApiRequestResult();
+    }
+     public void readApiRequestResult(){
+   
         // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
         JSONArray dataList = (JSONArray) jsonObject.get("data");
 
         Iterator<JSONObject> iterator = dataList.iterator();
-        opTruthTable = new HashMap<>();
-        states = new ArrayList<>();
+      
         while (iterator.hasNext()) {
             JSONObject dataObject = (JSONObject) iterator.next();
             id = (String) dataObject.get("id");
@@ -131,9 +139,18 @@ public class OperationsParser implements Serializable {
                 opTruthTable.put(opName, truthTable);
             }
         }
-        return opTruthTable;
+      
 
     }
+
+    public JSONObject getJsonObject() {
+        return jsonObject;
+    }
+
+    public void setJsonObject(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+    }
+     
 
     public String getId() {
         return id;

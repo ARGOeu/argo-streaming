@@ -23,16 +23,26 @@ public class ReportParser {
 
     private TenantReport tenantReport;
     private final String url = "/reports/";
+    private JSONObject jsonObject;
 
     public ReportParser(String apiUri, String key, String proxy, String reportId) throws IOException, ParseException {
         String uri = apiUri + url + reportId;
         loadReportInfo(uri, key, proxy);
     }
 
+    public ReportParser(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+        readApiRequestResult();
+    }
+
     public void loadReportInfo(String uri, String key, String proxy) throws IOException, ParseException {
 
-        JSONObject jsonObject = RequestManager.request(uri, key, proxy);
-
+         jsonObject = RequestManager.request(uri, key, proxy);
+         readApiRequestResult();
+    }
+    
+    
+    public void readApiRequestResult(){
         JSONArray dataList = (JSONArray) jsonObject.get("data");
 
         Iterator<JSONObject> iterator = dataList.iterator();
@@ -138,6 +148,15 @@ public class ReportParser {
         }
         return null;
     }
+
+    public JSONObject getJsonObject() {
+        return jsonObject;
+    }
+
+    public void setJsonObject(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+    }
+ 
     public TenantReport getTenantReport() {
         return tenantReport;
     }
