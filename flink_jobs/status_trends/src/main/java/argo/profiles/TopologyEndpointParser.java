@@ -25,12 +25,12 @@ import org.json.simple.parser.ParseException;
  */
 public class TopologyEndpointParser implements Serializable{
 
-    private HashMap<String, ArrayList<EndpointGroup>> topologyEndPointsPerType;
+    private HashMap<String, ArrayList<EndpointGroup>> topologyEndPointsPerType=new HashMap<>();
 
-    private HashMap<String, HashMap<String, String>> topologyEndpoint;
+    private HashMap<String, HashMap<String, String>> topologyEndpoint=new HashMap<>();
     private final String url = "/topology/endpoints/by_report";
 // private final String url = "/topology/endpoints";
-
+    private JSONObject jsonObject;
     public TopologyEndpointParser() {
     }
 
@@ -46,16 +46,23 @@ public class TopologyEndpointParser implements Serializable{
         loadTopologyEndpoints(uri, key, proxy);
     }
 
+    public TopologyEndpointParser(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+        readApiRequestResult();
+    }
+
+
     public HashMap<String, String> getTopology(String type) throws IOException, org.json.simple.parser.ParseException {
 
         return topologyEndpoint.get(type);
     }
+    
 
     private void loadTopologyEndpoints(String uri, String key, String proxy) throws IOException, ParseException {
-        topologyEndPointsPerType = new HashMap<>();
-        topologyEndpoint = new HashMap<>();
-        JSONObject jsonObject = RequestManager.request(uri, key, proxy);
-
+        jsonObject = RequestManager.request(uri, key, proxy);
+        readApiRequestResult();
+    }
+     public void readApiRequestResult(){
         JSONArray data = (JSONArray) jsonObject.get("data");
 
         Iterator<Object> dataIter = data.iterator();
@@ -84,7 +91,7 @@ public class TopologyEndpointParser implements Serializable{
                 endpMap.put(topologyEndpointKey, group);
                 topologyEndpoint.put(type, endpMap);
 
-                EndpointGroup endpointGroup = new EndpointGroup(group, hostname, service, key, tag);
+                EndpointGroup endpointGroup = new EndpointGroup(group, hostname, service, type, tag);
 
                 ArrayList<EndpointGroup> topologies = new ArrayList<>();
                 if (topologyEndPointsPerType.get(type) != null) {
@@ -95,6 +102,15 @@ public class TopologyEndpointParser implements Serializable{
         }
 
     }
+
+    public JSONObject getJsonObject() {
+        return jsonObject;
+    }
+
+    public void setJsonObject(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+    }
+     
     public String retrieveGroup(String type, String serviceEndpoint){
        return  topologyEndpoint.get(type).get(serviceEndpoint);
     

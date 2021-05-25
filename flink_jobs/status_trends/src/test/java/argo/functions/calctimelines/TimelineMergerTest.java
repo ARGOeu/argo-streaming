@@ -6,17 +6,21 @@
 package argo.functions.calctimelines;
 
 import argo.pojos.Timeline;
+import argo.profiles.AggregationProfileParser;
+import argo.profiles.OperationsParser;
 
-import argo.profiles.ProfilesLoader;
 import argo.utils.EnumStatus;
 import argo.utils.Utils;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.TreeMap;
-import org.apache.flink.api.java.utils.ParameterTool;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -37,6 +41,8 @@ public class TimelineMergerTest {
 
     @BeforeClass
     public static void setUpClass() {
+        assertNotNull("Test file missing", TimelineMergerTest.class.getResource("/calctimelines/aggregation.json"));
+        assertNotNull("Test file missing", TimelineMergerTest.class.getResource("/calctimelines/operations.json"));
     }
 
     @AfterClass
@@ -56,27 +62,19 @@ public class TimelineMergerTest {
      */
     @Test
     public void testMergeTimelines() throws Exception {
-        System.out.println("collectTimestamps");
-        HashMap<String, String> map = new HashMap<>();
-
-        map.put("yesterdayData", "hdfs://localhost:9000/user/cthermolia/egi-mdata-2021-01-14");
-        map.put("todayData", "hdfs://localhost:9000/user/cthermolia/egi-mdata-0-0");
-        map.put("N", "10");
-        map.put("mongoUri", "mongodb://localhost:27017/trendsdb");
-        map.put("apiUri", "https://api.devel.argo.grnet.gr/api/v2");
-        map.put("key", "1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f");
-        map.put("reportId", "04edb428-01e6-4286-87f1-050546736f7c");
-        map.put("date", "2021-01-15");
-        ParameterTool params = ParameterTool.fromMap(map);
-
-        ProfilesLoader profilesLoader = new ProfilesLoader(params);
         System.out.println("mergeTimelines");
         ArrayList<Timeline> timelineList = new ArrayList();
         timelineList.add(createTimeline1());
         timelineList.add(createTimeline2());
         timelineList.add(createTimeline3());
 
-        TimelineMerger instance = new TimelineMerger(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser());
+        JSONObject aggrJSONObject = readJsonFromFile(TimelineMergerTest.class.getResource("/calctimelines/aggregation.json").getFile());
+        AggregationProfileParser aggregationProfileParser = new AggregationProfileParser(aggrJSONObject);
+
+        JSONObject oppJSONObject = readJsonFromFile(TimelineMergerTest.class.getResource("/calctimelines/operations.json").getFile());
+        OperationsParser operationsParser = new OperationsParser(oppJSONObject);
+
+        TimelineMerger instance = new TimelineMerger(aggregationProfileParser.getMetricOp(), operationsParser);
 
         TreeMap<Date, String> expMap = createExpResultFinalTimeline();
         Timeline expResult = new Timeline(expMap);
@@ -92,26 +90,20 @@ public class TimelineMergerTest {
     @Test
     public void testCollectTimestamps() throws IOException, org.json.simple.parser.ParseException, ParseException {
         System.out.println("collectTimestamps");
-        HashMap<String, String> map = new HashMap<>();
 
-        map.put("yesterdayData", "hdfs://localhost:9000/user/cthermolia/egi-mdata-2021-01-14");
-        map.put("todayData", "hdfs://localhost:9000/user/cthermolia/egi-mdata-0-0");
-        map.put("N", "10");
-        map.put("mongoUri", "mongodb://localhost:27017/trendsdb");
-        map.put("apiUri", "https://api.devel.argo.grnet.gr/api/v2");
-        map.put("key", "1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f");
-        map.put("reportId", "04edb428-01e6-4286-87f1-050546736f7c");
-        map.put("date", "2021-01-15");
-        ParameterTool params = ParameterTool.fromMap(map);
-
-        ProfilesLoader profilesLoader = new ProfilesLoader(params);
-        System.out.println("mergeTimelines");
         ArrayList<Timeline> timelineList = new ArrayList();
         timelineList.add(createTimeline1());
         timelineList.add(createTimeline2());
         timelineList.add(createTimeline3());
 
-        TimelineMerger instance = new TimelineMerger(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser());
+        JSONObject aggrJSONObject = readJsonFromFile(TimelineMergerTest.class.getResource("/calctimelines/aggregation.json").getFile());
+        AggregationProfileParser aggregationProfileParser = new AggregationProfileParser(aggrJSONObject);
+
+        JSONObject oppJSONObject = readJsonFromFile(TimelineMergerTest.class.getResource("/calctimelines/operations.json").getFile());
+
+        OperationsParser operationsParser = new OperationsParser(oppJSONObject);
+
+        TimelineMerger instance = new TimelineMerger(aggregationProfileParser.getMetricOp(), operationsParser);
 
         ArrayList<Date> expResult = createTimestampList();
         ArrayList<Date> result = instance.collectTimestamps(timelineList);
@@ -127,26 +119,17 @@ public class TimelineMergerTest {
     public void testGatherStatusesPerTimestamp() throws ParseException, IOException, org.json.simple.parser.ParseException {
         System.out.println("gatherStatusesPerTimestamp");
         ArrayList<Date> timestamps = createTimestampList();
-        HashMap<String, String> map = new HashMap<>();
-
-        map.put("yesterdayData", "hdfs://localhost:9000/user/cthermolia/egi-mdata-2021-01-14");
-        map.put("todayData", "hdfs://localhost:9000/user/cthermolia/egi-mdata-0-0");
-        map.put("N", "10");
-        map.put("mongoUri", "mongodb://localhost:27017/trendsdb");
-        map.put("apiUri", "https://api.devel.argo.grnet.gr/api/v2");
-        map.put("key", "1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f");
-        map.put("reportId", "04edb428-01e6-4286-87f1-050546736f7c");
-        map.put("date", "2021-01-15");
-        ParameterTool params = ParameterTool.fromMap(map);
-
-        ProfilesLoader profilesLoader = new ProfilesLoader(params);
-        System.out.println("mergeTimelines");
         ArrayList<Timeline> timelineList = new ArrayList();
         timelineList.add(createTimeline1());
         timelineList.add(createTimeline2());
         timelineList.add(createTimeline3());
+        JSONObject aggrJSONObject = readJsonFromFile(TimelineMergerTest.class.getResource("/calctimelines/aggregation.json").getFile());
+        AggregationProfileParser aggregationProfileParser = new AggregationProfileParser(aggrJSONObject);
 
-        TimelineMerger instance = new TimelineMerger(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser());
+        JSONObject oppJSONObject = readJsonFromFile(TimelineMergerTest.class.getResource("/calctimelines/operations.json").getFile());
+        OperationsParser operationsParser = new OperationsParser(oppJSONObject);
+
+        TimelineMerger instance = new TimelineMerger(aggregationProfileParser.getMetricOp(), operationsParser);
         TreeMap<Date, ArrayList<String>> expResult = createTimestampStatusList();
         TreeMap<Date, ArrayList<String>> result = instance.gatherStatusesPerTimestamp(timestamps, timelineList);
         assertEquals(expResult, result);
@@ -158,7 +141,7 @@ public class TimelineMergerTest {
 
         TreeMap<Date, String> testTimelines = new TreeMap<>();
         //   String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-          testTimelines.put(Utils.createDate(format, 2021, 0, 15, 0, 0, 0), EnumStatus.OK.name());
+        testTimelines.put(Utils.createDate(format, 2021, 0, 15, 0, 0, 0), EnumStatus.OK.name());
         testTimelines.put(Utils.createDate(format, 2021, 0, 15, 0, 12, 23), EnumStatus.CRITICAL.name());
         testTimelines.put(Utils.createDate(format, 2021, 0, 15, 1, 5, 10), EnumStatus.CRITICAL.name());
         testTimelines.put(Utils.createDate(format, 2021, 0, 15, 5, 20, 15), EnumStatus.CRITICAL.name());
@@ -304,5 +287,15 @@ public class TimelineMergerTest {
         expResult.put(Utils.createDate(format, 2021, 0, 15, 22, 3, 5), EnumStatus.OK.name());
 
         return expResult;
+    }
+
+    private JSONObject readJsonFromFile(String path) throws FileNotFoundException, IOException, org.json.simple.parser.ParseException {
+        JSONParser parser = new JSONParser();
+        URL url = TimelineMergerTest.class.getResource(path);
+        Object obj = parser.parse(new FileReader(path));
+
+        JSONObject jsonObject = (JSONObject) obj;
+
+        return jsonObject;
     }
 }
