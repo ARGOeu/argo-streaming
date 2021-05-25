@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>run</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.0.0:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-classpath %classpath argo.batch.ArgoArBatch --mps /home/cthermolia/Desktop/neanias_files/metric_profile_2021-04-05.avro  --egp /home/cthermolia/Desktop/neanias_files/group_endpoints_2021-04-05.avro  --ggp  /home/cthermolia/Desktop/neanias_files/group_groups_2021-04-05.avro  --downtimes  /home/cthermolia/Desktop/neanias_files/downtimes_2021-04-05.avro  --weights  /home/cthermolia/Desktop/neanias_files/weights_2021-04-05.avro  --conf /home/cthermolia/Desktop/neanias_files/conf.json  --ops /home/cthermolia/Desktop/neanias_files/ops.json  --apr /home/cthermolia/Desktop/neanias_files/apr.json  --rec /home/cthermolia/Desktop/neanias_files/recomp.json  --pdata hdfs://localhost:9000/user/cthermolia/egi-mdata-2021-01-14    --mdata hdfs://localhost:9000/user/cthermolia/egi-mdata-0-0    --run.date 2021-01-15   --mongo.uri  mongodb://localhost:27017/arbatchdb   --mongo.method insert</exec.args>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+        <action>
+            <actionName>debug</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.0.0:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath argo.batch.ArgoArBatch --mps /home/cthermolia/Desktop/neanias_files/metric_profile_2021-04-05.avro  --egp /home/cthermolia/Desktop/neanias_files/group_endpoints_2021-04-05.avro  --ggp  /home/cthermolia/Desktop/neanias_files/group_groups_2021-04-05.avro  --downtimes  /home/cthermolia/Desktop/neanias_files/downtimes_2021-04-05.avro  --weights  /home/cthermolia/Desktop/neanias_files/weights_2021-04-05.avro  --conf /home/cthermolia/Desktop/neanias_files/conf.json  --ops /home/cthermolia/Desktop/neanias_files/ops.json  --apr /home/cthermolia/Desktop/neanias_files/apr.json  --rec /home/cthermolia/Desktop/neanias_files/recomp.json  --pdata hdfs://localhost:9000/user/cthermolia/egi-mdata-2021-01-14    --mdata hdfs://localhost:9000/user/cthermolia/egi-mdata-0-0    --run.date 2021-01-15   --mongo.uri  mongodb://localhost:27017/arbatchdb   --mongo.method insert</exec.args>
+                <exec.executable>java</exec.executable>
+                <jpda.listen>true</jpda.listen>
+            </properties>
+        </action>
+        <action>
+            <actionName>profile</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.0.0:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-classpath %classpath argo.batch.ArgoArBatch --mps /home/cthermolia/Desktop/neanias_files/metric_profile_2021-04-05.avro  --egp /home/cthermolia/Desktop/neanias_files/group_endpoints_2021-04-05.avro  --ggp  /home/cthermolia/Desktop/neanias_files/group_groups_2021-04-05.avro  --downtimes  /home/cthermolia/Desktop/neanias_files/downtimes_2021-04-05.avro  --weights  /home/cthermolia/Desktop/neanias_files/weights_2021-04-05.avro  --conf /home/cthermolia/Desktop/neanias_files/conf.json  --ops /home/cthermolia/Desktop/neanias_files/ops.json  --apr /home/cthermolia/Desktop/neanias_files/apr.json  --rec /home/cthermolia/Desktop/neanias_files/recomp.json  --pdata hdfs://localhost:9000/user/cthermolia/egi-mdata-2021-01-14    --mdata hdfs://localhost:9000/user/cthermolia/egi-mdata-0-0    --run.date 2021-01-15   --mongo.uri  mongodb://localhost:27017/arbatchdb   --mongo.method insert</exec.args>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+    </actions>

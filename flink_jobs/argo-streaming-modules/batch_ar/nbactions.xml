@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>run</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.0.0:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-classpath %classpath argo.batch.ArgoArBatch --pdata hdfs://localhost:9000/user/cthermolia/egi-mdata-2021-01-14   --mdata hdfs://localhost:9000/user/cthermolia/egi-mdata-0-0  --api.endpoint api.devel.argo.grnet.gr   --report.id 8b917325-bc45-4d72-9f31-5e2e2ca16bbf  --api.token 1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f   --run.date 2021-01-15   --mongo.uri  mongodb://localhost:27017/arbatchdb   --mongo.method insert --fs.output /home/cthermolia/Desktop/neanias_files/batch_results</exec.args>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+        <action>
+            <actionName>debug</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.0.0:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath argo.batch.ArgoArBatch --pdata hdfs://localhost:9000/user/cthermolia/egi-mdata-2021-01-14   --mdata hdfs://localhost:9000/user/cthermolia/egi-mdata-0-0  --api.endpoint api.devel.argo.grnet.gr   --report.id 8b917325-bc45-4d72-9f31-5e2e2ca16bbf  --api.token 1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f   --run.date 2021-01-15   --mongo.uri  mongodb://localhost:27017/arbatchdb   --mongo.method insert --fs.output /home/cthermolia/Desktop/neanias_files/batch_results</exec.args>
+                <exec.executable>java</exec.executable>
+                <jpda.listen>true</jpda.listen>
+            </properties>
+        </action>
+        <action>
+            <actionName>profile</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.0.0:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-classpath %classpath argo.batch.ArgoArBatch --pdata hdfs://localhost:9000/user/cthermolia/egi-mdata-2021-01-14   --mdata hdfs://localhost:9000/user/cthermolia/egi-mdata-0-0  --api.endpoint api.devel.argo.grnet.gr   --report.id 8b917325-bc45-4d72-9f31-5e2e2ca16bbf  --api.token 1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f   --run.date 2021-01-15   --mongo.uri  mongodb://localhost:27017/arbatchdb   --mongo.method insert --fs.output /home/cthermolia/Desktop/neanias_files/batch_results</exec.args>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+    </actions>

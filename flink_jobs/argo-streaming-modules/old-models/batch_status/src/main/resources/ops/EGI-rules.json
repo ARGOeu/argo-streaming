@@ -1,0 +1,33 @@
+{
+  "rules": [
+    {
+      "metric": "org.bdii.Freshness",
+      "thresholds": "freshness=10s;30;50:60;0;100 entries=5;0:10;20:30;50;30"
+    },
+    {
+      "metric": "org.bdii.Entries",
+      "thresholds": "time=-35s;~:10;15:;-100;300 entries=55;20;50:60;50;30"
+    },
+    {
+      "metric": "org.bdii.Freshness",
+      "thresholds": "freshness=10s; entries=29;;30:50",
+      "host" : "bdii.host3.example.foo"
+    },
+    {
+      "metric": "org.bdii.Freshness",
+      "thresholds": "freshness=10s;30;50:60;0;100 entries=29;0:10;20:30;0;30",
+      "host" : "bdii.host1.example.foo"
+    },
+    {
+      "metric": "org.bdii.Freshness",
+      "thresholds": "freshness=10s;30;50:60;0;100 entries=5;0:10;20:30;50;30",
+      "host" : "bdii.host1.example.foo",
+      "endpoint_group": "SITE-101"
+    },
+   {
+      "metric": "org.bdii.Freshness",
+      "thresholds": "freshness=10s;30;50:60;0;100 entries=5;0:10;20:30;50;30",
+      "endpoint_group": "SITE-101"
+    }
+  ]
+}

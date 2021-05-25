@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>flink.jobs</groupId>
+    <artifactId>argo-streaming-modules</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+    <modules>
+        <module>argo_commons</module>
+        <module>status_trends</module>
+        <module>ams_ingest_metric</module>
+        <module>ams_ingest_sync</module>
+        <module>batch_ar</module>
+        <module>batch_status</module>
+        <module>stream_status</module>
+        <module>old-models/batch_ar</module>
+        <module>old-models/ams_ingest_metric</module>
+        <module>old-models/batch_status</module>
+        <module>old-models/stream_status</module>
+        
+    </modules>
+    <dependencyManagement>
+        <dependencies>
+            
+            <!--            <dependency>
+                <groupId>argo.commons</groupId>
+                <artifactId>argo_commons</artifactId>
+                <version>{project.version}</version>
+                <type>jar</type>
+            </dependency>-->
+        </dependencies> 
+       
+    </dependencyManagement>
+</project>
