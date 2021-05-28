@@ -83,8 +83,9 @@ public class AggregationProfileParser implements Serializable {
         Iterator<JSONObject> groupiterator = groupArray.iterator();
 
         while (groupiterator.hasNext()) {
-            if (groupiterator.next() instanceof JSONObject) {
-                JSONObject groupObject = (JSONObject) groupiterator.next();
+            JSONObject groupObject=groupiterator.next();
+            if (groupObject instanceof JSONObject) {
+              
                 String groupname = (String) groupObject.get("name");
                 String groupoperation = (String) groupObject.get("operation");
 
