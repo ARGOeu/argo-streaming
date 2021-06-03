@@ -52,7 +52,6 @@ public class BatchMetricFlipFlopTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchMetricFlipFlopTrends.class);
 
-
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
@@ -65,8 +64,7 @@ public class BatchMetricFlipFlopTrends {
     private static final String format = "yyyy-MM-dd";
     private static ProfilesLoader profilesLoader;
 
-   private static boolean clearMongo=false;
-
+    private static boolean clearMongo = false;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -78,12 +76,12 @@ public class BatchMetricFlipFlopTrends {
             System.exit(0);
         }
 
-         if(params.get("clearMongo")!=null && params.getBoolean("clearMongo")==true){
-            clearMongo=true;
+        if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
+            clearMongo = true;
         }
 
         profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
-        env.setParallelism(1);
+      
         mongoUri = params.getRequired("mongoUri");
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
@@ -95,9 +93,16 @@ public class BatchMetricFlipFlopTrends {
         todayData = readInputData(env, params.getRequired("todayData"));
 
         calcFlipFlops();
-     
+
 // execute program
-        env.execute("Flink Batch Java API Skeleton");
+         StringBuilder jobTitleSB = new StringBuilder();
+        jobTitleSB.append("Metric Flip Flops for: ");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getInfo()[0]);
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesDate);
+        env.execute(jobTitleSB.toString());
     }
 
     // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
@@ -106,15 +111,15 @@ public class BatchMetricFlipFlopTrends {
 //    private static DataSet<MetricTrends> calcFlipFlops() {
     private static void calcFlipFlops() {
 
-       DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
+        DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
         DataSet<MetricTrends> metricData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
-       if (rankNum != null) {
-            metricData = metricData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+        if (rankNum != null) {
+            metricData = metricData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
 
         } else {
-            metricData = metricData.sortPartition("flipflops", Order.DESCENDING);
+            metricData = metricData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
 
         }
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate, clearMongo);
@@ -126,7 +131,7 @@ public class BatchMetricFlipFlopTrends {
             }
         });
         trends.output(metricMongoOut);
-       
+
     }
     //read input from file
 
@@ -139,5 +144,4 @@ public class BatchMetricFlipFlopTrends {
         return inputData;
     }
 
-   
 }

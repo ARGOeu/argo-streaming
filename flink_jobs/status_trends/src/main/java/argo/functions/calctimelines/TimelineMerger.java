@@ -45,6 +45,8 @@ public class TimelineMerger {
 
         TreeMap<Date, String> resultMap = operateStatusTimeline(statusMap);
         Timeline mergedTimeline = new Timeline(resultMap);
+        mergedTimeline.optimize();
+        
         return mergedTimeline;
     }
 

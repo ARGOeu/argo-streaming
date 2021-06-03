@@ -44,7 +44,6 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
         ArrayList<ServiceTrends> list = new ArrayList<>();
         //construct a timeline containing all the timestamps of each metric timeline
 
-       
         ArrayList<Timeline> timelineList = new ArrayList<>();
         for (EndpointTrends endpointTrend : in) {
             group = endpointTrend.getGroup();
@@ -54,12 +53,12 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
         String operation = serviceOperationMap.get(service);
         TimelineMerger timelineMerger = new TimelineMerger(operation, operationsParser);
 
-///        HashMap<String, String> opTruthTable = operationTruthTables.get(operation);
         Timeline timeline = timelineMerger.mergeTimelines(timelineList);
         int flipflops = timeline.calculateStatusChanges();
-
-        ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflops);
-        out.collect(serviceTrends);
+        if (group != null && service != null) {
+            ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflops);
+            out.collect(serviceTrends);
+        }
 
     }
 

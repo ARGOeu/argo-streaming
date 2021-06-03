@@ -11,6 +11,8 @@ import argo.pojos.EndpointTrends;
 import argo.pojos.MetricTrends;
 import argo.profiles.OperationsParser;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Map.Entry;
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 import org.apache.flink.util.Collector;
 
@@ -18,8 +20,7 @@ import org.apache.flink.util.Collector;
  *
  * @author cthermolia
  *
- * CalcEndpointTrends, count status changes for each service endpoint
- * group
+ * CalcEndpointTrends, count status changes for each service endpoint group
  */
 public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTrends, EndpointTrends> {
 
@@ -30,19 +31,22 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
         this.operation = operation;
         this.operationsParser = operationsParser;
     }
-/**
- * 
- * @param in, a collection of MetricTrends as calculated on previous steps , from group, service, endpoint, metric groups
- * @param out, a collection of EndpointTrends containing the information of the computation on group ,service, endpoint groups
- * @throws Exception 
- */
+
+    /**
+     *
+     * @param in, a collection of MetricTrends as calculated on previous steps ,
+     * from group, service, endpoint, metric groups
+     * @param out, a collection of EndpointTrends containing the information of
+     * the computation on group ,service, endpoint groups
+     * @throws Exception
+     */
     @Override
     public void reduce(Iterable<MetricTrends> in, Collector< EndpointTrends> out) throws Exception {
         String group = null;
         String service = null;
-        String hostname = null;    
-       //store the necessary info
-       //collect all timelines in a list
+        String hostname = null;
+        //store the necessary info
+        //collect all timelines in a list
         ArrayList<Timeline> timelinelist = new ArrayList<>();
         for (MetricTrends time : in) {
             group = time.getGroup();
@@ -50,18 +54,25 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
             hostname = time.getEndpoint();
             Timeline timeline = time.getTimeline();
             timelinelist.add(timeline);
+            
         }
         // merge the timelines into one timeline ,  
-        // as multiple status (each status exist in each timeline) correspond to each timestamp, there is a need to conclude into one status/timestamp
-        //for each timestamp the status that prevails is concluded by the truth table that is defined for the operation
-        
-        TimelineMerger timelinemerger = new TimelineMerger(operation, operationsParser);
+            // as multiple status (each status exist in each timeline) correspond to each timestamp, there is a need to conclude into one status/timestamp
+            //for each timestamp the status that prevails is concluded by the truth table that is defined for the operation
+         
+            TimelineMerger timelinemerger = new TimelineMerger(operation, operationsParser);
 
-        Timeline mergedTimeline = timelinemerger.mergeTimelines(timelinelist); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
-        Integer flipflops = mergedTimeline.calculateStatusChanges();//calculate flip flops on the concluded merged timeline
+            Timeline mergedTimeline = timelinemerger.mergeTimelines(timelinelist); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
+            for (Entry<Date, String> t : mergedTimeline.getTimelineMap().entrySet()) {
+                System.out.println(t.getKey() + ":  " + t.getValue());
 
-        EndpointTrends endpointTrends = new EndpointTrends(group, service, hostname, mergedTimeline, flipflops);
-        out.collect(endpointTrends);
-    }
+            }
+            Integer flipflops = mergedTimeline.calculateStatusChanges();//calculate flip flops on the concluded merged timeline
+            if (group != null && service != null && hostname != null) {
+                EndpointTrends endpointTrends = new EndpointTrends(group, service, hostname, mergedTimeline, flipflops);
+                out.collect(endpointTrends);
+            }
 
+        }
+    
 }

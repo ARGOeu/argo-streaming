@@ -6,6 +6,10 @@
 package argo.batch;
 
 import argo.avro.MetricData;
+import argo.filter.zero.flipflops.ZeroEndpointTrendsFilter;
+import argo.filter.zero.flipflops.ZeroGroupTrendsFilter;
+import argo.filter.zero.flipflops.ZeroMetricTrendsFilter;
+import argo.filter.zero.flipflops.ZeroServiceTrendsFilter;
 import argo.functions.calctimelines.CalcLastTimeStatus;
 import argo.functions.calctimelines.MapServices;
 import argo.functions.calctimelines.ServiceFilter;
@@ -60,7 +64,6 @@ public class BatchFlipFlopCollection {
             System.exit(0);
         }
 
-        env.setParallelism(1);
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }
@@ -75,12 +78,17 @@ public class BatchFlipFlopCollection {
         todayData = readInputData(env, params, "todayData");
 
         // calculate on data 
-        //DataSet<GroupTrends> resultData = 
         calcFlipFlops();
-        //writeToMongo(resultData);
 
 // execute program
-        env.execute("Flink Batch Java API Skeleton");
+        StringBuilder jobTitleSB = new StringBuilder();
+        jobTitleSB.append("Collection Flip Flops for: ");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getInfo()[0]);
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesDate);
+        env.execute(jobTitleSB.toString());
 
     }
 
@@ -95,14 +103,17 @@ public class BatchFlipFlopCollection {
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
         DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
+
+        DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
         if (rankNum != null) { //sort and rank data
-            serviceEndpointMetricGroupData = serviceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            serviceEndpointMetricGroupData = serviceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING);
+            noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
+
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate, clearMongo);
 
-        DataSet<Trends> trends = serviceEndpointMetricGroupData.map(new MapFunction<MetricTrends, Trends>() {
+        DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapFunction<MetricTrends, Trends>() {
 
             @Override
             public Trends map(MetricTrends in) throws Exception {
@@ -113,14 +124,16 @@ public class BatchFlipFlopCollection {
 
         //group data by service endpoint  and count flip flops
         DataSet<EndpointTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcEndpointFlipFlopTrends(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser()));
+        DataSet<EndpointTrends> noZeroserviceEndpointGroupData = serviceEndpointGroupData.filter(new ZeroEndpointTrendsFilter());
+
         if (rankNum != null) { //sort and rank data
-            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            noZeroserviceEndpointGroupData = noZeroserviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING);
+            noZeroserviceEndpointGroupData = noZeroserviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
         metricMongoOut = new MongoTrendsOutput(mongoUri, endpointTrends, MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportId, profilesDate, clearMongo);
 
-        trends = serviceEndpointGroupData.map(new MapFunction<EndpointTrends, Trends>() {
+        trends = noZeroserviceEndpointGroupData.map(new MapFunction<EndpointTrends, Trends>() {
 
             @Override
             public Trends map(EndpointTrends in) throws Exception {
@@ -131,14 +144,16 @@ public class BatchFlipFlopCollection {
 
         //group data by service   and count flip flops
         DataSet<ServiceTrends> serviceGroupData = serviceEndpointGroupData.filter(new ServiceFilter(profilesLoader.getAggregationProfileParser())).groupBy("group", "service").reduceGroup(new CalcServiceFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
-         if (rankNum != null) { //sort and rank data
-            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+        DataSet<ServiceTrends> noZeroserviceGroupData = serviceGroupData.filter(new ZeroServiceTrendsFilter());
+
+        if (rankNum != null) { //sort and rank data
+            noZeroserviceGroupData = noZeroserviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING);
+            noZeroserviceGroupData = noZeroserviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
         metricMongoOut = new MongoTrendsOutput(mongoUri, serviceTrends, MongoTrendsOutput.TrendsType.TRENDS_SERVICE, reportId, profilesDate, clearMongo);
 
-        trends = serviceGroupData.map(new MapFunction<ServiceTrends, Trends>() {
+        trends = noZeroserviceGroupData.map(new MapFunction<ServiceTrends, Trends>() {
 
             @Override
             public Trends map(ServiceTrends in) throws Exception {
@@ -152,18 +167,20 @@ public class BatchFlipFlopCollection {
 
         //group data by group,function   and count flip flops
         DataSet<GroupFunctionTrends> groupFunction = serviceGroupData.groupBy("group", "function").reduceGroup(new CalcGroupFunctionFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
+        //  DataSet<GroupFunctionTrends> noZerogroupFunction =groupFunction.filter(new ZeroGroupFunctionFilter());
 
         //group data by group   and count flip flops
         DataSet<GroupTrends> groupData = groupFunction.groupBy("group").reduceGroup(new CalcGroupFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
+        DataSet<GroupTrends> noZerogroupData = groupData.filter(new ZeroGroupTrendsFilter());
 
         if (rankNum != null) { //sort and rank data
-            groupData = groupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            noZerogroupData = noZerogroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            groupData = groupData.sortPartition("flipflops", Order.DESCENDING);
+            noZerogroupData = noZerogroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
-         metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate, clearMongo);
+        metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate, clearMongo);
 
-        trends = groupData.map(new MapFunction<GroupTrends, Trends>() {
+        trends = noZerogroupData.map(new MapFunction<GroupTrends, Trends>() {
 
             @Override
             public Trends map(GroupTrends in) throws Exception {
@@ -173,8 +190,6 @@ public class BatchFlipFlopCollection {
         trends.output(metricMongoOut);
 
     }
-
-   
 
     //read input from file
     private static DataSet<MetricData> readInputData(ExecutionEnvironment env, ParameterTool params, String path) {

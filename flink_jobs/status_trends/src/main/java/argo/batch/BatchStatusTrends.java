@@ -56,7 +56,6 @@ public class BatchStatusTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-
     private static final String criticalStatusTrends = "status_trends_critical";
     private static final String warningStatusTrends = "status_trends_warning";
     private static final String unknownStatusTrends = "status_trends_unknown";
@@ -80,7 +79,7 @@ public class BatchStatusTrends {
             System.exit(0);
         }
 
-        env.setParallelism(1);
+     
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }
@@ -101,7 +100,14 @@ public class BatchStatusTrends {
         filterByStatusAndWrite(unknownStatusTrends, rankedData, "unknown");
 
 // execute program
-        env.execute("Flink Batch Java API Skeleton");
+             StringBuilder jobTitleSB = new StringBuilder();
+        jobTitleSB.append("Status Trends for: ");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getInfo()[0]);
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesDate);
+        env.execute(jobTitleSB.toString());
     }
 
     //filters the yesterdayData and exclude the ones not in topology and metric profile data and keeps the last timestamp for each service endpoint metric
@@ -122,9 +128,9 @@ public class BatchStatusTrends {
         DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
 
         if (rankNum != null) {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING).first(rankNum);
+            filteredData = filteredData.sortPartition(5, Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING);
+            filteredData = filteredData.sortPartition(5, Order.DESCENDING).setParallelism(1);
         }
 
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, MongoTrendsOutput.TrendsType.TRENDS_STATUS, reportId, profilesDate, clearMongo);
@@ -150,6 +156,5 @@ public class BatchStatusTrends {
         inputData = env.createInput(inputAvroFormat);
         return inputData;
     }
-
 
 }
