@@ -47,6 +47,7 @@ pipeline {
                 mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/batch_status/pom.xml
                 mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/ams_ingest_metric/pom.xml
                 mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/ams_ingest_sync/pom.xml
+                 mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/status_trends/pom.xml
                 """
                 junit '**/target/surefire-reports/*.xml'
                 cobertura coberturaReportFile: '**/target/site/cobertura/coverage.xml'

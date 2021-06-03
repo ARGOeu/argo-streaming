@@ -46,7 +46,7 @@ public class BatchGroupFlipFlopTrends {
     private static String format = "yyyy-MM-dd";
 
     private static String reportId;
-   private static boolean clearMongo=false;
+    private static boolean clearMongo = false;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -55,13 +55,12 @@ public class BatchGroupFlipFlopTrends {
         ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
         if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "date", "reportId")) {
-           System.exit(0);
+            System.exit(0);
         }
+      
+        if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
+            clearMongo = true;
 
-        env.setParallelism(1);
-        if(params.get("clearMongo")!=null && params.getBoolean("clearMongo")==true){
-            clearMongo=true;
-         
         }
         reportId = params.getRequired("reportId");
         profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
@@ -76,14 +75,22 @@ public class BatchGroupFlipFlopTrends {
         // calculate on data 
         calcFlipFlops();
 // execute program
-        env.execute("Flink Batch Java API Skeleton");
+        StringBuilder jobTitleSB = new StringBuilder();
+        jobTitleSB.append("Group Flip Flops for: ");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getInfo()[0]);
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesDate);
+        env.execute(jobTitleSB.toString());
+
 
     }
 
 // filter yesterdaydata and exclude the ones not contained in topology and metric profile data and get the last timestamp data for each service endpoint metric
 // filter todaydata and exclude the ones not contained in topology and metric profile data , union yesterday data and calculate status changes for each service endpoint metric
 // rank results
-  private static void calcFlipFlops() {
+    private static void calcFlipFlops() {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
@@ -106,11 +113,11 @@ public class BatchGroupFlipFlopTrends {
         DataSet<GroupTrends> groupData = groupFunction.groupBy("group").reduceGroup(new CalcGroupFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
 
         if (rankNum != null) { //sort and rank data
-            groupData = groupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            groupData = groupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            groupData = groupData.sortPartition("flipflops", Order.DESCENDING);
+            groupData = groupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
-       MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate, clearMongo);
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate, clearMongo);
 
         DataSet<Trends> trends = groupData.map(new MapFunction<GroupTrends, Trends>() {
 

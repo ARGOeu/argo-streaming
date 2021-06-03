@@ -64,10 +64,11 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
         }
         Timeline timeline = new Timeline(timeStatusMap);
         timeline.manageFirstLastTimestamps(); //handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
-        Integer flipflop = timeline.calculateStatusChanges();
+        timeline.optimize();
+        Integer flipflops = timeline.calculateStatusChanges();
 
         if (group != null && service != null && hostname != null && metric != null) {
-            MetricTrends metricTrends = new MetricTrends(group, service, hostname, metric, timeline, flipflop);
+            MetricTrends metricTrends = new MetricTrends(group, service, hostname, metric, timeline, flipflops);
             out.collect(metricTrends);
         }
     }

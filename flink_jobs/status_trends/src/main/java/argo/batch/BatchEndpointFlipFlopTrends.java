@@ -53,14 +53,14 @@ public class BatchEndpointFlipFlopTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-  private static final String endpointTrends = "flipflop_trends_endpoints";
-      private static String mongoUri;
+     private static final String endpointTrends = "flipflop_trends_endpoints";
+    private static String mongoUri;
     private static ProfilesLoader profilesLoader;
     private static String profilesDate;
 
     private static String reportId;
     private static String format = "yyyy-MM-dd";
-   private static boolean clearMongo=false;
+    private static boolean clearMongo = false;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -69,15 +69,13 @@ public class BatchEndpointFlipFlopTrends {
         ParameterTool params = ParameterTool.fromArgs(args);
         //check if all required parameters exist and if not exit program
 
-
         if (!Utils.checkParameters(params, "yesterdayData", "todayData", "mongoUri", "apiUri", "key", "reportId", "date")) {
-           System.exit(0);
+            System.exit(0);
 
         }
-
-        env.setParallelism(1);
-         if(params.get("clearMongo")!=null && params.getBoolean("clearMongo")==true){
-            clearMongo=true;
+    
+        if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
+            clearMongo = true;
         }
         profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
         if (params.get("N") != null) {
@@ -89,10 +87,17 @@ public class BatchEndpointFlipFlopTrends {
         yesterdayData = readInputData(env, params, "yesterdayData");
         todayData = readInputData(env, params, "todayData");
 
-
         calcFlipFlops();
 // execute program
-        env.execute("Flink Batch Java API Skeleton");
+       StringBuilder jobTitleSB = new StringBuilder();
+        jobTitleSB.append("Group Endpoint Flip Flops for: ");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getInfo()[0]);
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesDate);
+        env.execute(jobTitleSB.toString());
+
 
     }
 
@@ -104,17 +109,16 @@ public class BatchEndpointFlipFlopTrends {
 
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
-      
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
         DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
-      //group data by service endpoint  and count flip flops
+        //group data by service endpoint  and count flip flops
         DataSet<EndpointTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcEndpointFlipFlopTrends(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser()));
 
         if (rankNum != null) { //sort and rank data
-            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING);
+            serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, endpointTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate, clearMongo);
 
@@ -139,5 +143,5 @@ public class BatchEndpointFlipFlopTrends {
         inputData = env.createInput(inputAvroFormat);
         return inputData;
     }
-  
+
 }

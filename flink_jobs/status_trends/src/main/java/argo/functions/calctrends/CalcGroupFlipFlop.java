@@ -50,9 +50,10 @@ public class CalcGroupFlipFlop implements GroupReduceFunction< GroupFunctionTren
 
         Timeline timeline = timelineMerger.mergeTimelines(timelist);
         int flipflops = timeline.calculateStatusChanges();
-
-        GroupTrends groupTrends = new GroupTrends(group, timeline, flipflops);
-        out.collect(groupTrends);
+        if (group != null  && flipflops > 0) {
+            GroupTrends groupTrends = new GroupTrends(group, timeline, flipflops);
+            out.collect(groupTrends);
+        }
 
     }
 

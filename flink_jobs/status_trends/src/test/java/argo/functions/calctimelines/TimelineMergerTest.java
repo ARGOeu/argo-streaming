@@ -29,8 +29,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- *
- * @author cthermolia
+ * A unit test for testing TimelineMerger class
  */
 public class TimelineMergerTest {
 
@@ -78,6 +77,7 @@ public class TimelineMergerTest {
 
         TreeMap<Date, String> expMap = createExpResultFinalTimeline();
         Timeline expResult = new Timeline(expMap);
+        expResult.optimize();
         Timeline result = instance.mergeTimelines(timelineList);
         assertEquals(expResult.getTimelineMap(), result.getTimelineMap());
         // TODO review the generated test code and remove the default call to fail.
