@@ -23,6 +23,7 @@ import java.util.TreeSet;
  */
 public class TimelineMerger {
 
+
     private final OperationsParser operationsParser;
     private final String operation;
    
@@ -45,8 +46,6 @@ public class TimelineMerger {
 
         TreeMap<Date, String> resultMap = operateStatusTimeline(statusMap);
         Timeline mergedTimeline = new Timeline(resultMap);
-        mergedTimeline.optimize();
-        
         return mergedTimeline;
     }
 
@@ -163,5 +162,4 @@ public class TimelineMerger {
         }
         return result;
     }
-
 }

@@ -33,6 +33,7 @@ import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
+import org.joda.time.DateTime;
 
 
 public class BatchFlipFlopCollection {
@@ -46,7 +47,7 @@ public class BatchFlipFlopCollection {
     private static final String serviceTrends = "flipflop_trends_services";
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
-    private static String profilesDate;
+    private static DateTime profilesDate;
     private static String format = "yyyy-MM-dd";
     private static String reportId;
     private static boolean clearMongo = false;
@@ -65,7 +66,9 @@ public class BatchFlipFlopCollection {
             clearMongo = true;
         }
         reportId = params.getRequired("reportId");
-        profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
+     String profilesDateStr = Utils.getParameterDate(format, params.getRequired("date"));
+       profilesDate=Utils.convertStringtoDate(format, profilesDateStr);
+     
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
@@ -99,7 +102,8 @@ public class BatchFlipFlopCollection {
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
-        DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
+
+        DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getOperationParser(),profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser(), profilesDate));
 
         DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
         if (rankNum != null) { //sort and rank data
@@ -108,7 +112,9 @@ public class BatchFlipFlopCollection {
             noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
 
-        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate, clearMongo);
+
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate.toString(), clearMongo);
+
 
         DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapFunction<MetricTrends, Trends>() {
 
@@ -128,7 +134,7 @@ public class BatchFlipFlopCollection {
         } else {
             noZeroserviceEndpointGroupData = noZeroserviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
-        metricMongoOut = new MongoTrendsOutput(mongoUri, endpointTrends, MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportId, profilesDate, clearMongo);
+        metricMongoOut = new MongoTrendsOutput(mongoUri, endpointTrends, MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportId, profilesDate.toString(), clearMongo);
 
         trends = noZeroserviceEndpointGroupData.map(new MapFunction<EndpointTrends, Trends>() {
 
@@ -148,7 +154,7 @@ public class BatchFlipFlopCollection {
         } else {
             noZeroserviceGroupData = noZeroserviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
-        metricMongoOut = new MongoTrendsOutput(mongoUri, serviceTrends, MongoTrendsOutput.TrendsType.TRENDS_SERVICE, reportId, profilesDate, clearMongo);
+        metricMongoOut = new MongoTrendsOutput(mongoUri, serviceTrends, MongoTrendsOutput.TrendsType.TRENDS_SERVICE, reportId, profilesDate.toString(), clearMongo);
 
         trends = noZeroserviceGroupData.map(new MapFunction<ServiceTrends, Trends>() {
 
@@ -175,7 +181,8 @@ public class BatchFlipFlopCollection {
         } else {
             noZerogroupData = noZerogroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
-        metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate, clearMongo);
+
+         metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate.toString(), clearMongo);
 
         trends = noZerogroupData.map(new MapFunction<GroupTrends, Trends>() {
 

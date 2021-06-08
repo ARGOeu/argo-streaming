@@ -1,7 +1,6 @@
 package argo.batch;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -12,19 +11,13 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
-import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import argo.avro.GroupEndpoint;
-import argo.avro.GroupGroup;
-
-import argo.avro.MetricProfile;
 import ops.CAggregator;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
-import sync.GroupGroupManager;
-import sync.MetricProfileManager;
+import timelines.TimelineAggregator;
 
 
 /**
@@ -54,7 +47,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 	
 
 	private String runDate;
-	private CAggregator serviceAggr;
+	private TimelineAggregator serviceAggr;
 
 	private boolean getService;
 	
@@ -75,7 +68,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 	
 		// Initialize endpoint group type
 		this.runDate = params.getRequired("run.date");
-		this.serviceAggr = new CAggregator(); // Create aggregator
+		this.serviceAggr = new TimelineAggregator(); // Create aggregator
 
 		this.getService = true;
 	}

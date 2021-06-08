@@ -308,4 +308,12 @@ public class OpsManager {
 
 	}
 
+    public int[][][] getTruthTable() {
+        return truthTable;
+    }
+
+    public void setTruthTable(int[][][] truthTable) {
+        this.truthTable = truthTable;
+    }
+
 }

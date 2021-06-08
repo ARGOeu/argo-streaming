@@ -4,6 +4,7 @@
  * and open the template in the editor.
  */
 package argo.pojos;
+import timelines.Timeline;
 
 /**
  *
@@ -23,13 +24,22 @@ public class MetricTrends{
     public MetricTrends() {
     }
 
-    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops) {
-        this.group = group;
+//    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops) {
+//        this.group = group;
+//        this.service = service;
+//        this.endpoint = endpoint;
+//        this.metric = metric;
+//        this.timeline = timeline;
+//        this.flipflops = flipflops;
+//    }
+
+    public MetricTrends(String group, String service, String hostname, String metric, timelines.Timeline timeline, Integer flipflop) {
+         this.group = group;
         this.service = service;
-        this.endpoint = endpoint;
+        this.endpoint = hostname;
         this.metric = metric;
         this.timeline = timeline;
-        this.flipflops = flipflops;
+        this.flipflops = flipflop;
     }
 
     public String getGroup() {

@@ -6,10 +6,10 @@ package argo.functions.calctrends;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import argo.functions.calctimelines.TimelineMerger;
+//import argo.functions.calctimelines.TimelineMerger;
 import argo.pojos.GroupFunctionTrends;
 import argo.pojos.GroupTrends;
-import argo.pojos.Timeline;
+//import argo.pojos.Timeline;
 import argo.profiles.AggregationProfileParser;
 import argo.profiles.OperationsParser;
 
@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.util.Collector;
+import timelines.Timeline;
+import timelines.TimelineMerger;
 
 /**
  *
@@ -46,15 +48,15 @@ public class CalcGroupFlipFlop implements GroupReduceFunction< GroupFunctionTren
             group = time.getGroup();
             timelist.add(time.getTimeline());
         }
-        TimelineMerger timelineMerger = new TimelineMerger(groupOperation, operationsParser);
+        TimelineMerger timelineMerger = new TimelineMerger();
 
-        Timeline timeline = timelineMerger.mergeTimelines(timelist);
-        int flipflops = timeline.calculateStatusChanges();
-        if (group != null  && flipflops > 0) {
-            GroupTrends groupTrends = new GroupTrends(group, timeline, flipflops);
-            out.collect(groupTrends);
-        }
 
+        timelineMerger.aggregate(timelist,operationsParser.getTruthTable(),operationsParser.getIntOperation(groupOperation));
+        Timeline timeline=timelineMerger.getOutput();
+        int flipflops = timeline.calcStatusChanges();
+
+        GroupTrends groupTrends = new GroupTrends(group, timeline, flipflops);
+        out.collect(groupTrends);
     }
 
 }

@@ -32,6 +32,7 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.core.fs.Path;
+import org.joda.time.DateTime;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -54,9 +55,10 @@ public class BatchEndpointFlipFlopTrends {
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
      private static final String endpointTrends = "flipflop_trends_endpoints";
+
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
-    private static String profilesDate;
+    private static DateTime profilesDate;
 
     private static String reportId;
     private static String format = "yyyy-MM-dd";
@@ -73,11 +75,13 @@ public class BatchEndpointFlipFlopTrends {
             System.exit(0);
 
         }
-    
+
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }
-        profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
+        String profilesDateStr = Utils.getParameterDate(format, params.getRequired("date"));
+        profilesDate = Utils.convertStringtoDate(format, profilesDateStr);
+
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
@@ -111,7 +115,9 @@ public class BatchEndpointFlipFlopTrends {
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
-        DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
+
+        DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getOperationParser(),profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser(), profilesDate));
+
         //group data by service endpoint  and count flip flops
         DataSet<EndpointTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcEndpointFlipFlopTrends(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser()));
 
@@ -120,7 +126,7 @@ public class BatchEndpointFlipFlopTrends {
         } else {
             serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
-        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, endpointTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate, clearMongo);
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, endpointTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate.toString(), clearMongo);
 
         DataSet<Trends> trends = serviceEndpointGroupData.map(new MapFunction<EndpointTrends, Trends>() {
 

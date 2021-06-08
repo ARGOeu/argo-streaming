@@ -14,9 +14,12 @@ import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ops.CAggregator;
 import ops.OpsManager;
+
+//import ops.OpsManager;
 import sync.AggregationProfileManager;
+import timelines.TimelineAggregator;
+
 
 /**
  * Accepts a list o status metrics grouped by the fields: endpoint group
@@ -45,7 +48,7 @@ public class CalcStatusEndGroup extends RichGroupReduceFunction<StatusMetric, St
 	
 
 	private String runDate;
-	public HashMap<String, CAggregator> groupEndpointAggr;
+	public HashMap<String, TimelineAggregator> groupEndpointAggr;
 
 	private boolean getGroup;
 	
@@ -67,7 +70,7 @@ public class CalcStatusEndGroup extends RichGroupReduceFunction<StatusMetric, St
 		// Initialize endpoint group type
 		this.runDate = params.getRequired("run.date");
 		// set the Structures
-		this.groupEndpointAggr = new HashMap<String, CAggregator>();
+		this.groupEndpointAggr = new HashMap<String, TimelineAggregator>();
 
 		this.getGroup = true;
 	}
@@ -105,7 +108,7 @@ public class CalcStatusEndGroup extends RichGroupReduceFunction<StatusMetric, St
 			
 			// if group doesn't exist yet create it
 			if (this.groupEndpointAggr.containsKey(group) == false) {
-				this.groupEndpointAggr.put(group, new CAggregator());
+				this.groupEndpointAggr.put(group, new TimelineAggregator());
 			}
 			
 			this.groupEndpointAggr.get(group).insert(service, ts, this.opsMgr.getIntStatus(status));
@@ -119,14 +122,26 @@ public class CalcStatusEndGroup extends RichGroupReduceFunction<StatusMetric, St
 			// Get group Operation
 
 			String gop = this.apsMgr.getProfileGroupOp(aProfile, group);
-
+                 
 			this.groupEndpointAggr.get(group).aggregate(this.opsMgr, gop);
 
 		}
 		
 		// Aggregate all sites
-		CAggregator totalSite = new CAggregator();
+		TimelineAggregator totalSite = new TimelineAggregator();
 
+		// Aggregate each group
+		for (String group : this.groupEndpointAggr.keySet()) {
+			for (Entry<DateTime,Integer> item : this.groupEndpointAggr.get(group).getSamples()) {
+				String ts = item.getKey().toString(DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+				totalSite.insert(group,ts, item.getValue());
+			}
+
+		}
+
+		totalSite.aggregate( this.opsMgr,apsMgr.getTotalOp(aProfile));
+
+              
 		// Aggregate each group
 		for (String group : this.groupEndpointAggr.keySet()) {
 			for (Entry<DateTime,Integer> item : this.groupEndpointAggr.get(group).getSamples()) {

@@ -32,6 +32,7 @@ import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import argo.profiles.ProfilesLoader;
+import org.joda.time.DateTime;
 
 /**
  * Skeleton for a Flink Batch Job.
@@ -58,8 +59,8 @@ public class BatchMetricFlipFlopTrends {
     private static final String metricTrends = "flipflop_trends_metrics";
     private static String mongoUri;
 
-    private static String profilesDate;
-
+    private static DateTime profilesDate;
+    private static String profilesDateStr;
     private static String reportId;
     private static final String format = "yyyy-MM-dd";
     private static ProfilesLoader profilesLoader;
@@ -80,8 +81,9 @@ public class BatchMetricFlipFlopTrends {
             clearMongo = true;
         }
 
-        profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
-      
+        profilesDateStr = Utils.getParameterDate(format, params.getRequired("date"));
+        profilesDate = Utils.convertStringtoDate(format, profilesDateStr);
+        env.setParallelism(1);
         mongoUri = params.getRequired("mongoUri");
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
@@ -95,7 +97,7 @@ public class BatchMetricFlipFlopTrends {
         calcFlipFlops();
 
 // execute program
-         StringBuilder jobTitleSB = new StringBuilder();
+        StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Metric Flip Flops for: ");
         jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
         jobTitleSB.append("/");
@@ -114,15 +116,16 @@ public class BatchMetricFlipFlopTrends {
         DataSet<MetricData> filteredYesterdayData = yesterdayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser())).groupBy("hostname", "service", "metric").reduceGroup(new CalcLastTimeStatus());
 
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
-        DataSet<MetricTrends> metricData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser()));
+
+        DataSet<MetricTrends> metricData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getOperationParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser(), profilesDate));
         if (rankNum != null) {
-            metricData = metricData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+            metricData = metricData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
 
         } else {
             metricData = metricData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
 
         }
-        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate, clearMongo);
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDate.toString(), clearMongo);
         DataSet<Trends> trends = metricData.map(new MapFunction<MetricTrends, Trends>() {
 
             @Override

@@ -9,8 +9,10 @@ import argo.utils.RequestManager;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -23,14 +25,17 @@ import org.json.simple.parser.ParseException;
  * api operations profiles request
  */
 public class OperationsParser implements Serializable {
-
+	private static final Logger LOG = Logger.getLogger(OperationsParser.class.getName());
     private String id;
     private String name;
-    private ArrayList<String> states=new ArrayList<>();
+    private ArrayList<String> states = new ArrayList<>();
     private DefaultStatus defaults;
-    private HashMap<String, HashMap<String, String>> opTruthTable=new HashMap<>();
+    private HashMap<String, HashMap<String, String>> opTruthTable = new HashMap<>();
     private final String url = "/operations_profiles";
     private JSONObject jsonObject;
+    private int[][][] truthTable;
+    private ArrayList<String> operations=new ArrayList<>();
+
     public OperationsParser() {
     }
 
@@ -38,7 +43,6 @@ public class OperationsParser implements Serializable {
         this.jsonObject = jsonObject;
         readApiRequestResult();
     }
-    
 
     private class DefaultStatus implements Serializable {
 
@@ -92,33 +96,34 @@ public class OperationsParser implements Serializable {
     }
 
     private void loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
-       jsonObject = RequestManager.request(uri, key, proxy);
+        jsonObject = RequestManager.request(uri, key, proxy);
         readApiRequestResult();
     }
-     public void readApiRequestResult(){
-   
+
+    public void readApiRequestResult() {
+
         // A JSON object. Key value pairs are unordered. JSONObject supports java.util.Map interface.
         JSONArray dataList = (JSONArray) jsonObject.get("data");
 
         Iterator<JSONObject> iterator = dataList.iterator();
-      
+
         while (iterator.hasNext()) {
             JSONObject dataObject = (JSONObject) iterator.next();
-            id = (String) dataObject.get("id");
-            name = (String) dataObject.get("name");
+            this.id = (String) dataObject.get("id");
+            this.name = (String) dataObject.get("name");
 
             JSONArray stateList = (JSONArray) dataObject.get("available_states");
             Iterator<String> stateIter = stateList.iterator();
             while (stateIter.hasNext()) {
                 String state = stateIter.next();
-                states.add(state);
+                this.states.add(state);
             }
 
             JSONObject defaultObject = (JSONObject) dataObject.get("defaults");
             String down = (String) defaultObject.get("down");
             String missing = (String) defaultObject.get("missing");
             String unknown = (String) defaultObject.get("unknown");
-            defaults = new DefaultStatus(down, missing, unknown);
+            this.defaults = new DefaultStatus(down, missing, unknown);
 
             JSONArray operationList = (JSONArray) dataObject.get("operations");
             Iterator<JSONObject> opIterator = operationList.iterator();
@@ -136,12 +141,73 @@ public class OperationsParser implements Serializable {
 
                     truthTable.put(a + "-" + b, x);
                 }
-                opTruthTable.put(opName, truthTable);
+                this.opTruthTable.put(opName, truthTable);
+                this.operations.add(opName);
             }
         }
-      
+        initTruthTable();
+    }
+
+    private void initTruthTable() {
+
+        int numOps = this.opTruthTable.keySet().size();
+        int numStates = this.states.size();
+        this.truthTable = new int[numOps][numStates][numStates];
+        for (int[][] surface : this.truthTable) {
+            for (int[] line : surface) {
+                Arrays.fill(line, -1);
+            }
+        }
+        int opPos = 0;
+        for (String op : this.opTruthTable.keySet()) {
+
+            HashMap<String, String> opStates = this.opTruthTable.get(op);
+            for (String key : opStates.keySet()) {
+                String[] stateArr = splitStates(key);
+                int a = this.states.indexOf(stateArr[0]);
+                int b = this.states.indexOf(stateArr[1]);
+                int x = this.states.indexOf(opStates.get(key));
+                this.truthTable[opPos][a][b] = x;
+            }
+            opPos++;
+        }
 
     }
+
+    private String[] splitStates(String state) {
+        String[] arrOfStr = state.split("-");
+        return arrOfStr;
+
+    }
+
+    public int opInt(int op, int a, int b) {
+        int result = -1;
+        try {
+            result = this.truthTable[op][a][b];
+        } catch (IndexOutOfBoundsException ex) {
+            LOG.info(ex);
+            result = -1;
+        }
+
+        return result;
+    }
+
+    public int opInt(String op, String a, String b) {
+        
+        int opInt = this.operations.indexOf(op);
+        int aInt = this.states.indexOf(a);
+        int bInt = this.states.indexOf(b);
+
+        return this.truthTable[opInt][aInt][bInt];
+    }
+    
+    public String getStrStatus(int status) {
+		return this.states.get(status);
+	}
+
+	public int getIntStatus(String status) {
+		return this.states.indexOf(status);
+	}
 
     public JSONObject getJsonObject() {
         return jsonObject;
@@ -150,7 +216,6 @@ public class OperationsParser implements Serializable {
     public void setJsonObject(JSONObject jsonObject) {
         this.jsonObject = jsonObject;
     }
-     
 
     public String getId() {
         return id;
@@ -191,6 +256,15 @@ public class OperationsParser implements Serializable {
     public void setOpTruthTable(HashMap<String, HashMap<String, String>> opTruthTable) {
         this.opTruthTable = opTruthTable;
     }
+    
+    
+    public String getStrOperation(int op) {
+		return this.operations.get(op);
+	}
+
+	public int getIntOperation(String op) {
+		return this.operations.indexOf(op);
+	}
 
     public String getStatusFromTruthTable(String operation, String astatus, String bstatus) {
         String finalStatus = null;
@@ -204,5 +278,23 @@ public class OperationsParser implements Serializable {
         }
         return finalStatus;
     }
+
+    public int[][][] getTruthTable() {
+        return truthTable;
+    }
+
+    public void setTruthTable(int[][][] truthTable) {
+        this.truthTable = truthTable;
+    }
+
+    public ArrayList<String> getOperations() {
+        return operations;
+    }
+
+    public void setOperations(ArrayList<String> operations) {
+        this.operations = operations;
+    }
+    
+    
 
 }

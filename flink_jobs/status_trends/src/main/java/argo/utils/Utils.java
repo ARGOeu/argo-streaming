@@ -18,6 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import argo.profiles.TopologyEndpointParser;
 import java.util.TimeZone;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  *
@@ -29,16 +32,16 @@ public class Utils {
     //   String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     public static String getParameterDate(String format, String paramDate) throws ParseException {
-        Date date = convertStringtoDate(format, paramDate);
+        DateTime date = convertStringtoDate(format, paramDate);
 
-        SimpleDateFormat formatter = new SimpleDateFormat(format);
-        String profileDate = formatter.format(date);
+        DateTime dt = new DateTime(date);
+        DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
+        String profileDate = dt.toString(dtf);
 
         return profileDate;
 
     }
 
-    
     public static String convertDateToString(String format, Date date) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -50,7 +53,7 @@ public class Utils {
         return sdf.format(newCalendar.getTime());
     }
 
-    public static Date convertStringtoDate(String format, String dateStr) throws ParseException {
+    public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
 
         //   String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         SimpleDateFormat sdf = new SimpleDateFormat(format);
@@ -58,7 +61,7 @@ public class Utils {
         Calendar cal = Calendar.getInstance();
         cal.setTime(sdf.parse(dateStr));
         cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTime();
+        return new DateTime(cal.getTime());
     }
 
     public static Date createDate(String format, Date dateStr, int hour, int min, int sec) throws ParseException {
