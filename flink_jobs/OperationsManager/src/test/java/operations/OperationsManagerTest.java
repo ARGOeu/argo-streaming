@@ -21,10 +21,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /*
-<<<<<<< HEAD
- *
-=======
->>>>>>> timelines
  * A unit test class to test OperationsManager
  */
 public class OperationsManagerTest {

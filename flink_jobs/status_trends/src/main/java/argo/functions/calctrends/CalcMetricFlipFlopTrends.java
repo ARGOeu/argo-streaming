@@ -33,10 +33,6 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
     private AggregationProfileParser aggregationProfileParser;
     private OperationsParser operationsParser;
     private DateTime date;
-//
-//    public CalcMetricFlipFlopTrends(HashMap<String, String> groupEndpoints) {
-//        this.groupEndpoints = groupEndpoints;
-//    }
 
     public CalcMetricFlipFlopTrends(OperationsParser operationsParser, TopologyEndpointParser topologyEndpointParser, AggregationProfileParser aggregationProfileParser, DateTime date) {
         this.topologyEndpointParser = topologyEndpointParser;

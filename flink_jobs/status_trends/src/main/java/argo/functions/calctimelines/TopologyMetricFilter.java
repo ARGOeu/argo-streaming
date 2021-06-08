@@ -8,18 +8,12 @@ package argo.functions.calctimelines;
 import argo.avro.MetricData;
 import argo.profiles.AggregationProfileParser;
 import argo.profiles.MetricProfileManager;
-import argo.profiles.MetricProfileParser;
+
 import argo.profiles.TopologyEndpointParser;
 import argo.profiles.TopologyGroupParser;
-import java.util.ArrayList;
-import java.util.HashMap;
 import org.apache.flink.api.common.functions.FilterFunction;
-//import org.apache.flink.api.common.functions.RichFilterFunction;
 
 /**
- *
- * @author cthermolia
- *
  * TopologyMetricFilter , filters service endpoint and exclude the ones that do
  * not appear in topology and metric profile data inputs
  */
@@ -38,6 +32,7 @@ public class TopologyMetricFilter implements FilterFunction<MetricData> {
 
         this.aggregationProfileParser = aggregationProfileParser;
     }
+
     @Override
     public boolean filter(MetricData t) throws Exception {
 

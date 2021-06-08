@@ -18,9 +18,6 @@ import org.joda.time.DateTime;
 import timelines.Timeline;
 import timelines.TimelineAggregator;
 /**
- *
- * @author cthermolia
- *
  * CalcEndpointTrends, count status changes for each service endpoint group
  */
 public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTrends, EndpointTrends> {
@@ -68,6 +65,7 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
         //for each timestamp the status that prevails is concluded by the truth table that is defined for the operation
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist);
         timelineAggregator.aggregate( operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
+
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
         Integer flipflops = mergedTimeline.calcStatusChanges();//calculate flip flops on the concluded merged timeline

@@ -30,6 +30,7 @@ conf.cfg
 /flink_jobs/OperationsManager/target/
 /flink_jobs/OperationsManager/nbproject/
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
 =======
@@ -37,3 +38,7 @@ conf.cfg
 /flink_jobs/ProfilesManager/nbproject/
 >>>>>>> profiles independent components
 >>>>>>> timelines
+=======
+/flink_jobs/ProfilesManager/target/
+/flink_jobs/ProfilesManager/nbproject/
+>>>>>>> profiles independent components

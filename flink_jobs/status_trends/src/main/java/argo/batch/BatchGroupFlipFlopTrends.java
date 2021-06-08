@@ -26,6 +26,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.joda.time.DateTime;
 
+
 /**
  * Implements an ARGO Status Trends Job in flink , to count the number of status
  * changes that occur to the level of group of the topology hierarchy
@@ -46,6 +47,7 @@ import org.joda.time.DateTime;
  * result the job will provide, if the parameter exists , e.g 10
  *
  */
+
 public class BatchGroupFlipFlopTrends {
 
     private static DataSet<MetricData> yesterdayData;
@@ -74,7 +76,6 @@ public class BatchGroupFlipFlopTrends {
 
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
-
         }
         reportId = params.getRequired("reportId");
         profilesDate = Utils.convertStringtoDate(format, params.getRequired("date"));
@@ -90,7 +91,6 @@ public class BatchGroupFlipFlopTrends {
 
         // calculate on data 
         calcFlipFlops();
-// execute program
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Group Flip Flops for: ");
         jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());

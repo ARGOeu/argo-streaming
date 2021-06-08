@@ -19,10 +19,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-/**
- *
- * @author cthermolia
- */
 public class RequestManager {
 
     public static JSONObject request(String uri, String key, String proxy) throws ParseException {
@@ -89,15 +85,16 @@ public class RequestManager {
         return loadProfile(uri, key, proxy);
     }
 
-    public static JsonElement loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
-        JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
-        JsonObject jsonObj=jsonElement.getAsJsonObject();
-        JsonArray dataObj = jsonObj.getAsJsonArray("data");
-        JsonElement dataElement=dataObj.get(0);
-      
-         
-        return dataElement;
-    }
+//    public static JsonElement loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
+//        JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
+//        JsonObject jsonObj=jsonElement.getAsJsonObject();
+//        JsonArray dataObj = jsonObj.getAsJsonArray("data");
+//        JsonElement dataElement=dataObj.get(0);
+//      
+//         
+//        return dataElement;
+//    }
+
        public static JsonElement metricProfileRequest(String apiUri, String operationsId, String key, String proxy,String dateStr) throws IOException, ParseException {
 
         String uri = apiUri + "/metric_profiles";
@@ -119,5 +116,6 @@ public class RequestManager {
          
         return dataElement;
     }
+       
 
 }

@@ -33,6 +33,7 @@ public class Utils {
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
 
         DateTimeFormatter formatter = DateTimeFormat.forPattern(format);
+
         DateTime dt = formatter.parseDateTime(dateStr);
 
         return dt;
@@ -52,7 +53,7 @@ public class Utils {
         newCalendar.set(Calendar.MILLISECOND, 0);
 
         return new DateTime( newCalendar.getTime());
-    }
+  }
 
     public static boolean isPreviousDate(String format, Date nowDate, Date firstDate) throws ParseException {
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -87,7 +88,6 @@ public class Utils {
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
-
         return  new DateTime(newCalendar.getTime());
     }
 }

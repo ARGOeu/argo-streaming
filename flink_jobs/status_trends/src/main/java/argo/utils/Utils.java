@@ -22,10 +22,6 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-/**
- *
- * @author cthermolia
- */
 public class Utils {
 
     static Logger LOG = LoggerFactory.getLogger(Utils.class);

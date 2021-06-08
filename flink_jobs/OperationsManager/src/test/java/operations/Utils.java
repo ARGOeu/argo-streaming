@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 /**
- *
  * A utils class to process resource files for tests and provide the information
  */
 public class Utils {

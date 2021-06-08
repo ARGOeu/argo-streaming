@@ -43,6 +43,7 @@ public class BatchEndpointFlipFlopTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
+
     private static final String endpointTrends = "flipflop_trends_endpoints";
 
     private static String mongoUri;
@@ -81,7 +82,7 @@ public class BatchEndpointFlipFlopTrends {
         todayData = readInputData(env, params, "todayData");
         
         calcFlipFlops();
-// execute program
+
        StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Group Endpoint Flip Flops for: ");
         jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());

@@ -194,7 +194,6 @@ public class BatchFlipFlopCollection {
             noZerogroupData = noZerogroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
         metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDateStr, clearMongo);
-
         trends = noZerogroupData.map(new MapFunction<GroupTrends, Trends>() {
 
             @Override

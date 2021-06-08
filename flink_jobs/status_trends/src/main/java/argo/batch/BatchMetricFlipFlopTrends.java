@@ -72,6 +72,8 @@ public class BatchMetricFlipFlopTrends {
 
         profilesDate = Utils.convertStringtoDate(format, params.getRequired("date"));
         profilesDateStr = Utils.convertDateToString(format, profilesDate);
+        mongoUri = params.getRequired("mongoUri");
+
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
