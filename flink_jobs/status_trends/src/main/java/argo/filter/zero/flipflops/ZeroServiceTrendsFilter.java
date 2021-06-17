@@ -5,15 +5,13 @@
  */
 package argo.filter.zero.flipflops;
 
-import argo.functions.calctimelines.ServiceFilter;
 import argo.pojos.ServiceTrends;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author cthermolia
+ * ZeroServiceTrendsFilter, filters ServiceTrends data and rejects the ones with flipflop=0
  */
     public class ZeroServiceTrendsFilter implements FilterFunction<ServiceTrends> {
     

@@ -13,11 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author cthermolia
- *
- * StatusFilter, filters data by status
- */
+* ZeroMetricTrendsFilter, filters MetricTrends data and rejects the ones with flipflop=0
+*/
 public class ZeroMetricTrendsFilter implements FilterFunction<MetricTrends> {
 
     static Logger LOG = LoggerFactory.getLogger(ServiceFilter.class);

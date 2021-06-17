@@ -9,10 +9,8 @@ package argo.functions.calctrends;
 //import argo.functions.calctimelines.TimelineMerger;
 import argo.pojos.GroupFunctionTrends;
 import argo.pojos.GroupTrends;
-//import argo.pojos.Timeline;
-import argo.profiles.AggregationProfileParser;
+import argo.profiles.AggregationProfileManager;
 import argo.profiles.OperationsParser;
-
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.util.Collector;
@@ -31,26 +29,24 @@ public class CalcGroupFlipFlop implements GroupReduceFunction< GroupFunctionTren
     private OperationsParser operationsParser;
     private String groupOperation;
 
-    public CalcGroupFlipFlop(OperationsParser operationsParser, AggregationProfileParser aggregationProfileParser) {
+    public CalcGroupFlipFlop(OperationsParser operationsParser, AggregationProfileManager aggregationProfileParser) {
         this.operationsParser = operationsParser;
-        this.groupOperation = aggregationProfileParser.getProfileOp();
+        this.groupOperation = aggregationProfileParser.retrieveProfileOperation();
     }
 
     @Override
     public void reduce(Iterable<GroupFunctionTrends> in, Collector< GroupTrends> out) throws Exception {
         String group = null;
 
-        HashMap<String,Timeline> timelist = new HashMap<>();
+        HashMap<String, Timeline> timelist = new HashMap<>();
         for (GroupFunctionTrends time : in) {
             group = time.getGroup();
-            timelist.put(time.getFunction(),time.getTimeline());
+            timelist.put(time.getFunction(), time.getTimeline());
         }
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelist);
 
-
-        timelineAggregator.aggregate(operationsParser.getTruthTable(),operationsParser.getIntOperation(groupOperation));
-        Timeline timeline=timelineAggregator.getOutput();
-
+        timelineAggregator.aggregate(operationsParser.getTruthTable(), operationsParser.getIntOperation(groupOperation));
+        Timeline timeline = timelineAggregator.getOutput();
         int flipflops = timeline.calcStatusChanges();
 
         GroupTrends groupTrends = new GroupTrends(group, timeline, flipflops);

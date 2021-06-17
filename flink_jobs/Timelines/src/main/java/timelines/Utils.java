@@ -5,14 +5,10 @@
  */
 package timelines;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.TimeZone;
@@ -26,18 +22,18 @@ import org.joda.time.format.DateTimeFormatter;
 public class Utils {
 
     static Logger LOG = LoggerFactory.getLogger(Utils.class);
-    
     public static String convertDateToString(String format, DateTime date) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
         String dateString = date.toString(dtf);
         return dateString;
-
     }
 
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
+
         DateTimeFormatter formatter = DateTimeFormat.forPattern(format);
+
         DateTime dt = formatter.parseDateTime(dateStr);
 
         return dt;
@@ -55,8 +51,9 @@ public class Utils {
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
-        return new DateTime(newCalendar.getTime());
-    }
+
+        return new DateTime( newCalendar.getTime());
+  }
 
     public static boolean isPreviousDate(String format, Date nowDate, Date firstDate) throws ParseException {
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -76,7 +73,8 @@ public class Utils {
         }
     }
 
-    public static DateTime createDate(String format, int year, int month, int day, int hour, int min, int sec) throws ParseException {
+
+       public static DateTime createDate(String format, int year, int month, int day, int hour, int min, int sec) throws ParseException {
 
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         SimpleDateFormat sdf = new SimpleDateFormat(format);
@@ -90,8 +88,6 @@ public class Utils {
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
-
-        return new DateTime(newCalendar.getTime());
+        return  new DateTime(newCalendar.getTime());
     }
-
 }

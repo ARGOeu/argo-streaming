@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -246,6 +245,7 @@ public class OpsManager {
         JsonElement j_element = json_parser.parse(opsJson.get(0));
         readJson(j_element);
     }
+
     public int[][][] getTruthTable() {
         return truthTable;
     }

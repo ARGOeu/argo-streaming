@@ -43,7 +43,8 @@ public class BatchEndpointFlipFlopTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-     private static final String endpointTrends = "flipflop_trends_endpoints";
+
+    private static final String endpointTrends = "flipflop_trends_endpoints";
 
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
@@ -65,7 +66,6 @@ public class BatchEndpointFlipFlopTrends {
             System.exit(0);
             
         }
-
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }
@@ -82,7 +82,7 @@ public class BatchEndpointFlipFlopTrends {
         todayData = readInputData(env, params, "todayData");
         
         calcFlipFlops();
-// execute program
+
        StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Group Endpoint Flip Flops for: ");
         jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
@@ -105,10 +105,10 @@ public class BatchEndpointFlipFlopTrends {
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
 
-        DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getOperationParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser(), profilesDate));
+        DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getOperationParser(), profilesLoader.getTopologyEndpointParser(),profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser(), profilesDate));
 
         //group data by service endpoint  and count flip flops
-        DataSet<EndpointTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcEndpointFlipFlopTrends(profilesLoader.getAggregationProfileParser().getMetricOp(), profilesLoader.getOperationParser()));
+        DataSet<EndpointTrends> serviceEndpointGroupData = serviceEndpointMetricGroupData.groupBy("group", "endpoint", "service").reduceGroup(new CalcEndpointFlipFlopTrends(profilesLoader.getAggregationProfileParser().getMetricOpByProfile(), profilesLoader.getOperationParser()));
         
         if (rankNum != null) { //sort and rank data
             serviceEndpointGroupData = serviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
@@ -126,8 +126,7 @@ public class BatchEndpointFlipFlopTrends {
         });
         trends.output(metricMongoOut);
 
-        // return serviceEndpointGroupData;
-    }    //read input from file
+    } 
 
     private static DataSet<MetricData> readInputData(ExecutionEnvironment env, ParameterTool params, String path) {
         DataSet<MetricData> inputData;

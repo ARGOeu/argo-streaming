@@ -29,7 +29,6 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
     private int mongoPort;
     private String dbName;
     private String colName;
-//	private MongoMethod method;
     private TrendsType trendsType;
     private String report;
     private int date;

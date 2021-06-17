@@ -4,12 +4,12 @@
  * and open the template in the editor.
  */
 package argo.pojos;
+
 import timelines.Timeline;
+
 /**
- *
- * @author cthermolia
- * 
- * ServiceTrends, describes the computed trend information extracted from the timelines at the level of group service endpoints groups 
+ * ServiceTrends, describes the computed trend information extracted from the
+ * timelines at the level of group service endpoints groups
  */
 public class ServiceTrends {
 
@@ -22,7 +22,6 @@ public class ServiceTrends {
     public ServiceTrends() {
     }
 
-    
     public ServiceTrends(String group, String service, Timeline timeline, Integer flipflops) {
         this.group = group;
         this.service = service;
@@ -69,7 +68,5 @@ public class ServiceTrends {
     public void setFunction(String function) {
         this.function = function;
     }
-
-  
 
 }

@@ -11,9 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author cthermolia
- *
  * StatusFilter, filters data by status
  */
 public class StatusFilter implements FilterFunction<Tuple6<String, String, String, String, String, Integer>> {

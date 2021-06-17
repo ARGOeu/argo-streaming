@@ -16,8 +16,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 /**
- *
- * @author cthermolia AggregationProfileParser, collects data as described in
+ * AggregationProfileParser, collects data as described in
  * the json received from web api aggregation profiles request
  */
 
@@ -104,7 +103,7 @@ public class AggregationProfileParser implements Serializable {
                     if (serviceFunctions.get(servicename) != null) {
                         serviceFunctionList = serviceFunctions.get(servicename);
                    }
-                    serviceFunctionList.add(groupname);
+                    serviceFunctionList.add(serviceoperation);
                     serviceFunctions.put(servicename, serviceFunctionList);
                 }
               groups.add(new GroupOps(groupname, groupoperation, services));

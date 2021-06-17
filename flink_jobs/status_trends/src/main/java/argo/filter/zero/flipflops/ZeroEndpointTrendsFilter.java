@@ -8,16 +8,12 @@ package argo.filter.zero.flipflops;
 
 import argo.functions.calctimelines.ServiceFilter;
 import argo.pojos.EndpointTrends;
-import argo.pojos.MetricTrends;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author cthermolia
- *
- * StatusFilter, filters data by status
+ * ZeroEndpointTrendsFilter, filters EndpointTrends data and rejects the ones with flipflop=0
  */
 public class ZeroEndpointTrendsFilter implements FilterFunction<EndpointTrends> {
 

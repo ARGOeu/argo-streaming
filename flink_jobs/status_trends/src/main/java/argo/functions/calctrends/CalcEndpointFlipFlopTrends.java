@@ -17,10 +17,8 @@ import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
 import timelines.Timeline;
 import timelines.TimelineAggregator;
+
 /**
- *
- * @author cthermolia
- *
  * CalcEndpointTrends, count status changes for each service endpoint group
  */
 public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTrends, EndpointTrends> {
@@ -51,15 +49,14 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
         //store the necessary info
         //collect all timelines in a list
 
-        HashMap<String,Timeline> timelinelist = new HashMap<>();
+        HashMap<String, Timeline> timelinelist = new HashMap<>();
 
         for (MetricTrends time : in) {
             group = time.getGroup();
             service = time.getService();
             hostname = time.getEndpoint();
             Timeline timeline = time.getTimeline();
- 
-            timelinelist.put(time.getMetric(),timeline);
+            timelinelist.put(time.getMetric(), timeline);
 
         }
         // merge the timelines into one timeline ,  
@@ -67,14 +64,13 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
         // as multiple status (each status exist in each timeline) correspond to each timestamp, there is a need to conclude into one status/timestamp
         //for each timestamp the status that prevails is concluded by the truth table that is defined for the operation
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist);
-        timelineAggregator.aggregate( operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
+        timelineAggregator.aggregate(operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
         Integer flipflops = mergedTimeline.calcStatusChanges();//calculate flip flops on the concluded merged timeline
-
         if (group != null && service != null && hostname != null) {
             EndpointTrends endpointTrends = new EndpointTrends(group, service, hostname, mergedTimeline, flipflops);
             out.collect(endpointTrends);
-      }
+        }
     }
 }
