@@ -29,3 +29,11 @@ conf.cfg
 /flink_jobs/Timelines/target/
 /flink_jobs/OperationsManager/target/
 /flink_jobs/OperationsManager/nbproject/
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+/flink_jobs/ProfilesManager/target/
+/flink_jobs/ProfilesManager/nbproject/
+>>>>>>> profiles independent components
+>>>>>>> timelines

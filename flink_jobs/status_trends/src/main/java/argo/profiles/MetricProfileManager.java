@@ -1,14 +1,20 @@
-package sync;
+package argo.profiles;
 
+import argo.avro.MetricProfile;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -17,17 +23,16 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.util.Utf8;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.json.simple.JSONObject;
 
-import argo.avro.MetricProfile;
-
-public class MetricProfileManager {
-
+public class MetricProfileManager implements Serializable {
+    
     private static final Logger LOG = Logger.getLogger(MetricProfileManager.class.getName());
-
+    
     private ArrayList<ProfileItem> list;
     private Map<String, HashMap<String, ArrayList<String>>> index;
-
-    private class ProfileItem {
+    
+    private class ProfileItem implements Serializable{
 
         String profile; // Name of the profile
         String service; // Name of the service type
@@ -41,15 +46,48 @@ public class MetricProfileManager {
             this.metric = "";
             this.tags = new HashMap<String, String>();
         }
-
+        
         public ProfileItem(String profile, String service, String metric, HashMap<String, String> tags) {
             this.profile = profile;
             this.service = service;
             this.metric = metric;
             this.tags = tags;
         }
-    }
 
+        public String getProfile() {
+            return profile;
+        }
+
+        public void setProfile(String profile) {
+            this.profile = profile;
+        }
+
+        public String getService() {
+            return service;
+        }
+
+        public void setService(String service) {
+            this.service = service;
+        }
+
+        public String getMetric() {
+            return metric;
+        }
+
+        public void setMetric(String metric) {
+            this.metric = metric;
+        }
+
+        public HashMap<String, String> getTags() {
+            return tags;
+        }
+
+        public void setTags(HashMap<String, String> tags) {
+            this.tags = tags;
+        }
+        
+    }
+    
     public MetricProfileManager() {
         this.list = new ArrayList<ProfileItem>();
         this.index = new HashMap<String, HashMap<String, ArrayList<String>>>();
@@ -69,13 +107,13 @@ public class MetricProfileManager {
         }
         return -1;
     }
-
+    
     public void insert(String profile, String service, String metric, HashMap<String, String> tags) {
         ProfileItem tmpProfile = new ProfileItem(profile, service, metric, tags);
         this.list.add(tmpProfile);
         this.indexInsertMetric(profile, service, metric);
     }
-
+    
     public int indexInsertService(String profile, String service) {
         if (index.containsKey(profile)) {
             if (index.get(profile).containsKey(service)) {
@@ -84,15 +122,15 @@ public class MetricProfileManager {
                 index.get(profile).put(service, new ArrayList<String>());
                 return 0;
             }
-
+            
         }
-
+        
         index.put(profile, new HashMap<String, ArrayList<String>>());
         index.get(profile).put(service, new ArrayList<String>());
         return 0;
-
+        
     }
-
+    
     public int indexInsertMetric(String profile, String service, String metric) {
         if (index.containsKey(profile)) {
             if (index.get(profile).containsKey(service)) {
@@ -109,14 +147,14 @@ public class MetricProfileManager {
                 index.get(profile).get(service).add(metric);
                 return 0;
             }
-
+            
         }
         // No profile - service - metric so add them all
         index.put(profile, new HashMap<String, ArrayList<String>>());
         index.get(profile).put(service, new ArrayList<String>());
         index.get(profile).get(service).add(metric);
         return 0;
-
+        
     }
 
     // Getter Functions
@@ -127,9 +165,9 @@ public class MetricProfileManager {
             return ans;
         }
         return null;
-
+        
     }
-
+    
     public ArrayList<String> getProfiles() {
         if (index.size() > 0) {
             ArrayList<String> ans = new ArrayList<String>();
@@ -138,7 +176,7 @@ public class MetricProfileManager {
         }
         return null;
     }
-
+    
     public ArrayList<String> getProfileServiceMetrics(String profile, String service) {
         if (index.containsKey(profile)) {
             if (index.get(profile).containsKey(service)) {
@@ -147,7 +185,7 @@ public class MetricProfileManager {
         }
         return null;
     }
-
+    
     public boolean checkProfileServiceMetric(String profile, String service, String metric) {
         if (index.containsKey(profile)) {
             if (index.get(profile).containsKey(service)) {
@@ -156,7 +194,7 @@ public class MetricProfileManager {
                 }
             }
         }
-
+        
         return false;
     }
 
@@ -202,7 +240,7 @@ public class MetricProfileManager {
 
                 // Generate 2nd level generic record reader (tags)
                 HashMap<Utf8, String> tags = (HashMap<Utf8, String>) (avroRow.get("tags"));
-
+                
                 if (tags != null) {
                     for (Utf8 item : tags.keySet()) {
                         tagMap.put(item.toString(), String.valueOf(tags.get(item)));
@@ -216,11 +254,11 @@ public class MetricProfileManager {
 
                 // Insert data to list
                 this.insert(profile, service, metric, tagMap);
-
+                
             } // end of avro rows
 
             dataFileReader.close();
-
+            
         } catch (IOException ex) {
             LOG.error("Could not open avro file:" + avroFile.getName());
             throw ex;
@@ -228,7 +266,7 @@ public class MetricProfileManager {
             // Close quietly without exceptions the buffered reader
             IOUtils.closeQuietly(dataFileReader);
         }
-
+        
     }
 
     /**
@@ -245,7 +283,7 @@ public class MetricProfileManager {
             String metric = item.getMetric();
             HashMap<String, String> tagMap = new HashMap<String, String>();
             HashMap<String, String> tags = (HashMap<String, String>) item.getTags();
-
+            
             if (tags != null) {
                 for (String key : tags.keySet()) {
                     tagMap.put(key, tags.get(key));
@@ -255,17 +293,72 @@ public class MetricProfileManager {
             // Insert data to list
             this.insert(profile, service, metric, tagMap);
         }
-
+        
     }
 
-    public boolean containsMetric(String service, String metric) {
+    public void loadMetricProfile(JsonElement element) throws IOException, org.json.simple.parser.ParseException {
+        MetricProfile[] metrics = readJson(element);
+        loadFromList(Arrays.asList(metrics));
+    }
+    
+    public MetricProfile[] readJson(JsonElement jElement) {
+        List<MetricProfile> results = new ArrayList<MetricProfile>();
+//		if (!this.data.containsKey(ApiResource.METRIC)) {
+//			MetricProfile[] rArr = new MetricProfile[results.size()]; 
+//			rArr = results.toArray(rArr);
+//			return rArr;
+//		}
+//			
 
+//		String content = this.data.get(ApiResource.METRIC);
+//		JsonParser jsonParser = new JsonParser();
+//		JsonElement jElement = jsonParser.parse(content);
+        JsonObject jRoot = jElement.getAsJsonObject();
+        String profileName = jRoot.get("name").getAsString();
+        JsonArray jElements = jRoot.get("services").getAsJsonArray();
+        for (int i = 0; i < jElements.size(); i++) {
+            JsonObject jItem = jElements.get(i).getAsJsonObject();
+            String service = jItem.get("service").getAsString();
+            JsonArray jMetrics = jItem.get("metrics").getAsJsonArray();
+            for (int j = 0; j < jMetrics.size(); j++) {
+                String metric = jMetrics.get(j).getAsString();
+                
+                Map<String, String> tags = new HashMap<String, String>();
+                MetricProfile mp = new MetricProfile(profileName, service, metric, tags);
+                results.add(mp);
+            }
+            
+        }
+        
+        MetricProfile[] rArr = new MetricProfile[results.size()];        
+        rArr = results.toArray(rArr);
+        return rArr;
+    }
+  
+    public boolean containsMetric(String service, String metric) {
+        
         for (ProfileItem profIt : list) {
-            if (profIt.equals(service) && profIt.equals(metric)) {
+            if (profIt.service.equals(service) && profIt.metric.equals(metric)) {
                 return true;
             }
         }
         return false;
     }
-
+    
+    public ArrayList<ProfileItem> getList() {
+        return list;
+    }
+    
+    public void setList(ArrayList<ProfileItem> list) {
+        this.list = list;
+    }
+    
+    public Map<String, HashMap<String, ArrayList<String>>> getIndex() {
+        return index;
+    }
+    
+    public void setIndex(Map<String, HashMap<String, ArrayList<String>>> index) {
+        this.index = index;
+    }
+    
 }

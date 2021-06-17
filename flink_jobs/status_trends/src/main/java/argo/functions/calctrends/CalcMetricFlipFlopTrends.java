@@ -68,7 +68,6 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
             int st = operationsParser.getIntStatus(md.getStatus().toString());
             timeStatusMap.put(Utils.convertStringtoDate(format, md.getTimestamp().toString()), st);
         }
-
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timeStatusMap);
 

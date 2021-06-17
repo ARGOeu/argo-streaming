@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import argo.profiles.ProfilesLoader;
 import org.joda.time.DateTime;
+
 /**
  * Implements an ARGO Status Trends Job in flink , to count the number of status appearances per status type
  * that occur to the level of group, service, endpoint. metric  of the topology hierarchy

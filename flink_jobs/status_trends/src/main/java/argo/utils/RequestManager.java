@@ -50,7 +50,8 @@ public class RequestManager {
         return jsonresult;
     }
 
-    public static JsonElement callRequest(String uri, String key, String proxy) throws ParseException {
+
+     public static JsonElement callRequest(String uri, String key, String proxy) throws ParseException {
         JsonElement j_element = null;
 
         Request request = Request.Get(uri);
@@ -84,11 +85,32 @@ public class RequestManager {
         } else {
             uri = uri + "?date=" + dateStr;
         }
-        return loadOperationProfile(uri, key, proxy);
 
+        return loadProfile(uri, key, proxy);
     }
 
     public static JsonElement loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
+        JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
+        JsonObject jsonObj=jsonElement.getAsJsonObject();
+        JsonArray dataObj = jsonObj.getAsJsonArray("data");
+        JsonElement dataElement=dataObj.get(0);
+      
+         
+        return dataElement;
+    }
+       public static JsonElement metricProfileRequest(String apiUri, String operationsId, String key, String proxy,String dateStr) throws IOException, ParseException {
+
+        String uri = apiUri + "/metric_profiles";
+        if (dateStr == null) {
+            uri = uri + operationsId;
+        } else {
+            uri = uri + "?date=" + dateStr;
+        }
+        return loadProfile(uri, key, proxy);
+
+    }
+       
+         public static JsonElement loadProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
         JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
         JsonObject jsonObj=jsonElement.getAsJsonObject();
         JsonArray dataObj = jsonObj.getAsJsonArray("data");

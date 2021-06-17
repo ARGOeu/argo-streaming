@@ -114,44 +114,44 @@ public class MetricProfileParser implements Serializable{
         }
     }
     
-    public boolean containsMetric(String service, String metric){
-    
-        if(metricData.get(service)!=null && metricData.get(service).contains(metric)){
-            return true;
-        }
-        return false;
-    }
+//    public boolean containsMetric(String service, String metric){
+//    
+//        if(metricData.get(service)!=null && metricData.get(service).contains(metric)){
+//            return true;
+//        }
+//        return false;
+//    }
 
-    public JSONObject getJsonObject() {
-        return jsonObject;
-    }
-
-    public void setJsonObject(JSONObject jsonObject) {
-        this.jsonObject = jsonObject;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getDate() {
-        return date;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public ArrayList<Services> getServices() {
-        return services;
-    }
-
-    public HashMap<String, ArrayList<String>> getMetricData() {
-        return metricData;
-    }
+//    public JSONObject getJsonObject() {
+//        return jsonObject;
+//    }
+//
+//    public void setJsonObject(JSONObject jsonObject) {
+//        this.jsonObject = jsonObject;
+//    }
+//
+//    public String getId() {
+//        return id;
+//    }
+//
+//    public String getDate() {
+//        return date;
+//    }
+//
+//    public String getName() {
+//        return name;
+//    }
+//
+//    public String getDescription() {
+//        return description;
+//    }
+//
+//    public ArrayList<Services> getServices() {
+//        return services;
+//    }
+//
+//    public HashMap<String, ArrayList<String>> getMetricData() {
+//        return metricData;
+//    }
 
 }

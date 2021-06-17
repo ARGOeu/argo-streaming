@@ -14,8 +14,8 @@ import org.joda.time.format.DateTimeFormatter;
 /**
     TImelineAggregator class implements an aggregator which is able to receive a list of different timelines
     and concude into one timeline by aggregating all the timestamps and the statuses
+*/
 
- */
 public class TimelineAggregator {
 
     private Timeline output;

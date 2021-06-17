@@ -1,14 +1,20 @@
-package sync;
+package profilesmanager;
 
+import argo.avro.MetricProfile;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -18,16 +24,32 @@ import org.apache.avro.util.Utf8;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import argo.avro.MetricProfile;
-
-public class MetricProfileManager {
+/**
+ *
+ * @author cthermolia
+ *
+ * MetricProfileManager class implements objects that store the information
+ * parsed from a json object containing μετριψ profile data or loaded from an
+ * avro file
+ *
+ * The MetricProfileManager keeps info of a list of ProfileItems each one having
+ * a name(profile), service, metric and a set of tags , also it convert string
+ * operations and statuses to integer based on their position in the list
+ * storage
+ */
+public class MetricProfileManager implements Serializable {
 
     private static final Logger LOG = Logger.getLogger(MetricProfileManager.class.getName());
 
-    private ArrayList<ProfileItem> list;
-    private Map<String, HashMap<String, ArrayList<String>>> index;
+    private ArrayList<ProfileItem> list; // a list of ProfileItem objects
+    private Map<String, HashMap<String, ArrayList<String>>> index; //a map that stores as key a profile and as value a map of pairs of service (as key) and list of metrics (as value)
 
-    private class ProfileItem {
+    /**
+     *
+     * A ProfileItem class implements an object containing info of a profile,
+     * service, metric , tags
+     */
+    private class ProfileItem implements Serializable {
 
         String profile; // Name of the profile
         String service; // Name of the service type
@@ -48,7 +70,44 @@ public class MetricProfileManager {
             this.metric = metric;
             this.tags = tags;
         }
+
+        public String getProfile() {
+            return profile;
+        }
+
+        public void setProfile(String profile) {
+            this.profile = profile;
+        }
+
+        public String getService() {
+            return service;
+        }
+
+        public void setService(String service) {
+            this.service = service;
+        }
+
+        public String getMetric() {
+            return metric;
+        }
+
+        public void setMetric(String metric) {
+            this.metric = metric;
+        }
+
+        public HashMap<String, String> getTags() {
+            return tags;
+        }
+
+        public void setTags(HashMap<String, String> tags) {
+            this.tags = tags;
+        }
+
     }
+
+    /**
+     * A constructor of a MetricProfileManager
+     */
 
     public MetricProfileManager() {
         this.list = new ArrayList<ProfileItem>();
@@ -61,7 +120,12 @@ public class MetricProfileManager {
         this.index = new HashMap<String, HashMap<String, ArrayList<String>>>();
     }
 
-    // Indexed List Functions
+    /**
+     * Inserts a profile in the map
+     *
+     * @param profile, a profile
+     * @return 0 if profile is added and -1 if the profile already exists
+     */
     public int indexInsertProfile(String profile) {
         if (!index.containsKey(profile)) {
             index.put(profile, new HashMap<String, ArrayList<String>>());
@@ -70,12 +134,29 @@ public class MetricProfileManager {
         return -1;
     }
 
+    /**
+     * Constructs a ProfileItem, add it at the list and insert into the index
+     * map
+     *
+     * @param profile, a profile
+     * @param service , a service
+     * @param metric , a metric
+     * @param tags , a map of tags
+     */
     public void insert(String profile, String service, String metric, HashMap<String, String> tags) {
         ProfileItem tmpProfile = new ProfileItem(profile, service, metric, tags);
         this.list.add(tmpProfile);
         this.indexInsertMetric(profile, service, metric);
     }
 
+    /**
+     * Inserts a service at the index map , based on the profile as a key
+     *
+     * @param profile , a profile
+     * @param service , a service
+     * @return 0 if the service is added successfully at the index map, -1 if
+     * the service already exists at the index map
+     */
     public int indexInsertService(String profile, String service) {
         if (index.containsKey(profile)) {
             if (index.get(profile).containsKey(service)) {
@@ -93,6 +174,16 @@ public class MetricProfileManager {
 
     }
 
+    /**
+     * Inserts a metric at the index map , based on the profile and service as
+     * keys
+     *
+     * @param profile, a profile
+     * @param service , a service
+     * @param metric , a metric
+     * @return0 if the metric is added successfully at the index map, -1 if the
+     * service already exists at the index map
+     */
     public int indexInsertMetric(String profile, String service, String metric) {
         if (index.containsKey(profile)) {
             if (index.get(profile).containsKey(service)) {
@@ -148,6 +239,16 @@ public class MetricProfileManager {
         return null;
     }
 
+    /**
+     * Checks if a combination of profile, service, metric exists in the index
+     * map
+     *
+     * @param profile , a profile
+     * @param service , a service
+     * @param metric , a metric
+     * @return true if the combination of profile , service, metric exists and
+     * false if it does not
+     */
     public boolean checkProfileServiceMetric(String profile, String service, String metric) {
         if (index.containsKey(profile)) {
             if (index.get(profile).containsKey(service)) {
@@ -234,6 +335,7 @@ public class MetricProfileManager {
     /**
      * Loads metric profile information from a list of MetricProfile objects
      *
+     * @param mps , the list of MetricProfile objects
      */
     @SuppressWarnings("unchecked")
     public void loadFromList(List<MetricProfile> mps) {
@@ -258,14 +360,77 @@ public class MetricProfileManager {
 
     }
 
+    public void loadMetricProfile(JsonElement element) throws IOException {
+
+        MetricProfile[] metrics = readJson(element);
+        loadFromList(Arrays.asList(metrics));
+    }
+
+    /**
+     * Reads from a json element and stores the information to an array of
+     * MetricProfile objects
+     *
+     * @param jElement , a JsonElement containing the metric profile data info
+     * @return
+     */
+    public MetricProfile[] readJson(JsonElement jElement) {
+        List<MetricProfile> results = new ArrayList<MetricProfile>();
+
+        JsonObject jRoot = jElement.getAsJsonObject();
+        String profileName = jRoot.get("name").getAsString();
+        JsonArray jElements = jRoot.get("services").getAsJsonArray();
+        for (int i = 0; i < jElements.size(); i++) {
+            JsonObject jItem = jElements.get(i).getAsJsonObject();
+            String service = jItem.get("service").getAsString();
+            JsonArray jMetrics = jItem.get("metrics").getAsJsonArray();
+            for (int j = 0; j < jMetrics.size(); j++) {
+                String metric = jMetrics.get(j).getAsString();
+
+                Map<String, String> tags = new HashMap<String, String>();
+                MetricProfile mp = new MetricProfile(profileName, service, metric, tags);
+                results.add(mp);
+            }
+
+        }
+
+        MetricProfile[] rArr = new MetricProfile[results.size()];
+        rArr = results.toArray(rArr);
+        return rArr;
+    }
+
+    /**
+     * Checks if a combination of service, metric exists ing the list of
+     * ProfileItems
+     *
+     * @param service, a service
+     * @param metric, a metric
+     * @return true if the combination of a service, metric exists in the
+     * ProfileItem list or false if it does not
+     */
     public boolean containsMetric(String service, String metric) {
 
         for (ProfileItem profIt : list) {
-            if (profIt.equals(service) && profIt.equals(metric)) {
+            if (profIt.service.equals(service) && profIt.metric.equals(metric)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public ArrayList<ProfileItem> getList() {
+        return list;
+    }
+
+    public void setList(ArrayList<ProfileItem> list) {
+        this.list = list;
+    }
+
+    public Map<String, HashMap<String, ArrayList<String>>> getIndex() {
+        return index;
+    }
+
+    public void setIndex(Map<String, HashMap<String, ArrayList<String>>> index) {
+        this.index = index;
     }
 
 }

@@ -43,7 +43,7 @@ public class BatchEndpointFlipFlopTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-     private static final String endpointTrends = "flipflop_trends_endpoints";
+    private static final String endpointTrends = "flipflop_trends_endpoints";
 
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
@@ -65,7 +65,6 @@ public class BatchEndpointFlipFlopTrends {
             System.exit(0);
             
         }
-
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }

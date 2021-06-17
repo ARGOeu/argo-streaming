@@ -21,7 +21,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /*
+<<<<<<< HEAD
  *
+=======
+>>>>>>> timelines
  * A unit test class to test OperationsManager
  */
 public class OperationsManagerTest {
@@ -311,7 +314,7 @@ public class OperationsManagerTest {
         OperationsManager instance = new OperationsManager();
         instance.loadJson(new File(OperationsManagerTest.class.getResource("/operations/operations.json").getFile()));
 
-        ArrayList<String> expResult = new ArrayList<>();
+        ArrayList<String> expResult = new ArrayList();
         expResult.add("OK");
         expResult.add("WARNING");
         expResult.add("UNKNOWN");

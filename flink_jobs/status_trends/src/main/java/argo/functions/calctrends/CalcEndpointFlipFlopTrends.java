@@ -51,14 +51,14 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
         //store the necessary info
         //collect all timelines in a list
 
-        HashMap<String,Timeline> timelinelist = new HashMap<>();
+       HashMap<String,Timeline> timelinelist = new HashMap<>();
 
         for (MetricTrends time : in) {
             group = time.getGroup();
             service = time.getService();
             hostname = time.getEndpoint();
             Timeline timeline = time.getTimeline();
- 
+
             timelinelist.put(time.getMetric(),timeline);
 
         }

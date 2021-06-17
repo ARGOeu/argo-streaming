@@ -84,8 +84,6 @@ public class BatchFlipFlopCollection {
         profilesDate = Utils.convertStringtoDate(format, params.getRequired("date"));
         profilesDateStr = Utils.convertDateToString(format, profilesDate);
 
-       
-
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
@@ -122,7 +120,6 @@ public class BatchFlipFlopCollection {
 
         DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getOperationParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getAggregationProfileParser(), profilesDate));
 
-
         DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
         if (rankNum != null) { //sort and rank data
             noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
@@ -131,8 +128,6 @@ public class BatchFlipFlopCollection {
         }
 
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, metricTrends, MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportId, profilesDateStr, clearMongo);
-
-
         DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapFunction<MetricTrends, Trends>() {
 
             @Override
@@ -198,7 +193,6 @@ public class BatchFlipFlopCollection {
         } else {
             noZerogroupData = noZerogroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
-
         metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDateStr, clearMongo);
 
         trends = noZerogroupData.map(new MapFunction<GroupTrends, Trends>() {

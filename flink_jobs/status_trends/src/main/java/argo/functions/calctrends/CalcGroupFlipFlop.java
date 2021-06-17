@@ -40,17 +40,15 @@ public class CalcGroupFlipFlop implements GroupReduceFunction< GroupFunctionTren
     public void reduce(Iterable<GroupFunctionTrends> in, Collector< GroupTrends> out) throws Exception {
         String group = null;
 
-        HashMap<String,Timeline> timelist = new HashMap<>();
+        HashMap<String, Timeline> timelist = new HashMap<>();
         for (GroupFunctionTrends time : in) {
             group = time.getGroup();
-            timelist.put(time.getFunction(),time.getTimeline());
+            timelist.put(time.getFunction(), time.getTimeline());
         }
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelist);
 
-
-        timelineAggregator.aggregate(operationsParser.getTruthTable(),operationsParser.getIntOperation(groupOperation));
-        Timeline timeline=timelineAggregator.getOutput();
-
+        timelineAggregator.aggregate(operationsParser.getTruthTable(), operationsParser.getIntOperation(groupOperation));
+        Timeline timeline = timelineAggregator.getOutput();
         int flipflops = timeline.calcStatusChanges();
 
         GroupTrends groupTrends = new GroupTrends(group, timeline, flipflops);

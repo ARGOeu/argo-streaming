@@ -8,7 +8,6 @@ package argo.functions.calctrends;
 //import argo.functions.calctimelines.TimelineMerger;
 import argo.pojos.EndpointTrends;
 import argo.pojos.ServiceTrends;
-//import argo.pojos.Timeline;
 import argo.profiles.AggregationProfileParser;
 import argo.profiles.OperationsParser;
 import java.util.ArrayList;
@@ -46,7 +45,6 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
         ArrayList<ServiceTrends> list = new ArrayList<>();
         //construct a timeline containing all the timestamps of each metric timeline
 
-
         HashMap<String, Timeline> timelineList = new HashMap<>();
 
         for (EndpointTrends endpointTrend : in) {
@@ -55,15 +53,12 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
             timelineList.put(endpointTrend.getEndpoint(), endpointTrend.getTimeline());
         }
         String operation = serviceOperationMap.get(service);
-
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelineList);
         timelineAggregator.aggregate(operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
 
 
-///        HashMap<String, String> opTruthTable = operationTruthTables.get(operation);
         Timeline timeline = timelineAggregator.getOutput();
         int flipflops = timeline.calcStatusChanges();
-
         if (group != null && service != null) {
             ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflops);
             out.collect(serviceTrends);
