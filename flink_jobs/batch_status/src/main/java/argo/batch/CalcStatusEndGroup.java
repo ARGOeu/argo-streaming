@@ -123,7 +123,7 @@ public class CalcStatusEndGroup extends RichGroupReduceFunction<StatusMetric, St
 
 			String gop = this.apsMgr.getProfileGroupOp(aProfile, group);
                  
-			this.groupEndpointAggr.get(group).aggregate(this.opsMgr, gop);
+			this.groupEndpointAggr.get(group).aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(gop));
 
 		}
 		
@@ -139,7 +139,7 @@ public class CalcStatusEndGroup extends RichGroupReduceFunction<StatusMetric, St
 
 		}
 
-		totalSite.aggregate( this.opsMgr,apsMgr.getTotalOp(aProfile));
+		totalSite.aggregate( this.opsMgr.getTruthTable(),this.opsMgr.getIntOperation(apsMgr.getTotalOp(aProfile)));
 
               
 		// Aggregate each group
@@ -151,7 +151,7 @@ public class CalcStatusEndGroup extends RichGroupReduceFunction<StatusMetric, St
 
 		}
 
-		totalSite.aggregate( this.opsMgr,apsMgr.getTotalOp(aProfile));
+		totalSite.aggregate( this.opsMgr.getTruthTable(),this.opsMgr.getIntOperation(apsMgr.getTotalOp(aProfile)));
 
 		// Append the timeline	
 		for (Entry<DateTime, Integer> item : totalSite.getSamples()) {

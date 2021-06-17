@@ -13,12 +13,11 @@ import argo.pojos.ServiceTrends;
 //import argo.pojos.Timeline;
 import argo.profiles.AggregationProfileParser;
 import argo.profiles.OperationsParser;
-import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.util.Collector;
 import timelines.Timeline;
-import timelines.TimelineMerger;
+import timelines.TimelineAggregator;
 
 /**
  *
@@ -46,17 +45,17 @@ public class CalcGroupFunctionFlipFlop implements GroupReduceFunction< ServiceTr
         //construct a timeline containing all the timestamps of each metric timeline
 
       
-        ArrayList<Timeline> timelist = new ArrayList<>();
+        HashMap<String,Timeline> timelist = new HashMap<>();
         for (ServiceTrends time : in) {
             group = time.getGroup();
             function=time.getFunction();
-            timelist.add(time.getTimeline());
+            timelist.put(time.getService(),time.getTimeline());
         }
         String operation=functionOperations.get(function);  //for each function an operation exists , so retrieve the corresponding truth table
-       TimelineMerger timelineMerger = new TimelineMerger();
-        timelineMerger.aggregate(timelist, operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
+        TimelineAggregator timelineAggregator = new TimelineAggregator(timelist);
+        timelineAggregator.aggregate( operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
       
-        Timeline timeline= timelineMerger.getOutput();
+        Timeline timeline= timelineAggregator.getOutput();
         int flipflops = timeline.calcStatusChanges();
 
         GroupFunctionTrends groupFunctionTrends = new GroupFunctionTrends(group, function, timeline, flipflops);

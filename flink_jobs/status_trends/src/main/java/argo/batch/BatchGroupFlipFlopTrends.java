@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package argo.batch;
 
 import argo.avro.MetricData;
@@ -30,11 +25,25 @@ import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.joda.time.DateTime;
-
 /**
- *
- * @author cthermolia
- */
+ * Implements an ARGO Status Trends Job in flink , to count the number of status changes
+ * that occur to the level of group  of the topology hierarchy
+ * 
+ * Submit job in flink cluster using the following parameters 
+
+* --date:the date for which the job runs and need to return results , yyyy-MM-dd
+* --yesterdayData: path to the metric profile data, of the previous day , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
+* --todayData: path to the metric profile data, of the current day , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
+* --mongoUri: path to MongoDB destination (eg mongodb://localhost:27017/database
+* --apiUri: path to the mongo db the  , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
+* --key: ARGO web api token    
+* --reportId: the id of the report the job will need to process
+*  --apiUri: ARGO wep api to connect to msg.example.com
+*Optional: 
+* -- clearMongo: option to clear the mongo db before saving the new result or not, e.g  true 
+* -- N : the number of the result the job will provide, if the parameter exists , e.g 10
+* 
+*/
 public class BatchGroupFlipFlopTrends {
 
     private static DataSet<MetricData> yesterdayData;
@@ -47,8 +56,8 @@ public class BatchGroupFlipFlopTrends {
     private static String format = "yyyy-MM-dd";
 
     private static String reportId;
-    private static boolean clearMongo = false;
-
+    private static boolean clearMongo=false;
+    private static String profilesDateStr;
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
@@ -64,8 +73,8 @@ public class BatchGroupFlipFlopTrends {
 
         }
         reportId = params.getRequired("reportId");
-       String profilesDateStr = Utils.getParameterDate(format, params.getRequired("date"));
-       profilesDate=Utils.convertStringtoDate(format, profilesDateStr);
+     profilesDate = Utils.convertStringtoDate(format, params.getRequired("date"));
+        profilesDateStr = Utils.convertDateToString(format, profilesDate);
      
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
@@ -121,7 +130,7 @@ public class BatchGroupFlipFlopTrends {
             groupData = groupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
 
-       MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDate.toString(), clearMongo);
+       MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, groupTrends, MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportId, profilesDateStr, clearMongo);
 
         DataSet<Trends> trends = groupData.map(new MapFunction<GroupTrends, Trends>() {
 
