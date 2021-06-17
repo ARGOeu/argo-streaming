@@ -30,25 +30,28 @@ import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.joda.time.DateTime;
-/**
- * Implements an ARGO Status Trends Job in flink , to count the number of status changes
- * that occur to all levels of the topology hierarchy
- * 
- * Submit job in flink cluster using the following parameters 
 
-* --date:the date for which the job runs and need to return results , e.g yyyy-MM-dd
-* --yesterdayData: path to the metric profile data, of the previous day , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
-* --todayData: path to the metric profile data, of the current day , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
-* --mongoUri: path to MongoDB destination (eg mongodb://localhost:27017/database
-* --apiUri: path to the mongo db the  , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
-* --key: ARGO web api token    
-* --reportId: the id of the report the job will need to process
-*  --apiUri: ARGO wep api to connect to e.g msg.example.com
-* Optional: 
-* -- clearMongo: option to clear the mongo db before saving the new result or not, e.g  true 
-* -- N : the number of the result the job will provide, if the parameter exists , e.g 10
-* 
-*/
+/**
+
+ * Implements an ARGO Status Trends Job in flink , to count the number of status
+ * changes that occur to all levels of the topology hierarchy
+ *
+ * Submit job in flink cluster using the following parameters  *
+ * --date:the date for which the job runs and need to return results , e.g
+ * yyyy-MM-dd --yesterdayData: path to the metric profile data, of the previous
+ * day , for which the jobs runs profile (For hdfs use:
+ * hdfs://namenode:port/path/to/file) --todayData: path to the metric profile
+ * data, of the current day , for which the jobs runs profile (For hdfs use:
+ * hdfs://namenode:port/path/to/file) --mongoUri: path to MongoDB destination
+ * (eg mongodb://localhost:27017/database --apiUri: path to the mongo db the ,
+ * for which the jobs runs profile (For hdfs use:
+ * hdfs://namenode:port/path/to/file) --key: ARGO web api token --reportId: the
+ * id of the report the job will need to process --apiUri: ARGO wep api to
+ * connect to e.g msg.example.com Optional: -- clearMongo: option to clear the
+ * mongo db before saving the new result or not, e.g true -- N : the number of
+ * the result the job will provide, if the parameter exists , e.g 10
+ *
+ */
 
 public class BatchFlipFlopCollection {
 
@@ -98,9 +101,9 @@ public class BatchFlipFlopCollection {
 // execute program
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Collection Flip Flops for: ");
-        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
+        jobTitleSB.append(profilesLoader.getReportParser().getTenant());
         jobTitleSB.append("/");
-        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getInfo()[0]);
+        jobTitleSB.append(profilesLoader.getReportParser().getReport());
         jobTitleSB.append("/");
         jobTitleSB.append(profilesDate);
         env.execute(jobTitleSB.toString());
@@ -117,9 +120,7 @@ public class BatchFlipFlopCollection {
         DataSet<MetricData> filteredTodayData = todayData.filter(new TopologyMetricFilter(profilesLoader.getMetricProfileParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser()));
 
         //group data by service enpoint metric and return for each group , the necessary info and a treemap containing timestamps and status
-
-        DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getOperationParser(), profilesLoader.getTopologyEndpointParser(),profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser(), profilesDate));
-
+        DataSet<MetricTrends> serviceEndpointMetricGroupData = filteredTodayData.union(filteredYesterdayData).groupBy("hostname", "service", "metric").reduceGroup(new CalcMetricFlipFlopTrends(profilesLoader.getOperationParser(), profilesLoader.getTopologyEndpointParser(), profilesLoader.getTopolGroupParser(), profilesLoader.getAggregationProfileParser(), profilesDate));
         DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
         if (rankNum != null) { //sort and rank data
             noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);

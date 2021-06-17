@@ -1,4 +1,4 @@
-package ops;
+package argo.profiles;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,10 +19,17 @@ import com.google.gson.JsonParser;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+/**
+ *
+ *
+ * ReportManager class implements objects that store the information parsed from
+ * a json object containing the profile data of a tenant's report or loaded from
+ * a json file
+ */
 
-public class ConfigManager {
+public class ReportManager {
 
-    private static final Logger LOG = Logger.getLogger(ConfigManager.class.getName());
+    private static final Logger LOG = Logger.getLogger(ReportManager.class.getName());
 
     public String id; // report uuid reference
     public String report;
@@ -36,7 +43,11 @@ public class ConfigManager {
     private Threshold threshold;
     ArrayList<Profiles> profiles;
 
-    public ConfigManager() {
+    /**
+     * Constructor to a ReportManager object to store the tenant's report
+     * information
+     */
+    public ReportManager() {
         this.report = null;
         this.id = null;
         this.tenant = null;
@@ -50,6 +61,9 @@ public class ConfigManager {
 
     }
 
+    /**
+     * Clears the stored data of a ReportManager object
+     */
     public void clear() {
         this.id = null;
         this.report = null;
@@ -57,9 +71,11 @@ public class ConfigManager {
         this.egroup = null;
         this.ggroup = null;
         this.weight = null;
+        this.threshold = null;
         this.egroupTags.clear();
         this.ggroupTags.clear();
         this.mdataTags.clear();
+        this.profiles.clear();
 
     }
 
@@ -79,6 +95,13 @@ public class ConfigManager {
         return egroup;
     }
 
+    /**
+     * loads from a json file that contain the tenant's report , and stores the
+     * info to the corresponding fields
+     *
+     * @param jsonFile
+     * @throws IOException
+     */
     public void loadJson(File jsonFile) throws IOException {
         // Clear data
         this.clear();
@@ -118,40 +141,6 @@ public class ConfigManager {
             // Grab the first - and only line of json from ops data
             JsonElement jElement = jsonParser.parse(confJson.get(0));
             readJson(jElement);
-//			JsonObject jObj = jElement.getAsJsonObject();
-//			// Get the simple fields
-//			this.id = jObj.get("id").getAsString();
-//			this.tenant = jObj.get("tenant").getAsString();
-//			this.report = jObj.get("info").getAsJsonObject().get("name").getAsString();
-//			// get topology schema names
-//			JsonObject topoGroup = jObj.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
-//			this.ggroup = topoGroup.get("type").getAsString();
-//			this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
-//			// optional weight filtering
-//			this.weight = "";
-//			if (jObj.has("weight")){
-//				this.weight = jObj.get("weight").getAsString();
-//			}
-//			// Get compound fields
-//			JsonArray jTags = jObj.getAsJsonArray("tags");
-//			
-//			// Iterate tags
-//			if (jTags != null) {
-//				for (JsonElement tag : jTags) {
-//					JsonObject jTag = tag.getAsJsonObject();
-//					String name = jTag.get("name").getAsString();
-//					String value = jTag.get("value").getAsString();
-//					String ctx = jTag.get("context").getAsString();
-//					if (ctx.equalsIgnoreCase("group_of_groups")){
-//						this.ggroupTags.put(name, value);
-//					} else if (ctx.equalsIgnoreCase("endpoint_groups")){
-//						this.egroupTags.put(name, value);
-//					} else if (ctx.equalsIgnoreCase("metric_data")) {
-//						this.mdataTags.put(name, value);
-//					}
-//					
-//				}
-//			}
 
         } catch (JsonParseException ex) {
             LOG.error("Not valid json contents");
@@ -160,6 +149,13 @@ public class ConfigManager {
 
     }
 
+    /**
+     * reads from a JsonElement array and stores the necessary information to
+     * the ReportManager objects and add them to the list
+     *
+     * @param jElement , a JsonElement containing the tenant's report data
+     * @return
+     */
     public void readJson(JsonElement jElement) {
 
         JsonObject jObj = jElement.getAsJsonObject();
@@ -198,12 +194,12 @@ public class ConfigManager {
 
             }
         }
-        if(jObj.has("thresholds")){
+
         JsonObject thresholdsObject = jObj.get("thresholds").getAsJsonObject();
 
         this.threshold = new Threshold(thresholdsObject.get("availability").getAsLong(), thresholdsObject.get("reliability").getAsLong(), thresholdsObject.get("uptime").getAsDouble(),
                 thresholdsObject.get("unknown").getAsDouble(), thresholdsObject.get("downtime").getAsDouble());
-        }
+
         JsonArray profilesArray = jObj.get("profiles").getAsJsonArray();
 
         Iterator<JsonElement> profileIter = profilesArray.iterator();
@@ -215,6 +211,9 @@ public class ConfigManager {
 
     }
 
+    /**
+     * Threshold class is an inner class that stores the info of the thresholds as described from the tenant's report
+    */
     public class Threshold {
 
         private Long availability;
@@ -252,7 +251,9 @@ public class ConfigManager {
         }
 
     }
-
+/**
+ * Profiles class is a class that stores the info of the profiles as described from the tenant's report
+ */
     private class Profiles {
 
         private String id;
@@ -278,9 +279,12 @@ public class ConfigManager {
         }
 
     }
-
+/**
+ * Returns the aggregation's report id , as described in the profiles of tenant's report
+ * @return 
+ */
     public String getAggregationReportId() {
-         if (profiles != null) {
+        if (profiles != null) {
             for (Profiles profile : profiles) {
                 if (profile.getType().equalsIgnoreCase(ProfileType.AGGREGATION.name())) {
                     return profile.id;
@@ -290,8 +294,13 @@ public class ConfigManager {
         return null;
     }
 
+ 
+    /**
+     * Returns the metric's report id , as described in the profiles of tenant's report
+     * @return 
+     */
     public String getMetricReportId() {
-     
+
         if (profiles != null) {
             for (Profiles profile : profiles) {
                 if (profile.getType().equalsIgnoreCase(ProfileType.METRIC.name())) {
@@ -302,6 +311,10 @@ public class ConfigManager {
         return null;
     }
 
+ /**
+  * Returns the operation's report id , as described in the profiles of tenant's report
+  * @return 
+  */
     public String getOperationReportId() {
         if (profiles != null) {
             for (Profiles profile : profiles) {
@@ -312,7 +325,7 @@ public class ConfigManager {
         }
         return null;
     }
-    
+
     public enum ProfileType {
 
         METRIC,
