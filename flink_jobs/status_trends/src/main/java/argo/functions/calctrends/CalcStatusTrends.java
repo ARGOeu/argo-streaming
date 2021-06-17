@@ -56,8 +56,8 @@ public class CalcStatusTrends implements GroupReduceFunction<MetricData, Tuple6<
             // group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
             String avProfileName = this.aggregationProfileParser.getAvProfileItem().getName();
 
-            // group=topologyEndpointParser.retrieveGroup(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString() + "-" + md.getService().toString());
-            groups = topologyEndpointParser.getGroup(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString(), md.getService().toString());
+            groups = topologyEndpointParser.getGroupFull(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString(), md.getService().toString());
+
 
             hostname = md.getHostname().toString();
             service = md.getService().toString();

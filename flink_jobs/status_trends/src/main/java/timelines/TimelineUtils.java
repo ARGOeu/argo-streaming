@@ -22,8 +22,6 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 /**
- *
- * @author cthermolia
  */
 public class TimelineUtils {
 

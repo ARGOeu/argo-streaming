@@ -18,14 +18,15 @@ import org.json.simple.parser.ParseException;
  */
 public class ProfilesLoader {
 
-    private ReportManager reportParser;
 
+    private ReportManager reportParser;
 
     private EndpointGroupManager topologyEndpointParser;
     private MetricProfileManager metricProfileParser;
 
     private OperationsParser operationParser;
     private AggregationProfileManager aggregationProfileParser;
+
     private GroupGroupManager topolGroupParser;
 
     private String aggregationId;
@@ -36,8 +37,7 @@ public class ProfilesLoader {
     }
 
     public ProfilesLoader(ParameterTool params) throws IOException, ParseException {
-
-        JsonElement reportProfileJson = RequestManager.reportProfileRequest(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
+       JsonElement reportProfileJson = RequestManager.reportProfileRequest(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
         reportParser = new ReportManager();
         reportParser.readJson(reportProfileJson);
 
@@ -63,6 +63,7 @@ public class ProfilesLoader {
         aggregationProfileParser.readJson(aggregationProfileJson);
 
         JsonArray endpointGroupProfileJson = RequestManager.endpointGroupProfileRequest(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), reportName, params.get("date"));
+
         topologyEndpointParser = new EndpointGroupManager();
         topologyEndpointParser.loadGroupEndpointProfile(endpointGroupProfileJson);
 
@@ -71,6 +72,7 @@ public class ProfilesLoader {
         topolGroupParser = new GroupGroupManager();
         topolGroupParser.loadGroupGroupProfile(groupGroupProfileJson);
     }
+
 
     public ReportManager getReportParser() {
         return reportParser;
