@@ -30,7 +30,6 @@ import org.joda.time.DateTime;
  * Implements an ARGO Status Trends Job in flink , to count the number of status
  * changes that occur to the level of group of the topology hierarchy
  *
-
  * Submit job in flink cluster using the following parameters * --date:the date
  * for which the job runs and need to return results , yyyy-MM-dd
  * --yesterdayData: path to the metric profile data, of the previous day , for

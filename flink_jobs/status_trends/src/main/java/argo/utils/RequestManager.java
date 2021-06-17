@@ -83,7 +83,6 @@ public class RequestManager {
         return loadProfile(uri, key, proxy).get(0);
     }
 
-
     public static JsonElement metricProfileRequest(String apiUri, String metricId, String key, String proxy, String dateStr) throws IOException, ParseException {
 
         String uri = apiUri + "/metric_profiles" + "/" + metricId;
@@ -101,8 +100,6 @@ public class RequestManager {
             uri = uri + "?date=" + dateStr;
         }
         return loadProfile(uri, key, proxy).get(0);
-
-
     }
 
     public static JsonArray endpointGroupProfileRequest(String apiUri, String key, String proxy, String reportname, String dateStr) throws IOException, ParseException {
@@ -114,30 +111,37 @@ public class RequestManager {
         return loadProfile(uri, key, proxy);
 
     }
-  public static JsonArray groupGroupProfileRequest(String apiUri, String key, String proxy, String reportname,String dateStr) throws IOException, ParseException {
- 
-        String uri = apiUri +  "/topology/groups/by_report" + "/" + reportname;
+
+    public static JsonArray groupGroupProfileRequest(String apiUri, String key, String proxy, String reportname, String dateStr) throws IOException, ParseException {
+
+        String uri = apiUri + "/topology/groups/by_report" + "/" + reportname;
         if (dateStr != null) {
             uri = uri + "?date=" + dateStr;
         }
         return loadProfile(uri, key, proxy);
 
-
     }
 
     public static JsonElement reportProfileRequest(String apiUri, String key, String proxy, String reportId) throws IOException, ParseException {
 
+        //   String uri = apiUri + "/reports/";
+//        if (dateStr != null) {
+//            uri = uri + "?date=" + dateStr;
+//        }
         String uri = apiUri + "/reports/" + reportId;
         return loadProfile(uri, key, proxy).get(0);
 
-
     }
+
 
     public static JsonArray loadProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
         JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
         JsonObject jsonObj = jsonElement.getAsJsonObject();
         JsonArray dataObj = jsonObj.getAsJsonArray("data");
-             return dataObj;
+
+        //JsonElement dataElement = dataObj.get(0);
+
+        return dataObj;
     }
 
 }

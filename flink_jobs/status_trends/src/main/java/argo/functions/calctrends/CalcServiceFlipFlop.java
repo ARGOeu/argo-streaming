@@ -33,6 +33,7 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
     public CalcServiceFlipFlop(OperationsParser operationsParser, AggregationProfileManager aggregationProfileParser) {
         this.operationsParser = operationsParser;
         this.serviceFunctionsMap = aggregationProfileParser.retrieveServiceOperations();
+
     }
 
     @Override
@@ -48,7 +49,6 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
             service = endpointTrend.getService();
                 timelineList.put(endpointTrend.getEndpoint(), endpointTrend.getTimeline());
         }
-
             String operation = serviceFunctionsMap.get(service);
             TimelineAggregator timelineAggregator = new TimelineAggregator(timelineList);
             timelineAggregator.aggregate(operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
