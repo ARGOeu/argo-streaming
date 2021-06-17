@@ -142,7 +142,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 
 		}
 
-		this.endpointAggr.aggregate(this.opsMgr, this.apsMgr.getMetricOp(aprofile));
+		this.endpointAggr.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(this.apsMgr.getMetricOp(aprofile)));
 
 		// Append the timeline
 		

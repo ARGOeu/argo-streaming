@@ -5,14 +5,12 @@ package timelines;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import argo.profiles.OperationsParser;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import org.apache.commons.math3.complex.Quaternion;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
@@ -185,16 +183,15 @@ public class Timeline {
         for (DateTime point : result.getPoints()) {
             int a = this.get(point);
             int b = second.get(point);
-
-            int x = -1;
-            try {
+            if (a != -1 && b != -1) {
+                int x = -1;
                 x = truthTable[op][a][b];
-            } catch (IndexOutOfBoundsException ex) {
-                // LOG.info(ex);
-                x = -1;
+                if (x == -1) {
+                    x = truthTable[op][b][a];
+                }
+
+                result.insert(point, x);
             }
-           
-            result.insert(point, x);
         }
 
         result.optimize();
@@ -204,21 +201,21 @@ public class Timeline {
         this.bulkInsert(result.getSamples());
     }
 
-    public TreeMap<String, Integer> buildStringTimeStampMap(ArrayList<String[]> timestampList, OperationsParser op) {
+    public TreeMap<String, Integer> buildStringTimeStampMap(ArrayList<String[]> timestampList, ArrayList<String> states) {
 
         TreeMap<String, Integer> timestampMap = new TreeMap();
 
         for (String[] timestamp : timestampList) {
 
             String time = timestamp[0];
-            int status = op.getIntStatus(timestamp[1]);
+            int status = states.indexOf(timestamp[1]);
             timestampMap.put(time, status);
         }
         return timestampMap;
 
     }
 
-    public TreeMap<DateTime, Integer> buildDateTimeStampMap(ArrayList<String[]> timestampList, OperationsParser op) {
+    public TreeMap<DateTime, Integer> buildDateTimeStampMap(ArrayList<String[]> timestampList, ArrayList<String> states) {
 
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
 
@@ -227,7 +224,7 @@ public class Timeline {
             DateTime tmp_date = new DateTime();
             DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
             tmp_date = fmt.parseDateTime(timestamp[0]);
-            int status = op.getIntStatus(timestamp[1]);
+            int status = states.indexOf(timestamp[1]);
             timestampMap.put(tmp_date, status);
         }
         return timestampMap;
@@ -254,7 +251,7 @@ public class Timeline {
         return this.samples.keySet().size() - 1;
     }
 
-    public void replacePreviousDateStatus(DateTime date, OperationsParser opsMgr) {
+    public void replacePreviousDateStatus(DateTime date, ArrayList<String> availStates) {
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
         DateTime firsTime = date;
@@ -266,7 +263,7 @@ public class Timeline {
             this.samples.put(firsTime, previousStatus);
             this.samples.remove(firstEntry);
         } else if (firstEntry == null) {
-            this.samples.put(firsTime, opsMgr.getIntStatus("MISSING"));
+            this.samples.put(firsTime, availStates.indexOf("MISSING"));
         }
 
         this.optimize();

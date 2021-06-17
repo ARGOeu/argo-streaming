@@ -77,6 +77,12 @@ under the License.
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+       
+        <dependency>
+            <groupId>de.javakaffee</groupId>
+            <artifactId>kryo-serializers</artifactId>
+            <version>0.30</version>
+        </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -116,6 +122,7 @@ under the License.
             <artifactId>flink-avro_2.10</artifactId>
             <version>${flink.version}</version>
         </dependency>
+    
        
             
         <!-- Apache Flink dependencies -->

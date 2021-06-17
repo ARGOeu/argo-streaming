@@ -3,12 +3,10 @@ package timelines;
 
 
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import ops.OpsManager;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
@@ -21,7 +19,7 @@ public class TimelineAggregator {
 	
 	public TimelineAggregator(String timestamp) throws ParseException
 	{
-		this.output = new Timeline();
+		this.output = new Timeline(timestamp);
 		this.inputs = new HashMap<String,Timeline>();
 	}
 	
@@ -45,8 +43,7 @@ public class TimelineAggregator {
 	}
 	
 	public void createTimeline(String name, String timestamp, int prevState){
-		Timeline temp = new Timeline();
-                temp.insert(timestamp, prevState);
+		Timeline temp = new Timeline(timestamp,prevState);
 	    this.inputs.put(name, temp);
 	}
 	
@@ -54,8 +51,7 @@ public class TimelineAggregator {
 		// Check if timeline exists, if not create it
 		if (this.inputs.containsKey(name) == false)
 		{
-			Timeline temp = new Timeline();
-                        temp.insert(timestamp, status);
+			Timeline temp = new Timeline(timestamp,status);
 			this.inputs.put(name, temp);
 			return;
 		}
@@ -67,8 +63,7 @@ public class TimelineAggregator {
 		// Check if timeline exists, if not create it
 		if (this.inputs.containsKey(name) == false)
 		{
-			Timeline temp = new Timeline();
-                        temp.insert(timestamp, status);
+			Timeline temp = new Timeline(timestamp,status);
 			this.inputs.put(name, temp);
 			return;
 		}
@@ -91,27 +86,14 @@ public class TimelineAggregator {
 		this.inputs.clear();
 		
 	}
-
-    public Timeline getOutput() {
-        return output;
-    }
-
-    public void setOutput(Timeline output) {
-        this.output = output;
-    }
-
-    public Map<String, Timeline> getInputs() {
-        return inputs;
-    }
-
-    public void setInputs(Map<String, Timeline> inputs) {
-        this.inputs = inputs;
-    }
 	
-     public void aggregate(OpsManager opsMgr, String op){
-     
-       TimelineMerger.aggregate((ArrayList<Timeline>)this.inputs.values(), opsMgr.getTruthTable(), opsMgr.getIntOperation(op));
-       this.output=TimelineMerger.getOutput();
-     }
-
+	public void aggregate(int[][][] truthTable, int op ){
+		this.output.clear();
+		
+		//Iterate through all available input timelines and aggregate
+		for (Timeline item : this.inputs.values()) {
+			this.output.aggregate(item,  truthTable,  op );
+		}
+		
+	}
 }

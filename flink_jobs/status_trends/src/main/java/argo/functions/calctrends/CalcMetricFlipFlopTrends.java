@@ -12,7 +12,7 @@ import argo.profiles.AggregationProfileParser;
 import argo.profiles.OperationsParser;
 import argo.profiles.TopologyEndpointParser;
 import argo.utils.Utils;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.util.Collector;
@@ -41,7 +41,7 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
     public CalcMetricFlipFlopTrends(OperationsParser operationsParser, TopologyEndpointParser topologyEndpointParser, AggregationProfileParser aggregationProfileParser, DateTime date) {
         this.topologyEndpointParser = topologyEndpointParser;
         this.aggregationProfileParser = aggregationProfileParser;
-        this.operationsParser=operationsParser;
+        this.operationsParser = operationsParser;
         this.date = date;
     }
 
@@ -59,25 +59,23 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
         String hostname = null;
         String service = null;
         String metric = null;
-        System.out.println("************");
         for (MetricData md : in) {
             hostname = md.getHostname().toString();
             service = md.getService().toString();
             metric = md.getMetric().toString();
             //      group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService()); //retrieve the group for the service, as contained in file
             group = topologyEndpointParser.retrieveGroup(aggregationProfileParser.getEndpointGroup().toUpperCase(), md.getHostname().toString() + "-" + md.getService().toString());
-            int st=operationsParser.getIntStatus(md.getStatus().toString());
+            int st = operationsParser.getIntStatus(md.getStatus().toString());
             timeStatusMap.put(Utils.convertStringtoDate(format, md.getTimestamp().toString()), st);
         }
 
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timeStatusMap);
-        
-        timeline.replacePreviousDateStatus(date, operationsParser);//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
-        Integer flipflop = timeline.calcStatusChanges();
-        System.out.println("flip flops : "+flipflop);
 
-        if (group != null && service != null && hostname != null && metric != null &&  flipflop>0) {
+        timeline.replacePreviousDateStatus(date, new ArrayList<>(operationsParser.getStates().keySet()));//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
+        Integer flipflop = timeline.calcStatusChanges();
+
+        if (group != null && service != null && hostname != null && metric != null) {
             MetricTrends metricTrends = new MetricTrends(group, service, hostname, metric, timeline, flipflop);
             out.collect(metricTrends);
         }

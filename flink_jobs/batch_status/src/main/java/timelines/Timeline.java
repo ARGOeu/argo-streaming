@@ -182,14 +182,16 @@ public class Timeline {
         for (DateTime point : result.getPoints()) {
             int a = this.get(point);
             int b = second.get(point);
-            int x = -1;
-            try {
-                x = truthTable[op][a][b];
-            } catch (IndexOutOfBoundsException ex) {
-                // LOG.info(ex);
-                x = -1;
+            if (a != -1 && b != -1) {
+                int x = -1;
+                try {
+                    x = truthTable[op][a][b];
+                } catch (IndexOutOfBoundsException ex) {
+                    // LOG.info(ex);
+                    x = -1;
+                }
+                result.insert(point, x);
             }
-            result.insert(point, x);
         }
 
         result.optimize();

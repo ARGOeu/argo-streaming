@@ -31,40 +31,43 @@ public class Utils {
     static Logger LOG = LoggerFactory.getLogger(Utils.class);
     //   String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
-    public static String getParameterDate(String format, String paramDate) throws ParseException {
-        DateTime date = convertStringtoDate(format, paramDate);
+//    public static String getParameterDate(String format, String paramDate) throws ParseException {
+//        DateTime date = convertStringtoDate(format, paramDate);
+//
+//        DateTime dt = new DateTime(date);
+//        DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
+//        String profileDate = dt.toString(dtf);
+//
+//        return profileDate;
+//
+//    }
 
-        DateTime dt = new DateTime(date);
-        DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
-        String profileDate = dt.toString(dtf);
-
-        return profileDate;
-
-    }
-
-    public static String convertDateToString(String format, Date date) throws ParseException {
+    public static String convertDateToString(String format, DateTime date) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        sdf.setTimeZone(TimeZone.getDefault());
-        Calendar newCalendar = Calendar.getInstance();
-        newCalendar.setTime(date);
-        newCalendar.set(Calendar.MILLISECOND, 0);
-        return sdf.format(newCalendar.getTime());
+        DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
+        String dateString = date.toString(dtf);
+        return dateString;
+        
     }
 
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
 
         //   String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        sdf.setTimeZone(TimeZone.getDefault());
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(sdf.parse(dateStr));
-        cal.set(Calendar.MILLISECOND, 0);
-        return new DateTime(cal.getTime());
+//        SimpleDateFormat sdf = new SimpleDateFormat(format);
+//        sdf.setTimeZone(TimeZone.getDefault());
+//        Calendar cal = Calendar.getInstance();
+//        cal.setTime(sdf.parse(dateStr));
+//        cal.set(Calendar.MILLISECOND, 0);
+//        return new DateTime(cal.getTime());
+        DateTimeFormatter formatter = DateTimeFormat.forPattern(format);
+        DateTime dt = formatter.parseDateTime(dateStr);
+        
+        
+        return dt;
     }
 
-    public static Date createDate(String format, Date dateStr, int hour, int min, int sec) throws ParseException {
+    public static DateTime createDate(String format, Date dateStr, int hour, int min, int sec) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         SimpleDateFormat sdf = new SimpleDateFormat(format);
@@ -76,7 +79,7 @@ public class Utils {
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
-        return newCalendar.getTime();
+        return new DateTime( newCalendar.getTime());
     }
 
     public static boolean isPreviousDate(String format, Date nowDate, Date firstDate) throws ParseException {
@@ -110,7 +113,7 @@ public class Utils {
 
     }
 
-    public static Date createDate(String format, int year, int month, int day, int hour, int min, int sec) throws ParseException {
+    public static DateTime createDate(String format, int year, int month, int day, int hour, int min, int sec) throws ParseException {
 
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         SimpleDateFormat sdf = new SimpleDateFormat(format);
@@ -125,7 +128,7 @@ public class Utils {
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
 
-        return newCalendar.getTime();
+        return  new DateTime(newCalendar.getTime());
     }
 
     public static HashMap<String, String> getEndpoints(ArrayList<TopologyEndpointParser.EndpointGroup> endpointList) throws IOException, org.json.simple.parser.ParseException {
