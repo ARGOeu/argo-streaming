@@ -20,7 +20,6 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
-import org.apache.avro.util.Utf8;
 import org.apache.commons.io.IOUtils;
 
 /**
@@ -135,13 +134,13 @@ public class DowntimeManager {
 
 				// Generate 2nd level generic record reader (tags)
 
-				HashMap<Utf8, String> tags = (HashMap<Utf8, String>) (avroRow.get("tags"));
-
-				if (tags != null) {
-					for (Utf8 item : tags.keySet()) {
-						tagMap.put(item.toString(), String.valueOf(tags.get(item)));
-					}
-				}
+//				HashMap<Utf8, String> tags = (HashMap<Utf8, String>) (avroRow.get("tags"));
+//
+//				if (tags != null) {
+//					for (Utf8 item : tags.keySet()) {
+//						tagMap.put(item.toString(), String.valueOf(tags.get(item)));
+//					}
+//				}
 
 				// Grab 1st level mandatory fields
 				String hostname = avroRow.get("hostname").toString();

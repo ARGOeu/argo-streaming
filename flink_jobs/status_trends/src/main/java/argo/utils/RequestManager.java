@@ -79,10 +79,18 @@ public class RequestManager {
         } else {
             uri = uri + "?date=" + dateStr;
         }
-
         return loadProfile(uri, key, proxy).get(0);
     }
 
+//    public static JsonElement loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
+//        JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
+//        JsonObject jsonObj=jsonElement.getAsJsonObject();
+//        JsonArray dataObj = jsonObj.getAsJsonArray("data");
+//        JsonElement dataElement=dataObj.get(0);
+//      
+//         
+//        return dataElement;
+//    }
     public static JsonElement metricProfileRequest(String apiUri, String metricId, String key, String proxy, String dateStr) throws IOException, ParseException {
 
         String uri = apiUri + "/metric_profiles" + "/" + metricId;
@@ -100,7 +108,11 @@ public class RequestManager {
             uri = uri + "?date=" + dateStr;
         }
         return loadProfile(uri, key, proxy).get(0);
+
     }
+
+
+
 
     public static JsonArray endpointGroupProfileRequest(String apiUri, String key, String proxy, String reportname, String dateStr) throws IOException, ParseException {
 

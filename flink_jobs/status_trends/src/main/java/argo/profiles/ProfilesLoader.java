@@ -18,8 +18,6 @@ import org.json.simple.parser.ParseException;
  */
 public class ProfilesLoader {
 
-
-
     private ReportManager reportParser;
 
 
@@ -28,7 +26,6 @@ public class ProfilesLoader {
 
     private OperationsParser operationParser;
     private AggregationProfileManager aggregationProfileParser;
-
     private GroupGroupManager topolGroupParser;
 
     private String aggregationId;
