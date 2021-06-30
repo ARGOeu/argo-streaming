@@ -44,9 +44,9 @@ public class BatchStatusTrends {
     private static DataSet<MetricData> yesterdayData;
     private static DataSet<MetricData> todayData;
     private static Integer rankNum;
-    private static final String criticalStatusTrends = "status_trends_critical";
-    private static final String warningStatusTrends = "status_trends_warning";
-    private static final String unknownStatusTrends = "status_trends_unknown";
+
+    private static final String statusTrendsCol = "status_trends_metrics";
+   
 
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
@@ -85,9 +85,9 @@ public class BatchStatusTrends {
         todayData = readInputData(env, params, "todayData");
 
         DataSet<Tuple6<String, String, String, String, String, Integer>> rankedData = rankByStatus();
-        filterByStatusAndWrite(criticalStatusTrends, rankedData, "critical");
-        filterByStatusAndWrite(warningStatusTrends, rankedData, "warning");
-        filterByStatusAndWrite(unknownStatusTrends, rankedData, "unknown");
+        filterByStatusAndWrite(statusTrendsCol, rankedData, "critical");
+        filterByStatusAndWrite(statusTrendsCol, rankedData, "warning");
+        filterByStatusAndWrite(statusTrendsCol, rankedData, "unknown");
 
 // execute program
              StringBuilder jobTitleSB = new StringBuilder();
