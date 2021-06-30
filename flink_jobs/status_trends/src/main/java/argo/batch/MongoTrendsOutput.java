@@ -32,7 +32,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
 //	private MongoMethod method;
     private TrendsType trendsType;
     private String report;
-    private String date;
+    private int date;
     private MongoClient mClient;
     private MongoDatabase mDB;
     private MongoCollection<Document> mCol;
@@ -41,7 +41,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
     // constructor
     public MongoTrendsOutput(String uri, String col, TrendsType trendsType, String report, String date, boolean clearMongo) {
 
-        this.date = date;
+        this.date = Integer.parseInt(date.replace("-", ""));
         this.trendsType = trendsType;
         this.report = report;
 
