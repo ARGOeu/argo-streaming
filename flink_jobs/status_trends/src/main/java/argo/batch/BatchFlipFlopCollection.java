@@ -34,10 +34,7 @@ import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 
-/**
- *
- * @author cthermolia
- */
+
 public class BatchFlipFlopCollection {
 
     private static DataSet<MetricData> yesterdayData;
