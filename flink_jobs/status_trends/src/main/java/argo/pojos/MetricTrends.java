@@ -11,7 +11,7 @@ package argo.pojos;
  * MetricTrends, describes the computed trend information extracted from the set of the timelines at the level of group service endpoints metrics groups 
 
  */
-public class MetricTrends {
+public class MetricTrends{
 
     String group;
     String service;

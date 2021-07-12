@@ -77,7 +77,7 @@ public class BatchServiceFlipFlopTrends {
           System.exit(0);
         }
 
-        env.setParallelism(1);
+    
 
         if(params.get("clearMongo")!=null && params.getBoolean("clearMongo")==true){
             clearMongo=true;
@@ -97,7 +97,16 @@ public class BatchServiceFlipFlopTrends {
         calcFlipFlops();
 
 // execute program
-        env.execute("Flink Batch Java API Skeleton");
+        StringBuilder jobTitleSB = new StringBuilder();
+        jobTitleSB.append("Service Flip Flops for: ");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getInfo()[0]);
+        jobTitleSB.append("/");
+        jobTitleSB.append(profilesDate);
+        env.execute(jobTitleSB.toString());
+
+      
 
     }
 
@@ -120,9 +129,9 @@ public class BatchServiceFlipFlopTrends {
         DataSet< ServiceTrends> serviceGroupData = serviceEndpointGroupData.filter(new ServiceFilter(profilesLoader.getAggregationProfileParser())).groupBy("group", "service").reduceGroup(new CalcServiceFlipFlop(profilesLoader.getOperationParser(), profilesLoader.getAggregationProfileParser()));
 
         if (rankNum != null) { //sort and rank data
-            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING).first(rankNum);
+            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING);
+            serviceGroupData = serviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
 
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, serviceTrends, MongoTrendsOutput.TrendsType.TRENDS_SERVICE, reportId, profilesDate, clearMongo);
