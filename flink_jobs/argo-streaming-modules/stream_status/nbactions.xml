@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>run</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.0.0:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-classpath %classpath argo.streaming.AmsStreamStatus --sync.mps hdfs://localhost:9000/user/cthermolia/metric_profile_2021-04-05.avro --sync.egp hdfs://localhost:9000/user/cthermolia/group_endpoints_2021-04-05.avro --sync.apr hdfs://localhost:9000/user/cthermolia/NEANIAS_CORE_ap.json --sync.ops hdfs://localhost:9000/user/cthermolia/NEANIAS_ops.json --sync.downtime hdfs://localhost:9000/user/cthermolia/downtimes_2021-04-05.avro --report CORE --report.uuid 4eb9046e-5026-4c5b-a306-f23f448aac17 --run.date 2021-04-05 --ams.endpoint msg-devel.argo.grnet.gr --ams.port 8444 --ams.token 78f00b0474a899f85224043db8a8bb2e7007f56f7dde0a5b27abc23e6a336065 --ams.project NEANIAS --ams.sub.metric devtest_metric_data --ams.sub.sync  devtest_sync_data --mongo.uri  mongodb://localhost:27017/eventsdb --fs.output /home/cthermolia/Desktop/neanias_files/results --api.endpoint api.devel.argo.grnet.gr   --reportID 8b917325-bc45-4d72-9f31-5e2e2ca16bbf   --apiToken 1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f    --report.id 8b917325-bc45-4d72-9f31-5e2e2ca16bbf   --api.token 1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f   --run.date 2021-01-15 --api.interval 1000</exec.args>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+        <action>
+            <actionName>debug</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.0.0:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath argo.streaming.AmsStreamStatus --sync.mps hdfs://localhost:9000/user/cthermolia/metric_profile_2021-04-05.avro --sync.egp hdfs://localhost:9000/user/cthermolia/group_endpoints_2021-04-05.avro --sync.apr hdfs://localhost:9000/user/cthermolia/NEANIAS_CORE_ap.json --sync.ops hdfs://localhost:9000/user/cthermolia/NEANIAS_ops.json --sync.downtime hdfs://localhost:9000/user/cthermolia/downtimes_2021-04-05.avro --report CORE --report.uuid 4eb9046e-5026-4c5b-a306-f23f448aac17 --run.date 2021-04-05 --ams.endpoint msg-devel.argo.grnet.gr --ams.port 8444 --ams.token 78f00b0474a899f85224043db8a8bb2e7007f56f7dde0a5b27abc23e6a336065 --ams.project NEANIAS --ams.sub.metric devtest_metric_data --ams.sub.sync  devtest_sync_data --mongo.uri  mongodb://localhost:27017/eventsdb --fs.output /home/cthermolia/Desktop/neanias_files/results --api.endpoint api.devel.argo.grnet.gr   --reportID 8b917325-bc45-4d72-9f31-5e2e2ca16bbf   --apiToken 1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f    --report.id 8b917325-bc45-4d72-9f31-5e2e2ca16bbf   --api.token 1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f   --run.date 2021-01-15 --api.interval 1000</exec.args>
+                <exec.executable>java</exec.executable>
+                <jpda.listen>true</jpda.listen>
+            </properties>
+        </action>
+        <action>
+            <actionName>profile</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.0.0:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-classpath %classpath argo.streaming.AmsStreamStatus --sync.mps hdfs://localhost:9000/user/cthermolia/metric_profile_2021-04-05.avro --sync.egp hdfs://localhost:9000/user/cthermolia/group_endpoints_2021-04-05.avro --sync.apr hdfs://localhost:9000/user/cthermolia/NEANIAS_CORE_ap.json --sync.ops hdfs://localhost:9000/user/cthermolia/NEANIAS_ops.json --sync.downtime hdfs://localhost:9000/user/cthermolia/downtimes_2021-04-05.avro --report CORE --report.uuid 4eb9046e-5026-4c5b-a306-f23f448aac17 --run.date 2021-04-05 --ams.endpoint msg-devel.argo.grnet.gr --ams.port 8444 --ams.token 78f00b0474a899f85224043db8a8bb2e7007f56f7dde0a5b27abc23e6a336065 --ams.project NEANIAS --ams.sub.metric devtest_metric_data --ams.sub.sync  devtest_sync_data --mongo.uri  mongodb://localhost:27017/eventsdb --fs.output /home/cthermolia/Desktop/neanias_files/results --api.endpoint api.devel.argo.grnet.gr   --reportID 8b917325-bc45-4d72-9f31-5e2e2ca16bbf   --apiToken 1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f    --report.id 8b917325-bc45-4d72-9f31-5e2e2ca16bbf   --api.token 1dc190a3e0f539c38baab65f1dbfc3ee1d0fee9f   --run.date 2021-01-15 --api.interval 1000</exec.args>
+                <exec.executable>java</exec.executable>
+            </properties>
+        </action>
+    </actions>

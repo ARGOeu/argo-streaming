@@ -1,0 +1,48 @@
+{
+  "ch.cern.sam.ROC_CRITICAL ARC-CE": [
+    "org.nordugrid.ARC-CE-ARIS",
+    "org.nordugrid.ARC-CE-IGTF",
+    "org.nordugrid.ARC-CE-lfc",
+    "org.nordugrid.ARC-CE-result",
+    "org.nordugrid.ARC-CE-srm",
+    "org.nordugrid.ARC-CE-sw-csh"
+  ],
+  "ch.cern.sam.ROC_CRITICAL CREAM-CE": [
+    "emi.cream.CREAMCE-JobSubmit",
+    "emi.wn.WN-Bi",
+    "emi.wn.WN-Csh",
+    "emi.wn.WN-SoftVer",
+    "hr.srce.CADist-Check",
+    "hr.srce.CREAMCE-CertLifetime",
+    "org.sam.WN-Rep"
+  ],
+  "ch.cern.sam.ROC_CRITICAL SRMv2": [
+    "hr.srce.SRM2-CertLifetime",
+    "org.sam.SRM-Del",
+    "org.sam.SRM-Get",
+    "org.sam.SRM-GetSURLs",
+    "org.sam.SRM-GetTURLs",
+    "org.sam.SRM-LsDir",
+    "org.sam.SRM-Ls",
+    "org.sam.SRM-Put"
+  ],
+  "ch.cern.sam.ROC_CRITICAL Site-BDII": [
+    "org.bdii.Entries",
+    "org.bdii.Freshness",
+    "org.gstat.SanityCheck"
+  ],
+  "ch.cern.sam.ROC_CRITICAL QCG.Computing": [
+    "hr.srce.QCG-Computing-CertLifetime",
+    "pl.plgrid.QCG-Computing"
+  ],
+  "ch.cern.sam.ROC_CRITICAL GRAM5": [
+    "hr.srce.GRAM-Auth",
+    "hr.srce.GRAM-CertLifetime",
+    "hr.srce.GRAM-Command"
+  ],
+  "ch.cern.sam.ROC_CRITICAL unicore6.TargetSystemFactory": [
+    "emi.unicore.TargetSystemFactory",
+    "emi.unicore.UNICORE-Job"
+  ]
+}
+

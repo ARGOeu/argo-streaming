@@ -1,0 +1,462 @@
+{
+    "desdemona.zih.tu-dresden.de CREAM-CE": {
+        "key": 80,
+        "value": 144
+    },
+    "ophelia.zih.tu-dresden.de SRM": {
+        "key": 80,
+        "value": 144
+    },
+    "wms312.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "cream.mi.sanu.ac.rs APEL": {
+        "key": 108,
+        "value": 168
+    },
+    "wms305.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "mgse1.physik.uni-mainz.de SRM": {
+        "key": 0,
+        "value": 287
+    },
+    "wms316.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "llrmpicream.in2p3.fr CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "atlas-cream01.na.infn.it CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "llrcream.in2p3.fr gLExec": {
+        "key": 0,
+        "value": 287
+    },
+    "wms317.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "wms313.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "cream.mi.sanu.ac.rs CREAM-CE": {
+        "key": 108,
+        "value": 168
+    },
+    "wms315.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "perfsonar2.na.infn.it net.perfSONAR.Latency": {
+        "key": 0,
+        "value": 287
+    },
+    "grisuce.scope.unina.it CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "apel.cis.gov.pl gLite-APEL": {
+        "key": 0,
+        "value": 287
+    },
+    "wms310.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "storm-fe-cms.cr.cnaf.infn.it SRM": {
+        "key": 0,
+        "value": 287
+    },
+    "wms303.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "grisuce.scope.unina.it APEL": {
+        "key": 0,
+        "value": 287
+    },
+    "cream.mi.sanu.ac.rs eu.egi.MPI": {
+        "key": 108,
+        "value": 168
+    },
+    "grisusitebdii.scope.unina.it Site-BDII": {
+        "key": 0,
+        "value": 287
+    },
+    "recasna-sitebdii.unina.it Site-BDII": {
+        "key": 0,
+        "value": 287
+    },
+    "wms302.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "vomsIGI-NA.unina.it VOMS": {
+        "key": 0,
+        "value": 287
+    },
+    "wms316.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "hepgrid10.ph.liv.ac.uk gLExec": {
+        "key": 0,
+        "value": 109
+    },
+    "cccreamceli05.in2p3.fr gLExec": {
+        "key": 108,
+        "value": 144
+    },
+    "atlas-cream02.na.infn.it APEL": {
+        "key": 0,
+        "value": 287
+    },
+    "hepgrid10.ph.liv.ac.uk CREAM-CE": {
+        "key": 0,
+        "value": 109
+    },
+    "wms303.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "wms307.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "mgbdii.physik.uni-mainz.de Site-BDII": {
+        "key": 0,
+        "value": 287
+    },
+    "wms317.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "llrcream.in2p3.fr CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "wms309.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "spacina-se.scope.unina.it SRMv2": {
+        "key": 0,
+        "value": 287
+    },
+    "svr026.gla.scotgrid.ac.uk CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "wms302.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "spacina-se.scope.unina.it SRM": {
+        "key": 0,
+        "value": 287
+    },
+    "hepgrid5.ph.liv.ac.uk APEL": {
+        "key": 0,
+        "value": 109
+    },
+    "wms304.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "wms312.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "spacina-sitebdii.scope.unina.it Site-BDII": {
+        "key": 0,
+        "value": 287
+    },
+    "grisuce.scope.unina.it eu.egi.MPI": {
+        "key": 0,
+        "value": 287
+    },
+    "recasna-se01.unina.it SRM": {
+        "key": 0,
+        "value": 287
+    },
+    "storm-fe-cms.cr.cnaf.infn.it SRMv2": {
+        "key": 0,
+        "value": 287
+    },
+    "recasna-ce01.unina.it APEL": {
+        "key": 0,
+        "value": 287
+    },
+    "wms300.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "emi-ce01.scope.unina.it eu.egi.MPI": {
+        "key": 0,
+        "value": 287
+    },
+    "wms300.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "wms301.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "se.cis.gov.pl SRMv2": {
+        "key": 0,
+        "value": 287
+    },
+    "wms304.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "grisuse.scope.unina.it SRMv2": {
+        "key": 0,
+        "value": 287
+    },
+    "t2-dpm-01.na.infn.it SRM": {
+        "key": 0,
+        "value": 287
+    },
+    "ce.cis.gov.pl CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "wms311.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "polgrid4.in2p3.fr SRM": {
+        "key": 0,
+        "value": 287
+    },
+    "atlas-cream02.na.infn.it gLExec": {
+        "key": 0,
+        "value": 287
+    },
+    "svr026.gla.scotgrid.ac.uk eu.egi.MPI": {
+        "key": 0,
+        "value": 287
+    },
+    "mgse1.physik.uni-mainz.de SRMv2": {
+        "key": 0,
+        "value": 287
+    },
+    "atlas-cream01.na.infn.it APEL": {
+        "key": 0,
+        "value": 287
+    },
+    "atlas-cream01.na.infn.it gLExec": {
+        "key": 0,
+        "value": 287
+    },
+    "atlas-argus.na.infn.it emi.ARGUS": {
+        "key": 0,
+        "value": 287
+    },
+    "polgrid4.in2p3.fr SRMv2": {
+        "key": 0,
+        "value": 287
+    },
+    "wms311.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "wms305.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "ophelia.zih.tu-dresden.de SRMv2": {
+        "key": 80,
+        "value": 144
+    },
+    "voms02.scope.unina.it VOMS": {
+        "key": 0,
+        "value": 287
+    },
+    "wms310.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "cccreamceli07.in2p3.fr CREAM-CE": {
+        "key": 108,
+        "value": 144
+    },
+    "bdii.cis.gov.pl Site-BDII": {
+        "key": 0,
+        "value": 287
+    },
+    "ce.cis.gov.pl APEL": {
+        "key": 0,
+        "value": 287
+    },
+    "mgce1.physik.uni-mainz.de CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "ce.scope.unina.it CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "perfsonar.na.infn.it net.perfSONAR.Bandwidth": {
+        "key": 0,
+        "value": 287
+    },
+    "hepgrid10.ph.liv.ac.uk APEL": {
+        "key": 0,
+        "value": 109
+    },
+    "atlas-bdii.na.infn.it Site-BDII": {
+        "key": 0,
+        "value": 287
+    },
+    "lcg58.sinp.msu.ru SRMv2": {
+        "key": 0,
+        "value": 96
+    },
+    "cream.mi.sanu.ac.rs Site-BDII": {
+        "key": 108,
+        "value": 168
+    },
+    "wms309.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "wms301.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "grisuse.scope.unina.it SRM": {
+        "key": 0,
+        "value": 287
+    },
+    "svr026.gla.scotgrid.ac.uk gLExec": {
+        "key": 0,
+        "value": 287
+    },
+    "emi-ce01.scope.unina.it CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "wms315.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "recasna-se01.unina.it SRMv2": {
+        "key": 0,
+        "value": 287
+    },
+    "wms307.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "se.scope.unina.it SRM": {
+        "key": 0,
+        "value": 287
+    },
+    "hepgrid5.ph.liv.ac.uk CREAM-CE": {
+        "key": 0,
+        "value": 109
+    },
+    "se.cis.gov.pl SRM": {
+        "key": 0,
+        "value": 287
+    },
+    "ce.scope.unina.it eu.egi.MPI": {
+        "key": 0,
+        "value": 287
+    },
+    "ce.scope.unina.it APEL": {
+        "key": 0,
+        "value": 287
+    },
+    "atlas-cream02.na.infn.it CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "lcg58.sinp.msu.ru SRM": {
+        "key": 0,
+        "value": 96
+    },
+    "hepgrid5.ph.liv.ac.uk gLExec": {
+        "key": 0,
+        "value": 109
+    },
+    "wms306.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "cccreamceli05.in2p3.fr CREAM-CE": {
+        "key": 108,
+        "value": 144
+    },
+    "se.scope.unina.it SRMv2": {
+        "key": 0,
+        "value": 287
+    },
+    "svr026.gla.scotgrid.ac.uk APEL": {
+        "key": 0,
+        "value": 287
+    },
+    "spacina-ce.scope.unina.it APEL": {
+        "key": 0,
+        "value": 287
+    },
+    "atlasce02.scope.unina.it CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "llrmpicream.in2p3.fr eu.egi.MPI": {
+        "key": 0,
+        "value": 287
+    },
+    "recasna-ce01.unina.it CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "wms314.cern.ch LB": {
+        "key": 108,
+        "value": 144
+    },
+    "recasce01.na.infn.it CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "t2-dpm-01.na.infn.it SRMv2": {
+        "key": 0,
+        "value": 287
+    },
+    "sitebdii.scope.unina.it Site-BDII": {
+        "key": 0,
+        "value": 287
+    },
+    "wms314.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "wms313.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    },
+    "cccreamceli07.in2p3.fr gLExec": {
+        "key": 108,
+        "value": 144
+    },
+    "spacina-ce.scope.unina.it CREAM-CE": {
+        "key": 0,
+        "value": 287
+    },
+    "wms306.cern.ch WMS": {
+        "key": 108,
+        "value": 144
+    }
+}

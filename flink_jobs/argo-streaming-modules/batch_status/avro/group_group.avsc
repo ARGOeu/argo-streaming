@@ -1,0 +1,14 @@
+{"namespace": "argo.avro",
+ "type": "record",
+ "name": "GroupGroup",
+ "fields": [
+    {"name": "type", "type": "string"},
+    {"name": "group", "type": "string"},
+    {"name": "subgroup", "type": "string"},
+    {"name": "tags", "type" : ["null", { "name" : "Tags",
+                                         "type" : "map",
+                                         "values" : "string"
+                                      }]
+    }]
+}
+

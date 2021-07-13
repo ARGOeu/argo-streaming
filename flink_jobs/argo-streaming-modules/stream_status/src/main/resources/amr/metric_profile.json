@@ -1,0 +1,22 @@
+{
+    "status": {
+        "message": "Success",
+        "code": "200"
+    },
+    "data": [
+        {
+            "id": "392fa5d74-015c-4122-b8b9-7b344f3154d4",
+            "date": "2020-09-24",
+            "name": "test-mon",
+            "description": "Generic monitoring profile",
+            "services": [
+                {
+                    "service": "WebPortal",
+                    "metrics": [
+                        "org.nagios.WebCheck"
+                    ]
+                }
+            ]
+        }
+    ]
+}

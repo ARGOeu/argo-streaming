@@ -1,0 +1,30 @@
+{
+  "service": "SRMv2",
+  "hostname": "se01.afroditi.hellasgrid.gr",
+  "metrics": [
+    {
+      "metric": "hr.srce.SRM2-CertLifetime"
+    },
+    {
+      "metric": "org.sam.SRM-Del"
+    },
+    {
+      "metric": "org.sam.SRM-Get"
+    },
+    {
+      "metric": "org.sam.SRM-GetSURLs"
+    },
+    {
+      "metric": "org.sam.SRM-GetTURLs"
+    },
+    {
+      "metric": "org.sam.SRM-Ls"
+    },
+    {
+      "metric": "org.sam.SRM-LsDir"
+    },
+    {
+      "metric": "org.sam.SRM-Put"
+    }
+  ]
+}

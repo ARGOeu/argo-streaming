@@ -1,0 +1,10 @@
+{"namespace": "argo.avro",
+ "type": "record",
+ "name": "Downtime",
+ "fields": [
+    {"name": "hostname", "type": "string"},
+    {"name": "service", "type": "string"},
+    {"name": "start_time", "type": "string"},
+    {"name": "end_time", "type": "string"}
+ ]
+}

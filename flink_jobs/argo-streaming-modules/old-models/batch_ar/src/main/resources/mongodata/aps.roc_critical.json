@@ -1,0 +1,24 @@
+{
+	'name' : 'ap1',
+	'namespace' : 'test',
+	'groups' : [
+		[
+			'CREAM-CE',
+			'ARC-CE',
+			'GRAM5',
+			'unicore6.TargetSystemFactory',
+			'QCG.Computing'
+		],
+		[
+			'SRM',
+			'SRMv2'
+		],
+		[
+			'Site-BDII'
+		]
+	],
+	'poems' : [
+		'ch.cern.sam.ROC_CRITICAL'
+	]
+}
+

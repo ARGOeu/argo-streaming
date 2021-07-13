@@ -1,0 +1,637 @@
+{
+    "status": {
+        "message": "Success",
+        "code": "200"
+    },
+    "data": [
+        {
+            "date": "2021-03-10",
+            "endpoints": [
+                {
+                    "hostname": "lhcb-ce.nipne.ro",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lhcb-ce.nipne.ro",
+                    "service": "Site-BDII",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lhcb-ce.nipne.ro",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lhcb-ce.nipne.ro",
+                    "service": "gLExec",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lhcb-perf.nipne.ro",
+                    "service": "net.perfSONAR.Bandwidth",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lhcb-ce.nipne.ro",
+                    "service": "gLite-APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ce01.igfae.usc.es",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ce01.igfae.usc.es",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ce01.igfae.usc.es",
+                    "service": "gLExec",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ce.scope.unina.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "emi-ce01.scope.unina.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ce.scope.unina.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ce.scope.unina.it",
+                    "service": "eu.egi.MPI",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "emi-ce01.scope.unina.it",
+                    "service": "eu.egi.MPI",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "emi-ce01.scope.unina.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "grisuce.scope.unina.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "grisuce.scope.unina.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "grisuce.scope.unina.it",
+                    "service": "eu.egi.MPI",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "recasna-ce01.unina.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "recasna-ce01.unina.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "recas-ce02.na.infn.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "recas-ce02.na.infn.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "recas-ce-01.cs.infn.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "recasna-ce02.unina.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "recasna-ce02.unina.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "cream.tryton.task.gda.pl",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "foam.grid.kiae.ru",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "cow.grid.kiae.ru",
+                    "service": "Top-BDII",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "pusher.grid.kiae.ru",
+                    "service": "Top-BDII",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "house.grid.kiae.ru",
+                    "service": "VO-box",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gate.grid.kiae.ru",
+                    "service": "Site-BDII",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "fate.grid.kiae.ru",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "foam.grid.kiae.ru",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "octopus.grid.kiae.ru",
+                    "service": "LB",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "se.grid.kiae.ru",
+                    "service": "SRM",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "rnag1.grid.kiae.ru",
+                    "service": "ngi.SAM",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lemon.grid.kiae.ru",
+                    "service": "gLite-APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "btw-bw.grid.kiae.ru",
+                    "service": "net.perfSONAR.Bandwidth",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "btw-lat.grid.kiae.ru",
+                    "service": "net.perfSONAR.Latency",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "cash1.grid.kiae.ru",
+                    "service": "org.squid-cache.Squid",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "cash2.grid.kiae.ru",
+                    "service": "org.squid-cache.Squid",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridce.ilc.cnr.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridbdii.ilc.cnr.it",
+                    "service": "Site-BDII",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridse.ilc.cnr.it",
+                    "service": "SRM",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridce.ilc.cnr.it",
+                    "service": "gLite-APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridse.ilc.cnr.it",
+                    "service": "eu.egi.storage.accounting",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridse.ilc.cnr.it",
+                    "service": "webdav",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridse.ilc.cnr.it",
+                    "service": "globus-GRIDFTP",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "linucs-ce-01.cs.infn.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "linucs-ce-01.cs.infn.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "recas-ce-02.cs.infn.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "recas-ce-02.cs.infn.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "sbdii-egi.cesar.unizar.es",
+                    "service": "Site-BDII",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "colossus.cesar.unizar.es",
+                    "service": "org.openstack.nova",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "sbdii-egi.cesar.unizar.es",
+                    "service": "eu.egi.cloud.accounting",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "sbdii-egi.cesar.unizar.es",
+                    "service": "eu.egi.cloud.information.bdii",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "sbdii-egi.cesar.unizar.es",
+                    "service": "eu.egi.cloud.infoProvider",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "sbdii-egi.cesar.unizar.es",
+                    "service": "eu.egi.cloud.vm-metadata.vmcatcher",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node02.datagrid.cea.fr",
+                    "service": "UI",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "pre7230.datagrid.cea.fr",
+                    "service": "ARC-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node12.datagrid.cea.fr",
+                    "service": "SRM",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "perfsonar02.datagrid.cea.fr",
+                    "service": "net.perfSONAR.Bandwidth",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "perfsonar01.datagrid.cea.fr",
+                    "service": "net.perfSONAR.Latency",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node12.datagrid.cea.fr",
+                    "service": "XRootD.Redirector",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node56.datagrid.cea.fr",
+                    "service": "gLite-APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node09.datagrid.cea.fr",
+                    "service": "VO-box",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node10.datagrid.cea.fr",
+                    "service": "UI",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node04.datagrid.cea.fr",
+                    "service": "ngi.ARGUS",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node21.datagrid.cea.fr",
+                    "service": "Top-BDII",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node23.datagrid.cea.fr",
+                    "service": "Site-BDII",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node16.datagrid.cea.fr",
+                    "service": "ARC-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node12.datagrid.cea.fr",
+                    "service": "webdav",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node12.datagrid.cea.fr",
+                    "service": "eu.egi.storage.accounting",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node24.datagrid.cea.fr",
+                    "service": "org.squid-cache.Squid",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "node25.datagrid.cea.fr",
+                    "service": "org.squid-cache.Squid",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "castorlhcb.cern.ch",
+                    "service": "XRootD",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "srm-lhcb.cern.ch",
+                    "service": "SRM.nearline",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ce1.ts.infn.it",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridbdii.ts.infn.it",
+                    "service": "Site-BDII",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ce1.ts.infn.it",
+                    "service": "CREAM-CE",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridsrm.ts.infn.it",
+                    "service": "SRM",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "gridapel.ts.infn.it",
+                    "service": "gLite-APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "farmsrv.ts.infn.it",
+                    "service": "org.squid-cache.Squid",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ce2.ts.infn.it",
+                    "service": "org.opensciencegrid.htcondorce",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "ui.hep.phy.cam.ac.uk",
+                    "service": "UI",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "serv04.hep.phy.cam.ac.uk",
+                    "service": "net.perfSONAR.Bandwidth",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "serv04.hep.phy.cam.ac.uk",
+                    "service": "net.perfSONAR.Latency",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "vserv05.hep.phy.cam.ac.uk",
+                    "service": "gLite-APEL",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "squid.hep.phy.cam.ac.uk",
+                    "service": "org.squid-cache.Squid",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "vac1.hep.phy.cam.ac.uk",
+                    "service": "uk.ac.gridpp.vac",
+                    "start_time": "2021-03-10T00:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-site01.in2p3.fr",
+                    "service": "Site-BDII",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-ps01.in2p3.fr",
+                    "service": "net.perfSONAR.Bandwidth",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-ps02.in2p3.fr",
+                    "service": "net.perfSONAR.Latency",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-se01.in2p3.fr",
+                    "service": "XRootD",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-argus02.in2p3.fr",
+                    "service": "emi.ARGUS",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-squid02.in2p3.fr",
+                    "service": "org.squid-cache.Squid",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-squid03.in2p3.fr",
+                    "service": "org.squid-cache.Squid",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-se01.in2p3.fr",
+                    "service": "eu.egi.storage.accounting",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-bdii01.in2p3.fr",
+                    "service": "Top-BDII",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-se01.in2p3.fr",
+                    "service": "webdav",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-ce04.in2p3.fr",
+                    "service": "ARC-CE",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-ce05.in2p3.fr",
+                    "service": "ARC-CE",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-ce04.in2p3.fr",
+                    "service": "APEL",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                },
+                {
+                    "hostname": "lapp-ce06.in2p3.fr",
+                    "service": "ARC-CE",
+                    "start_time": "2021-03-10T08:00:00Z",
+                    "end_time": "2021-03-10T23:59:00Z"
+                }
+            ]
+        }
+    ]
+}

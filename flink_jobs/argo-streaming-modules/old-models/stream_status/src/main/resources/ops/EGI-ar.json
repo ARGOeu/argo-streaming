@@ -1,0 +1,11 @@
+{
+  "counters":{
+    "up":["OK","WARNING"],
+    "unknown":["UNKNOWN","MISSING"],
+    "downtime":["DOWNTIME"]
+  },
+  "computations":{
+    "availability":"(up/t) - (1.0 - (unknown / t))",
+    "reliability":"(up/t) - (1.0 - (unknown / t) - (downtime/t))"
+  }
+}

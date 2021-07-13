@@ -1,0 +1,175 @@
+{
+  "ch.cern.sam.ROC_CRITICAL": {
+    "ARC-CE": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "test-ap1"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 152,
+      "spillableRegistered": false
+    },
+    "GRAM5": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "test-ap1"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 152,
+      "spillableRegistered": false
+    },
+    "QCG.Computing": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "test-ap1"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 152,
+      "spillableRegistered": false
+    },
+    "SRMv2": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "test-ap1"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 152,
+      "spillableRegistered": false
+    },
+    "Site-BDII": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "test-ap1"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 152,
+      "spillableRegistered": false
+    },
+    "unicore6.TargetSystemFactory": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "test-ap1"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 152,
+      "spillableRegistered": false
+    },
+    "CREAM-CE": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "test-ap1"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 152,
+      "spillableRegistered": false
+    },
+    "SRM": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "test-ap1"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 152,
+      "spillableRegistered": false
+    }
+  },
+  "ch.cern.sam.CLOUD-MON": {
+    "eu.egi.cloud.vm-management.occi": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "egi-fedcloud"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 160,
+      "spillableRegistered": false
+    },
+    "eu.egi.cloud.storage-management.cdmi": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "egi-fedcloud"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 160,
+      "spillableRegistered": false
+    },
+    "eu.egi.cloud.information.bdii": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "egi-fedcloud"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 160,
+      "spillableRegistered": false
+    },
+    "eu.egi.cloud.accounting": {
+      "mContents": [
+        {
+          "isNull": false,
+          "mFields": [
+            "egi-fedcloud"
+          ]
+        }
+      ],
+      "mSize": 1,
+      "mLastContentsSize": 1,
+      "avgTupleSize": 160,
+      "spillableRegistered": false
+    }
+  }
+}
+

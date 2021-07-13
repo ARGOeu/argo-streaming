@@ -1,0 +1,22 @@
+{
+	'name' : 'fedcloud',
+	'namespace' : 'egi',
+	'groups' : [
+		[
+			'eu.egi.cloud.accounting'
+		],
+		[
+			'eu.egi.cloud.information.bdii'
+		],
+		[
+			'eu.egi.cloud.storage-management.cdmi'
+		],
+		[
+			'eu.egi.cloud.vm-management.occi'
+		]
+	],
+	'poems' : [
+		'ch.cern.sam.CLOUD-MON'
+	]
+}
+

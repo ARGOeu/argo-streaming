@@ -1,0 +1,2 @@
+{"report":"Critical","date_integer":20150602,"endpoint_group":"AEGIS01-IPB-SCL","bag_0":[{"service":"SRMv2","timeline":[{"timestamp":"2015-06-02T00:00:00Z","status":"OK"}]},{"service":"CREAM-CE","timeline":[{"timestamp":"2015-06-02T00:00:00Z","status":"OK"}]},{"service":"Site-BDII","timeline":[{"timestamp":"2015-06-02T00:00:00Z","status":"OK"}]}]}
+

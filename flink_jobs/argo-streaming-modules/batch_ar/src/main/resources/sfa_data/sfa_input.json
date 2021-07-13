@@ -1,0 +1,105 @@
+{
+  
+  "t": [
+    {
+      "date": 20140221,
+      "profile": "ch.cern.sam.ROC_CRITICAL",
+      "timeline": "[OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK]",
+      "hostname": "grid01.elfak.ni.ac.rs",
+      "service_flavour": "CREAM-CE",
+      "vos": [
+        {
+          "vo": "ops"
+        }
+      ],
+      "topology::production": "Y",
+      "topology::monitored": "Y",
+      "topology::scope": "EGI",
+      "topology::site": "AEGIS03-ELEF-LEDA",
+      "topology::ngi": "NGI_AEGIS",
+      "topology::infrastructure": "Production",
+      "topology::certification_status": "Certified",
+      "topology::site_scope": "EGI",
+      "topology::availability_profiles": [
+        {
+          "availability_profile": "test-ap1"
+        }
+      ]
+    },
+    {
+      "date": 20140221,
+      "profile": "ch.cern.sam.ROC_CRITICAL",
+      "timeline": "[OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK]",
+      "hostname": "grid02.elfak.ni.ac.rs",
+      "service_flavour": "SRMv2",
+      "vos": [
+        {
+          "vo": "ops"
+        }
+      ],
+      "topology::production": "Y",
+      "topology::monitored": "Y",
+      "topology::scope": "EGI",
+      "topology::site": "AEGIS03-ELEF-LEDA",
+      "topology::ngi": "NGI_AEGIS",
+      "topology::infrastructure": "Production",
+      "topology::c ertification_status": "Certified",
+      "topology::site_scope": "EGI",
+      "topology::availability_profiles": [
+        {
+          "availability_profile": "test-ap1"
+        }
+      ]
+    },
+    {
+      "date": 20140221,
+      "profile": "ch.cern.sam.ROC_CRITICAL ",
+      "timeline": "[OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL, CRITICAL]",
+      "hostname": "grid01.elfak.ni.ac.rs",
+      "service_flavour": "Site-BDII",
+      "vos": [
+        {
+          "vo": "ops"
+        }
+      ],
+      "topology::production": "Y",
+      "topology::monitored": "Y",
+      "topology::scope": "EGI",
+      "topology::site": "AEGIS03-ELEF-LEDA",
+      "topology::ngi": "NGI_AEGIS",
+      "topology::infrastructure": "Production",
+      "topology::certification_status": "Certified",
+      "topology::site _scope": "EGI",
+      "topology::availability_profiles": [
+        {
+          "availability_profile": "test-ap1"
+        }
+      ]
+    },
+    {
+      "date": 20140221,
+      "profile": "ch.cern.sam.ROC_CRITICAL ",
+      "timeline": "[OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING, WARNING]",
+      "hostname": "grid02.elfak.ni.ac.rs",
+      "service_flavour": "Site-BDII",
+      "vos": [
+        {
+          "vo": "ops"
+        }
+      ],
+      "topology::production": "Y",
+      "topology::monitored": "Y",
+      "topology::scope": "EGI",
+      "topology::site": "AEGIS03-ELEF-LEDA",
+      "topology::ngi": "NGI_AEGIS",
+      "topology::infrastructure": "Production",
+      "topology::certification_status": "Certified",
+      "topology::site _scope": "EGI",
+      "topology::availability_profiles": [
+        {
+          "availability_profile": "test-ap1"
+        }
+      ]
+    }
+  ]
+}

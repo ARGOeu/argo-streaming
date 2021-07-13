@@ -1,0 +1,19 @@
+{
+  "test-ap1": {
+    "ARC-CE": 0,
+    "GRAM5": 0,
+    "QCG.Computing": 0,
+    "SRMv2": 1,
+    "Site-BDII": 2,
+    "unicore6.TargetSystemFactory": 0,
+    "CREAM-CE": 0,
+    "SRM": 1
+  },
+  "egi-fedcloud": {
+    "eu.egi.cloud.vm-management.occi": 3,
+    "eu.egi.cloud.storage-management.cdmi": 2,
+    "eu.egi.cloud.information.bdii": 1,
+    "eu.egi.cloud.accounting": 0
+  }
+}
+

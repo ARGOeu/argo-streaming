@@ -1,0 +1,7 @@
+/target/
+.project
+.settings/
+.classpath/
+.classpath
+flink_jobs/argo-streaming-modules/old-models/stream_status/nbactions.xml
+

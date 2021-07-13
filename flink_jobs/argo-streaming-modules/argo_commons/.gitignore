@@ -1,0 +1,11 @@
+/target/
+
+# Eclipse related
+.classpath
+.project
+.settings/
+
+
+/src/main/resources/profiles/config.properties
+
+
