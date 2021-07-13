@@ -4,8 +4,11 @@
  * and open the template in the editor.
  */
 package argo.profiles;
+import argo.utils.RequestManager;
+import com.google.gson.JsonElement;
 import java.io.IOException;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 /**
@@ -40,7 +43,10 @@ public class ProfilesLoader {
 
         aggregationProfileParser = new AggregationProfileParser(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), aggregationId, params.get("date"));
         metricProfileParser = new MetricProfileParser(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), metricId, params.get("date"));
-        operationParser = new OperationsParser(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), operationsId, params.get("date"));
+        JsonElement opProfileJson=RequestManager.operationsProfileRequest(params.getRequired("apiUri"),  operationsId, params.getRequired("key"), params.get("proxy"),  params.get("date"));
+      
+        operationParser = new OperationsParser();
+        operationParser.readJson(opProfileJson);
 
     }
 

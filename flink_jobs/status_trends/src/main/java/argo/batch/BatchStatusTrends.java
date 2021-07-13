@@ -1,21 +1,5 @@
 package argo.batch;
 
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements. See the NOTICE file distributed with this
- * work for additional information regarding copyright ownership. The ASF
- * licenses this file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
 import argo.avro.MetricData;
 import argo.functions.calctrends.CalcStatusTrends;
 import argo.functions.calctimelines.TopologyMetricFilter;
@@ -33,22 +17,26 @@ import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import argo.profiles.ProfilesLoader;
-
+import org.joda.time.DateTime;
 /**
- * Skeleton for a Flink Batch Job.
- *
- * For a full example of a Flink Batch Job, see the WordCountJob.java file in
- * the same package/directory or have a look at the website.
- *
- * You can also generate a .jar file that you can submit on your Flink cluster.
- * Just type mvn clean package in the projects root directory. You will find the
- * jar in target/argo2932-1.0.jar From the CLI you can then run ./bin/flink run
- * -c com.company.argo.BatchJob target/argo2932-1.0.jar
- *
- * For more information on the CLI see:
- *
- * http://flink.apache.org/docs/latest/apis/cli.html
- */
+ * Implements an ARGO Status Trends Job in flink , to count the number of status appearances per status type
+ * that occur to the level of group, service, endpoint. metric  of the topology hierarchy
+ * 
+ * Submit job in flink cluster using the following parameters 
+
+* --date:the date for which the job runs and need to return results , yyyy-MM-dd
+* --yesterdayData: path to the metric profile data, of the previous day , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
+* --todayData: path to the metric profile data, of the current day , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
+* --mongoUri: path to MongoDB destination (eg mongodb://localhost:27017/database
+* --apiUri: path to the mongo db the  , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
+* --key: ARGO web api token    
+* --reportId: the id of the report the job will need to process
+*  --apiUri: ARGO wep api to connect to msg.example.com
+*Optional: 
+* -- clearMongo: option to clear the mongo db before saving the new result or not, e.g  true 
+* -- N : the number of the result the job will provide, if the parameter exists , e.g 10
+* 
+*/
 public class BatchStatusTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchStatusTrends.class);
@@ -64,10 +52,11 @@ public class BatchStatusTrends {
     private static ProfilesLoader profilesLoader;
 
     private static String reportId;
-    private static String profilesDate;
+    private static DateTime profilesDate;
     private static String format = "yyyy-MM-dd";
 
     private static boolean clearMongo = false;
+    private static String profilesDateStr;
 
     public static void main(String[] args) throws Exception {
         // set up the batch execution environment
@@ -83,7 +72,8 @@ public class BatchStatusTrends {
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }
-        profilesDate = Utils.getParameterDate(format, params.getRequired("date"));
+        profilesDate = Utils.convertStringtoDate(format, params.getRequired("date"));
+        profilesDateStr = Utils.convertDateToString(format, profilesDate);
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
@@ -133,7 +123,7 @@ public class BatchStatusTrends {
             filteredData = filteredData.sortPartition(5, Order.DESCENDING).setParallelism(1);
         }
 
-        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, MongoTrendsOutput.TrendsType.TRENDS_STATUS, reportId, profilesDate, clearMongo);
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, MongoTrendsOutput.TrendsType.TRENDS_STATUS, reportId, profilesDateStr, clearMongo);
 
         DataSet<Trends> trends = filteredData.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Trends>() {
 

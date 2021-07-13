@@ -5,16 +5,18 @@ package argo.functions.calctrends;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import argo.functions.calctimelines.TimelineMerger;
+//import argo.functions.calctimelines.TimelineMerger;
 import argo.pojos.EndpointTrends;
 import argo.pojos.ServiceTrends;
-import argo.pojos.Timeline;
+//import argo.pojos.Timeline;
 import argo.profiles.AggregationProfileParser;
 import argo.profiles.OperationsParser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.util.Collector;
+import timelines.Timeline;
+import timelines.TimelineAggregator;
 
 /**
  *
@@ -44,22 +46,27 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
         ArrayList<ServiceTrends> list = new ArrayList<>();
         //construct a timeline containing all the timestamps of each metric timeline
 
-        ArrayList<Timeline> timelineList = new ArrayList<>();
+
+        HashMap<String, Timeline> timelineList = new HashMap<>();
+
         for (EndpointTrends endpointTrend : in) {
             group = endpointTrend.getGroup();
             service = endpointTrend.getService();
-            timelineList.add(endpointTrend.getTimeline());
+            timelineList.put(endpointTrend.getEndpoint(), endpointTrend.getTimeline());
         }
         String operation = serviceOperationMap.get(service);
-        TimelineMerger timelineMerger = new TimelineMerger(operation, operationsParser);
 
-        Timeline timeline = timelineMerger.mergeTimelines(timelineList);
-        int flipflops = timeline.calculateStatusChanges();
+        TimelineAggregator timelineAggregator = new TimelineAggregator(timelineList);
+        timelineAggregator.aggregate(operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
+
+
+///        HashMap<String, String> opTruthTable = operationTruthTables.get(operation);
+        Timeline timeline = timelineAggregator.getOutput();
+        int flipflops = timeline.calcStatusChanges();
+
         if (group != null && service != null) {
             ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflops);
             out.collect(serviceTrends);
         }
-
     }
-
 }
