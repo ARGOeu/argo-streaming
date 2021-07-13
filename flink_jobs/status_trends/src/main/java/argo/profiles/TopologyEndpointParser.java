@@ -17,10 +17,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 /**
- *
- * @author cthermolia
- *
- * * TopologyEndpointParser, collects data as described in the json received
+ * TopologyEndpointParser, collects data as described in the json received
  * from web api topology endpoint request
  */
 public class TopologyEndpointParser implements Serializable{

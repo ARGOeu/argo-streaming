@@ -1,0 +1,14 @@
+{"namespace": "argo.avro",
+ "type": "record",
+ "name": "GroupEndpoint",
+ "fields": [
+        {"name": "type", "type": "string"},
+        {"name": "group", "type": "string"},
+        {"name": "service", "type": "string"},
+        {"name": "hostname", "type": "string"},
+        {"name": "tags", "type" : ["null", { "name" : "Tags",
+                                             "type" : "map",
+                                             "values" : "string"
+                                          }]
+        }]
+}

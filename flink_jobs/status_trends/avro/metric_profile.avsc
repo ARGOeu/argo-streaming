@@ -1,0 +1,13 @@
+{"namespace": "argo.avro",
+ "type": "record",
+ "name": "MetricProfile",
+ "fields": [
+    {"name": "profile", "type": "string"},
+    {"name": "service", "type": "string"},
+    {"name": "metric", "type": "string"},
+    {"name": "tags", "type" : ["null", {"name" : "Tags",
+                                        "type" : "map",
+                                        "values" : "string"
+                                       }]
+    }]
+}

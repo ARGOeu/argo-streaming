@@ -4,6 +4,8 @@
  * and open the template in the editor.
  */
 package argo.profiles;
+import argo.utils.RequestManager;
+import com.google.gson.JsonElement;
 import java.io.IOException;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.json.simple.parser.ParseException;
@@ -18,7 +20,9 @@ public class ProfilesLoader {
 
     private ReportParser reportParser;
     private TopologyEndpointParser topologyEndpointParser;
-    private MetricProfileParser metricProfileParser;
+  //  private MetricProfileParser metricProfileParser;
+    private MetricProfileManager metricProfileParser;
+   
     private OperationsParser operationParser;
     private AggregationProfileParser aggregationProfileParser;
     private TopologyGroupParser topolGroupParser;
@@ -39,8 +43,19 @@ public class ProfilesLoader {
         String operationsId = reportParser.getOperationReportId();
 
         aggregationProfileParser = new AggregationProfileParser(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), aggregationId, params.get("date"));
-        metricProfileParser = new MetricProfileParser(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), metricId, params.get("date"));
-        operationParser = new OperationsParser(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), operationsId, params.get("date"));
+
+
+      //  metricProfileParser = new MetricProfileParser(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), metricId, params.get("date"));
+
+        JsonElement opProfileJson=RequestManager.operationsProfileRequest(params.getRequired("apiUri"),  operationsId, params.getRequired("key"), params.get("proxy"),  params.get("date"));
+      
+        operationParser = new OperationsParser();
+        operationParser.readJson(opProfileJson);
+        
+         JsonElement metricProfileJson=RequestManager.metricProfileRequest(params.getRequired("apiUri"),  operationsId, params.getRequired("key"), params.get("proxy"),  params.get("date"));
+      
+        metricProfileParser= new MetricProfileManager();
+        metricProfileParser.loadMetricProfile(metricProfileJson);
 
     }
 
@@ -60,14 +75,23 @@ public class ProfilesLoader {
         this.topologyEndpointParser = topologyEndpointParser;
     }
 
-    public MetricProfileParser getMetricProfileParser() {
+//    public MetricProfileParser getMetricProfileParser() {
+//        return metricProfileParser;
+//    }
+//
+//    public void setMetricProfileParser(MetricProfileParser metricProfileParser) {
+//        this.metricProfileParser = metricProfileParser;
+//    }
+
+    public MetricProfileManager getMetricProfileParser() {
         return metricProfileParser;
     }
 
-    public void setMetricProfileParser(MetricProfileParser metricProfileParser) {
+    public void setMetricProfileParser(MetricProfileManager metricProfileParser) {
         this.metricProfileParser = metricProfileParser;
     }
 
+    
     public OperationsParser getOperationParser() {
         return operationParser;
     }

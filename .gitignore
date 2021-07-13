@@ -25,3 +25,20 @@ conf.cfg
 .settings/
 /flink_jobs/status_trends/nbproject/
 /flink_jobs/old-models/stream_status/nbactions.xml
+/flink_jobs/Timelines/nbproject/
+/flink_jobs/Timelines/target/
+/flink_jobs/OperationsManager/target/
+/flink_jobs/OperationsManager/nbproject/
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+/flink_jobs/ProfilesManager/target/
+/flink_jobs/ProfilesManager/nbproject/
+>>>>>>> profiles independent components
+>>>>>>> timelines
+=======
+/flink_jobs/ProfilesManager/target/
+/flink_jobs/ProfilesManager/nbproject/
+>>>>>>> profiles independent components

@@ -5,10 +5,6 @@
  */
 package argo.utils;
 
-/**
- *
- * @author cthermolia
- */
 public enum EnumStatus {
     CRITICAL,
     WARNING,

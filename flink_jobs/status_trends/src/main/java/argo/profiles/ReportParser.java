@@ -14,9 +14,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 /**
- *
- * @author cthermolia
- * 
  * ReportParser, collects data as described in the json received from web api report request, that corresponds to the specific tenant
  */
 public class ReportParser {

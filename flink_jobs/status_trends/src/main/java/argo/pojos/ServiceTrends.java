@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 package argo.pojos;
-
+import timelines.Timeline;
 /**
  *
  * @author cthermolia
