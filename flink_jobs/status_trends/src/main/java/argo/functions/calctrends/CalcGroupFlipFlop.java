@@ -6,19 +6,18 @@ package argo.functions.calctrends;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import argo.functions.calctimelines.TimelineMerger;
+//import argo.functions.calctimelines.TimelineMerger;
 import argo.pojos.GroupFunctionTrends;
 import argo.pojos.GroupTrends;
-import argo.pojos.Timeline;
+//import argo.pojos.Timeline;
 import argo.profiles.AggregationProfileParser;
 import argo.profiles.OperationsParser;
 
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.TreeMap;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.util.Collector;
+import timelines.Timeline;
+import timelines.TimelineAggregator;
 
 /**
  *
@@ -41,20 +40,21 @@ public class CalcGroupFlipFlop implements GroupReduceFunction< GroupFunctionTren
     public void reduce(Iterable<GroupFunctionTrends> in, Collector< GroupTrends> out) throws Exception {
         String group = null;
 
-        ArrayList<Timeline> timelist = new ArrayList<>();
+        HashMap<String,Timeline> timelist = new HashMap<>();
         for (GroupFunctionTrends time : in) {
             group = time.getGroup();
-            timelist.add(time.getTimeline());
+            timelist.put(time.getFunction(),time.getTimeline());
         }
-        TimelineMerger timelineMerger = new TimelineMerger(groupOperation, operationsParser);
+        TimelineAggregator timelineAggregator = new TimelineAggregator(timelist);
 
-        Timeline timeline = timelineMerger.mergeTimelines(timelist);
-        int flipflops = timeline.calculateStatusChanges();
-        if (group != null  && flipflops > 0) {
-            GroupTrends groupTrends = new GroupTrends(group, timeline, flipflops);
-            out.collect(groupTrends);
-        }
 
+        timelineAggregator.aggregate(operationsParser.getTruthTable(),operationsParser.getIntOperation(groupOperation));
+        Timeline timeline=timelineAggregator.getOutput();
+
+        int flipflops = timeline.calcStatusChanges();
+
+        GroupTrends groupTrends = new GroupTrends(group, timeline, flipflops);
+        out.collect(groupTrends);
     }
 
 }

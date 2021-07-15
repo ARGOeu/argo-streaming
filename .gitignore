@@ -23,5 +23,3 @@ conf.cfg
 .classpath
 .project
 .settings/
-/flink_jobs/status_trends/nbproject/
-/flink_jobs/old-models/stream_status/nbactions.xml

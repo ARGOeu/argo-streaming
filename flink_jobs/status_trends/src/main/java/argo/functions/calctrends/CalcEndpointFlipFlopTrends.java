@@ -5,17 +5,18 @@ package argo.functions.calctrends;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import argo.pojos.Timeline;
-import argo.functions.calctimelines.TimelineMerger;
+//import argo.pojos.Timeline;
+//import argo.functions.calctimelines.TimelineMerger;
 import argo.pojos.EndpointTrends;
 import argo.pojos.MetricTrends;
 import argo.profiles.OperationsParser;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Map.Entry;
+
+import java.util.HashMap;
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 import org.apache.flink.util.Collector;
-
+import org.joda.time.DateTime;
+import timelines.Timeline;
+import timelines.TimelineAggregator;
 /**
  *
  * @author cthermolia
@@ -26,10 +27,12 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
 
     private OperationsParser operationsParser;
     private String operation;
+    private DateTime date;
 
     public CalcEndpointFlipFlopTrends(String operation, OperationsParser operationsParser) {
         this.operation = operation;
         this.operationsParser = operationsParser;
+
     }
 
     /**
@@ -47,32 +50,31 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
         String hostname = null;
         //store the necessary info
         //collect all timelines in a list
-        ArrayList<Timeline> timelinelist = new ArrayList<>();
+
+        HashMap<String,Timeline> timelinelist = new HashMap<>();
+
         for (MetricTrends time : in) {
             group = time.getGroup();
             service = time.getService();
             hostname = time.getEndpoint();
             Timeline timeline = time.getTimeline();
-            timelinelist.add(timeline);
-            
+ 
+            timelinelist.put(time.getMetric(),timeline);
+
         }
         // merge the timelines into one timeline ,  
-            // as multiple status (each status exist in each timeline) correspond to each timestamp, there is a need to conclude into one status/timestamp
-            //for each timestamp the status that prevails is concluded by the truth table that is defined for the operation
-         
-            TimelineMerger timelinemerger = new TimelineMerger(operation, operationsParser);
 
-            Timeline mergedTimeline = timelinemerger.mergeTimelines(timelinelist); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
-            for (Entry<Date, String> t : mergedTimeline.getTimelineMap().entrySet()) {
-                System.out.println(t.getKey() + ":  " + t.getValue());
+        // as multiple status (each status exist in each timeline) correspond to each timestamp, there is a need to conclude into one status/timestamp
+        //for each timestamp the status that prevails is concluded by the truth table that is defined for the operation
+        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist);
+        timelineAggregator.aggregate( operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
 
-            }
-            Integer flipflops = mergedTimeline.calculateStatusChanges();//calculate flip flops on the concluded merged timeline
-            if (group != null && service != null && hostname != null) {
-                EndpointTrends endpointTrends = new EndpointTrends(group, service, hostname, mergedTimeline, flipflops);
-                out.collect(endpointTrends);
-            }
+        Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
+        Integer flipflops = mergedTimeline.calcStatusChanges();//calculate flip flops on the concluded merged timeline
 
-        }
-    
+        if (group != null && service != null && hostname != null) {
+            EndpointTrends endpointTrends = new EndpointTrends(group, service, hostname, mergedTimeline, flipflops);
+            out.collect(endpointTrends);
+      }
+    }
 }

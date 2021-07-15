@@ -13,11 +13,8 @@ import ops.ConfigManager;
 import org.slf4j.Logger;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.flink.api.common.operators.Order;
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
