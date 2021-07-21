@@ -91,12 +91,12 @@ under the License.
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5.2</version>
+            <version>4.5.13</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>fluent-hc</artifactId>
-            <version>4.5.2</version>
+            <version>4.5.13</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-hadoop-compatibility -->
