@@ -5,14 +5,11 @@
  */
 package argo.pojos;
 
-import java.util.Date;
-import java.util.TreeMap;
 import timelines.Timeline;
+
 /**
- *
- * @author cthermolia
- * 
- * EndpointTrends, describes the computed trend information extracted from the timelines at the level of group service endpoints groups 
+ * EndpointTrends, describes the computed trend information extracted from the
+ * timelines at the level of group service endpoints groups
  */
 public class EndpointTrends {
 
@@ -21,7 +18,7 @@ public class EndpointTrends {
     String endpoint;
     Timeline timeline;
     Integer flipflops;
-
+ 
     public EndpointTrends() {
     }
 
@@ -33,6 +30,9 @@ public class EndpointTrends {
         this.flipflops = flipflops;
     }
 
+ 
+
+    
     public String getGroup() {
         return group;
     }
@@ -72,7 +72,5 @@ public class EndpointTrends {
     public void setFlipflops(Integer flipflops) {
         this.flipflops = flipflops;
     }
-
-  
 
 }

@@ -5,14 +5,13 @@
  */
 package timelines;
 
-import argo.utils.Utils;
+import timelines.TimelineUtils;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
 import org.joda.time.DateTime;
@@ -23,7 +22,7 @@ import org.json.simple.parser.ParseException;
 
 /**
  *
- * @author cthermolia
+ * A utils class to process resource files for tests and provide the information
  */
 public class TimelineUtils {
 

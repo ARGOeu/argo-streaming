@@ -14,15 +14,10 @@ import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-/**
- *
- * @author cthermolia
- */
 public class RequestManager {
 
     public static JSONObject request(String uri, String key, String proxy) throws ParseException {
@@ -66,8 +61,8 @@ public class RequestManager {
             Executor executor = Executor.newInstance(httpClient);
             content = executor.execute(request).returnContent().asString();
 
-           JsonParser parser = new JsonParser();
-             j_element = (JsonElement) parser.parse(content);
+            JsonParser parser = new JsonParser();
+            j_element = (JsonElement) parser.parse(content);
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -84,18 +79,69 @@ public class RequestManager {
         } else {
             uri = uri + "?date=" + dateStr;
         }
-        return loadOperationProfile(uri, key, proxy);
+        return loadProfile(uri, key, proxy).get(0);
+    }
+
+//    public static JsonElement loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
+//        JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
+//        JsonObject jsonObj=jsonElement.getAsJsonObject();
+//        JsonArray dataObj = jsonObj.getAsJsonArray("data");
+//        JsonElement dataElement=dataObj.get(0);
+//      
+//         
+//        return dataElement;
+//    }
+    public static JsonElement metricProfileRequest(String apiUri, String metricId, String key, String proxy, String dateStr) throws IOException, ParseException {
+
+        String uri = apiUri + "/metric_profiles" + "/" + metricId;
+        if (dateStr != null) {
+            uri = uri + "?date=" + dateStr;
+        }
+        return loadProfile(uri, key, proxy).get(0);
 
     }
 
-    public static JsonElement loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
+    public static JsonElement aggregationProfileRequest(String apiUri, String aggregationId, String key, String proxy, String dateStr) throws IOException, ParseException {
+
+        String uri = apiUri + "/aggregation_profiles" + "/" + aggregationId;
+        if (dateStr != null) {
+            uri = uri + "?date=" + dateStr;
+        }
+        return loadProfile(uri, key, proxy).get(0);
+
+    }
+    public static JsonArray endpointGroupProfileRequest(String apiUri, String key, String proxy, String reportname, String dateStr) throws IOException, ParseException {
+
+        String uri = apiUri + "/topology/endpoints/by_report" + "/" + reportname;
+        if (dateStr != null) {
+            uri = uri + "?date=" + dateStr;
+        }
+        return loadProfile(uri, key, proxy);
+
+    }
+
+    public static JsonArray groupGroupProfileRequest(String apiUri, String key, String proxy, String reportname, String dateStr) throws IOException, ParseException {
+
+        String uri = apiUri + "/topology/groups/by_report" + "/" + reportname;
+        if (dateStr != null) {
+            uri = uri + "?date=" + dateStr;
+        }
+        return loadProfile(uri, key, proxy);
+
+    }
+
+    public static JsonElement reportProfileRequest(String apiUri, String key, String proxy, String reportId) throws IOException, ParseException {
+
+        String uri = apiUri + "/reports/" + reportId;
+        return loadProfile(uri, key, proxy).get(0);
+
+    }
+
+    public static JsonArray loadProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
         JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
-        JsonObject jsonObj=jsonElement.getAsJsonObject();
+        JsonObject jsonObj = jsonElement.getAsJsonObject();
         JsonArray dataObj = jsonObj.getAsJsonArray("data");
-        JsonElement dataElement=dataObj.get(0);
-      
-         
-        return dataElement;
+        return dataObj;
     }
 
 }

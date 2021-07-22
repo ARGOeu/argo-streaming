@@ -12,8 +12,6 @@ import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.util.Collector;
 
 /**
- *
- * @author cthermolia
  * CalcLastTimeStatus keeps data of the latest time entry
 */
 

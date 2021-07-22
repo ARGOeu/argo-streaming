@@ -20,7 +20,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
 
     // Select the type of status input
     public enum TrendsType {
-        TRENDS_STATUS, TRENDS_METRIC, TRENDS_ENDPOINT, TRENDS_SERVICE, TRENDS_GROUP
+        TRENDS_STATUS_METRIC, TRENDS_STATUS_ENDPOINT, TRENDS_STATUS_SERVICE, TRENDS_STATUS_GROUP, TRENDS_METRIC, TRENDS_ENDPOINT, TRENDS_SERVICE, TRENDS_GROUP
     }
 
     private static final long serialVersionUID = 1L;
@@ -29,7 +29,6 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
     private int mongoPort;
     private String dbName;
     private String colName;
-//	private MongoMethod method;
     private TrendsType trendsType;
     private String report;
     private int date;
@@ -118,12 +117,34 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
                 doc.append("metric", record.getMetric());
                 doc.append("flipflop", record.getFlipflop());
                 break;
-            case TRENDS_STATUS:
+            case TRENDS_STATUS_METRIC:
                 doc.append("group", record.getGroup());
                 doc.append("service", record.getService());
                 doc.append("endpoint", record.getEndpoint());
                 doc.append("metric", record.getMetric());
                 doc.append("status", record.getStatus());
+                doc.append("duration", record.getDuration());
+                doc.append("trends", record.getTrends());
+                break;
+            case TRENDS_STATUS_ENDPOINT:
+                doc.append("group", record.getGroup());
+                doc.append("service", record.getService());
+                doc.append("endpoint", record.getEndpoint());
+                doc.append("status", record.getStatus());
+                doc.append("duration", record.getDuration());
+                doc.append("trends", record.getTrends());
+                break;
+            case TRENDS_STATUS_SERVICE:
+                doc.append("group", record.getGroup());
+                doc.append("service", record.getService());
+                doc.append("status", record.getStatus());
+                doc.append("duration", record.getDuration());
+                doc.append("trends", record.getTrends());
+                break;
+            case TRENDS_STATUS_GROUP:
+                doc.append("group", record.getGroup());
+                doc.append("status", record.getStatus());
+                doc.append("duration", record.getDuration());
                 doc.append("trends", record.getTrends());
                 break;
             default:

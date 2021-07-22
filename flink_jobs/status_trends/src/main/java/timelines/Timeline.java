@@ -5,15 +5,19 @@ package timelines;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+import argo.utils.Utils;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
+import org.joda.time.Minutes;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -251,24 +255,25 @@ public class Timeline {
         return this.samples.keySet().size() - 1;
     }
 
-    public void replacePreviousDateStatus(DateTime date, ArrayList<String> availStates) {
-        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+   public void replacePreviousDateStatus(DateTime date, ArrayList<String> availStates, boolean optimize) {
 
         DateTime firsTime = date;
         firsTime = firsTime.withTime(0, 0, 0, 0);
+        DateTime firstEntry = this.samples.lowerKey(firsTime);
 
-        DateTime firstEntry = this.samples.floorKey(firsTime);
         if (firstEntry != null && !firstEntry.equals(firsTime)) {
             int previousStatus = this.samples.get(firstEntry);
             this.samples.put(firsTime, previousStatus);
             this.samples.remove(firstEntry);
+
         } else if (firstEntry == null) {
             this.samples.put(firsTime, availStates.indexOf("MISSING"));
         }
-
-        this.optimize();
-
+        if (optimize) {
+            this.optimize();
+        }
     }
+
 
     @Override
     public int hashCode() {
@@ -309,6 +314,74 @@ public class Timeline {
         }
 
         return result;
+    }
+    /**
+     * Calculates the times a specific status appears on the timeline
+     *
+     * @param status , the status to calculate the appearances
+     * @return , the num of the times the specific status appears on the
+     * timeline
+     */
+    public int[] countStatusAppearances(int status) throws ParseException {
+        int[] statusInfo = new int[2];
+        int count = 0;
+        ArrayList<DateTime[]> durationTimes = new ArrayList<>();
+        DateTime startDt = null;
+        DateTime endDt = null;
+
+        boolean added = true;
+        for (Map.Entry<DateTime, Integer> entry : this.samples.entrySet()) {
+            if (status == entry.getValue()) {
+                startDt = entry.getKey();
+                count++;
+                added = false;
+            } else {
+                if (!added) {
+                    endDt = entry.getKey();
+
+                    DateTime[] statusDur = new DateTime[2];
+                    statusDur[0] = startDt;
+                    statusDur[1] = endDt;
+                    durationTimes.add(statusDur);
+                    startDt = null;
+                    endDt = null;
+                    added = true;
+                }
+            }
+
+        }
+        if (!added) {
+            endDt = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", startDt.toDate(), 23, 59, 0);
+
+            DateTime[] statusDur = new DateTime[2];
+            statusDur[0] = startDt;
+            statusDur[1] = endDt;
+            durationTimes.add(statusDur);
+
+        }
+        statusInfo[0] = count;
+        statusInfo[1] = countStatusDuration(durationTimes);
+        return statusInfo;
+
+    }
+
+    /**
+     * Calculates the total duration of a status appearance
+     *
+     * @param durationTimes
+     * @return
+     */
+    public int countStatusDuration(ArrayList<DateTime[]> durationTimes) throws ParseException {
+
+        int minutesInt = 0;
+        for (DateTime[] dt : durationTimes) {
+            DateTime startDt = dt[0];
+            DateTime endDt = dt[1];
+
+            Minutes minutes = Minutes.minutesBetween(startDt, endDt);
+            minutesInt = minutesInt + minutes.getMinutes();
+        }
+        return minutesInt;
     }
 
 }

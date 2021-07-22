@@ -330,7 +330,7 @@ public class TimelineTest {
         availStates.add("CRITICAL");
         availStates.add("DOWNTIME");
 
-        instance.replacePreviousDateStatus(date, availStates);
+        instance.replacePreviousDateStatus(date, availStates,false);
         // TODO review the generated test code and remove the default call to fail.
         // fail("The test case is a prototype.");
     }
@@ -494,6 +494,22 @@ public class TimelineTest {
 
         map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 20, 15), 0);
         return map;
+    }
+
+      /**
+     * Test of countStatusAppearances method, of class Timeline.
+     */
+    @Test
+    public void testCountStatusAppearances() throws ParseException {
+        System.out.println("countStatusAppearances");
+        int status = 0;
+        Timeline instance = new Timeline();
+        instance.insertDateTimeStamps(createTimestampList());
+        int expResult =1;
+        int result[] = instance.countStatusAppearances(status);
+        assertEquals(expResult, result[0]);
+        // TODO review the generated test code and remove the default call to fail.
+       //fail("The test case is a prototype.");
     }
 
 }

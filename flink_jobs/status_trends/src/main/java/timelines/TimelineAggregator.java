@@ -1,7 +1,5 @@
 package timelines;
 
-
-
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +10,6 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import scala.concurrent.ops;
 public class TimelineAggregator {
 	
 	private Timeline output;

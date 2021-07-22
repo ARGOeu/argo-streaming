@@ -25,31 +25,18 @@ import org.apache.flink.core.fs.Path;
 
 /**
  * Represents an ARGO A/R Batch Job in flink
- * <p>
- * The specific batch job calculates the availability and reliability results based on the input metric data
- * and sync files
- * </p>
- * Required arguments:
- * <ul>
- * <li>--pdata : file location of previous day's metric data (local or
- * hdfs)</li>
- * <li>--mdata : file location of target day's metric data (local or hdfs)</li>
- * <li>--egp : file location of endpoint group topology file (local or
- * hdfs)</li>
- * <li>--ggp : file location of group of groups topology file (local or
- * hdfs)</li>
- * <li>--mps : file location of metric profile (local or hdfs)</li>
- * <li>--aps : file location of aggregations profile (local or hdfs)</li>
- * <li>--ops : file location of operations profile (local or hdfs)</li>
- * <li>--rec : file location of recomputations file (local or hdfs)</li>
- * <li>--weights : file location of weights file (local or hdfs)</li>
- * <li>--downtimes : file location of downtimes file (local or hdfs)</li>
- * <li>--conf : file location of report configuration json file (local or
- * hdfs)</li>
- * <li>--run.date : target date in DD-MM-YYYY format</li>
- * <li>--mongo.uri : mongo uri for outputting the results</li>
- * <li>--mongo.method : mongo method for storing the results</li>
- * <ul>
+ * 
+ * Submit job in flink cluster using the following parameters: 
+ * --pdata: path to previous day's metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
+ * --mdata: path to metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
+ * --run.date: target date of computation in DD-MM-YYYY format
+ * --mongo.uri: path to MongoDB destination (eg mongodb://localhost:27017/database.table
+ * --mongo.method: Method for storing results to Mongo (insert,upsert)
+ * --report.id: UUUID of the report
+ * --api.endpoint: endpoint hostname of the argo-web-api instance (api.argo.example.com)
+ * --api.token: access token to argo-web-api 
+ * --api.proxy: optional address for proxy to be used (http://proxy.example.com)
+ * --api.timeout: set timeout (in seconds) when connecting to argo-web-api
  */
 public class ArgoArBatch {
 	// setup logger
@@ -81,7 +68,12 @@ public class ArgoArBatch {
 			amr.setProxy(params.get("api.proxy"));
 		}
 		
+		if (params.has("api.timeout")) {
+			amr.setTimeoutSec(params.getInt("api.timeout"));
+		}
+		
 		amr.setReportID(reportID);
+		amr.setDate(params.getRequired("run.date"));
 		amr.getRemoteAll();
 		
 		

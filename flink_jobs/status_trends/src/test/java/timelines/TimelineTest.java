@@ -380,7 +380,7 @@ public class TimelineTest {
         availStates.add("CRITICAL");
         availStates.add("DOWNTIME");
 
-        instance.replacePreviousDateStatus(date, availStates);
+        instance.replacePreviousDateStatus(date, availStates,false);
         // TODO review the generated test code and remove the default call to fail.
         // fail("The test case is a prototype.");
     }

@@ -7,15 +7,13 @@ package argo.functions.calctimelines;
  */
 
 import argo.pojos.ServiceTrends;
-import argo.profiles.AggregationProfileParser;
+import argo.profiles.AggregationProfileManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.util.Collector;
 
 /**
- * @author cthermolia
- *
  * MapServices produces TimelineTrends for each service,that maps to the groups
  * of functions as described in aggregation profile groups endpoint , metric
  */
@@ -23,12 +21,14 @@ import org.apache.flink.util.Collector;
 
 public class MapServices implements FlatMapFunction<ServiceTrends, ServiceTrends> {
 
-    private AggregationProfileParser aggregationProfileParser;
-
+    //private AggregationProfileParser aggregationProfileParser;
+    private AggregationProfileManager aggregationProfileParser;
+   
     private HashMap<String, ArrayList<String>> serviceFunctions;
 
-    public MapServices(AggregationProfileParser aggregationProfileParser) {
+    public MapServices(AggregationProfileManager aggregationProfileParser) {
         this.aggregationProfileParser = aggregationProfileParser;
+        
     }
 
     /**
@@ -44,13 +44,13 @@ public class MapServices implements FlatMapFunction<ServiceTrends, ServiceTrends
     public void flatMap(ServiceTrends t, Collector<ServiceTrends> out) throws Exception {
         String service = t.getService();
 
-        ArrayList<String> functionList = aggregationProfileParser.retrieveServiceFunctions(service);
-        if (functionList != null) {
-            for (String f : functionList) {
+        String function = aggregationProfileParser.retrieveFunctionsByService(service);
+      
+           
                 ServiceTrends newT = t;
-                newT.setFunction(f);
+                newT.setFunction(function);
                 out.collect(newT);
-            }
-        }
+           
+        
     }
 }
