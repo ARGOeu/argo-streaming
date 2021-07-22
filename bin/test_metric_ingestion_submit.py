@@ -5,8 +5,10 @@ from utils.argo_config import ArgoConfig
 import argparse
 import os
 
-CONF_TEMPLATE = os.path.join(os.path.dirname(__file__), '../conf/conf.template')
-CONF_SCHEMA = os.path.join(os.path.dirname(__file__), '../conf/config.schema.json')
+CONF_TEMPLATE = os.path.join(
+    os.path.dirname(__file__), '../conf/conf.template')
+CONF_SCHEMA = os.path.join(os.path.dirname(
+    __file__), '../conf/config.schema.json')
 
 # This is the command that the submission script is expected to compose based on given args and config
 expected_result = """sudo flink_path run -c test_class test.jar --ams.endpoint test_endpoint --ams.port 8080 \
@@ -27,6 +29,5 @@ class TestClass(unittest.TestCase):
         parser.add_argument('--sudo', action='store_true')
         args = parser.parse_args(['--tenant', 'TENANTA', '--sudo'])
 
-        print cmd_to_string(compose_command(config, args)[0])
-
-        self.assertEquals(expected_result, cmd_to_string(compose_command(config, args)[0]))
+        self.assertEqual(expected_result, cmd_to_string(
+            compose_command(config, args)[0]))

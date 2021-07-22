@@ -18,3 +18,8 @@ __pycache__
 .DS_STORE
 conf.cfg
 .pytest_cache
+
+# Java related
+.classpath
+.project
+.settings/

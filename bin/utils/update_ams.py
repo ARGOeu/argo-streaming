@@ -2,8 +2,8 @@
 import requests
 import json
 import logging
-from common import get_config_paths, get_log_conf
-from argo_config import ArgoConfig
+from .common import get_config_paths, get_log_conf
+from .argo_config import ArgoConfig
 from argparse import ArgumentParser
 import sys
 
@@ -18,16 +18,23 @@ class ArgoAmsClient:
     It connects to an argo-messaging host and retrieves project/user/topic/subscription information
     """
 
-    def __init__(self, host, admin_key, verify=True):
+    def __init__(self, host, admin_key, verify=True, http_proxy_url=None):
         """
         Initialize ArgoAAmsClient
         Args:
             host: str. argo ams host
             admin_key: str. admin token
+            verify (boolean): flag if the remote web api host should be verified
+            http_proxy_url (str.): optional url for local http proxy to be used
         """
 
         # flag to verify https connections or not
         self.verify = verify
+        # proxy configuration
+        if http_proxy_url:
+            self.proxies = {'http':http_proxy_url,'https':http_proxy_url}
+        else:
+            self.proxies = None
         # ams host
         self.host = host
         # admin key to access ams service
@@ -88,7 +95,7 @@ class ArgoAmsClient:
             'Accept': 'application/json'
         })
         # do the post requests
-        r = requests.post(url, headers=headers, verify=self.verify, data=json.dumps(data))
+        r = requests.post(url, headers=headers, verify=self.verify, data=json.dumps(data), proxies=self.proxies)
         # if successful return data (or empty json)
         if 200 == r.status_code:
             if r.text == "":
@@ -116,7 +123,7 @@ class ArgoAmsClient:
             'Accept': 'application/json'
         })
         # do the put request
-        r = requests.put(url, headers=headers, verify=self.verify, data=json.dumps(data))
+        r = requests.put(url, headers=headers, verify=self.verify, data=json.dumps(data), proxies=self.proxies)
         # if successful return json data (or empty json)
         if 200 == r.status_code:
             if r.text == "":
@@ -143,7 +150,7 @@ class ArgoAmsClient:
             'Accept': 'application/json'
         })
         # do the get resource
-        r = requests.get(url, headers=headers, verify=self.verify)
+        r = requests.get(url, headers=headers, verify=self.verify, proxies=self.proxies)
         # if successful return the json data or empty json
         if 200 == r.status_code:
             if r.text == "":
@@ -306,8 +313,8 @@ class ArgoAmsClient:
             dict. json representation of list of AMS users
 
         """
-        # tenant must have 3 users: project_admin, publisher, consumer
-        lookup = [("project_admin", "ams_{}_admin"), ("publisher", "ams_{}_publisher"), ("consumer", "ams_{}_consumer")]
+        # tenant must have 4 users: project_admin, publisher, consumer, archiver(consumer)
+        lookup = [("project_admin", "ams_{}_admin"), ("publisher", "ams_{}_publisher"), ("consumer", "ams_{}_consumer"), ("archiver", "ams_{}_archiver")]
         lookup = [(x, y.format(tenant.lower())) for (x, y) in lookup]
         users = dict()
         for (role, name) in lookup:
@@ -372,6 +379,9 @@ class ArgoAmsClient:
             if name.endswith('status_metric'):
                 if topics["metric_data"] == sub["topic"]:
                     found["status_metric"] = name
+            if name.endswith('archive_metric'):
+                if topics["metric_data"] == sub["topic"]:
+                    found["archive_metric"] = name
         return found
 
     @staticmethod
@@ -518,10 +528,14 @@ class ArgoAmsClient:
         project_name = tenant.upper()
         if role == "project_admin":
             username = "ams_{}_admin".format(tenant.lower())
+        elif role == "archiver":
+            username = "ams_{}_archiver".format(tenant.lower())
+            # archiver is actually a consumer
+            role = "consumer"
         else:
             username = "ams_{}_{}".format(tenant.lower(), role)
 
-        print username, role
+        
         url = self.get_url("users", username)
         data = {"projects": [{"project": project_name, "roles": [role]}]}
         return self.post_resource(url, data)
@@ -575,10 +589,10 @@ class ArgoAmsClient:
 
         # Things that sould be present in AMS definitions
         topics_lookup = ["sync_data", "metric_data"]
-        subs_lookup = ["ingest_sync", "ingest_metric", "status_sync", "status_metric"]
-        users_lookup = ["project_admin", "publisher", "consumer"]
+        subs_lookup = ["ingest_sync", "ingest_metric", "status_sync", "status_metric", "archive_metric"]
+        users_lookup = ["project_admin", "publisher", "consumer", "archiver"]
         topic_acl_lookup = ["sync_data", "metric_data"]
-        sub_acl_lookup = ["ingest_sync", "ingest_metric"]
+        sub_acl_lookup = ["ingest_sync", "ingest_metric", "archive_metric"]
 
         # Initialize a dictionary with missing definitions
         missing = dict()
@@ -601,19 +615,21 @@ class ArgoAmsClient:
         if users is None:
             users = {}
 
+        
+
         # For each expected topic check if it was indeed found in AMS or if it's missing
         for item in topics_lookup:
-            if item not in topics.keys():
+            if item not in list(topics.keys()):
                 missing["topics"].append(item)
 
         # For each expected sub check if it was indeed found in AMS or if it's missing
         for item in subs_lookup:
-            if item not in subs.keys():
+            if item not in list(subs.keys()):
                 missing["subs"].append(item)
 
         # For each expected user check if it was indeed found in AMS or if it's missing
         for item in users_lookup:
-            if item not in users.keys():
+            if item not in list(users.keys()):
                 missing["users"].append(item)
 
         user_topics = []
@@ -658,13 +674,17 @@ class ArgoAmsClient:
         # For each missing sub attempt to create it in AMS
         for sub in missing["subs"]:
             # create sub
+            if sub.startswith("archive") and sub.endswith("metric"): 
+                topic = "metric_data"
             if sub.endswith("metric"):
                 topic = "metric_data"
             elif sub.endswith("sync"):
                 topic = "sync_data"
             else:
                 continue
+
             sub_new = self.create_tenant_sub(tenant, topic, sub)
+            
             log.info("Tenant:{} - created missing subscription: {} on topic: {}".format(tenant, sub_new["name"],
                                                                                         sub_new["topic"]))
 
@@ -688,7 +708,10 @@ class ArgoAmsClient:
         # For each missing subscription attempt to set it in AMS
         for sub_acl in missing["sub_acls"]:
             acl = self.get_sub_acl(tenant, sub_acl)
-            user_con = "ams_{}_consumer".format(tenant.lower())
+            if sub_acl.startswith("archive"):
+                user_con = "ams_{}_archiver".format(tenant.lower())
+            else:
+                user_con = "ams_{}_consumer".format(tenant.lower())
             if user_con not in acl:
                 acl.append(user_con)
 
@@ -759,10 +782,14 @@ def run_ams_update(args):
 
     ams_token = config.get("AMS", "access_token")
     ams_host = config.get("AMS", "endpoint").hostname
+    ams_verify = config.get("AMS", "verify")
+    ams_proxy = config.get("AMS", "proxy")
+    if ams_proxy:
+        ams_proxy = ams_proxy.geturl()
     log.info("ams api used {}".format(ams_host))
 
     tenant_list = config.get("API", "tenants")
-    ams = ArgoAmsClient(ams_host, ams_token)
+    ams = ArgoAmsClient(ams_host, ams_token, ams_verify, ams_proxy)
 
     if args.tenant is not None:
         # Check if tenant exists in argo configuarion

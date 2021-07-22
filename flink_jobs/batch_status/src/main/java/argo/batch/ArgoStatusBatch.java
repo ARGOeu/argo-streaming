@@ -2,6 +2,8 @@ package argo.batch;
 
 import org.slf4j.LoggerFactory;
 
+import argo.amr.ApiResource;
+import argo.amr.ApiResourceManager;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
@@ -11,11 +13,8 @@ import ops.ConfigManager;
 import org.slf4j.Logger;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.flink.api.common.operators.Order;
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
@@ -58,16 +57,27 @@ public class ArgoStatusBatch {
 		env.getConfig().setGlobalJobParameters(params);
 		env.setParallelism(1);
 		
-		// sync data for input
-		Path mps = new Path(params.getRequired("mps"));
-		Path egp = new Path(params.getRequired("egp"));
-		Path ggp = new Path(params.getRequired("ggp"));
+		String apiEndpoint = params.getRequired("api.endpoint");
+		String apiToken = params.getRequired("api.token");
+		String reportID = params.getRequired("report.id");
+
+		ApiResourceManager amr = new ApiResourceManager(apiEndpoint,apiToken);
+
+		// fetch
+
+		// set params
+		if (params.has("api.proxy")) {
+			amr.setProxy(params.get("api.proxy"));
+		}
+
+		amr.setReportID(reportID);
+		amr.getRemoteAll();
 		
 
-		DataSource<String> cfgDS = env.readTextFile(params.getRequired("conf"));
-		DataSource<String> opsDS = env.readTextFile(params.getRequired("ops"));
-		DataSource<String> apsDS = env.readTextFile(params.getRequired("apr"));
-		DataSource<String> recDS = env.readTextFile(params.getRequired("rec"));
+		DataSource<String>cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
+		DataSource<String>opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
+		DataSource<String>apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
+		DataSource<String>recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
 		
 		// begin with empty threshold datasource
 		DataSource<String> thrDS = env.fromElements("");
@@ -84,18 +94,15 @@ public class ArgoStatusBatch {
 		List<String> confData = cfgDS.collect();
 		ConfigManager cfgMgr = new ConfigManager();
 		cfgMgr.loadJsonString(confData);
-		// sync data input: metric profile in avro format
-		AvroInputFormat<MetricProfile> mpsAvro = new AvroInputFormat<MetricProfile>(mps, MetricProfile.class);
-		DataSet<MetricProfile> mpsDS = env.createInput(mpsAvro);
-
-		// sync data input: endpoint group topology data in avro format
-		AvroInputFormat<GroupEndpoint> egpAvro = new AvroInputFormat<GroupEndpoint>(egp, GroupEndpoint.class);
-		DataSet<GroupEndpoint> egpDS = env.createInput(egpAvro);
-
-		// sync data input: group of group topology data in avro format
-		AvroInputFormat<GroupGroup> ggpAvro = new AvroInputFormat<GroupGroup>(ggp, GroupGroup.class);
-		DataSet<GroupGroup> ggpDS = env.createInput(ggpAvro);
-
+		
+		DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
+		DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
+		DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
+		GroupGroup[] listGroups = amr.getListGroupGroups();
+		if (listGroups.length > 0) ggpDS = env.fromElements(amr.getListGroupGroups());
+		
+		
+		
 		// todays metric data
 		Path in = new Path(params.getRequired("mdata"));
 		AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat<MetricData>(in, MetricData.class);
@@ -105,9 +112,11 @@ public class ArgoStatusBatch {
 		Path pin = new Path(params.getRequired("pdata"));
 		AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
 		DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
+		
+		DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData(params)).withBroadcastSet(recDS, "rec");
 
 		// Find the latest day
-		DataSet<MetricData> pdataMin = pdataDS.groupBy("service", "hostname", "metric")
+		DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
 				.sortGroup("timestamp", Order.DESCENDING).first(1);
 		
 		// Union todays data with the latest statuses from previous day 
@@ -161,7 +170,7 @@ public class ArgoStatusBatch {
 		String dbURI = params.getRequired("mongo.uri");
 		String dbMethod = params.getRequired("mongo.method");
 		
-		String reportID = cfgMgr.getReportID();
+	
 		 // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
 		MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI,"status_metrics",dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
 		MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI,"status_endpoints",dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);

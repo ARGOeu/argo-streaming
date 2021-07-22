@@ -28,6 +28,14 @@ public class StatusEvent{
 	private @SerializedName("status_service") String statusService[];
 	private @SerializedName("status_endpoint") String statusEndpoint[];
 	private @SerializedName("status_metric") String statusMetric[];
+	// Record statuses of the other groups
+	private @SerializedName("group_statuses") String groupStatuses[];
+	private @SerializedName("group_endpoints") String groupEndpoints[];
+	private @SerializedName("group_services") String groupServices[];
+	
+	// Record all statuses of endpoint's metrics
+	private @SerializedName("metric_statuses") String metricStatuses[];
+	private @SerializedName("metric_names") String metricNames[];
 	
 	
 	public StatusEvent() {
@@ -51,6 +59,11 @@ public class StatusEvent{
 		this.statusService = new String[0];
 		this.statusEndpoint = new String[0];
 		this.statusMetric = new String[0];
+		this.groupEndpoints = new String[0];
+		this.groupServices= new String[0];
+		this.groupStatuses = new String[0];
+		this.metricStatuses = new String[0];
+		this.metricNames = new String[0];
 		
 	}
 	
@@ -76,6 +89,12 @@ public class StatusEvent{
 		this.statusService = null;
 		this.statusEndpoint = null;
 		this.statusMetric = null;
+		this.groupEndpoints = null;
+		this.groupServices = null;
+		this.groupStatuses = null;
+		this.metricStatuses = null;
+		this.metricNames = null;
+
 		
 	}
 	
@@ -109,7 +128,47 @@ public class StatusEvent{
 		this.statusMetric = statusMetric;
 	}
 	
+	public void setGroupStatuses(String[] groupStatuses) {
+		this.groupStatuses = groupStatuses;
+	}
 	
+	public void setGroupEndpoints(String[] groupEndpoints) {
+		this.groupEndpoints = groupEndpoints;
+	}
+	
+	
+	public void setGroupServices(String[] groupServices) {
+		this.groupServices = groupServices;
+	}
+	
+	public String[] getGroupStatuses() {
+		return this.groupStatuses;
+	}
+	
+	public String[] getGroupServices() {
+		return this.groupServices;
+	}
+	
+	public String[] getGroupEndpoints() {
+		return this.groupEndpoints;
+	}
+	
+	public String[] getMetricStatuses() {
+		return this.metricStatuses;
+	}
+	
+	public String[] getMetricNames() {
+		return this.metricNames;
+	}
+	
+
+	public void setMetricNames(String[] metricNames) {
+		this.metricNames = metricNames;
+	}
+	
+	public void setMetricStatuses(String[] metricStatuses) {
+		this.metricStatuses = metricStatuses;
+	}
 	
 	
 	public String getReport() { return report; }

@@ -14,16 +14,13 @@ import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.minlog.Log;
-
-import argo.avro.GroupGroup;
 
 import argo.avro.MetricProfile;
 import ops.CAggregator;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
-import sync.GroupGroupManager;
 import sync.MetricProfileManager;
+import timelines.TimelineAggregator;
 
 
 /**
@@ -50,7 +47,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 	private AggregationProfileManager apsMgr;
 	private OpsManager opsMgr;
 	private String runDate;
-	private CAggregator endpointAggr;
+	private TimelineAggregator endpointAggr;
 
 	private boolean fillMissing;
 
@@ -74,7 +71,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 		this.opsMgr.loadJsonString(ops);
 		
 		this.runDate = params.getRequired("run.date");
-		this.endpointAggr = new CAggregator(); // Create aggregator
+		this.endpointAggr = new TimelineAggregator(); // Create aggregator
 
 		this.fillMissing = true;
 	}
@@ -98,6 +95,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 		String service ="";
 		String endpointGroup ="";
 		String hostname ="";
+		String info = "";
 		int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
 
 		
@@ -129,6 +127,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 			String ts = item.getTimestamp();
 			String status = item.getStatus();
 			String prevStatus = item.getPrevState();
+			info = item.getInfo();
 			
 
 			// Check if we are in the switch of a new metric name
@@ -143,7 +142,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 
 		}
 
-		this.endpointAggr.aggregate(this.opsMgr, this.apsMgr.getMetricOp(aprofile));
+		this.endpointAggr.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(this.apsMgr.getMetricOp(aprofile)));
 
 		// Append the timeline
 		
@@ -156,6 +155,8 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 			cur.setGroup(endpointGroup);
 			cur.setHostname(hostname);
 			cur.setService(service);
+			cur.setInfo(info);
+			
 			
 			
 			cur.setTimestamp(item.getKey().toString(DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")));

@@ -95,6 +95,18 @@
 		</dependency>
 
 
+	    <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.13</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>fluent-hc</artifactId>
+			<version>4.5.13</version>
+		</dependency>
+
 		<dependency>
 			<groupId>joda-time</groupId>
 			<artifactId>joda-time</artifactId>
@@ -135,9 +147,17 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.11</version>
+			<version>4.13.1</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.github.tomakehurst/wiremock -->
+		<dependency>
+    		<groupId>com.github.tomakehurst</groupId>
+    		<artifactId>wiremock</artifactId>
+    		<version>1.58</version>
+    		<scope>test</scope>
+		</dependency>
+		
 
 	</dependencies>
 
@@ -202,6 +222,17 @@
 					<groupId>org.mongodb</groupId>
 					<artifactId>mongo-java-driver</artifactId>
 					<version>3.2.2</version>
+				</dependency>
+
+				<dependency>
+					<groupId>org.apache.httpcomponents</groupId>
+					<artifactId>httpclient</artifactId>
+					<version>4.5.13</version>
+				</dependency>
+				<dependency>
+					<groupId>org.apache.httpcomponents</groupId>
+					<artifactId>fluent-hc</artifactId>
+					<version>4.5.13</version>
 				</dependency>
 
 			</dependencies>

@@ -129,21 +129,19 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		String metric = md.getMetric();
 		String monHost = md.getMonitoringHost();
 		String ts = md.getTimestamp();
-
+		
 		// Filter By monitoring engine
 		if (recMgr.isMonExcluded(monHost, ts) == true) return;
-		
+
 		// Filter By aggregation profile
 		if (apsMgr.checkService(aprof, service) == false) return;
-		
+			
 		// Filter By metric profile
 		if (mpsMgr.checkProfileServiceMetric(prof, service, metric) == false) return;
 		
-		
-		
-		
 		// Filter By endpoint group if belongs to supergroup
 		ArrayList<String> groupnames = egpMgr.getGroup(egroupType, hostname, service);
+		
 		
 		for (String groupname : groupnames) {
 			if (ggpMgr.checkSubGroup(groupname) == true){
@@ -178,7 +176,12 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 					
 				}
 				
-				StatusMetric sm = new StatusMetric(groupname,md.getService(),md.getHostname(),md.getMetric(), status,md.getTimestamp(),dateInt,timeInt,md.getSummary(),md.getMessage(),"","",actualData, ogStatus, ruleApplied);
+	
+			   
+				 
+				String info  = this.egpMgr.getInfo(groupname, egroupType, md.getHostname(), md.getService());
+
+				StatusMetric sm = new StatusMetric(groupname,md.getService(),md.getHostname(),md.getMetric(), status,md.getTimestamp(),dateInt,timeInt,md.getSummary(),md.getMessage(),"","",actualData, ogStatus, ruleApplied,info);
 				
 				out.collect(sm);
 			}

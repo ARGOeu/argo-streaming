@@ -64,6 +64,8 @@ public class StatusManagerTest {
 		sm.setReport("Critical");
 		sm.loadAllFiles("2017-03-03", avroDownFile, avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
 
+		System.out.println("");
+		
 		Date ts1 = sm.fromZulu("2017-03-03T00:00:00Z");
 		
 		sm.addNewGroup("GR-01-AUTH",sm.ops.getIntStatus("OK"), ts1);
@@ -275,7 +277,7 @@ public class StatusManagerTest {
 		ArrayList<String> elist07 = sm.setStatus("UKI-LT2-IC-HEP", "CREAM-CE", "ceprod05.grid.hep.ph.ic.ac.uk", "emi.cream.CREAMCE-JobCancel",
 				"OK", "mon01.argo.eu", "2017-03-03T22:30:00Z","","");
 		
-	
+		
 		
 		assertTrue(elist07.size()==4);
 		j01 = getJSON(elist07.get(0));
@@ -283,7 +285,14 @@ public class StatusManagerTest {
 		j03 = getJSON(elist07.get(2));
 		j04 = getJSON(elist07.get(3));
 		
+		// check list of metric statuses and metric names included in the endpoint
+		assertTrue(j02.get("metric_statuses").toString().equals("[\"OK\",\"OK\",\"OK\",\"OK\",\"OK\",\"OK\"]"));
+		assertTrue(j02.get("metric_names").toString().equals("[\"emi.cream.CREAMCE-ServiceInfo\",\"emi.cream.CREAMCE-JobCancel\",\"hr.srce.CREAMCE-CertLifetime\",\"eu.egi.CREAM-IGTF\",\"emi.cream.CREAMCE-JobPurge\",\"emi.cream.CREAMCE-AllowedSubmission\"]"));
 		
+		// check if endpoint groups have been captured
+		assertTrue(j04.get("group_endpoints").toString().equals("[\"cetest01.grid.hep.ph.ic.ac.uk\",\"cetest02.grid.hep.ph.ic.ac.uk\",\"bdii.grid.hep.ph.ic.ac.uk\",\"ceprod08.grid.hep.ph.ic.ac.uk\",\"ceprod06.grid.hep.ph.ic.ac.uk\",\"ceprod07.grid.hep.ph.ic.ac.uk\",\"ceprod05.grid.hep.ph.ic.ac.uk\"]"));
+		assertTrue(j04.get("group_services").toString().equals("[\"ARC-CE\",\"ARC-CE\",\"Site-BDII\",\"CREAM-CE\",\"CREAM-CE\",\"CREAM-CE\",\"CREAM-CE\"]"));
+		assertTrue(j04.get("group_statuses").toString().equals("[\"CRITICAL\",\"CRITICAL\",\"OK\",\"CRITICAL\",\"CRITICAL\",\"CRITICAL\",\"OK\"]"));
 		assertTrue(j01.get("type").getAsString().equals("metric"));
 		assertTrue(j02.get("type").getAsString().equals("endpoint"));
 		assertTrue(j03.get("type").getAsString().equals("service"));

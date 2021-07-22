@@ -27,4 +27,4 @@ class TestClass(unittest.TestCase):
         parser.add_argument('--sudo', action='store_true')
         args = parser.parse_args(['--tenant', 'TENANTA', '--sudo'])
 
-        self.assertEquals(expected_result, cmd_to_string(compose_command(config, args)[0]))
+        self.assertEqual(expected_result, cmd_to_string(compose_command(config, args)[0]))

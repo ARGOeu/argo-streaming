@@ -368,3 +368,82 @@ Ingest Sync | Ingesting sync data from `{{ams-endpoint}}`/v1/projects/`{{project
 Batch AR | Ar Batch job for tenant:`{{tenant}}` on day:`{{day}}` using report:`{{report}}`
 Batch Status | Status Batch job for tenant:`{{tenant}}` on day:`{{day}}` using report:`{{report}}`
 Streaming Status | Streaming status using data from `{{ams-endpoint}}`/v1/projects/`{{project}}`/subscriptions/`[`{{metric_subscription}}`,`{{sync_subscription}}`]
+
+## Status Trends
+Flink batch Job that calculate status trends for critical,warning,unknown status
+Job requires parameters:
+
+`--yesterdayData`             : file location of previous day's data
+`--todayData`                 : file location of today day's data
+`--N`              	       : (optional) number of displayed top results
+`--mongoUri`                  : uri to the mongo db , to store results
+`--apiUri`                    : uri to the web-api
+`--key`                       : users's token, used for authentication
+`--proxy`                     : (optional) proxy url 
+`--clearMongo`                : (optional) defines if the collections in mongo will be 					 cleared from previous documents or not. if false or is 					 missing collection will remain as it is 
+
+
+Flink batch Job that calculate flip flop trends for service endpoints metrics
+Job requires parameters:
+
+`--yesterdayData`              : file location of previous day's data
+`--todayData`                  : file location of today day's data
+`--N`              		: (optional) number of displayed top results
+`--mongoUri`                   : uri to the mongo db , to store results
+`--apiUri`                     : uri to the web-api
+`--key`                        : users's token, used for authentication
+`--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be 					  cleared from previous documents or not. if false or is 					  missing collection will remain as it is 
+
+
+Flink batch Job that calculate flip flop trends for service endpoints
+Job requires parameters:
+
+`--yesterdayData`              : file location of previous day's data
+`--todayData`                  : file location of today day's data
+`--N`              		: (optional) number of displayed top results
+`--mongoUri`                   : uri to the mongo db , to store results
+`--apiUri`                     : uri to the web-api
+`--key`                        : users's token, used for authentication
+`--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be 					  cleared from previous documents or not. if false or is 					  missing collection will remain as it is 
+
+
+Flink batch Job that calculate flip flop trends for service  
+Job requires parameters:
+
+`--yesterdayData`              : file location of previous day's data
+`--todayData`                  : file location of today day's data
+`--N`              		: (optional) number of displayed top results
+`--mongoUri`                   : uri to the mongo db , to store results
+`--apiUri`                     : uri to the web-api
+`--key`                        : users's token, used for authentication
+`--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be 					  cleared from previous documents or not. if false or is 					  missing collection will remain as it is 
+
+
+Flink batch Job that calculate flip flop trends for groups 
+Job requires parameters:
+
+`--yesterdayData`              : file location of previous day's data
+`--todayData`                  : file location of today day's data
+`--N`              		: (optional) number of displayed top results
+`--mongoUri`                   : uri to the mongo db , to store results
+`--apiUri`                     : uri to the web-api
+`--key`                        : users's token, used for authentication
+`--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be cleared from previous documents or not. if false or is missing collection will remain as it is 
+
+Flink batch Job that calculate flip flop trends for all levels of groups
+Job requires parameters:
+
+`--yesterdayData`              : file location of previous day's data
+`--todayData`                  : file location of today day's data
+`--N`              		: (optional) number of displayed top results
+`--mongoUri`                   : uri to the mongo db , to store results
+`--apiUri`                     : uri to the web-api
+`--key`                        : users's token, used for authentication
+`--proxy`                      : (optional) proxy url 
+`--clearMongo`                 : (optional) defines if the collections in mongo will be 					  cleared from previous documents or not. if false or is 					  missing collection will remain as it is 
+
+
