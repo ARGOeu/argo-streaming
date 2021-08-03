@@ -58,6 +58,7 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
             Timeline timeline = time.getTimeline();
             timelinelist.put(time.getMetric(), timeline);
 
+
         }
         // merge the timelines into one timeline ,  
 
@@ -68,6 +69,7 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
         Integer flipflops = mergedTimeline.calcStatusChanges();//calculate flip flops on the concluded merged timeline
+
         if (group != null && service != null && hostname != null) {
             EndpointTrends endpointTrends = new EndpointTrends(group, service, hostname, mergedTimeline, flipflops);
             out.collect(endpointTrends);

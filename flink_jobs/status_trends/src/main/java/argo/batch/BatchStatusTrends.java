@@ -126,7 +126,7 @@ public class BatchStatusTrends {
             noZeroStatusTrends = noZeroStatusTrends.sortPartition(5, Order.DESCENDING).setParallelism(1);
         }
 
-        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, MongoTrendsOutput.TrendsType.TRENDS_STATUS, reportId, profilesDateStr, clearMongo);
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, reportId, profilesDateStr, clearMongo);
 
         DataSet<Trends> trends = noZeroStatusTrends.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Trends>() {
 

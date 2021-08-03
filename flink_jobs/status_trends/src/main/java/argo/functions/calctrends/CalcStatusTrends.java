@@ -53,11 +53,9 @@ public class CalcStatusTrends implements GroupReduceFunction<MetricData, Tuple6<
 
         //for each MetricData in group check the status and increase counter accordingly
         for (MetricData md : in) {
-            // group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
-            String avProfileName = this.aggregationProfileParser.getAvProfileItem().getName();
+        String avProfileName = this.aggregationProfileParser.getAvProfileItem().getName();
 
             groups = topologyEndpointParser.getGroupFull(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString(), md.getService().toString());
-
 
             hostname = md.getHostname().toString();
             service = md.getService().toString();

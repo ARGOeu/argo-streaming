@@ -29,7 +29,6 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
 
     private final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     private EndpointGroupManager topologyEndpointParser;
-  //  private TopologyGroupParser topologyGroupParser;
       private GroupGroupManager topologyGroupParser;
     private AggregationProfileManager aggregationProfileParser;
     private OperationsParser operationsParser;
@@ -57,11 +56,18 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
         String hostname = null;
         String service = null;
         String metric = null;
+          String status = null;
+          int criticalSum = 0, warningSum = 0, unknownSum = 0;
+          ArrayList<MetricData> critical=new ArrayList<>();
+          ArrayList<MetricData> warning=new ArrayList<>();
+          ArrayList<MetricData> unknown=new ArrayList<>();
+         
         for (MetricData md : in) {
             hostname = md.getHostname().toString();
             service = md.getService().toString();
             
             metric = md.getMetric().toString();
+            status = md.getStatus().toString();
             //      group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService()); //retrieve the group for the service, as contained in file
             String avProfileName = this.aggregationProfileParser.getAvProfileItem().getName();
 
@@ -70,7 +76,15 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
             groups = topologyEndpointParser.getGroupFull(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString(), md.getService().toString());
             int st = operationsParser.getIntStatus(md.getStatus().toString());
             timeStatusMap.put(Utils.convertStringtoDate(format, md.getTimestamp().toString()), st);
-            
+
+            if (status.equalsIgnoreCase("critical")) {
+                criticalSum++;
+            } else if (status.equalsIgnoreCase("warning")) {
+                warningSum++;
+            } else if (status.equalsIgnoreCase("unknown")) {
+                unknownSum++;
+            }
+
         }
         
         Timeline timeline = new Timeline();
@@ -78,14 +92,16 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
 
         timeline.replacePreviousDateStatus(date, new ArrayList<>(operationsParser.getStates().keySet()));//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
         Integer flipflop = timeline.calcStatusChanges();
+
         if (service != null && hostname != null && metric != null) {
             for (String group : groups) {
                 
                 if (topologyGroupParser.checkSubGroup(group)) {
-                    MetricTrends metricTrends = new MetricTrends(group, service, hostname, metric, timeline, flipflop);
+                    MetricTrends metricTrends = new MetricTrends(group, service, hostname, metric, timeline, flipflop,criticalSum, warningSum,unknownSum );
                     out.collect(metricTrends);
                 }
             }
+
         }
         }
    
