@@ -29,7 +29,7 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
 
     private final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     private EndpointGroupManager topologyEndpointParser;
-      private GroupGroupManager topologyGroupParser;
+    private GroupGroupManager topologyGroupParser;
     private AggregationProfileManager aggregationProfileParser;
     private OperationsParser operationsParser;
     private DateTime date;
@@ -56,23 +56,19 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
         String hostname = null;
         String service = null;
         String metric = null;
-          String status = null;
-          int criticalSum = 0, warningSum = 0, unknownSum = 0;
-          ArrayList<MetricData> critical=new ArrayList<>();
-          ArrayList<MetricData> warning=new ArrayList<>();
-          ArrayList<MetricData> unknown=new ArrayList<>();
-         
+        String status = null;
+        int criticalSum = 0, warningSum = 0, unknownSum = 0;
+
         for (MetricData md : in) {
             hostname = md.getHostname().toString();
             service = md.getService().toString();
-            
+
             metric = md.getMetric().toString();
             status = md.getStatus().toString();
             //      group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService()); //retrieve the group for the service, as contained in file
             String avProfileName = this.aggregationProfileParser.getAvProfileItem().getName();
 
             // group = topologyEndpointParser.retrieveGroup(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString() + "-" + md.getService().toString());
-
             groups = topologyEndpointParser.getGroupFull(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString(), md.getService().toString());
             int st = operationsParser.getIntStatus(md.getStatus().toString());
             timeStatusMap.put(Utils.convertStringtoDate(format, md.getTimestamp().toString()), st);
@@ -86,7 +82,7 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
             }
 
         }
-        
+
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timeStatusMap);
 
@@ -94,15 +90,16 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
         Integer flipflop = timeline.calcStatusChanges();
 
         if (service != null && hostname != null && metric != null) {
+
             for (String group : groups) {
-                
+
                 if (topologyGroupParser.checkSubGroup(group)) {
-                    MetricTrends metricTrends = new MetricTrends(group, service, hostname, metric, timeline, flipflop,criticalSum, warningSum,unknownSum );
+                    MetricTrends metricTrends = new MetricTrends(group, service, hostname, metric, timeline, flipflop, criticalSum, warningSum, unknownSum);
                     out.collect(metricTrends);
                 }
             }
 
         }
-        }
-   
+    }
+
 }

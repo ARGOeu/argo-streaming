@@ -8,7 +8,7 @@ import argo.filter.zero.flipflops.ZeroServiceTrendsFilter;
 import argo.functions.calctimelines.CalcLastTimeStatus;
 import argo.functions.calctimelines.MapServices;
 import argo.functions.calctimelines.ServiceFilter;
-import argo.functions.calctimelines.StatusFilter;
+import argo.functions.calctimelines.StatusAndDurationFilter;
 import argo.functions.calctimelines.TopologyMetricFilter;
 import argo.functions.calctrends.CalcEndpointFlipFlopTrends;
 import argo.functions.calctrends.CalcGroupFlipFlop;
@@ -32,7 +32,7 @@ import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
-import org.apache.flink.api.java.tuple.Tuple6;
+import org.apache.flink.api.java.tuple.Tuple7;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.joda.time.DateTime;
@@ -103,7 +103,7 @@ public class BatchTrendsCalculations {
         mongoUri = params.get("mongoUri");
         profilesLoader = new ProfilesLoader(params);
         yesterdayData = readInputData(env, params, "yesterdayData");
-        todayData = readInputData(env, params, "todayDatas");
+        todayData = readInputData(env, params, "todayData");
 
         // calculate on data 
         calcFlipFlops();
@@ -150,7 +150,7 @@ public class BatchTrendsCalculations {
         });
         trends.output(metricMongoOut);
         //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> metricStatusTrendsData = serviceEndpointMetricGroupData.flatMap(new MetricTrendsCounter(profilesLoader.getOperationParser()));
+        DataSet< Tuple7< String,String, String, String, String, Integer,Integer>> metricStatusTrendsData = serviceEndpointMetricGroupData.flatMap(new MetricTrendsCounter(profilesLoader.getOperationParser()));
         //filter dataset for each status type and write to mongo db
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, statusTrendsMetricCol, metricStatusTrendsData, "critical");
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, statusTrendsMetricCol, metricStatusTrendsData, "warning");
@@ -179,7 +179,7 @@ public class BatchTrendsCalculations {
         });
         trends.output(metricMongoOut);
         //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> endpointStatusTrendsData = serviceEndpointGroupData.flatMap(new EndpointTrendsCounter(profilesLoader.getOperationParser()));
+        DataSet< Tuple7< String,String, String, String, String, Integer,Integer>> endpointStatusTrendsData = serviceEndpointGroupData.flatMap(new EndpointTrendsCounter(profilesLoader.getOperationParser()));
         //filter dataset for each status type and write to mongo db
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT, statusTrendsEndpointCol, endpointStatusTrendsData, "critical");
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT, statusTrendsEndpointCol, endpointStatusTrendsData, "warning");
@@ -208,7 +208,7 @@ public class BatchTrendsCalculations {
         });
         trends.output(metricMongoOut);
         //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> serviceStatusTrendsData = serviceGroupData.flatMap(new ServiceTrendsCounter(profilesLoader.getOperationParser()));
+        DataSet< Tuple7< String,String, String, String, String, Integer,Integer>> serviceStatusTrendsData = serviceGroupData.flatMap(new ServiceTrendsCounter(profilesLoader.getOperationParser()));
         //filter dataset for each status type and write to mongo db
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_SERVICE, statusTrendsServiceCol, serviceStatusTrendsData, "critical");
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_SERVICE, statusTrendsServiceCol, serviceStatusTrendsData, "warning");
@@ -245,7 +245,7 @@ public class BatchTrendsCalculations {
         });
         trends.output(metricMongoOut);
         //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> groupStatusTrendsData = groupData.flatMap(new GroupTrendsCounter(profilesLoader.getOperationParser()));
+        DataSet< Tuple7< String,String, String, String, String, Integer,Integer>> groupStatusTrendsData = groupData.flatMap(new GroupTrendsCounter(profilesLoader.getOperationParser()));
         //filter dataset for each status type and write to mongo db
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, statusTrendsGroupCol, groupStatusTrendsData, "critical");
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, statusTrendsGroupCol, groupStatusTrendsData, "warning");
@@ -265,37 +265,37 @@ public class BatchTrendsCalculations {
     }
  
     //filters the dataset to appear result by status type and status appearances>0 and write to mongo db
-    private static void filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType mongoTrendsType, String uri, DataSet<Tuple6< String, String, String, String, String, Integer>> data, String status) {
+    private static void filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType mongoTrendsType, String uri, DataSet< Tuple7< String,String, String, String, String, Integer,Integer>> data, String status) {
 
-        DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status)); //filter dataset by status type and status appearances>0
+        DataSet< Tuple7< String,String, String, String, String, Integer,Integer>> filteredData = data.filter(new StatusAndDurationFilter(status)); //filter dataset by status type and status appearances>0
 
         if (rankNum != null) {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING).setParallelism(1).first(rankNum);
+            filteredData = filteredData.sortPartition(6, Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING).setParallelism(1);
+            filteredData = filteredData.sortPartition(6, Order.DESCENDING).setParallelism(1);
         }
         writeStatusTrends(filteredData, uri, mongoTrendsType, data, status); //write to mongo db
     }
 
     // write status trends to mongo db
-    private static void writeStatusTrends(DataSet<Tuple6<String, String, String, String, String, Integer>> outputData, String uri, final MongoTrendsOutput.TrendsType mongoCase, DataSet<Tuple6< String, String, String, String, String, Integer>> data, String status) {
+    private static void writeStatusTrends(DataSet< Tuple7< String,String, String, String, String, Integer,Integer>> outputData, String uri, final MongoTrendsOutput.TrendsType mongoCase, DataSet< Tuple7< String,String, String, String, String, Integer,Integer>> data, String status) {
 
         //MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, mongoCase, reportId, profilesDateStr, clearMongo);
 
-        DataSet<Trends> trends = outputData.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Trends>() {
+        DataSet<Trends> trends = outputData.map(new MapFunction< Tuple7< String,String, String, String, String, Integer,Integer>, Trends>() {
 
             @Override
-            public Trends map(Tuple6<String, String, String, String, String, Integer> in) throws Exception {
+            public Trends map( Tuple7< String,String, String, String, String, Integer,Integer> in) throws Exception {
                 switch (mongoCase) {
                     case TRENDS_STATUS_METRIC:
-                        return new Trends(in.f0.toString(), in.f1.toString(), in.f2.toString(), in.f3.toString(), in.f4.toString(), in.f5);
+                        return new Trends(in.f0, in.f1, in.f2, in.f3, in.f4, in.f5, in.f6);
                     case TRENDS_STATUS_ENDPOINT:
-                        return new Trends(in.f0.toString(), in.f1.toString(), in.f2.toString(), null, in.f4.toString(), in.f5);
+                        return new Trends(in.f0, in.f1, in.f2, null, in.f4, in.f5, in.f6);
                     case TRENDS_STATUS_SERVICE:
-                        return new Trends(in.f0.toString(), in.f1.toString(), null, null, in.f4.toString(), in.f5);
+                        return new Trends(in.f0, in.f1, null, null, in.f4, in.f5, in.f6);
                     case TRENDS_STATUS_GROUP:
-                        return new Trends(in.f0.toString(), null, null, null, in.f4.toString(), in.f5);
+                        return new Trends(in.f0, null, null, null, in.f4, in.f5, in.f6);
                     default:
                         return null;
                 }

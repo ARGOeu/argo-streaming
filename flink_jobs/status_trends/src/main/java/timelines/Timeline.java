@@ -5,6 +5,8 @@ package timelines;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+import argo.utils.Utils;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -15,6 +17,7 @@ import java.util.TreeMap;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
+import org.joda.time.Minutes;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -320,20 +323,57 @@ public class Timeline {
      * timeline
      */
 
-    public int countStatusAppearances(int status) {
-
-        System.out.println("status is : " + status);
+    public int[] countStatusAppearances(int status) throws ParseException {
+        int[] statusInfo = new int[2];
         int count = 0;
+        ArrayList<DateTime> durationTimes = new ArrayList<>();
         for (Entry<DateTime, Integer> entry : this.samples.entrySet()) {
-            System.out.println("value status is : " + entry.getValue());
             if (status == entry.getValue()) {
-
+                durationTimes.add(entry.getKey());
                 count++;
             }
 
         }
-        return count;
+        statusInfo[0] = count;
+        statusInfo[1] = countStatusDuration(durationTimes);
+        return statusInfo;
 
+    }
+
+    /**
+     * Calculates the total duration of a status appearance
+     *
+     * @param durationTimes
+     * @return
+     */
+    public int countStatusDuration(ArrayList<DateTime> durationTimes) throws ParseException {
+
+        DateTime firstDt = null;
+        int minutesInt = 0;
+        for (DateTime dt : durationTimes) {
+            if (durationTimes.indexOf(dt) == 0) {
+
+                firstDt = dt;
+            } else {
+                Minutes minutes = Minutes.minutesBetween(firstDt, dt);
+                minutesInt = minutesInt + minutes.getMinutes();
+                firstDt = dt;
+            }
+
+        }
+
+        if (durationTimes.size() == 1 && minutesInt == 0) {
+            DateTime endDay = durationTimes.get(0);
+            DateTime startDay = durationTimes.get(0);
+
+            startDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", startDay, 0, 0, 0,0);
+            endDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", endDay, 23, 59, 59,59);
+
+            Minutes minutes = Minutes.minutesBetween(startDay, endDay);
+            minutesInt = minutes.getMinutes();
+        
+        }
+        return minutesInt;
     }
 
 }

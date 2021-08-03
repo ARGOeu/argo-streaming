@@ -56,9 +56,8 @@ public class CalcEndpointFlipFlopTrends extends RichGroupReduceFunction<MetricTr
             service = time.getService();
             hostname = time.getEndpoint();
             Timeline timeline = time.getTimeline();
-            timelinelist.put(time.getMetric(), timeline);
-
-
+ 
+            timelinelist.put(time.getMetric(),timeline);
         }
         // merge the timelines into one timeline ,  
 
