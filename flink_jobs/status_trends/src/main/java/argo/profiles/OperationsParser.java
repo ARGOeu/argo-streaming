@@ -5,7 +5,6 @@
  */
 package argo.profiles;
 
-import com.google.gson.Gson;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -79,8 +78,6 @@ public class OperationsParser implements Serializable {
         this.truthTable = null;
     }
 
-  
-
     public String getDefaultDown() {
         return this.defaultDownState;
     }
@@ -100,7 +97,6 @@ public class OperationsParser implements Serializable {
     public String getDefaultMissing() {
         return this.defaultMissingState;
     }
-
     public int getDefaultMissingInt() {
         return this.getIntStatus(this.defaultMissingState);
     }

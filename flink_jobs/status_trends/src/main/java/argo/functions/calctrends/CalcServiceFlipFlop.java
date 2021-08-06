@@ -5,11 +5,9 @@ package argo.functions.calctrends;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-//import argo.functions.calctimelines.TimelineMerger;
 import argo.pojos.EndpointTrends;
 import argo.pojos.ServiceTrends;
-//import argo.pojos.Timeline;
-import argo.profiles.AggregationProfileParser;
+import argo.profiles.AggregationProfileManager;
 import argo.profiles.OperationsParser;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,13 +27,14 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
 
     private HashMap<String, HashMap<String, String>> operationTruthTables;
 
-    private HashMap<String, String> serviceOperationMap;
+    private HashMap<String, String> serviceFunctionsMap;
     private OperationsParser operationsParser;
 
-    public CalcServiceFlipFlop(OperationsParser operationsParser, AggregationProfileParser aggregationProfileParser) {
+    public CalcServiceFlipFlop(OperationsParser operationsParser, AggregationProfileManager aggregationProfileParser) {
 //        this.operationTruthTables = operationParser.getOpTruthTable();
         this.operationsParser = operationsParser;
-        this.serviceOperationMap = aggregationProfileParser.getServiceOperations();
+        this.serviceFunctionsMap = aggregationProfileParser.retrieveServiceOperations();
+        
     }
 
     @Override
@@ -46,7 +45,6 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
         ArrayList<ServiceTrends> list = new ArrayList<>();
         //construct a timeline containing all the timestamps of each metric timeline
 
-
         HashMap<String, Timeline> timelineList = new HashMap<>();
 
         for (EndpointTrends endpointTrend : in) {
@@ -54,16 +52,13 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
             service = endpointTrend.getService();
             timelineList.put(endpointTrend.getEndpoint(), endpointTrend.getTimeline());
         }
-        String operation = serviceOperationMap.get(service);
-
+        String operation = serviceFunctionsMap.get(service);
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelineList);
         timelineAggregator.aggregate(operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
 
 
-///        HashMap<String, String> opTruthTable = operationTruthTables.get(operation);
         Timeline timeline = timelineAggregator.getOutput();
         int flipflops = timeline.calcStatusChanges();
-
         if (group != null && service != null) {
             ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflops);
             out.collect(serviceTrends);

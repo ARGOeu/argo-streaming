@@ -11,8 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author cthermolia
+ * ZeroGroupTrendsFilter, filters GroupTrends data and rejects the ones with flipflop=0
  */
     
     

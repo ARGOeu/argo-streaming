@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileReader;
 
 import java.net.URL;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.flink.api.java.DataSet;
@@ -22,9 +21,6 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import junit.framework.Assert;
-import ops.ConfigManager;
-import ops.OpsManager;
-import ops.ThresholdManager;
 import ops.ThresholdManagerTest;
 import sync.AggregationProfileManager;
 import sync.EndpointGroupManager;

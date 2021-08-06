@@ -22,25 +22,9 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-/**
- *
- * @author cthermolia
- */
 public class Utils {
 
     static Logger LOG = LoggerFactory.getLogger(Utils.class);
-    //   String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-
-//    public static String getParameterDate(String format, String paramDate) throws ParseException {
-//        DateTime date = convertStringtoDate(format, paramDate);
-//
-//        DateTime dt = new DateTime(date);
-//        DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
-//        String profileDate = dt.toString(dtf);
-//
-//        return profileDate;
-//
-//    }
 
     public static String convertDateToString(String format, DateTime date) throws ParseException {
 
@@ -52,14 +36,6 @@ public class Utils {
     }
 
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
-
-        //   String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-//        SimpleDateFormat sdf = new SimpleDateFormat(format);
-//        sdf.setTimeZone(TimeZone.getDefault());
-//        Calendar cal = Calendar.getInstance();
-//        cal.setTime(sdf.parse(dateStr));
-//        cal.set(Calendar.MILLISECOND, 0);
-//        return new DateTime(cal.getTime());
         DateTimeFormatter formatter = DateTimeFormat.forPattern(format);
         DateTime dt = formatter.parseDateTime(dateStr);
         

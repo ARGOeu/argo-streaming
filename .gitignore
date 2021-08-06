@@ -23,3 +23,5 @@ conf.cfg
 .classpath
 .project
 .settings/
+
+/flink_jobs/ProfilesManager/target/

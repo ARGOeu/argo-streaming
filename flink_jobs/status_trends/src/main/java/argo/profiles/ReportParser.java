@@ -14,9 +14,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 /**
- *
- * @author cthermolia
- * 
  * ReportParser, collects data as described in the json received from web api report request, that corresponds to the specific tenant
  */
 public class ReportParser {
@@ -101,18 +98,6 @@ public class ReportParser {
 
     }
 
-//    public String getProfileId(String profileName) {
-//        ArrayList<Profiles> profiles = tenantReport.getProfiles();
-//        if (profiles != null) {
-//            for (Profiles profile : profiles) {
-//                if (profile.getType().equalsIgnoreCase(profileName)) {
-//                    return profile.id;
-//                }
-//            }
-//        }
-//        return null;
-//    }
-    
     public String getAggregationReportId() {
         ArrayList<Profiles> profiles = tenantReport.getProfiles();
         if (profiles != null) {

@@ -6,19 +6,15 @@ package argo.functions.calctrends;
  * and open the template in the editor.
  */
 import argo.avro.MetricData;
-import argo.profiles.AggregationProfileParser;
-import argo.profiles.TopologyEndpointParser;
+import argo.profiles.AggregationProfileManager;
+import argo.profiles.EndpointGroupManager;
 import java.text.ParseException;
-import java.util.HashMap;
-import java.util.TreeMap;
+import java.util.ArrayList;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.util.Collector;
 
 /**
- *
- * @author cthermolia
- *
  * CalcServiceEnpointMetricStatus, for each service endpoint metric group ,
  * keeps count for each status (CRITICAL,WARNING,UNKNOW) appearance and returns
  * the group information (group, service,hostname, metric, status,
@@ -26,19 +22,16 @@ import org.apache.flink.util.Collector;
  */
 public class CalcStatusTrends implements GroupReduceFunction<MetricData, Tuple6<String, String, String, String, String, Integer>> {
 
-    //private  HashMap<String, String> groupEndpoints;
-    private TopologyEndpointParser topologyEndpointParser;
-    private AggregationProfileParser aggregationProfileParser;
-//    public CalcStatusTrends(HashMap<String, String> groupEndpoints) {
-//        this.groupEndpoints = groupEndpoints;
-//    }
+    private EndpointGroupManager topologyEndpointParser;
+    private AggregationProfileManager aggregationProfileParser;
 
-    public CalcStatusTrends(TopologyEndpointParser topologyEndpointParser,AggregationProfileParser aggregationProfileParser) {
+
+    public CalcStatusTrends(EndpointGroupManager topologyEndpointParser, AggregationProfileManager aggregationProfileParser) {
         this.topologyEndpointParser = topologyEndpointParser;
-        this.aggregationProfileParser=aggregationProfileParser;
+        this.aggregationProfileParser = aggregationProfileParser;
+
     }
 
-    
     /**
      * for each service endpoint metric Iterable check the MetricData status ,
      * keep counter for each status(CRITICAL, WARNING,UNKNOWN) and provide
@@ -48,12 +41,10 @@ public class CalcStatusTrends implements GroupReduceFunction<MetricData, Tuple6<
      * @param out, the collection of 3 Tuple6 for each Iterable (one for each
      * status) that keeps info for group ,service, hostname, metric, status, and
      * status counter
-     * @throws Exception
      */
     @Override
     public void reduce(Iterable<MetricData> in, Collector<Tuple6<String, String, String, String, String, Integer>> out) throws ParseException {
-        TreeMap<String, String> timeStatusMap = new TreeMap<>();
-        String group = null;
+        ArrayList<String> groups = new ArrayList<>();
         String hostname = null;
         String service = null;
         String status = null;
@@ -62,28 +53,33 @@ public class CalcStatusTrends implements GroupReduceFunction<MetricData, Tuple6<
 
         //for each MetricData in group check the status and increase counter accordingly
         for (MetricData md : in) {
-           // group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
-            group=topologyEndpointParser.retrieveGroup(aggregationProfileParser.getEndpointGroup().toUpperCase(), md.getHostname().toString() + "-" + md.getService().toString());
-           hostname = md.getHostname().toString();
+            // group = groupEndpoints.get(md.getHostname().toString() + "-" + md.getService().toString()); //retrieve the group for the service, as contained in file group_endpoints. if group is null exit 
+            String avProfileName = this.aggregationProfileParser.getAvProfileItem().getName();
+
+            // group=topologyEndpointParser.retrieveGroup(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString() + "-" + md.getService().toString());
+            groups = topologyEndpointParser.getGroup(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString(), md.getService().toString());
+
+            hostname = md.getHostname().toString();
             service = md.getService().toString();
             status = md.getStatus().toString();
             metric = md.getMetric().toString();
-            if (group != null && service != null && hostname != null && metric != null) {
+            if (service != null && hostname != null && metric != null) {
+                for (String group : groups) {
+                    if (status.equalsIgnoreCase("critical")) {
+                        criticalSum++;
+                    } else if (status.equalsIgnoreCase("warning")) {
 
-                if (status.equalsIgnoreCase("critical")) {
-                    criticalSum++;
-                } else if (status.equalsIgnoreCase("warning")) {
+                        warningSum++;
+                    } else if (status.equalsIgnoreCase("unknown")) {
+                        unknownSum++;
+                    }
 
-                    warningSum++;
-                } else if (status.equalsIgnoreCase("unknown")) {
-                    unknownSum++;
                 }
-
             }
         }
         // for the group create result for each status and keep group info
-        if (group != null && service != null && hostname != null && metric != null) {
-
+        if ( service != null && hostname != null && metric != null) {
+            for(String group: groups){
             Tuple6<String, String, String, String, String, Integer> tupleCritical = new Tuple6<String, String, String, String, String, Integer>(
                     group, service, hostname, metric, "CRITICAL", criticalSum);
             out.collect(tupleCritical);
@@ -95,6 +91,7 @@ public class CalcStatusTrends implements GroupReduceFunction<MetricData, Tuple6<
             Tuple6<String, String, String, String, String, Integer> tupleUnknown = new Tuple6<String, String, String, String, String, Integer>(
                     group, service, hostname, metric, "UNKNOWN", unknownSum);
             out.collect(tupleUnknown);
+            }
         }
     }
 

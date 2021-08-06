@@ -17,9 +17,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 /**
- *
- * @author cthermolia
- *
  * TopologyGroupParser, collects data as described in the json received from web
  * api topology group request
  */
