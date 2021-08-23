@@ -1,7 +1,7 @@
 package profilesmanager;
 
 import argo.avro.MetricProfile;
-import com.google.gson.Gson;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -397,8 +397,7 @@ public class MetricProfileManager implements Serializable {
     }
 
     /**
-     * Checks if a combination of service, metric exists ing the list of
-     * ProfileItems
+     * Checks if a combination of service, metric exists in the list of ProfileItems
      *
      * @param service, a service
      * @param metric, a metric

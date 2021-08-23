@@ -83,15 +83,7 @@ public class RequestManager {
         return loadProfile(uri, key, proxy).get(0);
     }
 
-//    public static JsonElement loadOperationProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
-//        JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
-//        JsonObject jsonObj=jsonElement.getAsJsonObject();
-//        JsonArray dataObj = jsonObj.getAsJsonArray("data");
-//        JsonElement dataElement=dataObj.get(0);
-//      
-//         
-//        return dataElement;
-//    }
+
     public static JsonElement metricProfileRequest(String apiUri, String metricId, String key, String proxy, String dateStr) throws IOException, ParseException {
 
         String uri = apiUri + "/metric_profiles" + "/" + metricId;
@@ -110,10 +102,12 @@ public class RequestManager {
         }
         return loadProfile(uri, key, proxy).get(0);
 
+
     }
-     public static JsonArray endpointGroupProfileRequest(String apiUri, String key, String proxy, String reportname,String dateStr) throws IOException, ParseException {
- 
-        String uri = apiUri +  "/topology/endpoints/by_report" + "/" + reportname;
+
+    public static JsonArray endpointGroupProfileRequest(String apiUri, String key, String proxy, String reportname, String dateStr) throws IOException, ParseException {
+
+        String uri = apiUri + "/topology/endpoints/by_report" + "/" + reportname;
         if (dateStr != null) {
             uri = uri + "?date=" + dateStr;
         }
@@ -128,15 +122,22 @@ public class RequestManager {
         }
         return loadProfile(uri, key, proxy);
 
+
+    }
+
+    public static JsonElement reportProfileRequest(String apiUri, String key, String proxy, String reportId) throws IOException, ParseException {
+
+        String uri = apiUri + "/reports/" + reportId;
+        return loadProfile(uri, key, proxy).get(0);
+
+
     }
 
     public static JsonArray loadProfile(String uri, String key, String proxy) throws IOException, org.json.simple.parser.ParseException {
         JsonElement jsonElement = RequestManager.callRequest(uri, key, proxy);
         JsonObject jsonObj = jsonElement.getAsJsonObject();
         JsonArray dataObj = jsonObj.getAsJsonArray("data");
-        //JsonElement dataElement = dataObj.get(0);
-
-        return dataObj;
+             return dataObj;
     }
 
 }

@@ -31,18 +31,14 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
     private OperationsParser operationsParser;
 
     public CalcServiceFlipFlop(OperationsParser operationsParser, AggregationProfileManager aggregationProfileParser) {
-//        this.operationTruthTables = operationParser.getOpTruthTable();
         this.operationsParser = operationsParser;
         this.serviceFunctionsMap = aggregationProfileParser.retrieveServiceOperations();
-        
     }
 
     @Override
     public void reduce(Iterable<EndpointTrends> in, Collector< ServiceTrends> out) throws Exception {
         String group = null;
         String service = null;
-        // String hostname = null;
-        ArrayList<ServiceTrends> list = new ArrayList<>();
         //construct a timeline containing all the timestamps of each metric timeline
 
         HashMap<String, Timeline> timelineList = new HashMap<>();
@@ -50,18 +46,19 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
         for (EndpointTrends endpointTrend : in) {
             group = endpointTrend.getGroup();
             service = endpointTrend.getService();
-            timelineList.put(endpointTrend.getEndpoint(), endpointTrend.getTimeline());
+                timelineList.put(endpointTrend.getEndpoint(), endpointTrend.getTimeline());
         }
-        String operation = serviceFunctionsMap.get(service);
-        TimelineAggregator timelineAggregator = new TimelineAggregator(timelineList);
-        timelineAggregator.aggregate(operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
 
+            String operation = serviceFunctionsMap.get(service);
+            TimelineAggregator timelineAggregator = new TimelineAggregator(timelineList);
+            timelineAggregator.aggregate(operationsParser.getTruthTable(), operationsParser.getIntOperation(operation));
 
-        Timeline timeline = timelineAggregator.getOutput();
-        int flipflops = timeline.calcStatusChanges();
-        if (group != null && service != null) {
-            ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflops);
-            out.collect(serviceTrends);
-        }
-    }
+            Timeline timeline = timelineAggregator.getOutput();
+            int flipflops = timeline.calcStatusChanges();
+            if (group != null && service != null) {
+                ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflops);
+                System.out.println("group: " + group + " service: " + service + " flipflops: " + flipflops);
+                out.collect(serviceTrends);
+            }
+       }
 }

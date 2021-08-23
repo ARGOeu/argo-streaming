@@ -89,9 +89,9 @@ public class BatchServiceFlipFlopTrends {
 // execute program
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Service Flip Flops for: ");
-        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
+       jobTitleSB.append(profilesLoader.getReportParser().getTenant());
         jobTitleSB.append("/");
-        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getInfo()[0]);
+        jobTitleSB.append(profilesLoader.getReportParser().getReport());
         jobTitleSB.append("/");
         jobTitleSB.append(profilesDate);
         env.execute(jobTitleSB.toString());

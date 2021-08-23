@@ -13,22 +13,21 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.json.simple.parser.ParseException;
 
 /**
- *
- * @author cthermolia
- *
  * ProfilesLoader, loads all the parser that will be used to collect the
  * information from the web api
  */
 public class ProfilesLoader {
 
-    private ReportParser reportParser;
+
+    private ReportManager reportParser;
+
     private EndpointGroupManager topologyEndpointParser;
     private MetricProfileManager metricProfileParser;
 
     private OperationsParser operationParser;
     private AggregationProfileManager aggregationProfileParser;
-//    private TopologyGroupParser topolGroupParser;
-      private GroupGroupManager topolGroupParser;
+
+    private GroupGroupManager topolGroupParser;
 
     private String aggregationId;
     private String metricId;
@@ -39,13 +38,16 @@ public class ProfilesLoader {
 
     public ProfilesLoader(ParameterTool params) throws IOException, ParseException {
 
-        reportParser = new ReportParser(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
-        String[] reportInfo = reportParser.getTenantReport().getInfo();
-        //topolGroupParser = new TopologyGroupParser(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("date"), reportInfo[0]);
-  
-         aggregationId = reportParser.getAggregationReportId();
-         metricId = reportParser.getMetricReportId();
-         operationsId = reportParser.getOperationReportId();
+        JsonElement reportProfileJson = RequestManager.reportProfileRequest(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), params.getRequired("reportId"));
+        reportParser = new ReportManager();
+        reportParser.readJson(reportProfileJson);
+
+        String reportName = reportParser.getReport();
+
+        aggregationId = reportParser.getAggregationReportId();
+        metricId = reportParser.getMetricReportId();
+        operationsId = reportParser.getOperationReportId();
+
 
         JsonElement opProfileJson = RequestManager.operationsProfileRequest(params.getRequired("apiUri"), operationsId, params.getRequired("key"), params.get("proxy"), params.get("date"));
 
@@ -61,25 +63,25 @@ public class ProfilesLoader {
 
         aggregationProfileParser = new AggregationProfileManager();
         aggregationProfileParser.readJson(aggregationProfileJson);
-        
-        
-         JsonArray endpointGroupProfileJson = RequestManager.endpointGroupProfileRequest(params.getRequired("apiUri"),  params.getRequired("key"), params.get("proxy"), reportInfo[0],params.get("date"));
+
+        JsonArray endpointGroupProfileJson = RequestManager.endpointGroupProfileRequest(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), reportName, params.get("date"));
+
 
         topologyEndpointParser = new EndpointGroupManager();
         topologyEndpointParser.loadGroupEndpointProfile(endpointGroupProfileJson);
 
- 
-         JsonArray groupGroupProfileJson = RequestManager.groupGroupProfileRequest(params.getRequired("apiUri"),  params.getRequired("key"), params.get("proxy"), reportInfo[0],params.get("date"));
+        JsonArray groupGroupProfileJson = RequestManager.groupGroupProfileRequest(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), reportName, params.get("date"));
+
 
         topolGroupParser = new GroupGroupManager();
         topolGroupParser.loadGroupGroupProfile(groupGroupProfileJson);
     }
 
-    public ReportParser getReportParser() {
+    public ReportManager getReportParser() {
         return reportParser;
     }
 
-    public void setReportParser(ReportParser reportParser) {
+    public void setReportParser(ReportManager reportParser) {
         this.reportParser = reportParser;
     }
 
@@ -113,15 +115,6 @@ public class ProfilesLoader {
     public void setAggregationProfileParser(AggregationProfileManager aggregationProfileParser) {
         this.aggregationProfileParser = aggregationProfileParser;
     }
-
-//    public TopologyGroupParser getTopolGroupParser() {
-//        return topolGroupParser;
-//    }
-//
-//    public void setTopolGroupParser(TopologyGroupParser topolGroupParser) {
-//        this.topolGroupParser = topolGroupParser;
-//    }
-
     public GroupGroupManager getTopolGroupParser() {
         return topolGroupParser;
     }
@@ -129,7 +122,6 @@ public class ProfilesLoader {
     public void setTopolGroupParser(GroupGroupManager topolGroupParser) {
         this.topolGroupParser = topolGroupParser;
     }
-    
 
     public String getAggregationId() {
         return aggregationId;
