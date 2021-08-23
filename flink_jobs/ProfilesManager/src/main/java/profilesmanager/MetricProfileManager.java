@@ -1,7 +1,6 @@
 package profilesmanager;
 
 import argo.avro.MetricProfile;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

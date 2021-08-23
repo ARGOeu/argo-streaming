@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 public class ServiceFilter implements FilterFunction<EndpointTrends> {
 
     static Logger LOG = LoggerFactory.getLogger(ServiceFilter.class);
-
     private AggregationProfileManager aggregationProfileParser;
 
     public ServiceFilter(AggregationProfileManager aggregationProfileParser) {
@@ -28,9 +27,7 @@ public class ServiceFilter implements FilterFunction<EndpointTrends> {
     //if the status field value in Tuple equals the given status returns true, else returns false
     @Override
     public boolean filter(EndpointTrends t) throws Exception {
-
         return aggregationProfileParser.checkServiceExistance(t.getService());
-   
     }
 
 }

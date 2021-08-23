@@ -32,7 +32,6 @@ import org.apache.flink.core.fs.Path;
 import org.joda.time.DateTime;
 
 /**
-
  * Implements an ARGO Status Trends Job in flink , to count the number of status
  * changes that occur to all levels of the topology hierarchy
  *

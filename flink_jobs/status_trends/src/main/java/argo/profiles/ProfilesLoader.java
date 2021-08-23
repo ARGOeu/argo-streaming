@@ -19,7 +19,9 @@ import org.json.simple.parser.ParseException;
 public class ProfilesLoader {
 
 
+
     private ReportManager reportParser;
+
 
     private EndpointGroupManager topologyEndpointParser;
     private MetricProfileManager metricProfileParser;
@@ -48,7 +50,6 @@ public class ProfilesLoader {
         metricId = reportParser.getMetricReportId();
         operationsId = reportParser.getOperationReportId();
 
-
         JsonElement opProfileJson = RequestManager.operationsProfileRequest(params.getRequired("apiUri"), operationsId, params.getRequired("key"), params.get("proxy"), params.get("date"));
 
         operationParser = new OperationsParser();
@@ -65,13 +66,10 @@ public class ProfilesLoader {
         aggregationProfileParser.readJson(aggregationProfileJson);
 
         JsonArray endpointGroupProfileJson = RequestManager.endpointGroupProfileRequest(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), reportName, params.get("date"));
-
-
         topologyEndpointParser = new EndpointGroupManager();
         topologyEndpointParser.loadGroupEndpointProfile(endpointGroupProfileJson);
 
         JsonArray groupGroupProfileJson = RequestManager.groupGroupProfileRequest(params.getRequired("apiUri"), params.getRequired("key"), params.get("proxy"), reportName, params.get("date"));
-
 
         topolGroupParser = new GroupGroupManager();
         topolGroupParser.loadGroupGroupProfile(groupGroupProfileJson);
