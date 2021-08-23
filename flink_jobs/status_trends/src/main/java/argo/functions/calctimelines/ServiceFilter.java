@@ -18,7 +18,6 @@ public class ServiceFilter implements FilterFunction<EndpointTrends> {
 
     static Logger LOG = LoggerFactory.getLogger(ServiceFilter.class);
     private AggregationProfileManager aggregationProfileParser;
-
     public ServiceFilter(AggregationProfileManager aggregationProfileParser) {
         this.aggregationProfileParser = aggregationProfileParser;
 
