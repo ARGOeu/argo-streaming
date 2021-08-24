@@ -1,0 +1,12 @@
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/profilesmanager/DowntimeManager.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/profilesmanager/AggregationProfileManager.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/profilesmanager/ThresholdManager.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/argo/avro/GroupEndpoint.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/profilesmanager/OperationsManager.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/profilesmanager/GroupGroupManager.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/argo/avro/MetricProfile.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/profilesmanager/ReportManager.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/argo/avro/GroupGroup.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/profilesmanager/EndpointGroupManager.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/argo/avro/Downtime.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/ProfilesManager/src/main/java/profilesmanager/MetricProfileManager.java

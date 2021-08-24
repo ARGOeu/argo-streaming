@@ -1,0 +1,3 @@
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/batch_status/src/test/java/argo/batch/PickDataPointsTest.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/batch_status/src/test/java/argo/batch/ExcludeMetricDataTest.java
+/home/cthermolia/github.com/argo-streaming/flink_jobs_v2/batch_status/src/test/java/sync/RecomputationManagerTest.java

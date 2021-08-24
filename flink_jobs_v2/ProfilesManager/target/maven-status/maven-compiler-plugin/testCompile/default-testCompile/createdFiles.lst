@@ -1,0 +1,9 @@
+profilesmanager/ReportManagerTest.class
+profilesmanager/OperationsManagerTest.class
+profilesmanager/MetricProfileManagerTest.class
+profilesmanager/ThresholdManagerTest.class
+profilesmanager/Utils.class
+profilesmanager/EndpointGroupManagerTest.class
+profilesmanager/DowntimeManagerTest.class
+profilesmanager/AggregationProfileManagerTest.class
+profilesmanager/GroupGroupManagerTest.class

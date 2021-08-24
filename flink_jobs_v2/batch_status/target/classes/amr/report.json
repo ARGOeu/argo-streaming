@@ -1,0 +1,57 @@
+{
+  "status": {
+    "message": "Success",
+    "code": "200"
+  },
+  "data": [
+    {
+      "id": "f29eeb59-ab38-4aa0-b372-5d3c0709dfb2",
+      "tenant": "demo",
+      "disabled": false,
+      "info": {
+        "name": "Critical",
+        "description": "test report",
+        "created": "2020-09-24 12:05:04",
+        "updated": "2020-10-08 09:32:46"
+      },
+      "thresholds": {
+        "availability": 80,
+        "reliability": 85,
+        "uptime": 0.8,
+        "unknown": 0.1,
+        "downtime": 0.1
+      },
+      "topology_schema": {
+        "group": {
+          "type": "PROJECT",
+          "group": {
+            "type": "SERVICEGROUPS"
+          }
+        }
+      },
+      "profiles": [
+        {
+          "id": "92fa5d74-015c-4122-b8b9-7b344f3154d4",
+          "name": "test-mon",
+          "type": "metric"
+        },
+        {
+          "id": "2744247f-40f8-4dd6-b22c-76a3b38334d8",
+          "name": "test-agg2",
+          "type": "aggregation"
+        },
+        {
+          "id": "ea62ff1e-c6e1-438b-83c7-9262b3a4f179",
+          "name": "demo_ops",
+          "type": "operations"
+        },
+        {
+          "id": "3345c3c1-322a-47f1-982c-1d9df1fc065e",
+          "name": "endpoint_example",
+          "type": "thresholds"
+        }
+      ],
+      "filter_tags": []
+    }
+  ]
+}

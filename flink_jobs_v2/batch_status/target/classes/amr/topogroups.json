@@ -1,0 +1,28 @@
+{
+  "status": {
+    "message": "Success",
+    "code": "200"
+  },
+  "data": [
+    {
+      "date": "2020-11-11",
+      "group": "ORG-A",
+      "type": "PROJECT",
+      "subgroup": "GROUP-101",
+      "tags": {
+        "monitored": "0",
+        "scope": "Local"
+      }
+    },
+    {
+      "date": "2020-11-11",
+      "group": "ORG-A",
+      "type": "PROJECT",
+      "subgroup": "GROUP-202",
+      "tags": {
+        "monitored": "1",
+        "scope": "Local"
+      }
+    }
+  ]
+}
