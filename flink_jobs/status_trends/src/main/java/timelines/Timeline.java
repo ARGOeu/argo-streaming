@@ -8,6 +8,7 @@ package timelines;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
@@ -309,6 +310,30 @@ public class Timeline {
         }
 
         return result;
+    }
+
+    /**
+     * Calculates the times a specific status appears on the timeline
+     *
+     * @param status , the status to calculate the appearances
+     * @return , the num of the times the specific status appears on the
+     * timeline
+     */
+
+    public int countStatusAppearances(int status) {
+
+        System.out.println("status is : " + status);
+        int count = 0;
+        for (Entry<DateTime, Integer> entry : this.samples.entrySet()) {
+            System.out.println("value status is : " + entry.getValue());
+            if (status == entry.getValue()) {
+
+                count++;
+            }
+
+        }
+        return count;
+
     }
 
 }

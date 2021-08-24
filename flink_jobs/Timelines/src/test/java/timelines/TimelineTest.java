@@ -496,4 +496,20 @@ public class TimelineTest {
         return map;
     }
 
+      /**
+     * Test of countStatusAppearances method, of class Timeline.
+     */
+    @Test
+    public void testCountStatusAppearances() throws ParseException {
+        System.out.println("countStatusAppearances");
+        int status = 0;
+        Timeline instance = new Timeline();
+        instance.insertDateTimeStamps(createTimestampList());
+        int expResult =1;
+        int result = instance.countStatusAppearances(status);
+        assertEquals(expResult, result);
+        // TODO review the generated test code and remove the default call to fail.
+       //fail("The test case is a prototype.");
+    }
+
 }

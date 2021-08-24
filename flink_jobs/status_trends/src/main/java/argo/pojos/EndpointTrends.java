@@ -18,7 +18,7 @@ public class EndpointTrends {
     String endpoint;
     Timeline timeline;
     Integer flipflops;
-
+ 
     public EndpointTrends() {
     }
 
@@ -30,6 +30,9 @@ public class EndpointTrends {
         this.flipflops = flipflops;
     }
 
+ 
+
+    
     public String getGroup() {
         return group;
     }

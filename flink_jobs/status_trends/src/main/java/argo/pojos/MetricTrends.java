@@ -19,19 +19,36 @@ public class MetricTrends {
     String metric;
     Timeline timeline;
     Integer flipflops;
-
+    Integer criticalNum;
+    Integer warningNum;
+    Integer unknownNum;
+    
     public MetricTrends() {
     }
 
-    public MetricTrends(String group, String service, String hostname, String metric, timelines.Timeline timeline, Integer flipflop) {
+    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops, Integer criticalNum, Integer warningNum, Integer unknownNum) {
         this.group = group;
         this.service = service;
-        this.endpoint = hostname;
+        this.endpoint = endpoint;
         this.metric = metric;
         this.timeline = timeline;
-        this.flipflops = flipflop;
+        this.flipflops = flipflops;
+        this.criticalNum = criticalNum;
+        this.warningNum = warningNum;
+        this.unknownNum = unknownNum;
+    }
+    
+    
+
+    public Integer getUnknownNum() {
+        return unknownNum;
     }
 
+    public void setUnknownNum(Integer unknownNum) {
+        this.unknownNum = unknownNum;
+    }
+
+   
     public String getGroup() {
         return group;
     }
@@ -79,5 +96,23 @@ public class MetricTrends {
     public void setFlipflops(Integer flipflops) {
         this.flipflops = flipflops;
     }
+
+    public Integer getCriticalNum() {
+        return criticalNum;
+    }
+
+    public void setCriticalNum(Integer criticalNum) {
+        this.criticalNum = criticalNum;
+    }
+
+    public Integer getWarningNum() {
+        return warningNum;
+    }
+
+    public void setWarningNum(Integer warningNum) {
+        this.warningNum = warningNum;
+    }
+
+
 
 }
