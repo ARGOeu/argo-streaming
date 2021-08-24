@@ -1,10 +1,12 @@
 package argo.batch;
 
 import argo.avro.MetricData;
+import argo.filter.zero.flipflops.ZeroStatusTrends;
 import argo.functions.calctrends.CalcStatusTrends;
 import argo.functions.calctimelines.TopologyMetricFilter;
 import argo.functions.calctimelines.CalcLastTimeStatus;
 import argo.functions.calctimelines.StatusFilter;
+import argo.pojos.MetricTrends;
 import argo.utils.Utils;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
@@ -115,18 +117,18 @@ public class BatchStatusTrends {
 
     // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
     private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status) {
-        String collectionUri = mongoUri + "." + uri;
         DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
-
+    DataSet<Tuple6<String, String, String, String, String, Integer>> noZeroStatusTrends = filteredData.filter(new ZeroStatusTrends());
+     
         if (rankNum != null) {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING).setParallelism(1).first(rankNum);
+            noZeroStatusTrends = noZeroStatusTrends.sortPartition(5, Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING).setParallelism(1);
+            noZeroStatusTrends = noZeroStatusTrends.sortPartition(5, Order.DESCENDING).setParallelism(1);
         }
 
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, MongoTrendsOutput.TrendsType.TRENDS_STATUS, reportId, profilesDateStr, clearMongo);
 
-        DataSet<Trends> trends = filteredData.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Trends>() {
+        DataSet<Trends> trends = noZeroStatusTrends.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Trends>() {
 
             @Override
             public Trends map(Tuple6<String, String, String, String, String, Integer> in) throws Exception {

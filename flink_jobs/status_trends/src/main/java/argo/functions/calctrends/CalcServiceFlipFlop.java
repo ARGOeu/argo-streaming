@@ -31,6 +31,7 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
     private OperationsParser operationsParser;
 
     public CalcServiceFlipFlop(OperationsParser operationsParser, AggregationProfileManager aggregationProfileParser) {
+
         this.operationsParser = operationsParser;
         this.serviceFunctionsMap = aggregationProfileParser.retrieveServiceOperations();
 
@@ -40,7 +41,7 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
     public void reduce(Iterable<EndpointTrends> in, Collector< ServiceTrends> out) throws Exception {
         String group = null;
         String service = null;
-        //construct a timeline containing all the timestamps of each metric timeline
+       //construct a timeline containing all the timestamps of each metric timeline
 
         HashMap<String, Timeline> timelineList = new HashMap<>();
 
@@ -57,7 +58,6 @@ public class CalcServiceFlipFlop implements GroupReduceFunction< EndpointTrends,
             int flipflops = timeline.calcStatusChanges();
             if (group != null && service != null) {
                 ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflops);
-                System.out.println("group: " + group + " service: " + service + " flipflops: " + flipflops);
                 out.collect(serviceTrends);
             }
        }

@@ -38,10 +38,8 @@ public class TopologyMetricFilter implements FilterFunction<MetricData> {
     public boolean filter(MetricData t) throws Exception {
         String avProfileName = this.aggregationProfileParser.getAvProfileItem().getName();
 
-        ArrayList<String> groups = topologyEndpointParser.getGroup(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), t.getHostname().toString(), t.getService().toString());
-        //boolean hasGroup = false;
-
-        for (String group : groups) {
+        ArrayList<String> groups = topologyEndpointParser.getGroupFull(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), t.getHostname().toString(), t.getService().toString());
+       for (String group : groups) {
             if (topologyGroupParser.checkSubGroup(group) && metricProfileParser.containsMetric(t.getService().toString(), t.getMetric().toString())) {
                 return true;
             }

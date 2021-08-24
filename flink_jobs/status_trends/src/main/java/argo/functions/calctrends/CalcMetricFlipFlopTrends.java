@@ -6,13 +6,11 @@ package argo.functions.calctrends;
  * and open the template in the editor.
  */
 import argo.avro.MetricData;
-//import argo.pojos.Timeline;
 import argo.pojos.MetricTrends;
 import argo.profiles.AggregationProfileManager;
 import argo.profiles.EndpointGroupManager;
 import argo.profiles.GroupGroupManager;
 import argo.profiles.OperationsParser;
-import argo.profiles.TopologyGroupParser;
 import argo.utils.Utils;
 import java.util.ArrayList;
 import java.util.TreeMap;
@@ -68,7 +66,8 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
             String avProfileName = this.aggregationProfileParser.getAvProfileItem().getName();
 
             // group = topologyEndpointParser.retrieveGroup(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString() + "-" + md.getService().toString());
-            groups = topologyEndpointParser.getGroup(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString(), md.getService().toString());
+
+            groups = topologyEndpointParser.getGroupFull(aggregationProfileParser.getProfileGroupType(avProfileName).toUpperCase(), md.getHostname().toString(), md.getService().toString());
             int st = operationsParser.getIntStatus(md.getStatus().toString());
             timeStatusMap.put(Utils.convertStringtoDate(format, md.getTimestamp().toString()), st);
             

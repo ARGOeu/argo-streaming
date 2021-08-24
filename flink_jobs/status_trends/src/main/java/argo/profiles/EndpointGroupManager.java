@@ -1,6 +1,5 @@
 package argo.profiles;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,9 +24,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.io.Serializable;
 import java.util.Arrays;
+
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-
+import java.util.Set;
 /**
  *
  *
@@ -49,10 +51,14 @@ public class EndpointGroupManager implements Serializable {
 
     private ArrayList<EndpointItem> list; // the list of EndpointItems that are included in the profile data
     private ArrayList<EndpointItem> fList; // the list of the filter EndpointItems that correspond to the criteria
-    private HashMap<String, HashMap<String, String>> topologyEndpoint = new HashMap<>();
+
+    private Map<String, Map<String, EndpointItem>> topologyGrouplist;
+    private Map<String, ArrayList<EndpointItem>> groupIndex;
+    private String defaultType = null;
 
     //* A EndpointItem class implements an object containing info of an group endpoint included in the  topology
-    protected class EndpointItem implements Serializable { // the object
+    public class EndpointItem implements Serializable { // the object
+
 
         String type; // type of group
         String group; // name of the group
@@ -119,11 +125,59 @@ public class EndpointGroupManager implements Serializable {
             return true;
         }
 
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getGroup() {
+            return group;
+        }
+
+        public void setGroup(String group) {
+            this.group = group;
+        }
+
+        public String getService() {
+            return service;
+        }
+
+        public void setService(String service) {
+            this.service = service;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public HashMap<String, String> getTags() {
+            return tags;
+        }
+
+        public void setTags(HashMap<String, String> tags) {
+            this.tags = tags;
+        }
+
+        @Override
+        public String toString() {
+            return type + "," + group + "," + service + "," + hostname;
+        }
+
     }
 
     public EndpointGroupManager() {
         this.list = new ArrayList<>();
         this.fList = new ArrayList<>();
+
+        this.groupIndex = new HashMap<String, ArrayList<EndpointItem>>();
+        this.topologyGrouplist = new HashMap<>();
 
     }
 
@@ -262,7 +316,8 @@ public class EndpointGroupManager implements Serializable {
         return this.fList.size();
     }
     /**
-     * Clear the filtered fList and initialize with all the EndpointItems the list includes
+     * Clear the filtered fList and initialize with all the EndpointItems the
+     * list includes
      */
     public void unfilter() {
         this.fList.clear();
@@ -270,12 +325,15 @@ public class EndpointGroupManager implements Serializable {
             this.fList.add(item);
         }
     }
-/**
- * Applies filter on the tags of the EndpointItems included in the list, based on a map of criteria 
- * each criteria containing a pair of the tags field name and the value it searches . e.g ("monitored","1") searches tags 
- * with the specific pair of criteria
- * @param fTags a map of criteria  
- */
+
+    /**
+     * Applies filter on the tags of the EndpointItems included in the list,
+     * based on a map of criteria each criteria containing a pair of the tags
+     * field name and the value it searches . e.g ("monitored","1") searches
+     * tags with the specific pair of criteria
+     *
+     * @param fTags a map of criteria
+     */
     public void filter(TreeMap<String, String> fTags) {
         this.fList.clear();
         boolean trim;
@@ -369,7 +427,8 @@ public class EndpointGroupManager implements Serializable {
 
                 // Insert data to list
                 this.insert(type, group, service, hostname, tagMap);
-//                populateTopologyEndpoint(hostname, service, type, group);
+                this.insertTopologyGroup(type, group, service, hostname, tagMap);
+                defaultType = type;
             } // end of avro rows
 
             this.unfilter();
@@ -420,36 +479,27 @@ public class EndpointGroupManager implements Serializable {
 
             // Insert data to list
             this.insert(type, group, service, hostname, tagMap);
+           this.insertTopologyGroup(type, group, service, hostname, tagMap);
+            defaultType = type;
+
 //            populateTopologyEndpoint(hostname, service, type, group);
         }
 
         this.unfilter();
 
     }
-
-//    private void populateTopologyEndpoint(String hostname, String service, String type, String group) {
-//
-//        String topologyEndpointKey = hostname + "-" + service;
-//
-//        HashMap<String, String> endpMap = new HashMap<String, String>();
-//        if (topologyEndpoint.get(type) != null) {
-//            endpMap = topologyEndpoint.get(type);
-//        }
-//
-//        endpMap.put(topologyEndpointKey, group);
-//        topologyEndpoint.put(type, endpMap);
-//    }
-
     public void loadGroupEndpointProfile(JsonArray element) throws IOException {
         GroupEndpoint[] groupEndpoints = readJson(element);
         loadFromList(Arrays.asList(groupEndpoints));
     }
-/**
-     * reads from a JsonElement array and stores the necessary information to the
-     * GroupEndpoint objects and add them to the list
+
+    /**
+     * reads from a JsonElement array and stores the necessary information to
+     * the GroupEndpoint objects and add them to the list
      *
-     * @param jElement , a JsonElement containing the topology group endpoint  profiles data
-     * @return 
+     * @param jElement , a JsonElement containing the topology group endpoint
+     * profiles data
+     * @return
      */
     public GroupEndpoint[] readJson(JsonArray jElement) {
         List<GroupEndpoint> results = new ArrayList<>();
@@ -472,6 +522,102 @@ public class EndpointGroupManager implements Serializable {
         GroupEndpoint[] rArr = new GroupEndpoint[results.size()];
         rArr = results.toArray(rArr);
         return rArr;
+    }
+
+    /**
+     * ***********************************
+     */
+    public Set<String> getEndpointSet() {
+        Set<String> curItems = new HashSet<String>();
+        for (String groupKey : this.groupIndex.keySet()) {
+            ArrayList<EndpointItem> eList = this.groupIndex.get(groupKey);
+            for (EndpointItem item : eList) {
+                curItems.add(item.toString());
+            }
+        }
+        return curItems;
+    }
+
+    public ArrayList<String> getGroupList() {
+        ArrayList<String> results = new ArrayList<String>();
+        results.addAll(this.groupIndex.keySet());
+        return results;
+    }
+
+    public ArrayList<String> compareToBeRemoved(EndpointGroupManager egp) {
+
+        ArrayList<String> results = new ArrayList<String>();
+
+        Set<String> curItems = this.getEndpointSet();
+        Set<String> futurItems = egp.getEndpointSet();
+
+        // lost items is cur items minus future set
+        curItems.removeAll(futurItems);
+
+        results.addAll(curItems);
+
+        return results;
+    }
+
+    public int insertTopologyGroup(String type, String group, String service, String hostname, HashMap<String, String> tags) {
+        EndpointItem itemNew = new EndpointItem(type, group, service, hostname, tags);
+        String key = type + "|" + hostname + "|" + service;
+        if (!topologyGrouplist.containsKey(key)) {
+            Map<String, EndpointItem> subList = new HashMap<String, EndpointItem>();
+            subList.put(group, itemNew);
+            topologyGrouplist.put(key, subList);
+
+        } else {
+            Map<String, EndpointItem> subList = topologyGrouplist.get(key);
+            subList.put(group, itemNew);
+        }
+        // Add item to the secondary group index
+        if (!groupIndex.containsKey(group)) {
+            groupIndex.put(group, new ArrayList<EndpointItem>(Arrays.asList(itemNew)));
+        } else {
+            groupIndex.get(group).add(itemNew);
+        }
+
+        return 0; // All good
+    }
+
+    public boolean checkEndpointGroup(String hostname, String service) {
+
+        String key = defaultType + "|" + hostname + "|" + service;
+        return topologyGrouplist.containsKey(key);
+    }
+
+    public ArrayList<String> getGroupFull(String type, String hostname, String service) {
+
+        String key = type + "|" + hostname + "|" + service;
+        Map<String, EndpointItem> sublist = topologyGrouplist.get(key);
+        if (sublist != null) {
+            return new ArrayList<String>(topologyGrouplist.get(key).keySet());
+        }
+
+        return new ArrayList<String>();
+
+    }
+
+    public Iterator<EndpointItem> getGroupIter(String group) {
+        ArrayList<EndpointItem> list = groupIndex.get(group);
+        if (list != null) {
+            return list.iterator();
+        }
+
+        return null;
+    }
+
+    public ArrayList<String> getGroup(String hostname, String service) {
+
+        String key = defaultType + "|" + hostname + "|" + service;
+        Map<String, EndpointItem> sublist = topologyGrouplist.get(key);
+        if (sublist != null) {
+            return new ArrayList<String>(topologyGrouplist.get(key).keySet());
+        }
+
+        return new ArrayList<String>();
+
     }
 
 }
