@@ -71,7 +71,9 @@ public class ArgoStatusBatch {
 		}
 
 		amr.setReportID(reportID);
+		amr.setDate(params.getRequired("run.date"));
 		amr.getRemoteAll();
+		
 		
 
 		DataSource<String>cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
