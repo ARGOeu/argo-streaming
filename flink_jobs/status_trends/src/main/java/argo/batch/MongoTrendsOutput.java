@@ -20,7 +20,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
 
     // Select the type of status input
     public enum TrendsType {
-        TRENDS_STATUS_METRIC, TRENDS_STATUS_ENDPOINT,TRENDS_STATUS_SERVICE, TRENDS_STATUS_GROUP,TRENDS_METRIC, TRENDS_ENDPOINT, TRENDS_SERVICE, TRENDS_GROUP
+        TRENDS_STATUS_METRIC, TRENDS_STATUS_ENDPOINT, TRENDS_STATUS_SERVICE, TRENDS_STATUS_GROUP, TRENDS_METRIC, TRENDS_ENDPOINT, TRENDS_SERVICE, TRENDS_GROUP
     }
 
     private static final long serialVersionUID = 1L;
@@ -123,24 +123,28 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
                 doc.append("endpoint", record.getEndpoint());
                 doc.append("metric", record.getMetric());
                 doc.append("status", record.getStatus());
+                doc.append("duration", record.getDuration());
                 doc.append("trends", record.getTrends());
                 break;
-              case TRENDS_STATUS_ENDPOINT:
+            case TRENDS_STATUS_ENDPOINT:
                 doc.append("group", record.getGroup());
                 doc.append("service", record.getService());
                 doc.append("endpoint", record.getEndpoint());
                 doc.append("status", record.getStatus());
+                doc.append("duration", record.getDuration());
                 doc.append("trends", record.getTrends());
                 break;
-                  case TRENDS_STATUS_SERVICE:
+            case TRENDS_STATUS_SERVICE:
                 doc.append("group", record.getGroup());
                 doc.append("service", record.getService());
                 doc.append("status", record.getStatus());
+                doc.append("duration", record.getDuration());
                 doc.append("trends", record.getTrends());
                 break;
-                  case TRENDS_STATUS_GROUP:
+            case TRENDS_STATUS_GROUP:
                 doc.append("group", record.getGroup());
                 doc.append("status", record.getStatus());
+                doc.append("duration", record.getDuration());
                 doc.append("trends", record.getTrends());
                 break;
             default:

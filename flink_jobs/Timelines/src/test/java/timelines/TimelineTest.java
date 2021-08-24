@@ -506,8 +506,8 @@ public class TimelineTest {
         Timeline instance = new Timeline();
         instance.insertDateTimeStamps(createTimestampList());
         int expResult =1;
-        int result = instance.countStatusAppearances(status);
-        assertEquals(expResult, result);
+        int result[] = instance.countStatusAppearances(status);
+        assertEquals(expResult, result[0]);
         // TODO review the generated test code and remove the default call to fail.
        //fail("The test case is a prototype.");
     }

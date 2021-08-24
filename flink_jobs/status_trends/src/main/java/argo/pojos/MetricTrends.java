@@ -22,7 +22,7 @@ public class MetricTrends {
     Integer criticalNum;
     Integer warningNum;
     Integer unknownNum;
-    
+
     public MetricTrends() {
     }
 
@@ -37,8 +37,6 @@ public class MetricTrends {
         this.warningNum = warningNum;
         this.unknownNum = unknownNum;
     }
-    
-    
 
     public Integer getUnknownNum() {
         return unknownNum;
@@ -48,7 +46,6 @@ public class MetricTrends {
         this.unknownNum = unknownNum;
     }
 
-   
     public String getGroup() {
         return group;
     }
@@ -112,7 +109,5 @@ public class MetricTrends {
     public void setWarningNum(Integer warningNum) {
         this.warningNum = warningNum;
     }
-
-
 
 }

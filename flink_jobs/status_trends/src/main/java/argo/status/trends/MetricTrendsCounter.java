@@ -8,15 +8,17 @@ package argo.status.trends;
 import argo.pojos.MetricTrends;
 import argo.profiles.OperationsParser;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.java.tuple.Tuple6;
+import org.apache.flink.api.java.tuple.Tuple7;
 import org.apache.flink.util.Collector;
+import timelines.Timeline;
+import timelines.TimelineAggregator;
 
 /**
  * MetricTrendsCounter calculates on the dataset's timeline the num of
  * appearances of the status CRITICAL, WARNING,UNKNOWN and produces a dataset of
  * tuples that contain these calculations
  */
-public class MetricTrendsCounter implements FlatMapFunction<MetricTrends, Tuple6<String, String, String, String, String, Integer>> {
+public class MetricTrendsCounter implements FlatMapFunction<MetricTrends, Tuple7<String, String, String, String, String, Integer, Integer>> {
 
     private OperationsParser operationsParser;
 
@@ -34,20 +36,29 @@ public class MetricTrendsCounter implements FlatMapFunction<MetricTrends, Tuple6
      * @throws Exception
      */
     @Override
-    public void flatMap(MetricTrends t, Collector< Tuple6<String, String, String, String, String, Integer>> out) throws Exception {
+    public void flatMap(MetricTrends t, Collector<Tuple7<String, String, String, String, String, Integer, Integer>> out) throws Exception {
+        int criticalstatus = operationsParser.getIntStatus("CRITICAL");
+        int warningstatus = operationsParser.getIntStatus("WARNING");
+        int unknownstatus = operationsParser.getIntStatus("UNKNOWN");
 
-        Tuple6<String, String, String, String, String, Integer> tupleCritical = new Tuple6<String, String, String, String, String, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "CRITICAL", t.getCriticalNum());
+        Timeline timeline = t.getTimeline();
+        TimelineAggregator timelineAggregator = new TimelineAggregator();
+
+        int[] criticalstatusInfo = timeline.countStatusAppearances(criticalstatus);
+        int[] warningstatusInfo = timeline.countStatusAppearances(warningstatus);
+        int[] unknownstatusInfo = timeline.countStatusAppearances(unknownstatus);
+
+        Tuple7< String, String, String, String, String, Integer, Integer> tupleCritical = new Tuple7<  String, String, String, String, String, Integer, Integer>(
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "CRITICAL", t.getCriticalNum(), criticalstatusInfo[1]);
         out.collect(tupleCritical);
 
-        Tuple6<String, String, String, String, String, Integer> tupleWarning = new Tuple6<String, String, String, String, String, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "WARNING", t.getWarningNum());
+        Tuple7<  String, String, String, String, String, Integer, Integer> tupleWarning = new Tuple7< String, String, String, String, String, Integer, Integer>(
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "WARNING", t.getWarningNum(), warningstatusInfo[1]);
 
         out.collect(tupleWarning);
 
-        Tuple6<String, String, String, String, String, Integer> tupleUnknown = new Tuple6<String, String, String, String, String, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNWON", t.getUnknownNum());
+        Tuple7<  String, String, String, String, String, Integer, Integer> tupleUnknown = new Tuple7<  String, String, String, String, String, Integer, Integer>(
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNOWN", t.getUnknownNum(), unknownstatusInfo[1]);
         out.collect(tupleUnknown);
-
     }
 }

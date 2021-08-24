@@ -5,6 +5,7 @@ package timelines;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.TreeMap;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
+import org.joda.time.Minutes;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -100,8 +102,8 @@ public class Timeline {
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         tmp_date = fmt.parseDateTime(timestamp);
         if (this.samples.floorEntry(tmp_date) != null) {
-              return -1;
-          //  throw new NullPointerException("no item found in timeline, size of timeline:" + this.samples.size() + "," + tmp_date.toString());
+            return -1;
+            //  throw new NullPointerException("no item found in timeline, size of timeline:" + this.samples.size() + "," + tmp_date.toString());
         }
 
         return this.samples.floorEntry(tmp_date).getValue();
@@ -250,7 +252,6 @@ public class Timeline {
      * stored when the status of the next timestamp is different from the
      * previous timestamp's status then both timestamp, status pairs are stored
      */
-
     public void optimize() {
         TreeMap<DateTime, Integer> optimal = new TreeMap<DateTime, Integer>();
         int prevstate = -1;
@@ -287,7 +288,6 @@ public class Timeline {
      * @param op aggregate a set of timestamp,status pairs that are stored in a
      * timeline with a set of timestamp,status pairs of a different timeline,
      */
-
     public void aggregate(Timeline second, int[][][] truthTable, int op) {
         if (this.isEmpty()) {
             this.bulkInsert(second.getSamples());
@@ -311,14 +311,14 @@ public class Timeline {
         for (DateTime point : result.getPoints()) {
             int a = this.get(point);
             int b = second.get(point);
-            if(a!=-1 && b!=-1){
-            int x = -1;
-            x = truthTable[op][a][b];
-            if (x == -1) {
-                x = truthTable[op][b][a];
-            }
+            if (a != -1 && b != -1) {
+                int x = -1;
+                x = truthTable[op][a][b];
+                if (x == -1) {
+                    x = truthTable[op][b][a];
+                }
 
-            result.insert(point, x);
+                result.insert(point, x);
             }
         }
 
@@ -331,12 +331,15 @@ public class Timeline {
 
     /**
      *
-     * @param timestampList, a list of pairs of timestamp, status where status is in the form of string
+     * @param timestampList, a list of pairs of timestamp, status where status
+     * is in the form of string
      * @param states, a list of the existing states
      * @return a sorted map of timestamp, status pairs in an ascending order
-     * receives pairs of timestamp , status where status is a string (e.g "OK", "WARNING") and converts the string to an integer
-     * based on the position of the status in the existing list of the states. Next this pair is stored in the map
-     * 
+     * receives pairs of timestamp , status where status is a string (e.g "OK",
+     * "WARNING") and converts the string to an integer based on the position of
+     * the status in the existing list of the states. Next this pair is stored
+     * in the map
+     *
      */
     public TreeMap<String, Integer> buildStringTimeStampMap(ArrayList<String[]> timestampList, ArrayList<String> states) {
 
@@ -351,17 +354,19 @@ public class Timeline {
         return timestampMap;
 
     }
-    
+
     /**
      *
-     * @param timestampList, a list of pairs of timestamp, status where status is in the form of string and timestamp is in the form of a datetime
+     * @param timestampList, a list of pairs of timestamp, status where status
+     * is in the form of string and timestamp is in the form of a datetime
      * @param states, a list of the existing states
      * @return a sorted map of timestamp, status pairs in an ascending order
-     * receives pairs of timestamp , status where status is a string (e.g "OK", "WARNING") and converts the string to an integer
-     * based on the position of the status in the existing list of the states. Next this pair is stored in the map
-     * 
+     * receives pairs of timestamp , status where status is a string (e.g "OK",
+     * "WARNING") and converts the string to an integer based on the position of
+     * the status in the existing list of the states. Next this pair is stored
+     * in the map
+     *
      */
-
     public TreeMap<DateTime, Integer> buildDateTimeStampMap(ArrayList<String[]> timestampList, ArrayList<String> states) {
 
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
@@ -376,13 +381,12 @@ public class Timeline {
         return timestampMap;
 
     }
-    
-    /**
-     * 
-     * @param timestamp, a timestamp
-     * removes a pair of timestamp , status from the map
-     */
 
+    /**
+     *
+     * @param timestamp, a timestamp removes a pair of timestamp , status from
+     * the map
+     */
     public void removeTimeStamp(DateTime timestamp) {
 
         if (this.samples.containsKey(timestamp)) {
@@ -397,9 +401,11 @@ public class Timeline {
         }
 
     }
+
     /**
-     * 
-     * @return the number of  the times a status changes between the timestamps of the timeline , after the map is optimized
+     *
+     * @return the number of the times a status changes between the timestamps
+     * of the timeline , after the map is optimized
      */
 
     public int calcStatusChanges() {
@@ -408,13 +414,13 @@ public class Timeline {
     }
 
     /**
-     * 
-     * @param date,  a timestamp
+     *
+     * @param date, a timestamp
      * @param availStates , the list of the available states
-     * 
-     * checks if in the map the midnight exists and if not it is added with status "MISSING"
+     *
+     * checks if in the map the midnight exists and if not it is added with
+     * status "MISSING"
      */
-    
     public void replacePreviousDateStatus(DateTime timestamp, ArrayList<String> availStates) {
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
@@ -462,13 +468,16 @@ public class Timeline {
         }
         return true;
     }
+
     /**
-     * 
-     * @param truthTable the truthtable of the combination of various statuses with each other
-     * @param op , the operation 
+     *
+     * @param truthTable the truth table of the combination of various statuses
+     * with each other
+     * @param op , the operation
      * @param a, the status a
      * @param b, the status b
-     * @return , the result of the combination as defined from the truth table of the defined operation
+     * @return , the result of the combination as defined from the truth table
+     * of the defined operation
      */
 
     public int opInt(int[][][] truthTable, int op, int a, int b) {
@@ -483,28 +492,66 @@ public class Timeline {
         return result;
     }
     
+ 
     /**
- * Calculates the times a specific status appears on the timeline
- * @param status , the status to calculate the appearances
- * @return  , the num of the times the specific status appears on the timeline
- */
-
-    public int countStatusAppearances(int status) {
-        
-        System.out.println("status is : "+status);
-        int count=0;
+     * Calculates the times a specific status appears on the timeline
+     *
+     * @param status , the status to calculate the appearances
+     * @return , the num of the times the specific status appears on the
+     * timeline
+     */
+    public int[] countStatusAppearances(int status) throws ParseException {
+        int[] statusInfo = new int[2];
+        int count = 0;
+        ArrayList<DateTime> durationTimes = new ArrayList<>();
         for (Map.Entry<DateTime, Integer> entry : this.samples.entrySet()) {
-            System.out.println("value status is : "+entry.getValue());
             if (status == entry.getValue()) {
-                
-
+                durationTimes.add(entry.getKey());
                 count++;
             }
 
         }
-        return count;
+        statusInfo[0] = count;
+        statusInfo[1] = countStatusDuration(durationTimes);
+        return statusInfo;
 
     }
 
+    /**
+     * Calculates the total duration of a status appearance
+     *
+     * @param durationTimes
+     * @return
+     */
+    public int countStatusDuration(ArrayList<DateTime> durationTimes) throws ParseException {
+
+        DateTime firstDt = null;
+        int minutesInt = 0;
+        for (DateTime dt : durationTimes) {
+            if (durationTimes.indexOf(dt) == 0) {
+
+                firstDt = dt;
+            } else {
+                Minutes minutes = Minutes.minutesBetween(firstDt, dt);
+                minutesInt = minutesInt + minutes.getMinutes();
+                firstDt = dt;
+            }
+
+        }
+
+        if (durationTimes.size() == 1 && minutesInt == 0) {
+            DateTime endDay = durationTimes.get(0);
+            DateTime startDay = durationTimes.get(0);
+
+            startDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", startDay, 0, 0, 0, 0);
+            endDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", endDay, 23, 59, 59, 59);
+
+            Minutes minutes = Minutes.minutesBetween(startDay, endDay);
+            minutesInt = minutes.getMinutes();
+
+        }
+        return minutesInt;
+
+    }
 
 }

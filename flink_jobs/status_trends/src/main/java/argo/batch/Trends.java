@@ -23,12 +23,24 @@ public class Trends {
 
     private String status;
     private int trends;
+    private int duration;
+
+    public Trends(String group, String service, String endpoint, String metric, String status, int trends, int duration) {
+        this.group = group;
+        this.service = service;
+        this.endpoint = endpoint;
+        this.metric = metric;
+        this.status = status;
+        this.trends = trends;
+        this.duration=duration;
+    }
 
     public Trends(String group, String service, String endpoint, String metric, String status, int trends) {
         this.group = group;
         this.service = service;
         this.endpoint = endpoint;
         this.metric = metric;
+        this.flipflop = flipflop;
         this.status = status;
         this.trends = trends;
     }
@@ -117,6 +129,15 @@ public class Trends {
     public void setTrends(int trends) {
         this.trends = trends;
     }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+    
     
     
 }

@@ -123,5 +123,20 @@ public class Utils {
 
         return jsonDataMap;
     }
+    
+    public static DateTime setTime(String format, DateTime dateStr, int hour, int min, int sec, int mill) throws ParseException {
+
+        //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        sdf.setTimeZone(TimeZone.getDefault());
+        Calendar newCalendar = Calendar.getInstance();
+        newCalendar.setTime(dateStr.toDate());
+
+        newCalendar.set(Calendar.HOUR_OF_DAY, hour);
+        newCalendar.set(Calendar.MINUTE, min);
+        newCalendar.set(Calendar.SECOND, sec);
+        newCalendar.set(Calendar.MILLISECOND, mill);
+        return new DateTime( newCalendar.getTime());
+    }
 
 }
