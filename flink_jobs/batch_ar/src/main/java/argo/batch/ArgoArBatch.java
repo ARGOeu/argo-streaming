@@ -82,6 +82,7 @@ public class ArgoArBatch {
 		}
 		
 		amr.setReportID(reportID);
+		amr.setDate(params.getRequired("run.date"));
 		amr.getRemoteAll();
 		
 		
