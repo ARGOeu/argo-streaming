@@ -1,0 +1,2960 @@
+{
+    "status": {
+        "message": "Success",
+        "code": "200"
+    },
+    "data": [
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST",
+            "type": "SERVICEGROUPS",
+            "service": "Top-BDII",
+            "hostname": "bdii.marie.hellasgrid.gr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST",
+            "type": "SERVICEGROUPS",
+            "service": "Top-BDII",
+            "hostname": "bdii01.athena.hellasgrid.gr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST",
+            "type": "SERVICEGROUPS",
+            "service": "Top-BDII",
+            "hostname": "bdii02.athena.hellasgrid.gr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "cream-ce01.marie.hellasgrid.gr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "se01.marie.hellasgrid.gr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST_B",
+            "type": "SERVICEGROUPS",
+            "service": "UI",
+            "hostname": "ui01.isabella.grnet.gr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST_B",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "snf-189278.vm.okeanos.grnet.gr",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST_B",
+            "type": "SERVICEGROUPS",
+            "service": "APEL",
+            "hostname": "snf-189278.vm.okeanos.grnet.gr",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST_B",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "snf-189279.vm.okeanos.grnet.gr",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST_B",
+            "type": "SERVICEGROUPS",
+            "service": "gLite-APEL",
+            "hostname": "snf-189279.vm.okeanos.grnet.gr",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST_B",
+            "type": "SERVICEGROUPS",
+            "service": "emi.ARGUS",
+            "hostname": "snf-451878.vm.okeanos.grnet.gr",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "SLA_TEST_B",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.MPI",
+            "hostname": "snf-189278.vm.okeanos.grnet.gr",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_D4SCIENCE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "api.cloud.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_D4SCIENCE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "sbdii01.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "prod-bdii-02.pd.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "sitebdii.grid.sara.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "siteinfo03.nikhef.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "ce06.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "prod-ce-01.pd.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "creamce3.gina.sara.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "creamce.gina.sara.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "creamce2.gina.sara.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "klomp.nikhef.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "gazon.nikhef.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "juk.nikhef.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "stremsel.nikhef.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "storm.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "srm01.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "srm01.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "prod-se-01.pd.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "srm.grid.sara.nl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "carach5.ics.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "ce01.grid.nchc.org.tw",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "se01.grid.nchc.org.tw",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "api.cloud.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "openstack.bitp.kiev.ua",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "webdav",
+            "hostname": "gftp01.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas, cms, EOSC-hub"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "ARC-CE",
+            "hostname": "ce02.grid.nchc.org.tw",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "egi-cloud.pd.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "webdav",
+            "hostname": "se01.grid.nchc.org.tw",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_WENMR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "globus-GRIDFTP",
+            "hostname": "se01.grid.nchc.org.tw",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_OBSEA_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "stack-server.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_NBISBILS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "sbgcloud.in2p3.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_NBISBILS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_NBISBILS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_MSO4SC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_MSO4SC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_BIOISI_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "sbgcloud.in2p3.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_BIOISI_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "stratus.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud, EOSC-hub"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TERRADUE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TERRADUE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TERRADUE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TERRADUE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "panel.cloud.cyfronet.pl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TERRADUE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TERRADUE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud-egi.100percentit.com",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_GEODAB_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_OPENUNIVERSE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_OPENUNIVERSE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_CLARIN_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_CLARIN_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_CLARIN_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_CLARIN_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_CLARIN_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_DEIMOS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_DEIMOS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_DEIMOS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_DEIMOS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_DEIMOS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_DEIMOS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.swift",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_DEIMOS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_DEIMOS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EMSOERIC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EMSOERIC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EMSOERIC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EMSOERIC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TrainingInfrastructure_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "api.cloud.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TrainingInfrastructure_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "nova3.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TrainingInfrastructure_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TrainingInfrastructure_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "keystone3.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TrainingInfrastructure_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TrainingInfrastructure_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_TrainingInfrastructure_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "stack-server.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Notebooks_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Notebooks_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.notebooks.jupyterhub",
+            "hostname": "notebooks.egi.eu",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Notebooks_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.notebooks.jupyterhub",
+            "hostname": "aginfra-notebooks.fedcloud-tf.fedcloud.eu",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Notebooks_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "stack-server.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Notebooks_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "sitebdii.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "cream.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "se2.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "api.cloud.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "sbgcloud.in2p3.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "openstack.bitp.kiev.ua",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-metadata.vmcatcher",
+            "hostname": "openstack.bitp.kiev.ua",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-metadata.vmcatcher",
+            "hostname": "fc.scai.fraunhofer.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud-ctrl.nipne.ro",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "thor.univ-lille.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "egi-cloud.pd.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "panel.cloud.cyfronet.pl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fc.scai.fraunhofer.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "stack-server.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud-egi.100percentit.com",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_AoD_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-metadata.vmcatcher",
+            "hostname": "egi.100percentit.com",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EXTraS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-metadata.vmcatcher",
+            "hostname": "egi.cloud.cyfronet.pl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EXTraS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "panel.cloud.cyfronet.pl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EXTraS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "stack-server.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Fusion_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Fusion_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "thor.univ-lille.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Fusion_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-metadata.vmcatcher",
+            "hostname": "thor.univ-lille.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Fusion_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "bdii-local-grid.obspm.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "sbgbdii1.in2p3.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "gridiis01.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "sbdii01.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "gridsrv4-4.dir.garr.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "gridsite.fe.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "gridsrv-02.roma3.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "gridba2.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, atlas, cms, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "lcg002.ihep.ac.cn",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "cream-ce-grid.obspm.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "ce05.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "ce06.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "gridsrv2-4.dir.garr.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "ce-01.roma3.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, wlcg, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "grid012.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "gridce4.pi.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "gridce2.pi.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "gridce3.pi.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "se-dpm-server-grid.obspm.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "sbgse1.in2p3.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "storm.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "srm01.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "srm01.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "gridsrv3-4.dir.garr.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "grid2.fe.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "storm-01.roma3.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "prod-se-01.ct.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, tier2, alice"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "storm-se-01.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "gridsrm.pi.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "SRM",
+            "hostname": "stormfe1.pi.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.opensciencegrid.htcondorce",
+            "hostname": "alict-ce-01.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "Site-BDII",
+            "hostname": "alict-sbdii.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "sbgce1.in2p3.fr",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, tier2, alice, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "ce-01.recas.ba.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, tier2, alice, cms, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.opensciencegrid.htcondorce",
+            "hostname": "ce-02.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, cms, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "sbgcloud.in2p3.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "ce03.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "ce-03.recas.ba.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, tier2, cms"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "webdav",
+            "hostname": "gftp01.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas, cms, EOSC-hub"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud-ctrl.nipne.ro",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "webdav",
+            "hostname": "gridsrv-06.roma3.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.opensciencegrid.htcondorce",
+            "hostname": "ce-04.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, cms, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "CREAM-CE",
+            "hostname": "ce-02.roma3.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "ARC-CE",
+            "hostname": "arcce01.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "ARC-CE",
+            "hostname": "arcce02.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_LSGC_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "webdav",
+            "hostname": "ccsrm.ihep.ac.cn",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas, cms, lhcb"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_Peachnote_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_OPENBIOMAP_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "api.cloud.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_IIASA_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_IIASA_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EMPHASIS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "sbgcloud.in2p3.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EMPHASIS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "panel.cloud.cyfronet.pl",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EMPHASIS_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EOSCSYNERGY_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "api.cloud.ifca.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EOSCSYNERGY_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "controller.ceta-ciemat.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EOSCSYNERGY_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EOSCSYNERGY_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EOSCSYNERGY_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EOSCSYNERGY_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_EOSCSYNERGY_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "stratus.ncg.ingrid.pt",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud, EOSC-hub"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_ENVRIFAIR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "stack-server.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_ENVRIFAIR_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_VESPA_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "sbgcloud.in2p3.fr",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, alice, cms, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_VESPA_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "identity.cloud.muni.cz",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, elixir, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_ECRIN_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_STARS4ALL_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "EGI_GOSAFE_SLA",
+            "type": "SERVICEGROUPS",
+            "service": "org.openstack.nova",
+            "hostname": "colossus.cesar.unizar.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "Site-BDII",
+            "hostname": "bdii.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "CREAM-CE",
+            "hostname": "creamce3.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "CREAM-CE",
+            "hostname": "creamce2.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "SRM",
+            "hostname": "se-goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "gLite-APEL",
+            "hostname": "apel.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "occi.cloud.gwdg.de",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "eu.egi.cloud.storage-management.cdmi",
+            "hostname": "cdmi.cloud.gwdg.de",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "egi.cloud.gwdg.de",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "APEL",
+            "hostname": "creamce2.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "APEL",
+            "hostname": "creamce3.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "org.squid-cache.Squid",
+            "hostname": "squid.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "org.squid-cache.Squid",
+            "hostname": "squid2.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "CREAM-CE",
+            "hostname": "creamce.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "Local, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "net.perfSONAR.Bandwidth",
+            "hostname": "perfsonar01.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "net.perfSONAR.Latency",
+            "hostname": "perfsonar01.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "ARC-CE",
+            "hostname": "arcce1.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "ARC-CE",
+            "hostname": "arcce2.goegrid.gwdg.de",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, tier2, atlas"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "org.openstack.nova",
+            "hostname": "api.prod.cloud.gwdg.de",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, tier2, atlas, SLA"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "GoeGrid",
+            "type": "SITES",
+            "service": "eu.egi.cloud.vm-metadata.vmcatcher",
+            "hostname": "egi.cloud.gwdg.de",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, tier2, atlas, SLA"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "UI",
+            "hostname": "ui.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "APEL",
+            "hostname": "cream.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "Local-LFC",
+            "hostname": "lfc.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "Top-BDII",
+            "hostname": "topbdii.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "VOMS",
+            "hostname": "voms.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "Site-BDII",
+            "hostname": "sitebdii.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "MyProxy",
+            "hostname": "myproxy.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "CREAM-CE",
+            "hostname": "cream.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "SRM",
+            "hostname": "se2.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "gLite-APEL",
+            "hostname": "apel.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "eu.egi.MPI",
+            "hostname": "cream.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "eu.egi.MPI",
+            "hostname": "cream.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "eu.egi.cloud.information.bdii",
+            "hostname": "ui.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "emi.ARGUS",
+            "hostname": "argus.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "fedcloud-services.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "fedcloud-cmdone.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fedcloud-cmdone.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "eu.egi.storage.accounting",
+            "hostname": "se2.egi.cesga.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "org.openstack.nova",
+            "hostname": "fedcloud-osservices.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "CESGA",
+            "type": "SITES",
+            "service": "VOMS",
+            "hostname": "voms2.egi.cesga.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "UPV-GRyCAP",
+            "type": "SITES",
+            "service": "Site-BDII",
+            "hostname": "ngiesbdii.i3m.upv.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "UPV-GRyCAP",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "fc-one.i3m.upv.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "UPV-GRyCAP",
+            "type": "SITES",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "fc-one.i3m.upv.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "UPV-GRyCAP",
+            "type": "SITES",
+            "service": "es.upv.grycap.im",
+            "hostname": "appsgrycap.i3m.upv.es",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "UPV-GRyCAP",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "fc-horsemen.i3m.upv.es",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud, SLA"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "RECAS-BARI",
+            "type": "SITES",
+            "service": "Site-BDII",
+            "hostname": "cloud-bdii.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "RECAS-BARI",
+            "type": "SITES",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "RECAS-BARI",
+            "type": "SITES",
+            "service": "org.openstack.nova",
+            "hostname": "cloud.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "RECAS-BARI",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "cloud-accounting.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, wlcg, lhcb, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "RECAS-BARI",
+            "type": "SITES",
+            "service": "VOMS",
+            "hostname": "voms.recas.ba.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "INFN-CATANIA-STACK",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "indigo-sb.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "INFN-CATANIA-STACK",
+            "type": "SITES",
+            "service": "Site-BDII",
+            "hostname": "stack-server.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "INFN-CATANIA-STACK",
+            "type": "SITES",
+            "service": "org.openstack.nova",
+            "hostname": "stack-server.ct.infn.it",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "IISAS-FedCloud",
+            "type": "SITES",
+            "service": "Site-BDII",
+            "hostname": "cloud-bdii.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "IISAS-FedCloud",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "IISAS-FedCloud",
+            "type": "SITES",
+            "service": "eu.egi.cloud.vm-management.occi",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "IISAS-FedCloud",
+            "type": "SITES",
+            "service": "org.openstack.nova",
+            "hostname": "nova.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "IISAS-FedCloud",
+            "type": "SITES",
+            "service": "CUSTOM_SERVICE",
+            "hostname": "nextgeoss-storage.ui.savba.sk",
+            "tags": {
+                "monitored": "0",
+                "production": "0",
+                "scope": "EGI, FedCloud, SLA"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "IISAS-FedCloud",
+            "type": "SITES",
+            "service": "org.openstack.nova",
+            "hostname": "cloud.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud, SLA, EOSC-hub"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "IISAS-FedCloud",
+            "type": "SITES",
+            "service": "eu.egi.cloud.accounting",
+            "hostname": "fedcloud-appliance.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud, SLA, EOSC-hub"
+            }
+        },
+        {
+            "date": "2021-01-15",
+            "group": "IISAS-FedCloud",
+            "type": "SITES",
+            "service": "eu.egi.cloud.infoProvider",
+            "hostname": "fedcloud-appliance.ui.savba.sk",
+            "tags": {
+                "monitored": "1",
+                "production": "1",
+                "scope": "EGI, FedCloud, SLA, EOSC-hub"
+            }
+        }
+    ]
+}
