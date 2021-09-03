@@ -256,12 +256,11 @@ public class Timeline {
     }
 
     public void replacePreviousDateStatus(DateTime date, ArrayList<String> availStates) {
-        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
+     
         DateTime firsTime = date;
         firsTime = firsTime.withTime(0, 0, 0, 0);
 
-        DateTime firstEntry = this.samples.floorKey(firsTime);
+        DateTime firstEntry = this.samples.lowerKey(firsTime);
         if (firstEntry != null && !firstEntry.equals(firsTime)) {
             int previousStatus = this.samples.get(firstEntry);
             this.samples.put(firsTime, previousStatus);
@@ -315,30 +314,59 @@ public class Timeline {
         return result;
     }
 
-    /**
+ 
+    
+     /**
      * Calculates the times a specific status appears on the timeline
      *
      * @param status , the status to calculate the appearances
      * @return , the num of the times the specific status appears on the
      * timeline
      */
-
     public int[] countStatusAppearances(int status) throws ParseException {
         int[] statusInfo = new int[2];
         int count = 0;
-        ArrayList<DateTime> durationTimes = new ArrayList<>();
+        ArrayList<DateTime[]> durationTimes = new ArrayList<>();
+        DateTime startDt = null;
+        DateTime endDt = null;
+            
+        boolean added=true;
         for (Entry<DateTime, Integer> entry : this.samples.entrySet()) {
             if (status == entry.getValue()) {
-                durationTimes.add(entry.getKey());
+                startDt = entry.getKey();
                 count++;
+                added=false;
+            } else {
+                if (!added) {
+                    endDt = entry.getKey();
+
+                    DateTime[] statusDur = new DateTime[2];
+                    statusDur[0] = startDt;
+                    statusDur[1] = endDt;
+                    durationTimes.add(statusDur);
+                    startDt=null;
+                    endDt=null;
+                    added=true;
+                }
             }
+           
 
         }
+         if (!added) {
+                endDt = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", startDt.toDate(), 23, 59, 0);
+
+                DateTime[] statusDur = new DateTime[2];
+                statusDur[0] = startDt;
+                statusDur[1] = endDt;
+                durationTimes.add(statusDur);
+
+            }
         statusInfo[0] = count;
         statusInfo[1] = countStatusDuration(durationTimes);
         return statusInfo;
 
     }
+    
 
     /**
      * Calculates the total duration of a status appearance
@@ -346,34 +374,16 @@ public class Timeline {
      * @param durationTimes
      * @return
      */
-    public int countStatusDuration(ArrayList<DateTime> durationTimes) throws ParseException {
+    public int countStatusDuration(ArrayList<DateTime[]> durationTimes) throws ParseException {
 
-        DateTime firstDt = null;
         int minutesInt = 0;
-        for (DateTime dt : durationTimes) {
-            if (durationTimes.indexOf(dt) == 0) {
-
-                firstDt = dt;
-            } else {
-                Minutes minutes = Minutes.minutesBetween(firstDt, dt);
+        for (DateTime[] dt : durationTimes) {
+            DateTime startDt=dt[0];
+            DateTime endDt=dt[1];
+            
+                Minutes minutes = Minutes.minutesBetween(startDt, endDt);
                 minutesInt = minutesInt + minutes.getMinutes();
-                firstDt = dt;
             }
-
-        }
-
-        if (durationTimes.size() == 1 && minutesInt == 0) {
-            DateTime endDay = durationTimes.get(0);
-            DateTime startDay = durationTimes.get(0);
-
-            startDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", startDay, 0, 0, 0,0);
-            endDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", endDay, 23, 59, 59,59);
-
-            Minutes minutes = Minutes.minutesBetween(startDay, endDay);
-            minutesInt = minutes.getMinutes();
-        
-        }
         return minutesInt;
     }
-
 }

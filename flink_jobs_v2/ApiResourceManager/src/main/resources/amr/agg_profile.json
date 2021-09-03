@@ -1,0 +1,33 @@
+{
+    "status": {
+        "message": "Success",
+        "code": "200"
+    },
+    "data": [
+        {
+            "id": "2744247f-40f8-4dd6-b22c-76a3b38334d8",
+            "date": "2020-06-24",
+            "name": "test-agg2",
+            "namespace": "",
+            "endpoint_group": "servicegroups",
+            "metric_operation": "AND",
+            "profile_operation": "AND",
+            "metric_profile": {
+                "name": "test-mon",
+                "id": "92fa5d74-015c-4122-b8b9-7b344f3154d4"
+            },
+            "groups": [
+                {
+                    "name": "webportal",
+                    "operation": "AND",
+                    "services": [
+                        {
+                            "name": "WebPortal",
+                            "operation": "OR"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
