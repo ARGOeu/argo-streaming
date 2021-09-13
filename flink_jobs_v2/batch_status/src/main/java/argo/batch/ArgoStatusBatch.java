@@ -82,8 +82,10 @@ public class ArgoStatusBatch {
 		DataSource<String>cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
 		DataSource<String>opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
 		DataSource<String>apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
-		DataSource<String>recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
-		
+                DataSource<String>recDS=env.fromElements(""); ;
+                if(amr.getResourceJSON(ApiResource.RECOMPUTATIONS)!=null){
+		recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
+                }
 		// begin with empty threshold datasource
 		DataSource<String> thrDS = env.fromElements("");
 		// if threshold filepath has been defined in cli parameters

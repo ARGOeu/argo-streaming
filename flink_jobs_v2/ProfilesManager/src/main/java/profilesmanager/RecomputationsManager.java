@@ -1,4 +1,4 @@
-package sync;
+package profilesmanager;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -13,15 +13,17 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+/**
+ * RecomputationsManager, provide information about the endpoints
+ * for which exist requests about recomputing the generated results for a time period
+ */
 public class RecomputationsManager {
 
     private static final Logger LOG = Logger.getLogger(RecomputationsManager.class.getName());
@@ -123,18 +125,10 @@ public class RecomputationsManager {
         return false;
     }
 
-    public void loadJson(File jsonFile) throws IOException, ParseException {
-
-        this.clear();
-
-        BufferedReader br = null;
+    private void readJson(JsonElement jRootElement) throws ParseException  {
         try {
-            br = new BufferedReader(new FileReader(jsonFile));
-
-            JsonParser jsonParser = new JsonParser();
-            JsonElement jRootElement = jsonParser.parse(br);
-            JsonArray jRootObj = jRootElement.getAsJsonArray();
-
+                 JsonArray jRootObj = jRootElement.getAsJsonArray();
+   
             for (JsonElement item : jRootObj) {
 
                 // Get the excluded sites 
@@ -165,14 +159,29 @@ public class RecomputationsManager {
                 }
 
             }
+        }catch (ParseException pex) {
+            LOG.error("Parsing date error");
+            throw pex;
+        }
+
+    }
+
+    public void loadJson(File jsonFile) throws IOException, ParseException {
+
+        this.clear();
+
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(jsonFile));
+
+            JsonParser jsonParser = new JsonParser();
+            JsonElement jRootElement = jsonParser.parse(br);
+            readJson(jRootElement);
 
         } catch (FileNotFoundException ex) {
             LOG.error("Could not open file:" + jsonFile.getName());
             throw ex;
 
-        } catch (ParseException pex) {
-            LOG.error("Parsing date error");
-            throw pex;
         } finally {
             // Close quietly without exceptions the buffered reader
             IOUtils.closeQuietly(br);
@@ -196,38 +205,8 @@ public class RecomputationsManager {
             if (jRootElement.isJsonNull()) {
                 return;
             }
-            JsonArray jRootObj = jRootElement.getAsJsonArray();
-
-            for (JsonElement item : jRootObj) {
-
-                // Get the excluded sites 
-                if (item.getAsJsonObject().get("start_time") != null
-                        && item.getAsJsonObject().get("end_time") != null
-                        && item.getAsJsonObject().get("exclude") != null) {
-
-                    String start = item.getAsJsonObject().get("start_time").getAsString();
-                    String end = item.getAsJsonObject().get("end_time").getAsString();
-
-                    // Get the excluded
-                    JsonArray jExclude = item.getAsJsonObject().get("exclude").getAsJsonArray();
-                    for (JsonElement subitem : jExclude) {
-                        this.insert(subitem.getAsString(), start, end);
-                    }
-                }
-
-                // Get the excluded Monitoring sources
-                if (item.getAsJsonObject().get("exclude_monitoring_source") != null) {
-                    JsonArray jMon = item.getAsJsonObject().get("exclude_monitoring_source").getAsJsonArray();
-                    for (JsonElement subitem : jMon) {
-
-                        String monHost = subitem.getAsJsonObject().get("host").getAsString();
-                        String monStart = subitem.getAsJsonObject().get("start_time").getAsString();
-                        String monEnd = subitem.getAsJsonObject().get("end_time").getAsString();
-                        this.insertMon(monHost, monStart, monEnd);
-                    }
-                }
-
-            }
+            readJson(jRootElement);
+            
 
         } catch (ParseException pex) {
             LOG.error("Parsing date error");

@@ -23,9 +23,9 @@ import profilesmanager.EndpointGroupManager;
 import profilesmanager.GroupGroupManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
+import profilesmanager.RecomputationsManager;
 import profilesmanager.ReportManager;
 import profilesmanager.ThresholdManager;
-import sync.RecomputationsManager;
 
 /**
  * Accepts a metric data entry and converts it to a status metric object by appending endpoint group information
@@ -109,8 +109,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 		this.thrMgr = new ThresholdManager();
 		if (!this.thr.get(0).isEmpty()){
 			this.thrMgr.parseJSON(this.thr.get(0));
-		}
-		
+		}	
 		
 	}
 
