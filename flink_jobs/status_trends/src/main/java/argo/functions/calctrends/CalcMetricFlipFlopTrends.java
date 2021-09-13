@@ -84,9 +84,9 @@ public class CalcMetricFlipFlopTrends implements GroupReduceFunction<MetricData,
         }
 
         Timeline timeline = new Timeline();
-        timeline.insertDateTimeStamps(timeStatusMap);
+        timeline.insertDateTimeStamps(timeStatusMap,true);
 
-        timeline.replacePreviousDateStatus(date, new ArrayList<>(operationsParser.getStates().keySet()));//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
+        timeline.replacePreviousDateStatus(date, new ArrayList<>(operationsParser.getStates().keySet()),true);//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
         Integer flipflop = timeline.calcStatusChanges();
 
         if (service != null && hostname != null && metric != null) {

@@ -218,7 +218,7 @@ public class TimelineAggregatorTest {
             Timeline timeline = new Timeline();
             checkForMissingMidnightStatus(map, states.indexOf("MISSING"));
 
-            timeline.insertDateTimeStamps(map);
+            timeline.insertDateTimeStamps(map,false);
             inputs.put(timeline + "_" + counter, timeline);
             counter++;
         }

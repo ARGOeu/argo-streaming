@@ -101,10 +101,9 @@ public class Timeline {
         DateTime tmp_date = new DateTime();
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         tmp_date = fmt.parseDateTime(timestamp);
-        if (this.samples.floorEntry(tmp_date) != null) {
+        if (this.samples.floorEntry(tmp_date) == null) {
             return -1;
-            //  throw new NullPointerException("no item found in timeline, size of timeline:" + this.samples.size() + "," + tmp_date.toString());
-        }
+         }
 
         return this.samples.floorEntry(tmp_date).getValue();
     }
@@ -154,11 +153,14 @@ public class Timeline {
      *
      * @param timestamps a map of timestamp, status to be stored in the timeline
      */
-    public void insertStringTimeStamps(TreeMap<String, Integer> timestamps) {
+    public void insertStringTimeStamps(TreeMap<String, Integer> timestamps, boolean optimize) {
         for (String dt : timestamps.keySet()) {
             int status = timestamps.get(dt);
             this.insert(dt, status);
 
+        }
+          if (optimize) {
+            this.optimize();
         }
     }
 
@@ -167,12 +169,14 @@ public class Timeline {
      * @param timestamps a map of timestamp, status to be stored in the
      * timeline. the timestamps are in the form of datetime
      */
-    public void insertDateTimeStamps(TreeMap<DateTime, Integer> timestamps) {
+    public void insertDateTimeStamps(TreeMap<DateTime, Integer> timestamps, boolean optimize) {
         for (DateTime dt : timestamps.keySet()) {
             int status = timestamps.get(dt);
             this.insert(dt, status);
         }
-        this.optimize();
+        if (optimize) {
+            this.optimize();
+        }
 
     }
 
@@ -407,7 +411,6 @@ public class Timeline {
      * @return the number of the times a status changes between the timestamps
      * of the timeline , after the map is optimized
      */
-
     public int calcStatusChanges() {
         this.optimize();
         return this.samples.keySet().size() - 1;
@@ -421,23 +424,23 @@ public class Timeline {
      * checks if in the map the midnight exists and if not it is added with
      * status "MISSING"
      */
-    public void replacePreviousDateStatus(DateTime timestamp, ArrayList<String> availStates) {
-        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    public void replacePreviousDateStatus(DateTime date, ArrayList<String> availStates, boolean optimize) {
 
-        DateTime firsTime = timestamp;
+        DateTime firsTime = date;
         firsTime = firsTime.withTime(0, 0, 0, 0);
+        DateTime firstEntry = this.samples.lowerKey(firsTime);
 
-        DateTime firstEntry = this.samples.floorKey(firsTime);
         if (firstEntry != null && !firstEntry.equals(firsTime)) {
             int previousStatus = this.samples.get(firstEntry);
             this.samples.put(firsTime, previousStatus);
             this.samples.remove(firstEntry);
+
         } else if (firstEntry == null) {
             this.samples.put(firsTime, availStates.indexOf("MISSING"));
         }
-
-        this.optimize();
-
+        if (optimize) {
+            this.optimize();
+        }
     }
 
     @Override
@@ -479,7 +482,6 @@ public class Timeline {
      * @return , the result of the combination as defined from the truth table
      * of the defined operation
      */
-
     public int opInt(int[][][] truthTable, int op, int a, int b) {
         int result = -1;
         try {
@@ -492,7 +494,8 @@ public class Timeline {
         return result;
     }
     
- 
+
+
     /**
      * Calculates the times a specific status appears on the timeline
      *
@@ -503,12 +506,38 @@ public class Timeline {
     public int[] countStatusAppearances(int status) throws ParseException {
         int[] statusInfo = new int[2];
         int count = 0;
-        ArrayList<DateTime> durationTimes = new ArrayList<>();
+        ArrayList<DateTime[]> durationTimes = new ArrayList<>();
+        DateTime startDt = null;
+        DateTime endDt = null;
+
+        boolean added = true;
         for (Map.Entry<DateTime, Integer> entry : this.samples.entrySet()) {
             if (status == entry.getValue()) {
-                durationTimes.add(entry.getKey());
+                startDt = entry.getKey();
                 count++;
+                added = false;
+            } else {
+                if (!added) {
+                    endDt = entry.getKey();
+
+                    DateTime[] statusDur = new DateTime[2];
+                    statusDur[0] = startDt;
+                    statusDur[1] = endDt;
+                    durationTimes.add(statusDur);
+                    startDt = null;
+                    endDt = null;
+                    added = true;
+                }
             }
+
+        }
+        if (!added) {
+            endDt = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", startDt.toDate(), 23, 59, 0);
+
+            DateTime[] statusDur = new DateTime[2];
+            statusDur[0] = startDt;
+            statusDur[1] = endDt;
+            durationTimes.add(statusDur);
 
         }
         statusInfo[0] = count;
@@ -523,35 +552,17 @@ public class Timeline {
      * @param durationTimes
      * @return
      */
-    public int countStatusDuration(ArrayList<DateTime> durationTimes) throws ParseException {
+    public int countStatusDuration(ArrayList<DateTime[]> durationTimes) throws ParseException {
 
-        DateTime firstDt = null;
         int minutesInt = 0;
-        for (DateTime dt : durationTimes) {
-            if (durationTimes.indexOf(dt) == 0) {
+        for (DateTime[] dt : durationTimes) {
+            DateTime startDt = dt[0];
+            DateTime endDt = dt[1];
 
-                firstDt = dt;
-            } else {
-                Minutes minutes = Minutes.minutesBetween(firstDt, dt);
-                minutesInt = minutesInt + minutes.getMinutes();
-                firstDt = dt;
-            }
-
-        }
-
-        if (durationTimes.size() == 1 && minutesInt == 0) {
-            DateTime endDay = durationTimes.get(0);
-            DateTime startDay = durationTimes.get(0);
-
-            startDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", startDay, 0, 0, 0, 0);
-            endDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", endDay, 23, 59, 59, 59);
-
-            Minutes minutes = Minutes.minutesBetween(startDay, endDay);
-            minutesInt = minutes.getMinutes();
-
+            Minutes minutes = Minutes.minutesBetween(startDt, endDt);
+            minutesInt = minutesInt + minutes.getMinutes();
         }
         return minutesInt;
-
     }
 
 }
