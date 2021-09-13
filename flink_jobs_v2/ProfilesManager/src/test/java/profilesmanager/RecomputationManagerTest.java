@@ -1,4 +1,4 @@
-package sync;
+package profilesmanager;
 
 import static org.junit.Assert.*;
 
@@ -22,13 +22,13 @@ public class RecomputationManagerTest {
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		// Assert that files are present
-		assertNotNull("Test file missing", RecomputationManagerTest.class.getResource("/ops/recomp.json"));
+		assertNotNull("Test file missing", RecomputationManagerTest.class.getResource("/profiles/recomp.json"));
 	}
 
 	@Test
 	public void test() throws URISyntaxException, ParseException, IOException {
 		// Prepare Resource File
-		URL resJsonFile = RecomputationManagerTest.class.getResource("/ops/recomp.json");
+		URL resJsonFile = RecomputationManagerTest.class.getResource("/profiles/recomp.json");
 		File jsonFile = new File(resJsonFile.toURI());
 
 		RecomputationsManager recMgr = new RecomputationsManager();

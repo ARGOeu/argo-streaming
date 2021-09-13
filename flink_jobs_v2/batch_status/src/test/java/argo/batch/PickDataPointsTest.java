@@ -27,7 +27,6 @@ import profilesmanager.GroupGroupManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.ThresholdManager;
 
-import sync.RecomputationManagerTest;
 
 
 public class PickDataPointsTest {
@@ -95,7 +94,7 @@ public class PickDataPointsTest {
 		File jsonFileOps = new File(resJsonFileOps.toURI());
 
 		// Prepare Resource File which contains recomputations
-		URL resJsonFileRecomp = RecomputationManagerTest.class.getResource("/ops/recomp.json.flink");
+		URL resJsonFileRecomp = PickDataPointsTest.class.getResource("/ops/recomp.json.flink");
 		File jsonFileRecomp = new File(resJsonFileRecomp.toURI());
 
 		// Prepare Resource File

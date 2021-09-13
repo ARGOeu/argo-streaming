@@ -19,7 +19,6 @@ import org.junit.Test;
 
 
 import argo.avro.MetricData;
-import sync.RecomputationManagerTest;
 
 public class ExcludeMetricDataTest {
 
@@ -34,7 +33,7 @@ public class ExcludeMetricDataTest {
 	public void test() throws Exception {
 		
 				// Prepare Resource File which contains recomputations
-				URL resJsonFile = RecomputationManagerTest.class.getResource("/ops/recomp.json.flink");
+				URL resJsonFile = ExcludeMetricDataTest.class.getResource("/ops/recomp.json.flink");
 				File jsonFile = new File(resJsonFile.toURI());
 
 				// Prepare a local flink execution environment for testing
