@@ -447,7 +447,7 @@ public class ApiResourceManager {
         // get downtimes
         this.getRemoteDowntimes();
         // get recomptations
-        this.getRemoteRecomputations();
+     //  this.getRemoteRecomputations();
 
     }
 
