@@ -5,17 +5,14 @@
  */
 package timelines;
 
-import argo.profiles.OperationsParser;
 import argo.utils.Utils;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -28,7 +25,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author cthermolia
+ * A unit test to test TImeline class
  */
 public class TimelineTest {
 
@@ -62,7 +59,7 @@ public class TimelineTest {
         DateTime timestamp = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 31, 1);
         String timestampStr = timestamp.toString(dtf);
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), false);
         int expResult = 1;
         int result = instance.get(timestampStr);
         assertEquals(expResult, result);
@@ -78,7 +75,7 @@ public class TimelineTest {
         System.out.println("get");
         DateTime point = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 31, 1);
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), true);
         int expResult = 1;
         int result = instance.get(point);
         assertEquals(expResult, result);
@@ -110,7 +107,7 @@ public class TimelineTest {
     @Test
     public void testInsert_DateTime_int() throws ParseException {
         System.out.println("insert");
-        DateTime timestamp = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 31, 1);
+        DateTime timestamp =Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 31, 1);
 
         int status = 0;
         Timeline instance = new Timeline();
@@ -127,7 +124,7 @@ public class TimelineTest {
         System.out.println("insertStringTimeStamps");
         TreeMap<String, Integer> timestamps = createStringTimestampList();
         Timeline instance = new Timeline();
-        instance.insertStringTimeStamps(timestamps);
+        instance.insertStringTimeStamps(timestamps, true);
         // TODO review the generated test code and remove the default call to fail.
         // fail("The test case is a prototype.");
     }
@@ -140,7 +137,7 @@ public class TimelineTest {
         System.out.println("insertDateTimeStamps");
         TreeMap<DateTime, Integer> timestamps = createTimestampList();
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(timestamps);
+        instance.insertDateTimeStamps(timestamps, true);
         // TODO review the generated test code and remove the default call to fail.
         //  fail("The test case is a prototype.");
     }
@@ -170,7 +167,7 @@ public class TimelineTest {
     public void testClear() throws ParseException {
         System.out.println("clear");
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), true);
         instance.clear();
         // TODO review the generated test code and remove the default call to fail.
         // fail("The test case is a prototype.");
@@ -196,7 +193,7 @@ public class TimelineTest {
     public void testGetSamples() throws ParseException {
         System.out.println("getSamples");
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), true);
         Set<Map.Entry<DateTime, Integer>> expResult = instance.getSamples();
         Set<Map.Entry<DateTime, Integer>> result = instance.getSamples();
         assertEquals(expResult, result);
@@ -228,7 +225,7 @@ public class TimelineTest {
     public void testGetLength() throws ParseException {
         System.out.println("getLength");
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), true);
         int expResult = 2;
         int result = instance.getLength();
         assertEquals(expResult, result);
@@ -243,7 +240,7 @@ public class TimelineTest {
     public void testIsEmpty() throws ParseException {
         System.out.println("isEmpty");
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), true);
 
         boolean expResult = false;
         boolean result = instance.isEmpty();
@@ -259,7 +256,7 @@ public class TimelineTest {
     public void testOptimize() throws ParseException {
         System.out.println("optimize");
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), true);
         instance.optimize();
         // TODO review the generated test code and remove the default call to fail.
         // fail("The test case is a prototype.");
@@ -273,7 +270,7 @@ public class TimelineTest {
         System.out.println("getPoints");
         Timeline instance = new Timeline();
         TreeMap<DateTime, Integer> map = createTimestampList();
-        instance.insertDateTimeStamps(map);
+        instance.insertDateTimeStamps(map, true);
         Set<DateTime> expResult = new TreeSet<>();
         expResult.add(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 20, 15));
         expResult.add(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 12, 23));
@@ -291,7 +288,7 @@ public class TimelineTest {
     public void testAggregate() throws ParseException {
         System.out.println("aggregate");
         Timeline second = new Timeline();
-        second.insertDateTimeStamps(createSecondTimeline());
+        second.insertDateTimeStamps(createSecondTimeline(), true);
         int[][][] truthTable = createTruthTable();
         int op = 0;
         Timeline instance = new Timeline();
@@ -302,51 +299,6 @@ public class TimelineTest {
         // TODO review the generated test code and remove the default call to fail.
         //  fail("The test case is a prototype.");
     }
-
-    /**
-     * Test of buildStringTimeStampMap method, of class Timeline.
-     */
-//    @Test
-//    public void testBuildStringTimeStampMap() {
-//        System.out.println("buildStringTimeStampMap");
-//        ArrayList timestampList = null;
-//        OperationsParser op = null;
-//        Timeline instance = new Timeline();
-//        TreeMap<String, Integer> expResult = null;
-//        TreeMap<String, Integer> result = instance.buildStringTimeStampMap(timestampList, op);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        //fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of buildDateTimeStampMap method, of class Timeline.
-//     */
-//    @Test
-//    public void testBuildDateTimeStampMap() {
-//        System.out.println("buildDateTimeStampMap");
-//        ArrayList timestampList = null;
-//        OperationsParser op = null;
-//        Timeline instance = new Timeline();
-//        TreeMap<DateTime, Integer> expResult = null;
-//        TreeMap<DateTime, Integer> result = instance.buildDateTimeStampMap(timestampList, op);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-//
-//    /**
-//     * Test of removeTimeStamp method, of class Timeline.
-//     */
-//    @Test
-//    public void testRemoveTimeStamp() {
-//        System.out.println("removeTimeStamp");
-//        DateTime timestamp = null;
-//        Timeline instance = new Timeline();
-//        instance.removeTimeStamp(timestamp);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
     /**
      * Test of calcStatusChanges method, of class Timeline.
      */
@@ -354,7 +306,7 @@ public class TimelineTest {
     public void testCalcStatusChanges() throws ParseException {
         System.out.println("calcStatusChanges");
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), true);
         int expResult = 1;
         int result = instance.calcStatusChanges();
         assertEquals(expResult, result);
@@ -369,9 +321,8 @@ public class TimelineTest {
     public void testReplacePreviousDateStatus() throws ParseException {
         System.out.println("replacePreviousDateStatus");
         DateTime date = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0);
-        OperationsParser opsMgr = null;
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), true);
         ArrayList<String> availStates = new ArrayList<>();
         availStates.add("OK");
         availStates.add("WARNING");
@@ -380,38 +331,10 @@ public class TimelineTest {
         availStates.add("CRITICAL");
         availStates.add("DOWNTIME");
 
-        instance.replacePreviousDateStatus(date, availStates);
+        instance.replacePreviousDateStatus(date, availStates, true);
         // TODO review the generated test code and remove the default call to fail.
         // fail("The test case is a prototype.");
     }
-
-    /**
-     * Test of hashCode method, of class Timeline.
-     */
-//    @Test
-//    public void testHashCode() {
-//        System.out.println("hashCode");
-//        Timeline instance = new Timeline();
-//        int expResult = 0;
-//        int result = instance.hashCode();
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
-    /**
-     * Test of equals method, of class Timeline.
-     */
-//    @Test
-//    public void testEquals() {
-//        System.out.println("equals");
-//        Object obj = null;
-//        Timeline instance = new Timeline();
-//        boolean expResult = false;
-//        boolean result = instance.equals(obj);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
     /**
      * Test of opInt method, of class Timeline.
      */
@@ -423,7 +346,7 @@ public class TimelineTest {
         int a = 0;
         int b = 0;
         Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList());
+        instance.insertDateTimeStamps(createTimestampList(), true);
         int expResult = 0;
         int result = instance.opInt(truthTable, op, a, b);
         assertEquals(expResult, result);
@@ -572,6 +495,22 @@ public class TimelineTest {
 
         map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 20, 15), 0);
         return map;
+    }
+
+      /**
+     * Test of countStatusAppearances method, of class Timeline.
+     */
+    @Test
+    public void testCountStatusAppearances() throws ParseException {
+        System.out.println("countStatusAppearances");
+        int status = 0;
+        Timeline instance = new Timeline();
+        instance.insertDateTimeStamps(createTimestampList(), true);
+        int expResult =1;
+        int result[] = instance.countStatusAppearances(status);
+        assertEquals(expResult, result[0]);
+        // TODO review the generated test code and remove the default call to fail.
+       //fail("The test case is a prototype.");
     }
 
 }
