@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.apache.flink.api.common.functions.RichGroupReduceFunction;
-
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
@@ -14,23 +12,13 @@ import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.minlog.Log;
-
-import argo.avro.GroupGroup;
 
 import argo.avro.MetricProfile;
 import ops.CAggregator;
 import ops.OpsManager;
+import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 import sync.AggregationProfileManager;
-import sync.GroupGroupManager;
 import sync.MetricProfileManager;
-
-
-/**
- * Accepts a list o status metrics grouped by the fields: endpoint group, service, endpoint
- * Uses Continuous Timelines and Aggregators to calculate the status results of a service endpoint
- * Prepares the data in a form aligned with the datastore schema for status endpoint collection
- */
 public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, StatusMetric> {
 
 	private static final long serialVersionUID = 1L;

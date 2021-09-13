@@ -151,18 +151,33 @@ public class ArgoStatusBatch {
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");
         
-         String dbURI = params.getRequired("mongo.uri");
+
+        //Create StatusMetricTimeline dataset for endpoints
+        DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
+                .reduceGroup(new CalcEndpointTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(apsDS, "aps");
+
+        //Calculate endpoint timeline timestamps 
+        DataSet<StatusMetric> stEndpointDS = statusEndpointTimeline.flatMap(new CalcStatusEndpoint(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(apsDS, "aps");
+
+        String dbURI = params.getRequired("mongo.uri");
         String dbMethod = params.getRequired("mongo.method");
 
         // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
         MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
+        MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
        
         // Store datasets to the designated outputs prepared above
         stDetailDS.output(metricMongoOut);
        
-        
-   
-        
+
+        // Store datasets to the designated outputs prepared above
+        stDetailDS.output(metricMongoOut);
+        stEndpointDS.output(endpointMongoOut);
+
         String runDate = params.getRequired("run.date");
 
         // Create a job title message to discern job in flink dashboard/cli
