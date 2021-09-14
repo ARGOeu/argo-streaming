@@ -1,6 +1,7 @@
 package argo.batch;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -11,13 +12,19 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import argo.avro.GroupEndpoint;
+import argo.avro.GroupGroup;
+
+import argo.avro.MetricProfile;
 import ops.CAggregator;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
-import timelines.TimelineAggregator;
+import sync.GroupGroupManager;
+import sync.MetricProfileManager;
 
 
 /**
@@ -47,7 +54,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 	
 
 	private String runDate;
-	private TimelineAggregator serviceAggr;
+	private CAggregator serviceAggr;
 
 	private boolean getService;
 	
@@ -68,7 +75,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 	
 		// Initialize endpoint group type
 		this.runDate = params.getRequired("run.date");
-		this.serviceAggr = new TimelineAggregator(); // Create aggregator
+		this.serviceAggr = new CAggregator(); // Create aggregator
 
 		this.getService = true;
 	}
@@ -114,7 +121,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 		avGroup = this.apsMgr.getGroupByService(aProfile, service);
 		String avOp = this.apsMgr.getProfileGroupServiceOp(aProfile, avGroup, service);
 		
-		this.serviceAggr.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(avOp));
+		this.serviceAggr.aggregate(this.opsMgr, avOp);
 
 		// Append the timeline	
 		for (Entry<DateTime, Integer> item : this.serviceAggr.getSamples()) {

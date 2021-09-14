@@ -16,308 +16,181 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 
 public class ConfigManager {
 
-    private static final Logger LOG = Logger.getLogger(ConfigManager.class.getName());
+	private static final Logger LOG = Logger.getLogger(ConfigManager.class.getName());
 
-    public String id; // report uuid reference
-    public String report;
-    public String tenant;
-    public String egroup; // endpoint group
-    public String ggroup; // group of groups
-    public String weight; // weight factor type
-    public TreeMap<String, String> egroupTags;
-    public TreeMap<String, String> ggroupTags;
-    public TreeMap<String, String> mdataTags;
-    private Threshold threshold;
-    ArrayList<Profiles> profiles;
+	public String id; // report uuid reference
+	public String report;
+	public String tenant;
+	public String egroup; // endpoint group
+	public String ggroup; // group of groups
+	public String weight; // weight factor type
+	public TreeMap<String, String> egroupTags;
+	public TreeMap<String, String> ggroupTags;
+	public TreeMap<String, String> mdataTags;
 
-    public ConfigManager() {
-        this.report = null;
-        this.id = null;
-        this.tenant = null;
-        this.egroup = null;
-        this.ggroup = null;
-        this.weight = null;
-        this.egroupTags = new TreeMap<String, String>();
-        this.ggroupTags = new TreeMap<String, String>();
-        this.mdataTags = new TreeMap<String, String>();
-        this.profiles = new ArrayList<>();
+	public ConfigManager() {
+		this.report = null;
+		this.id = null;
+		this.tenant = null;
+		this.egroup = null;
+		this.ggroup = null;
+		this.weight = null;
+		this.egroupTags = new TreeMap<String, String>();
+		this.ggroupTags = new TreeMap<String, String>();
+		this.mdataTags = new TreeMap<String, String>();
 
-    }
+	}
 
-    public void clear() {
-        this.id = null;
-        this.report = null;
-        this.tenant = null;
-        this.egroup = null;
-        this.ggroup = null;
-        this.weight = null;
-        this.egroupTags.clear();
-        this.ggroupTags.clear();
-        this.mdataTags.clear();
+	public void clear() {
+		this.id = null;
+		this.report = null;
+		this.tenant = null;
+		this.egroup = null;
+		this.ggroup = null;
+		this.weight = null;
+		this.egroupTags.clear();
+		this.ggroupTags.clear();
+		this.mdataTags.clear();
 
-    }
+	}
+	
+	public String getReportID() {
+		return id;
+	}
+	
+	public String getReport() {
+		return report;
+	}
+	
+	public String getTenant() {
+		return tenant;
+	}
+	
+	
+	public String getEgroup() {
+		return egroup;
+	}
 
-    public String getReportID() {
-        return id;
-    }
+	public void loadJson(File jsonFile) throws IOException {
+		// Clear data
+		this.clear();
 
-    public String getReport() {
-        return report;
-    }
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(jsonFile));
 
-    public String getTenant() {
-        return tenant;
-    }
+			JsonParser jsonParser = new JsonParser();
+			JsonElement jElement = jsonParser.parse(br);
+			JsonObject jObj = jElement.getAsJsonObject();
+			// Get the simple fields
+			this.id = jObj.get("id").getAsString();
+			this.tenant = jObj.get("tenant").getAsString();
+			this.report = jObj.get("info").getAsJsonObject().get("name").getAsString();
+			
+			// get topology schema names
+			JsonObject topoGroup = jObj.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
+			this.ggroup = topoGroup.get("type").getAsString();
+			this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
+			
+			// optional weight filtering
+			this.weight = "";
+			if (jObj.has("weight")){
+				this.weight = jObj.get("weight").getAsString();
+			}
+			// Get compound fields
+			JsonArray jTags = jObj.getAsJsonArray("filter_tags");
+			
+			// Iterate tags
+			if (jTags != null) {
+				for (JsonElement tag : jTags) {
+					JsonObject jTag = tag.getAsJsonObject();
+					String name = jTag.get("name").getAsString();
+					String value = jTag.get("value").getAsString();
+					String ctx = jTag.get("context").getAsString();
+					if (ctx.equalsIgnoreCase("group_of_groups")){
+						this.ggroupTags.put(name, value);
+					} else if (ctx.equalsIgnoreCase("endpoint_groups")){
+						this.egroupTags.put(name, value);
+					} else if (ctx.equalsIgnoreCase("metric_data")) {
+						this.mdataTags.put(name, value);
+					}
+					
+				}
+			}
+			
 
-    public String getEgroup() {
-        return egroup;
-    }
+		} catch (FileNotFoundException ex) {
+			LOG.error("Could not open file:" + jsonFile.getName());
+			throw ex;
 
-    public void loadJson(File jsonFile) throws IOException {
-        // Clear data
-        this.clear();
+		} catch (JsonParseException ex) {
+			LOG.error("File is not valid json:" + jsonFile.getName());
+			throw ex;
+		} finally {
+			// Close quietly without exceptions the buffered reader
+			IOUtils.closeQuietly(br);
+		}
 
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader(jsonFile));
+	}
 
-            JsonParser jsonParser = new JsonParser();
-            JsonElement jElement = jsonParser.parse(br);
-            readJson(jElement);
-        } catch (FileNotFoundException ex) {
-            LOG.error("Could not open file:" + jsonFile.getName());
-            throw ex;
+	
+	/**
+	 * Loads Report config information from a config json string
+	 * 
+	 */
+	public void loadJsonString(List<String> confJson) throws JsonParseException {
+		// Clear data
+		this.clear();
 
-        } catch (JsonParseException ex) {
-            LOG.error("File is not valid json:" + jsonFile.getName());
-            throw ex;
-        } finally {
-            // Close quietly without exceptions the buffered reader
-            IOUtils.closeQuietly(br);
-        }
+		try {
 
-    }
+			JsonParser jsonParser = new JsonParser();
+			// Grab the first - and only line of json from ops data
+			JsonElement jElement = jsonParser.parse(confJson.get(0));
+			JsonObject jObj = jElement.getAsJsonObject();
+			// Get the simple fields
+			this.id = jObj.get("id").getAsString();
+			this.tenant = jObj.get("tenant").getAsString();
+			this.report = jObj.get("info").getAsJsonObject().get("name").getAsString();
+			// get topology schema names
+			JsonObject topoGroup = jObj.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
+			this.ggroup = topoGroup.get("type").getAsString();
+			this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
+			// optional weight filtering
+			this.weight = "";
+			if (jObj.has("weight")){
+				this.weight = jObj.get("weight").getAsString();
+			}
+			// Get compound fields
+			JsonArray jTags = jObj.getAsJsonArray("tags");
+			
+			// Iterate tags
+			if (jTags != null) {
+				for (JsonElement tag : jTags) {
+					JsonObject jTag = tag.getAsJsonObject();
+					String name = jTag.get("name").getAsString();
+					String value = jTag.get("value").getAsString();
+					String ctx = jTag.get("context").getAsString();
+					if (ctx.equalsIgnoreCase("group_of_groups")){
+						this.ggroupTags.put(name, value);
+					} else if (ctx.equalsIgnoreCase("endpoint_groups")){
+						this.egroupTags.put(name, value);
+					} else if (ctx.equalsIgnoreCase("metric_data")) {
+						this.mdataTags.put(name, value);
+					}
+					
+				}
+			}
 
-    /**
-     * Loads Report config information from a config json string
-     *
-     */
-    public void loadJsonString(List<String> confJson) throws JsonParseException {
-        // Clear data
-        this.clear();
+		} catch (JsonParseException ex) {
+			LOG.error("Not valid json contents");
+			throw ex;
+		} 
 
-        try {
+	}
 
-            JsonParser jsonParser = new JsonParser();
-            // Grab the first - and only line of json from ops data
-            JsonElement jElement = jsonParser.parse(confJson.get(0));
-            readJson(jElement);
-//			JsonObject jObj = jElement.getAsJsonObject();
-//			// Get the simple fields
-//			this.id = jObj.get("id").getAsString();
-//			this.tenant = jObj.get("tenant").getAsString();
-//			this.report = jObj.get("info").getAsJsonObject().get("name").getAsString();
-//			// get topology schema names
-//			JsonObject topoGroup = jObj.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
-//			this.ggroup = topoGroup.get("type").getAsString();
-//			this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
-//			// optional weight filtering
-//			this.weight = "";
-//			if (jObj.has("weight")){
-//				this.weight = jObj.get("weight").getAsString();
-//			}
-//			// Get compound fields
-//			JsonArray jTags = jObj.getAsJsonArray("tags");
-//			
-//			// Iterate tags
-//			if (jTags != null) {
-//				for (JsonElement tag : jTags) {
-//					JsonObject jTag = tag.getAsJsonObject();
-//					String name = jTag.get("name").getAsString();
-//					String value = jTag.get("value").getAsString();
-//					String ctx = jTag.get("context").getAsString();
-//					if (ctx.equalsIgnoreCase("group_of_groups")){
-//						this.ggroupTags.put(name, value);
-//					} else if (ctx.equalsIgnoreCase("endpoint_groups")){
-//						this.egroupTags.put(name, value);
-//					} else if (ctx.equalsIgnoreCase("metric_data")) {
-//						this.mdataTags.put(name, value);
-//					}
-//					
-//				}
-//			}
-
-        } catch (JsonParseException ex) {
-            LOG.error("Not valid json contents");
-            throw ex;
-        }
-
-    }
-
-    public void readJson(JsonElement jElement) {
-
-        JsonObject jObj = jElement.getAsJsonObject();
-        // Get the simple fields
-        this.id = jObj.get("id").getAsString();
-        this.tenant = jObj.get("tenant").getAsString();
-        this.report = jObj.get("info").getAsJsonObject().get("name").getAsString();
-
-        // get topology schema names
-        JsonObject topoGroup = jObj.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
-        this.ggroup = topoGroup.get("type").getAsString();
-        this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
-
-        // optional weight filtering
-        this.weight = "";
-        if (jObj.has("weight")) {
-            this.weight = jObj.get("weight").getAsString();
-        }
-        // Get compound fields
-        JsonArray jTags = jObj.getAsJsonArray("filter_tags");
-
-        // Iterate tags
-        if (jTags != null) {
-            for (JsonElement tag : jTags) {
-                JsonObject jTag = tag.getAsJsonObject();
-                String name = jTag.get("name").getAsString();
-                String value = jTag.get("value").getAsString();
-                String ctx = jTag.get("context").getAsString();
-                if (ctx.equalsIgnoreCase("group_of_groups")) {
-                    this.ggroupTags.put(name, value);
-                } else if (ctx.equalsIgnoreCase("endpoint_groups")) {
-                    this.egroupTags.put(name, value);
-                } else if (ctx.equalsIgnoreCase("metric_data")) {
-                    this.mdataTags.put(name, value);
-                }
-
-            }
-        }
-        if(jObj.has("thresholds")){
-        JsonObject thresholdsObject = jObj.get("thresholds").getAsJsonObject();
-
-        this.threshold = new Threshold(thresholdsObject.get("availability").getAsLong(), thresholdsObject.get("reliability").getAsLong(), thresholdsObject.get("uptime").getAsDouble(),
-                thresholdsObject.get("unknown").getAsDouble(), thresholdsObject.get("downtime").getAsDouble());
-        }
-        JsonArray profilesArray = jObj.get("profiles").getAsJsonArray();
-
-        Iterator<JsonElement> profileIter = profilesArray.iterator();
-        while (profileIter.hasNext()) {
-            JsonObject profileObject = profileIter.next().getAsJsonObject();
-            Profiles profile = new Profiles(profileObject.get("id").getAsString(), profileObject.get("name").getAsString(), profileObject.get("type").getAsString());
-            profiles.add(profile);
-        }
-
-    }
-
-    public class Threshold {
-
-        private Long availability;
-        private Long reliability;
-        private Double uptime;
-        private Double unknown;
-        private Double downtime;
-
-        public Threshold(Long availability, Long reliability, Double uptime, Double unknown, Double downtime) {
-            this.availability = availability;
-            this.reliability = reliability;
-            this.uptime = uptime;
-            this.unknown = unknown;
-            this.downtime = downtime;
-        }
-
-        public Long getAvailability() {
-            return availability;
-        }
-
-        public Long getReliability() {
-            return reliability;
-        }
-
-        public Double getUptime() {
-            return uptime;
-        }
-
-        public Double getUnknown() {
-            return unknown;
-        }
-
-        public Double getDowntime() {
-            return downtime;
-        }
-
-    }
-
-    private class Profiles {
-
-        private String id;
-        private String name;
-        private String type;
-
-        public Profiles(String id, String name, String type) {
-            this.id = id;
-            this.name = name;
-            this.type = type;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-    }
-
-    public String getAggregationReportId() {
-         if (profiles != null) {
-            for (Profiles profile : profiles) {
-                if (profile.getType().equalsIgnoreCase(ProfileType.AGGREGATION.name())) {
-                    return profile.id;
-                }
-            }
-        }
-        return null;
-    }
-
-    public String getMetricReportId() {
-     
-        if (profiles != null) {
-            for (Profiles profile : profiles) {
-                if (profile.getType().equalsIgnoreCase(ProfileType.METRIC.name())) {
-                    return profile.id;
-                }
-            }
-        }
-        return null;
-    }
-
-    public String getOperationReportId() {
-        if (profiles != null) {
-            for (Profiles profile : profiles) {
-                if (profile.getType().equalsIgnoreCase(ProfileType.OPERATIONS.name())) {
-                    return profile.id;
-                }
-            }
-        }
-        return null;
-    }
-    
-    public enum ProfileType {
-
-        METRIC,
-        AGGREGATION,
-        OPERATIONS
-
-    }
 }
