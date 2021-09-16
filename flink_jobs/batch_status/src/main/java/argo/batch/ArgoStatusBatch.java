@@ -13,8 +13,11 @@ import ops.ConfigManager;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.flink.api.common.operators.Order;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
@@ -26,9 +29,9 @@ import org.apache.flink.core.fs.Path;
 
 
 /**
- * Implements an ARGO Status Batch Job in flink
+ * Represents an ARGO A/R Batch Job in flink
  * 
- * Submit job in flink cluster using the following parameters:
+ * Submit job in flink cluster using the following parameters: 
  * --pdata: path to previous day's metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --mdata: path to metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --run.date: target date of computation in DD-MM-YYYY format
@@ -40,6 +43,9 @@ import org.apache.flink.core.fs.Path;
  * --api.proxy: optional address for proxy to be used (http://proxy.example.com)
  * --api.timeout: set timeout (in seconds) when connecting to argo-web-api
  */
+
+
+
 public class ArgoStatusBatch {
 	// setup logger
 	static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
@@ -75,7 +81,6 @@ public class ArgoStatusBatch {
 		amr.setReportID(reportID);
 		amr.setDate(params.getRequired("run.date"));
 		amr.getRemoteAll();
-		
 		
 
 		DataSource<String>cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));

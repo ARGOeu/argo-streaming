@@ -14,13 +14,16 @@ import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.minlog.Log;
+
+import argo.avro.GroupGroup;
 
 import argo.avro.MetricProfile;
 import ops.CAggregator;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
+import sync.GroupGroupManager;
 import sync.MetricProfileManager;
-import timelines.TimelineAggregator;
 
 
 /**
@@ -47,7 +50,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 	private AggregationProfileManager apsMgr;
 	private OpsManager opsMgr;
 	private String runDate;
-	private TimelineAggregator endpointAggr;
+	private CAggregator endpointAggr;
 
 	private boolean fillMissing;
 
@@ -71,7 +74,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 		this.opsMgr.loadJsonString(ops);
 		
 		this.runDate = params.getRequired("run.date");
-		this.endpointAggr = new TimelineAggregator(); // Create aggregator
+		this.endpointAggr = new CAggregator(); // Create aggregator
 
 		this.fillMissing = true;
 	}
@@ -142,7 +145,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 
 		}
 
-		this.endpointAggr.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(this.apsMgr.getMetricOp(aprofile)));
+		this.endpointAggr.aggregate(this.opsMgr, this.apsMgr.getMetricOp(aprofile));
 
 		// Append the timeline
 		
