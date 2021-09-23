@@ -47,7 +47,7 @@ public class EndpointGroupManagerTest {
 
 		// Test Tag Filtering (Wont filter out anything since input is already
 		// filtered)
-		URL resJson = GroupsOfGroupsTest.class.getResource("/ops/config.json");
+		URL resJson = EndpointGroupManagerTest.class.getResource("/ops/config.json");
 		File cfgFile = new File(resJson.toURI());
 		ConfigManager cfgMgr = new ConfigManager();
 		cfgMgr.loadJson(cfgFile);

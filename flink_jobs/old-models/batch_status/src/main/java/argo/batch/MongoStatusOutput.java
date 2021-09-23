@@ -109,8 +109,23 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 		
 		} else if (this.sType == StatusType.STATUS_ENDPOINT) {
 			
+
 			doc.append("service", record.getService())
 			.append("host", record.getHostname());
+			
+			String info = record.getInfo();
+			if (!info.equalsIgnoreCase("")) {
+				Document infoDoc = new Document();
+				String[] kvs = info.split(",");
+				for (String kv : kvs) {
+					String[] kvtok = kv.split(":",2);
+					if (kvtok.length == 2){
+						infoDoc.append(kvtok[0], kvtok[1]);
+					}
+				}
+				
+				doc.append("info", infoDoc);
+			}
 				
 		} else if (this.sType == StatusType.STATUS_METRIC) {
 		
@@ -153,6 +168,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 		
 		} else if (this.sType == StatusType.STATUS_ENDPOINT) {
 			
+			
 			return Filters.and(Filters.eq("report", this.report), Filters.eq("date_integer", record.getDateInt()),
 					Filters.eq("endpoint_group", record.getGroup()), Filters.eq("service", record.getService()),
 					Filters.eq("host", record.getHostname()), Filters.eq("timestamp", record.getTimestamp()));
@@ -181,7 +197,8 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
 		// Mongo Document to be prepared according to StatusType of input
 		Document doc = prepDoc(record);
-
+		
+	
 		if (this.method == MongoMethod.UPSERT) {
 
 			// Filter for upsert to be prepared according to StatusType of input
