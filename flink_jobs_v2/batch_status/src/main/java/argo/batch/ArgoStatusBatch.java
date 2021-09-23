@@ -2,8 +2,10 @@ package argo.batch;
 
 import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
+import argo.ar.CalcEndpointAR;
 import org.slf4j.LoggerFactory;
-
+import argo.ar.EndpointAR;
+import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
@@ -41,8 +43,6 @@ import profilesmanager.ReportManager;
  */
 public class ArgoStatusBatch {
 
-    // setup logger
-
     static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
 
     public static void main(String[] args) throws Exception {
@@ -55,7 +55,6 @@ public class ArgoStatusBatch {
         // make parameters available in the web interface
         env.getConfig().setGlobalJobParameters(params);
         env.setParallelism(1);
-
         String apiEndpoint = params.getRequired("api.endpoint");
         String apiToken = params.getRequired("api.token");
         String reportID = params.getRequired("report.id");
@@ -83,7 +82,13 @@ public class ArgoStatusBatch {
         if (amr.getResourceJSON(ApiResource.RECOMPUTATIONS) != null) {
             recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
         }
-        // begin with empty threshold datasource
+
+        amr.setReportID(reportID);
+        amr.setDate(params.getRequired("run.date"));
+        amr.getRemoteAll();
+        DataSource<String> confDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
+
+        DataSet<Downtime> downDS = env.fromElements(new Downtime());
         DataSource<String> thrDS = env.fromElements("");
         // if threshold filepath has been defined in cli parameters
         if (params.has("thr")) {
@@ -107,6 +112,10 @@ public class ArgoStatusBatch {
             ggpDS = env.fromElements(amr.getListGroupGroups());
         }
 
+        Downtime[] listDowntimes = amr.getListDowntimes();
+        if (listDowntimes.length > 0) {
+            downDS = env.fromElements(amr.getListDowntimes());
+        }
         // todays metric data
         Path in = new Path(params.getRequired("mdata"));
         AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat<MetricData>(in, MetricData.class);
@@ -151,7 +160,11 @@ public class ArgoStatusBatch {
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");
         
+         String dbURI = params.getRequired("mongo.uri");
+        String dbMethod = params.getRequired("mongo.method");
 
+      
+   
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
                 .reduceGroup(new CalcEndpointTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
@@ -163,20 +176,22 @@ public class ArgoStatusBatch {
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
 
-        String dbURI = params.getRequired("mongo.uri");
-        String dbMethod = params.getRequired("mongo.method");
-
-        // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
+    
+        //Calculate endpoint a/r 
+        DataSet<EndpointAR> endpointArDS = statusEndpointTimeline.flatMap(new CalcEndpointAR(params)).withBroadcastSet(mpsDS, "mps")
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
+                withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
+        //Calculate endpoint timeline timestamps 
+      
+         
+//        // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
         MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
         MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
-       
-        // Store datasets to the designated outputs prepared above
-        stDetailDS.output(metricMongoOut);
-       
-
+         MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
         // Store datasets to the designated outputs prepared above
         stDetailDS.output(metricMongoOut);
         stEndpointDS.output(endpointMongoOut);
+         endpointArDS.output(endpointARMongoOut);
 
         String runDate = params.getRequired("run.date");
 

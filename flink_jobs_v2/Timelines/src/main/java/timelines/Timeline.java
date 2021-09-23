@@ -15,7 +15,6 @@ import java.util.TreeMap;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
-import org.joda.time.Minutes;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -55,7 +54,6 @@ public class Timeline {
     public Timeline() {
         this.date = null;
         this.samples = new TreeMap<DateTime, Integer>();
-
     }
 
     /**
@@ -89,7 +87,7 @@ public class Timeline {
         this.date = tmp_date.toLocalDate();
         this.samples = new TreeMap<DateTime, Integer>();
         this.samples.put(tmp_date, state);
-
+ 
     }
 
     /**
@@ -103,7 +101,7 @@ public class Timeline {
         tmp_date = fmt.parseDateTime(timestamp);
         if (this.samples.floorEntry(tmp_date) == null) {
             return -1;
-         }
+        }
 
         return this.samples.floorEntry(tmp_date).getValue();
     }
@@ -159,7 +157,7 @@ public class Timeline {
             this.insert(dt, status);
 
         }
-          if (optimize) {
+        if (optimize) {
             this.optimize();
         }
     }
@@ -448,6 +446,7 @@ public class Timeline {
         int hash = 7;
         hash = 83 * hash + Objects.hashCode(this.date);
         hash = 83 * hash + Objects.hashCode(this.samples);
+        
         return hash;
     }
 
@@ -493,76 +492,79 @@ public class Timeline {
 
         return result;
     }
-    
 
 
     /**
-     * Calculates the times a specific status appears on the timeline
+     * aggregates a timeline with a timeline of downtime statuses, defined from
+     * the downtime data source
      *
-     * @param status , the status to calculate the appearances
-     * @return , the num of the times the specific status appears on the
-     * timeline
+     * @param downtimeline the timeline containing the defined downtime
+     * timestamps
+     * @param downDefaultInt the downtime status
      */
-    public int[] countStatusAppearances(int status) throws ParseException {
-        int[] statusInfo = new int[2];
-        int count = 0;
-        ArrayList<DateTime[]> durationTimes = new ArrayList<>();
-        DateTime startDt = null;
-        DateTime endDt = null;
+    public void aggregateDownTime(Timeline downtimeline, int downDefaultInt) {
+        if (downtimeline.isEmpty()) {
+            return;
+        }
+        if (this.isEmpty()) {
+            this.bulkInsert(downtimeline.getSamples());
+            // Optimize even when we have a single timeline for aggregation
+            this.optimize();
+            return;
+        }
 
-        boolean added = true;
-        for (Map.Entry<DateTime, Integer> entry : this.samples.entrySet()) {
-            if (status == entry.getValue()) {
-                startDt = entry.getKey();
-                count++;
-                added = false;
-            } else {
-                if (!added) {
-                    endDt = entry.getKey();
+        Timeline result = new Timeline();
 
-                    DateTime[] statusDur = new DateTime[2];
-                    statusDur[0] = startDt;
-                    statusDur[1] = endDt;
-                    durationTimes.add(statusDur);
-                    startDt = null;
-                    endDt = null;
-                    added = true;
-                }
+        // Slice for first
+        for (DateTime point : this.getPoints()) {
+            result.insert(point, -1);
+        }
+        // Slice for second 
+        for (DateTime point : downtimeline.getPoints()) {
+            result.insert(point, -1);
+        }
+
+        // Iterate over result and ask
+        for (DateTime point : result.getPoints()) {
+            int a = this.get(point);
+            int b = downtimeline.get(point);
+            int x = a;
+
+            if (a == downDefaultInt || b == downDefaultInt) {
+                x = downDefaultInt;
             }
+            result.insert(point, x);
 
         }
-        if (!added) {
-            endDt = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", startDt.toDate(), 23, 59, 0);
 
-            DateTime[] statusDur = new DateTime[2];
-            statusDur[0] = startDt;
-            statusDur[1] = endDt;
-            durationTimes.add(statusDur);
+        result.optimize();
 
-        }
-        statusInfo[0] = count;
-        statusInfo[1] = countStatusDuration(durationTimes);
-        return statusInfo;
-
+        // Engrave the result in this timeline
+        this.clear();
+        this.bulkInsert(result.getSamples());
     }
 
-    /**
-     * Calculates the total duration of a status appearance
-     *
-     * @param durationTimes
-     * @return
-     */
-    public int countStatusDuration(ArrayList<DateTime[]> durationTimes) throws ParseException {
 
-        int minutesInt = 0;
-        for (DateTime[] dt : durationTimes) {
-            DateTime startDt = dt[0];
-            DateTime endDt = dt[1];
 
-            Minutes minutes = Minutes.minutesBetween(startDt, endDt);
-            minutesInt = minutesInt + minutes.getMinutes();
+
+    public void createDownTimeline(ArrayList<String> downPeriod, int defaultDownStatus, DateTime runDateDt) throws ParseException {
+        DateTime endDay = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", runDateDt.toDate(), 23, 59, 59);
+
+        Timeline downTimeline = null;
+        if (downPeriod != null) {
+
+            DateTime startDown = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", downPeriod.get(0));
+            DateTime endDown = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", downPeriod.get(1));
+            endDown = endDown.plusMinutes(1);
+            TreeMap<DateTime, Integer> downSample = new TreeMap();
+            downSample.put(startDown, defaultDownStatus);
+            if (!endDown.isAfter(endDay.getMillis())) {
+                downSample.put(endDown, -1);
+            }
+            // We have downtime declared
+            downTimeline = new Timeline();
+            downTimeline.insertDateTimeStamps(downSample, true);
         }
-        return minutesInt;
-    }
 
+    }
 }
