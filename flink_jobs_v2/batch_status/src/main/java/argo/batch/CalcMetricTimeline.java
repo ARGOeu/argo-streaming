@@ -48,7 +48,6 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
-
     @Override
     public void open(Configuration parameters) throws IOException {
         this.runDate = params.getRequired("run.date");
@@ -87,7 +86,6 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             String ts = item.getTimestamp();
             String status = item.getStatus();
             statusMetrics.add(item);
-             
             if (i == 0) {
                 int st = this.opsMgr.getIntStatus(item.getPrevState());
                 timeStatusMap.put(Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", item.getPrevTs()), st);

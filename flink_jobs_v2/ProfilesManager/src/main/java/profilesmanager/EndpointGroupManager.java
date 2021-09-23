@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
 /**
  *
  *
@@ -58,7 +59,6 @@ public class EndpointGroupManager implements Serializable {
 
     //* A EndpointItem class implements an object containing info of an group endpoint included in the  topology
     public class EndpointItem implements Serializable { // the object
-
 
         String type; // type of group
         String group; // name of the group
@@ -124,7 +124,6 @@ public class EndpointGroupManager implements Serializable {
             }
             return true;
         }
-
 
         public String getType() {
             return type;
@@ -234,7 +233,9 @@ public class EndpointGroupManager implements Serializable {
 
         for (EndpointItem item : fList) {
             if (item.type.equals(type) && item.hostname.equals(hostname) && item.service.equals(service)) {
-                results.add(item.group);
+                if (!results.contains(item.group)) {
+                    results.add(item.group);
+                }
             }
         }
 
@@ -315,6 +316,7 @@ public class EndpointGroupManager implements Serializable {
     public int count() {
         return this.fList.size();
     }
+
     /**
      * Clear the filtered fList and initialize with all the EndpointItems the
      * list includes
@@ -325,6 +327,7 @@ public class EndpointGroupManager implements Serializable {
             this.fList.add(item);
         }
     }
+
     /**
      * Applies filter on the tags of the EndpointItems included in the list,
      * based on a map of criteria each criteria containing a pair of the tags
@@ -333,7 +336,6 @@ public class EndpointGroupManager implements Serializable {
      *
      * @param fTags a map of criteria
      */
-
     public void filter(TreeMap<String, String> fTags) {
         this.fList.clear();
         boolean trim;
@@ -465,6 +467,8 @@ public class EndpointGroupManager implements Serializable {
     @SuppressWarnings("unchecked")
     public void loadFromList(List<GroupEndpoint> egp) {
 
+        this.list.clear();
+        this.fList.clear();
         // For each endpoint group record
         for (GroupEndpoint item : egp) {
             String type = item.getType();
@@ -485,18 +489,16 @@ public class EndpointGroupManager implements Serializable {
 
             this.insertTopologyGroup(type, group, service, hostname, tagMap);
             defaultType = type;
-   }
+        }
 
         this.unfilter();
 
     }
 
-
     public void loadGroupEndpointProfile(JsonArray element) throws IOException {
         GroupEndpoint[] groupEndpoints = readJson(element);
         loadFromList(Arrays.asList(groupEndpoints));
     }
-
 
     /**
      * reads from a JsonElement array and stores the necessary information to
@@ -528,7 +530,6 @@ public class EndpointGroupManager implements Serializable {
         rArr = results.toArray(rArr);
         return rArr;
     }
-
 
     /**
      * ***********************************

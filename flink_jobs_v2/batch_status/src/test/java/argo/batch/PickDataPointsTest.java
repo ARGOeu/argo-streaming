@@ -28,7 +28,6 @@ import profilesmanager.MetricProfileManager;
 import profilesmanager.ThresholdManager;
 
 
-
 public class PickDataPointsTest {
 
 	@BeforeClass

@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author cthermolia
+ * A unit test to test TImelineIntegrator class
  */
 public class TimelineIntegratorTest {
 

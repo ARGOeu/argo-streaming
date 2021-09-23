@@ -156,9 +156,9 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
         downTimeline.createDownTimeline(downPeriod, this.opsMgr.getDefaultDownInt(), runDateDt);
         timelineMap.put("down", downTimeline);
         timeline.aggregateDownTime(downTimeline, this.opsMgr.getDefaultDownInt());
-         TimelineIntegrator tIntegrator=new TimelineIntegrator();
+        TimelineIntegrator tIntegrator = new TimelineIntegrator();
 
-        tIntegrator.calcAR(timeline.getSamples(),runDateDt, this.opsMgr.getIntStatus("OK"), this.opsMgr.getIntStatus("WARNING"), this.opsMgr.getDefaultUnknownInt(), this.opsMgr.getDefaultDownInt(), this.opsMgr.getDefaultMissingInt());
+        tIntegrator.calcAR(timeline.getSamples(), runDateDt, this.opsMgr.getIntStatus("OK"), this.opsMgr.getIntStatus("WARNING"), this.opsMgr.getDefaultUnknownInt(), this.opsMgr.getDefaultDownInt(), this.opsMgr.getDefaultMissingInt());
 
 //        // Availability = UP period / KNOWN period = UP period / (Total period –
 //		// UNKNOWN period)
