@@ -111,7 +111,6 @@ public class CalcServiceAR extends RichFlatMapFunction<StatusTimeline, ServiceAR
         this.repMgr.loadJsonString(conf);
 
         this.runDate = params.getRequired("run.date");
-                
     }
 
     /**
@@ -137,8 +136,6 @@ public class CalcServiceAR extends RichFlatMapFunction<StatusTimeline, ServiceAR
         String endpointGroup = "";
         service = in.getService();
         endpointGroup = in.getGroup();
-    
-       
 //        // Availability = UP period / KNOWN period = UP period / (Total period –
 //		// UNKNOWN period)
 //		this.availability = round(((up / dt) / (1.0 - (unknown / dt))) * 100, 5, BigDecimal.ROUND_HALF_UP);
@@ -150,10 +147,9 @@ public class CalcServiceAR extends RichFlatMapFunction<StatusTimeline, ServiceAR
 //		this.up_f = round(up / dt, 5, BigDecimal.ROUND_HALF_UP);
 //		this.unknown_f = round(unknown / dt, 5, BigDecimal.ROUND_HALF_UP);
 //		this.down_f = round(down / dt, 5, BigDecimal.ROUND_HALF_UP);
-      
-     ArrayList<TimeStatus> timestatusList = in.getTimestamps();
-   
-  TreeMap<DateTime, Integer> timestampMap = new TreeMap();
+        ArrayList<TimeStatus> timestatusList = in.getTimestamps();
+
+        TreeMap<DateTime, Integer> timestampMap = new TreeMap();
         for (TimeStatus ts : timestatusList) {
             timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
         }
@@ -167,10 +163,8 @@ public class CalcServiceAR extends RichFlatMapFunction<StatusTimeline, ServiceAR
 
         tIntegrator.calcAR(timeline.getSamples(), runDateDt, this.opsMgr.getIntStatus("OK"), this.opsMgr.getIntStatus("WARNING"), this.opsMgr.getDefaultUnknownInt(), this.opsMgr.getDefaultDownInt(), this.opsMgr.getDefaultMissingInt());
 
-
-   int runDateInt = Integer.parseInt(this.runDate.replace("-", ""));
-	  ServiceAR result = new ServiceAR(runDateInt, this.repMgr.id,  service, endpointGroup, tIntegrator.getAvailability(), tIntegrator.getReliability(), tIntegrator.getUp_f(), tIntegrator.getUnknown_f(), tIntegrator.getDown_f());
-			
+        int runDateInt = Integer.parseInt(this.runDate.replace("-", ""));
+        ServiceAR result = new ServiceAR(runDateInt, this.repMgr.id, service, endpointGroup, tIntegrator.getAvailability(), tIntegrator.getReliability(), tIntegrator.getUp_f(), tIntegrator.getUnknown_f(), tIntegrator.getDown_f());
         // Output MonTimeline object
         out.collect(result);
 

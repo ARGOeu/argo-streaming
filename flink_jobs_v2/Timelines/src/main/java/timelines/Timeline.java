@@ -89,7 +89,6 @@ public class Timeline {
         this.date = tmp_date.toLocalDate();
         this.samples = new TreeMap<DateTime, Integer>();
         this.samples.put(tmp_date, state);
- 
     }
 
     public int get(String timestamp) {
@@ -514,9 +513,6 @@ public class Timeline {
         this.bulkInsert(result.getSamples());
     }
 
-
-
-
     public void createDownTimeline(ArrayList<String> downPeriod, int defaultDownStatus, DateTime runDateDt) throws ParseException {
         DateTime endDay = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", runDateDt.toDate(), 23, 59, 59);
 
@@ -535,6 +531,5 @@ public class Timeline {
             downTimeline = new Timeline();
             downTimeline.insertDateTimeStamps(downSample, true);
         }
-
     }
 }

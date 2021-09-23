@@ -27,7 +27,6 @@ import profilesmanager.RecomputationsManager;
 import profilesmanager.ReportManager;
 import profilesmanager.ThresholdManager;
 
-
 /**
  * Accepts a metric data entry and converts it to a status metric object by appending endpoint group information
  * Filters out entries that do not appear in topology and metric profiles
@@ -173,8 +172,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 				}
 				String info  = this.egpMgr.getInfo(groupname, egroupType, md.getHostname(), md.getService());
 
-				StatusMetric sm = new StatusMetric(groupname,md.getService(),md.getHostname(),md.getMetric(), status,md.getTimestamp(),dateInt,timeInt,md.getSummary(),md.getMessage(),"","",actualData, ogStatus, ruleApplied,info);
-				
+				StatusMetric sm = new StatusMetric(groupname,"",md.getService(),md.getHostname(),md.getMetric(), status,md.getTimestamp(),dateInt,timeInt,md.getSummary(),md.getMessage(),"","",actualData, ogStatus, ruleApplied,info);
 				out.collect(sm);
 			}
 				

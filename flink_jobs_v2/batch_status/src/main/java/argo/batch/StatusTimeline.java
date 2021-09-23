@@ -15,26 +15,26 @@ import java.util.ArrayList;
 public class StatusTimeline implements Serializable {
 
     private String group;
+    private String function;
     private String service;
     private String hostname;
     private String metric;
-    private ArrayList<StatusMetric> statusMetrics;
     ArrayList<TimeStatus> timestamps;
 
     public StatusTimeline() {
         group = "";
+        function = "";
         service = "";
         hostname = "";
-        statusMetrics = new ArrayList<>();
-        timestamps = new ArrayList<>();
+         timestamps = new ArrayList<>();
     }
 
-    public StatusTimeline(String group, String service, String hostname, String metric, ArrayList<StatusMetric> statusMetrics, ArrayList<TimeStatus> timestamps) {
+    public StatusTimeline(String group, String function, String service, String hostname, String metric, ArrayList<TimeStatus> timestamps) {
         this.group = group;
+        this.function = function;
         this.service = service;
         this.hostname = hostname;
         this.metric = metric;
-        this.statusMetrics = statusMetrics;
         this.timestamps = timestamps;
     }
 
@@ -44,6 +44,14 @@ public class StatusTimeline implements Serializable {
 
     public void setGroup(String group) {
         this.group = group;
+    }
+
+    public String getFunction() {
+        return function;
+    }
+
+    public void setFunction(String function) {
+        this.function = function;
     }
 
     public String getService() {
@@ -70,13 +78,7 @@ public class StatusTimeline implements Serializable {
         this.metric = metric;
     }
 
-    public ArrayList<StatusMetric> getStatusMetrics() {
-        return statusMetrics;
-    }
 
-    public void setStatusMetrics(ArrayList<StatusMetric> statusMetrics) {
-        this.statusMetrics = statusMetrics;
-    }
 
     public ArrayList<TimeStatus> getTimestamps() {
         return timestamps;
@@ -90,9 +92,6 @@ public class StatusTimeline implements Serializable {
     public String toString() {
 
         String resultsStatusMetrics = "+";
-        for (StatusMetric st : statusMetrics) {
-            resultsStatusMetrics += st.toString();
-        }
         String resultsTimeStatus = "+";
         for (TimeStatus st : timestamps) {
             resultsTimeStatus += st.toString();

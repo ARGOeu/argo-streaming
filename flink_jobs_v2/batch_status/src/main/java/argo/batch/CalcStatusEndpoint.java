@@ -2,13 +2,11 @@ package argo.batch;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map.Entry;
 
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,25 +67,26 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
     @Override
     public void flatMap(StatusTimeline in, Collector<StatusMetric> out) throws Exception {
         String service = "";
+        String function = "";
         String endpointGroup = "";
         String hostname = "";
         String info = "";
         int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
-
+        function = "";
         service = in.getService();
         endpointGroup = in.getGroup();
         hostname = in.getHostname();
-        ArrayList<TimeStatus>  timestamps = in.getTimestamps();
-                
-                
+        ArrayList<TimeStatus> timestamps = in.getTimestamps();
+
         for (TimeStatus item : timestamps) {
             StatusMetric cur = new StatusMetric();
             cur.setDateInt(dateInt);
             cur.setGroup(endpointGroup);
             cur.setHostname(hostname);
             cur.setService(service);
+            cur.setFunction(function);
             cur.setInfo(info);
-            cur.setTimestamp(Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'",new DateTime(item.getTimestamp())));
+            cur.setTimestamp(Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp())));
             cur.setStatus(opsMgr.getStrStatus(item.getStatus()));
             out.collect(cur);
         }
