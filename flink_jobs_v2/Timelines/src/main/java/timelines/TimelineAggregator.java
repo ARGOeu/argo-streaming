@@ -12,11 +12,10 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 /**
-
-* TimelineAggregator class implements an aggregator which is able to receive a list of different timelines
-* and conclude into one timeline by aggregating all the timestamps and the statuses
+ * TimelineAggregator class implements an aggregator which is able to receive a
+ * list of different timelines and conclude into one timeline by aggregating all
+ * the timestamps and the statuses
  */
-
 public class TimelineAggregator {
 
     private Timeline output;
@@ -116,7 +115,6 @@ public class TimelineAggregator {
      * timeline contains the given status for the midnight (00:00:00) of the
      * timestamp
      */
-
     public void setFirst(String name, String timestamp, int status) {
         // Check if timeline exists, if not create it
         if (this.inputs.containsKey(name) == false) {

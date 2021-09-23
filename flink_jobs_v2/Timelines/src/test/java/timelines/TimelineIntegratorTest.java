@@ -148,7 +148,6 @@ public class TimelineIntegratorTest {
         map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 18, 0, 0).toString(dtf), 5);
         map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 22, 0, 0).toString(dtf), 0);
         return map;
-//
     }
  private TreeMap<DateTime, Integer> createTimestampList() throws ParseException {
         TreeMap<DateTime, Integer> map = new TreeMap<>();
@@ -160,7 +159,6 @@ public class TimelineIntegratorTest {
         map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 50, 4), 1);
         map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 21, 3, 5), 0);
         return map;
-//
     }
 
 }

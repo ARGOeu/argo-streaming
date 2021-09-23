@@ -16,7 +16,6 @@ regarding status duration and a/r results
  */
 
 public class TimelineIntegrator {
-
     public double availability=0;
     public double reliability=0;
 

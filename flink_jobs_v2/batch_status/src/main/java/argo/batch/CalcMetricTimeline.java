@@ -30,7 +30,6 @@ import utils.Utils;
  * the datastore schema for status endpoint collection
  */
 public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, StatusTimeline> {
-
     private static final long serialVersionUID = 1L;
 
     final ParameterTool params;
@@ -40,7 +39,6 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     }
 
     static Logger LOG = LoggerFactory.getLogger(CalcMetricTimeline.class);
-
     private List<MetricProfile> mps;
     private List<String> aps;
     private List<String> ops;

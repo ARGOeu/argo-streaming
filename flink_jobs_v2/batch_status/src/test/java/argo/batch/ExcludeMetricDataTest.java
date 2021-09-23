@@ -19,7 +19,6 @@ import org.junit.Test;
 
 
 import argo.avro.MetricData;
-
 public class ExcludeMetricDataTest {
 
 	@BeforeClass
