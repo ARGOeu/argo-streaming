@@ -122,7 +122,7 @@ public class TimelineUtils {
 
             }
         }
-        TimelineJson timelineJsonObject = new TimelineJson(inputTimelines, outputTimeline, operations.indexOf(operation),table,states);
+        TimelineJson timelineJsonObject = new TimelineJson(inputTimelines, outputTimeline, operations.indexOf(operation), table, states);
         return timelineJsonObject;
     }
 
@@ -182,6 +182,5 @@ public class TimelineUtils {
             this.states = states;
         }
     }
-        
 
 }

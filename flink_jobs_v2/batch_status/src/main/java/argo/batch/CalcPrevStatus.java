@@ -14,8 +14,6 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 
 import argo.avro.MetricProfile;
-import profilesmanager.EndpointGroupManager;
-import profilesmanager.GroupGroupManager;
 import profilesmanager.MetricProfileManager;
 
 public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusMetric> {
@@ -35,9 +33,7 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusM
 	private List<GroupEndpoint> egp;
 	private List<GroupGroup> ggp;
 	private MetricProfileManager mpsMgr;
-	private EndpointGroupManager egpMgr;
-	private GroupGroupManager ggpMgr;
-	private String runDate;
+		private String runDate;
 
 	@Override
 	public void open(Configuration parameters) {
@@ -45,19 +41,10 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusM
 		this.runDate = params.getRequired("run.date");
 		
 		this.mps = getRuntimeContext().getBroadcastVariable("mps");
-		this.egp = getRuntimeContext().getBroadcastVariable("egp");
-		this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
 		// Initialize metric profile manager
 		this.mpsMgr = new MetricProfileManager();
 		this.mpsMgr.loadFromList(mps);
 		// Initialize endpoint group manager
-		this.egpMgr = new EndpointGroupManager();
-		this.egpMgr.loadFromList(egp);
-
-		
-		// Initialize group group manager
-		this.ggpMgr = new GroupGroupManager();
-		this.ggpMgr.loadFromList(ggp);
 		
 	}
 
@@ -69,7 +56,8 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusM
 		boolean gotPrev = false;
 		for (StatusMetric item : in){
 			// If haven't captured yet previous timestamp
-			if (!gotPrev){
+                    
+                        if (!gotPrev){
 				if (item.getTimestamp().split("T")[0].compareToIgnoreCase(this.runDate) != 0) {
 					// set prevTimestamp to this
 					prevTimestamp = item.getTimestamp();
@@ -81,22 +69,17 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric,StatusM
 			
 			item.setPrevState(prevStatus);
 			item.setPrevTs(prevTimestamp);
-			
 			if (item.getTimestamp().split("T")[0].compareToIgnoreCase(this.runDate) == 0){
-				out.collect(item);
+                      	out.collect(item);
 			}
 			
 			
 			prevStatus = item.getStatus();
 			prevTimestamp = item.getTimestamp();
-			
-			
+                       
+                           }
 			
 		}
 		
-	}
-
 	
-
-
 }
