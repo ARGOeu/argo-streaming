@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.OperationsManager;
 import utils.Utils;
-
 import timelines.TimelineAggregator;
 
 /**
@@ -66,29 +65,28 @@ public class CalcStatusService extends RichFlatMapFunction<StatusTimeline, Statu
 
         this.getService = true;
     }
-
+    
     @Override
     public void flatMap(StatusTimeline in, Collector<StatusMetric> out) throws Exception {
         int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
-
+        
         String service = in.getService();
         String endpointGroup = in.getGroup();
         String function = in.getFunction();
         ArrayList<TimeStatus> timestamps = in.getTimestamps();
-
         for (TimeStatus item : timestamps) {
             StatusMetric cur = new StatusMetric();
             cur.setDateInt(dateInt);
             cur.setGroup(endpointGroup);
             cur.setFunction(function);
             cur.setService(service);
-
+            
             cur.setTimestamp(Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp())));
-
+            
             cur.setStatus(opsMgr.getStrStatus(item.getStatus()));
-
+            
             out.collect(cur);
         }
-
+        
     }
 }

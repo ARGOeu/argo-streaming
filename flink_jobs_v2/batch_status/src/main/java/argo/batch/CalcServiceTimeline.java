@@ -106,5 +106,4 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
         out.collect(statusMetricTimeline);
 
     }
-
 }

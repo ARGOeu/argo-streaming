@@ -100,7 +100,6 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
      * Reads the topology in endpoint group list and the metric profile and
      * produces a set of available service endpoint metrics that are expected to
      * be found (as tuple objects (endpoint_group,service,hostname,metric)
-     *
      */
     public void initExpected() {
         this.expected = new HashSet<Tuple4<String, String, String, String>>();

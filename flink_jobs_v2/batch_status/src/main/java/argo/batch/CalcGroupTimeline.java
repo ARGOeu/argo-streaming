@@ -67,14 +67,12 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
 
     @Override
     public void reduce(Iterable<StatusTimeline> in, Collector<StatusTimeline> out) throws Exception {
-
         String endpointGroup = "";
 
         HashMap<String, Timeline> timelinelist = new HashMap<>();
 
         for (StatusTimeline item : in) {
             endpointGroup = item.getGroup();
-       
                 ArrayList<TimeStatus> timestatusList = item.getTimestamps();
                 TreeMap<DateTime, Integer> samples = new TreeMap<>();
                 for (TimeStatus timestatus : timestatusList) {
@@ -102,7 +100,6 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
         }
 
         StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, "", "", "", "", timestatuCol);
-
         out.collect(statusMetricTimeline);
 
     }

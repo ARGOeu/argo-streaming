@@ -71,7 +71,6 @@ public class StatusMetric {
     public void setGroup(String group) {
         this.group = group;
     }
-
     public String getFunction() {
         return function;
     }
@@ -79,7 +78,6 @@ public class StatusMetric {
     public void setFunction(String function) {
         this.function = function;
     }
-
 
     public String getService() {
         return service;
