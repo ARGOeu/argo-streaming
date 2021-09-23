@@ -19,6 +19,7 @@ public class StatusMetric {
 	private String actualData;
 	private String ogStatus; // original status from moniting host
 	private String ruleApplied; // threshold rule applied - empty if not 
+	private String info; // extra endpoint information provided by the topology
 	
 	public StatusMetric(){
 		this.group = "";
@@ -36,10 +37,11 @@ public class StatusMetric {
 		this.actualData = "";
 		this.ogStatus = "";
 		this.ruleApplied = "";
+		this.info = "";
 	}
 	
 	public StatusMetric(String group, String service, String hostname, String metric, String status, String timestamp,
-			int dateInt, int timeInt, String summary, String message, String prevState, String prevTs, String actualData, String ogStatus, String ruleApplied) {
+			int dateInt, int timeInt, String summary, String message, String prevState, String prevTs, String actualData, String ogStatus, String ruleApplied, String info) {
 		
 		this.group = group;
 		this.service = service;
@@ -56,6 +58,7 @@ public class StatusMetric {
 		this.actualData = actualData;
 		this.ogStatus = ogStatus;
 		this.ruleApplied = ruleApplied;
+		this.info = info;
 	}
 
 	
@@ -158,10 +161,18 @@ public class StatusMetric {
 		this.ruleApplied = ruleApplied;
 	}
 	
+	public String getInfo() {
+		return this.info;
+	}
+	
+	public void setInfo(String info) {
+		this.info = info;
+	}
+	
 	@Override
 	public String toString() {
 		return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + "," + 
-				this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + ")";
+				this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + ")";
 	}
 	
 }

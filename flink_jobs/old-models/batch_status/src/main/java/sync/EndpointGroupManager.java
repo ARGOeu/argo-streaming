@@ -5,12 +5,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -21,7 +19,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import argo.avro.GroupEndpoint;
-import argo.avro.MetricProfile;
 
 public class EndpointGroupManager {
 
@@ -92,11 +89,41 @@ public class EndpointGroupManager {
 
 		return results;
 	}
+	
+	public String getInfo(String group, String type, String hostname, String service) {
+		String info = "";
+		boolean first = true;
+		HashMap<String, String> tags = this.getGroupTags(group, type, hostname, service);
+		
+		if (tags == null) return info;
+	
+		for (String tName : tags.keySet()) {
+			
+			if (tName.startsWith("info.")) {
+				
+				String infoName = tName.replaceFirst("info.", "");
+				
+				String value = tags.get(tName);
+				
+				if (!value.equalsIgnoreCase("")) {
+					
+					if (!first) {
+						info = info + ",";
+					} else {
+						first = false;
+					}
+					info = info + infoName+ ":" + value;
+					
+				}
+			}	
+		}
+		return info;
+	}
 
-	public HashMap<String, String> getGroupTags(String type, String hostname, String service) {
+	public HashMap<String, String> getGroupTags(String group, String type, String hostname, String service) {
 
 		for (EndpointItem item : fList) {
-			if (item.type.equals(type) && item.hostname.equals(hostname) && item.service.equals(service)) {
+			if (item.group.equals(group) && item.type.equals(type) && item.hostname.equals(hostname) && item.service.equals(service)) {
 				return item.tags;
 			}
 		}
