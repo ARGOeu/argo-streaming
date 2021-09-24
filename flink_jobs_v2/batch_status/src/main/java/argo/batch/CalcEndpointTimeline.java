@@ -14,13 +14,15 @@ import org.slf4j.LoggerFactory;
 
 import argo.avro.MetricProfile;
 import java.util.ArrayList;
-import java.util.Map.Entry;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TreeMap;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
 
 import timelines.Timeline;
+import timelines.TimelineAggregator;
 import utils.Utils;
 
 /**
@@ -29,17 +31,17 @@ import utils.Utils;
  * status results of a service endpoint Prepares the data in a form aligned with
  * the datastore schema for status endpoint collection
  */
-public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, StatusTimeline> {
+public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline, StatusTimeline> {
 
     private static final long serialVersionUID = 1L;
 
     final ParameterTool params;
 
-    public CalcMetricTimeline(ParameterTool params) {
+    public CalcEndpointTimeline(ParameterTool params) {
         this.params = params;
     }
 
-    static Logger LOG = LoggerFactory.getLogger(CalcMetricTimeline.class);
+    static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
 
     private List<MetricProfile> mps;
     private List<String> aps;
@@ -48,9 +50,11 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
+    private String operation;
 
     @Override
     public void open(Configuration parameters) throws IOException {
+
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
@@ -66,49 +70,54 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
+
+        this.runDate = params.getRequired("run.date");
+        this.operation = this.apsMgr.getMetricOpByProfile();
+
     }
 
     @Override
-    public void reduce(Iterable<StatusMetric> in, Collector<StatusTimeline> out) throws Exception {
-        int i = 0;
+    public void reduce(Iterable<StatusTimeline> in, Collector<StatusTimeline> out) throws Exception {
+
         String service = "";
         String endpointGroup = "";
         String hostname = "";
-        String metric = "";
+
         TreeMap<DateTime, Integer> timeStatusMap = new TreeMap<>();
         ArrayList<StatusMetric> statusMetrics = new ArrayList();
-        for (StatusMetric item : in) {
+        HashMap<String, Timeline> timelinelist = new HashMap<>();
+
+        for (StatusTimeline item : in) {
             service = item.getService();
             endpointGroup = item.getGroup();
             hostname = item.getHostname();
 
-            metric = item.getMetric();
-            String ts = item.getTimestamp();
-            String status = item.getStatus();
-            statusMetrics.add(item);
-             
-            if (i == 0) {
-                int st = this.opsMgr.getIntStatus(item.getPrevState());
-                timeStatusMap.put(Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", item.getPrevTs()), st);
-
+            statusMetrics = item.getStatusMetrics();
+            ArrayList<TimeStatus> timestatusList=item.getTimestamps();
+            TreeMap<DateTime, Integer> samples=new TreeMap<>();
+            for(TimeStatus timestatus: timestatusList){
+                
+                samples.put(new DateTime(timestatus.getTimestamp()),timestatus.getStatus());
             }
-            int st = this.opsMgr.getIntStatus(status);
-            timeStatusMap.put(Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", ts), st);
+            Timeline timeline =new Timeline();
+            timeline.insertDateTimeStamps(samples, true);
 
-            i++;
-
+            timelinelist.put(item.getMetric(), timeline);
         }
 
-        Timeline timeline = new Timeline();
-        timeline.insertDateTimeStamps(timeStatusMap, true);
-        timeline.replacePreviousDateStatus(Utils.convertStringtoDate("yyyy-MM-dd", this.runDate), new ArrayList<>(this.opsMgr.getStates().keySet()), true);//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
-        ArrayList<TimeStatus> timestatusList=new ArrayList<TimeStatus>();
-        for(Entry<DateTime,Integer> entry: timeline.getSamples()){
+        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist);
+        timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));
+
+        Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
+
+         ArrayList<TimeStatus> timestatuCol=new ArrayList();
+        for(Map.Entry<DateTime,Integer> entry: mergedTimeline.getSamples()){
             TimeStatus timestatus=new TimeStatus(entry.getKey().getMillis(),entry.getValue());
-            timestatusList.add(timestatus);
+            timestatuCol.add(timestatus);
         }
         
-        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, service, hostname, metric, statusMetrics, timestatusList);
+        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, service, hostname, "", statusMetrics, timestatuCol);
+
         out.collect(statusMetricTimeline);
 
     }

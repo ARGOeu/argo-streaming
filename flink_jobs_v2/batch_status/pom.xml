@@ -187,7 +187,6 @@ language governing permissions and limitations under the License. -->
             <version>1.0-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
-       
     </dependencies>
 
     <profiles>

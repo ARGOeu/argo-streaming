@@ -48,26 +48,27 @@ public class ApiResourceManager {
         this.requestManager = new RequestManager("", this.token);
         this.apiResponseParser = new ApiResponseParser(this.reportName, this.metricID, this.aggregationID, this.opsID, this.threshID);
     }
-    
-    public void setProxy(String proxy){
-    
+
+    public void setProxy(String proxy) {
+
         this.requestManager.setProxy(proxy);
     }
 
     public String getProxy() {
         return this.requestManager.getProxy();
     }
-    
-    public void setTimeoutSec(int timeOutSec){
-    
+
+    public void setTimeoutSec(int timeOutSec) {
+
         this.requestManager.setTimeoutSec(timeOutSec);
     }
-    public void setVerify(boolean verify){
+
+    public void setVerify(boolean verify) {
         this.requestManager.setVerify(verify);
     }
-    
-    public boolean isVerify(){
-       return  this.requestManager.isVerify();
+
+    public boolean isVerify() {
+        return this.requestManager.isVerify();
     }
 
     public EnumMap<ApiResource, String> getData() {
@@ -447,7 +448,7 @@ public class ApiResourceManager {
         // get downtimes
         this.getRemoteDowntimes();
         // get recomptations
-     //  this.getRemoteRecomputations();
+        this.getRemoteRecomputations();
 
     }
 
