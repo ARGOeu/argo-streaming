@@ -106,7 +106,7 @@ public class TimelineTest {
     @Test
     public void testInsert_DateTime_int() throws ParseException {
         System.out.println("insert");
-        DateTime timestamp =Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 31, 1);
+        DateTime timestamp = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 31, 1);
 
         int status = 0;
         Timeline instance = new Timeline();
@@ -298,6 +298,7 @@ public class TimelineTest {
         // TODO review the generated test code and remove the default call to fail.
         //  fail("The test case is a prototype.");
     }
+
     /**
      * Test of calcStatusChanges method, of class Timeline.
      */
@@ -334,6 +335,7 @@ public class TimelineTest {
         // TODO review the generated test code and remove the default call to fail.
         // fail("The test case is a prototype.");
     }
+
     /**
      * Test of opInt method, of class Timeline.
      */
@@ -496,20 +498,5 @@ public class TimelineTest {
         return map;
     }
 
-      /**
-     * Test of countStatusAppearances method, of class Timeline.
-     */
-    @Test
-    public void testCountStatusAppearances() throws ParseException {
-        System.out.println("countStatusAppearances");
-        int status = 0;
-        Timeline instance = new Timeline();
-        instance.insertDateTimeStamps(createTimestampList(), true);
-        int expResult =1;
-        int result[] = instance.countStatusAppearances(status);
-        assertEquals(expResult, result[0]);
-        // TODO review the generated test code and remove the default call to fail.
-       //fail("The test case is a prototype.");
-    }
-
+  
 }

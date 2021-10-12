@@ -23,7 +23,6 @@ import profilesmanager.OperationsManager;
 
 import timelines.Timeline;
 import timelines.TimelineAggregator;
-import utils.Utils;
 
 /**
  * Accepts a list o status metrics grouped by the fields: endpoint group,

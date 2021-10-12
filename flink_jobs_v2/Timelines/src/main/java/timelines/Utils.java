@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.TimeZone;
 import org.joda.time.DateTime;
+import org.joda.time.Minutes;
+import org.joda.time.Seconds;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -22,6 +24,7 @@ import org.joda.time.format.DateTimeFormatter;
 public class Utils {
 
     static Logger LOG = LoggerFactory.getLogger(Utils.class);
+
     public static String convertDateToString(String format, DateTime date) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -51,9 +54,8 @@ public class Utils {
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
-
-        return new DateTime( newCalendar.getTime());
-  }
+        return new DateTime(newCalendar.getTime());
+    }
 
     public static boolean isPreviousDate(String format, Date nowDate, Date firstDate) throws ParseException {
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -73,7 +75,6 @@ public class Utils {
         }
     }
 
-
        public static DateTime createDate(String format, int year, int month, int day, int hour, int min, int sec) throws ParseException {
 
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -88,10 +89,10 @@ public class Utils {
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
-        return  new DateTime(newCalendar.getTime());
+        return new DateTime(newCalendar.getTime());
     }
 
-       public static DateTime setTime(String format, DateTime dateStr, int hour, int min, int sec, int mill) throws ParseException {
+    public static DateTime setTime(String format, DateTime dateStr, int hour, int min, int sec, int mill) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         SimpleDateFormat sdf = new SimpleDateFormat(format);
@@ -103,7 +104,26 @@ public class Utils {
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, mill);
-        return new DateTime( newCalendar.getTime());
+        return new DateTime(newCalendar.getTime());
     }
 
+    public static int calcDayMinutes(DateTime startDay, DateTime endDay) throws ParseException {
+
+        startDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", startDay, 0, 0, 0, 0);
+        endDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", endDay, 23, 59, 59, 59);
+
+        Minutes minutes = Minutes.minutesBetween(startDay, endDay);
+        int minutesInt = minutes.getMinutes();
+        return minutesInt;
+    }
+
+    public static int calcDaySeconds(DateTime startDay, DateTime endDay) throws ParseException {
+
+        startDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", startDay, 0, 0, 0, 0);
+        endDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", endDay, 23, 59, 59, 59);
+
+        Seconds seconds = Seconds.secondsBetween(startDay, endDay);
+        int secondsInt = seconds.getSeconds()+1;
+        return secondsInt;
+    }
 }

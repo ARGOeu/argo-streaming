@@ -72,6 +72,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     public void reduce(Iterable<StatusMetric> in, Collector<StatusTimeline> out) throws Exception {
         int i = 0;
         String service = "";
+      
         String endpointGroup = "";
         String hostname = "";
         String metric = "";
