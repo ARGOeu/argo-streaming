@@ -1,10 +1,14 @@
 package argo.batch;
 
 import argo.amr.ApiResource;
+import org.slf4j.LoggerFactory;
+
+import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
 import argo.ar.CalcEndpointAR;
-import org.slf4j.LoggerFactory;
+import argo.ar.CalcServiceAR;
 import argo.ar.EndpointAR;
+import argo.ar.ServiceAR;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
@@ -195,17 +199,25 @@ public class ArgoStatusBatch {
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");
 
+        DataSet<ServiceAR> serviceArDS = statusServiceTimeline.flatMap(new CalcServiceAR(params)).withBroadcastSet(mpsDS, "mps")
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
+                withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
+
+
 //        // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
         MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
         MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
         MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI, "status_services", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
         MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
+        MongoServiceArOutput serviceARMongoOut = new MongoServiceArOutput(dbURI, "service_ar", dbMethod);
+
         // Store datasets to the designated outputs prepared above
         stDetailDS.output(metricMongoOut);
         stEndpointDS.output(endpointMongoOut);
         stServiceDS.output(serviceMongoOut);
         endpointArDS.output(endpointARMongoOut);
-
+        serviceArDS.output(serviceARMongoOut);
+        
         String runDate = params.getRequired("run.date");
 
         // Create a job title message to discern job in flink dashboard/cli

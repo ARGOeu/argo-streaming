@@ -106,11 +106,7 @@ public class Utils {
         newCalendar.set(Calendar.MILLISECOND, mill);
         return new DateTime(newCalendar.getTime());
     }
-
     public static int calcDayMinutes(DateTime startDay, DateTime endDay) throws ParseException {
-
-        startDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", startDay, 0, 0, 0, 0);
-        endDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", endDay, 23, 59, 59, 59);
 
         Minutes minutes = Minutes.minutesBetween(startDay, endDay);
         int minutesInt = minutes.getMinutes();

@@ -2,11 +2,13 @@ package argo.batch;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

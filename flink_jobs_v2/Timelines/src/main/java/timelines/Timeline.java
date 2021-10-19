@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Timeline {
 
+
     private LocalDate date;
 
     static Logger LOG = LoggerFactory.getLogger(Timeline.class);
@@ -62,6 +63,7 @@ public class Timeline {
      * would define the date of the timeline *
      *
      */
+
     public Timeline(String timestamp) {
         DateTime tmp_date = new DateTime();
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -90,11 +92,6 @@ public class Timeline {
  
     }
 
-    /**
-     *
-     * @param timestamp a timestamp
-     * @return the state for the input timestamp as is stored in the map
-     */
     public int get(String timestamp) {
         DateTime tmp_date = new DateTime();
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -102,19 +99,13 @@ public class Timeline {
         if (this.samples.floorEntry(tmp_date) == null) {
             return -1;
         }
-
         return this.samples.floorEntry(tmp_date).getValue();
     }
 
-    /**
-     *
-     * @param point a timestamp , passed as datetime
-     * @return the state for the input timestamp as is stored in the map
-     */
     public int get(DateTime point) {
         if (this.samples.floorEntry(point) == null) {
             return -1;
-            //throw new NullPointerException("no item found in timeline, size of timeline:" + this.samples.size() + "," + point.toString());
+            //throw new RuntimeException("no item found in timeline, size of timeline:" + this.samples.size() + "," + point.toString());
         }
         return this.samples.floorEntry(point).getValue();
     }
@@ -144,26 +135,19 @@ public class Timeline {
      */
     public void insert(DateTime timestamp, int status) {
         samples.put(timestamp, status);
-
     }
 
-    /**
-     *
-     * @param timestamps a map of timestamp, status to be stored in the timeline
-     */
     public void insertStringTimeStamps(TreeMap<String, Integer> timestamps, boolean optimize) {
         for (String dt : timestamps.keySet()) {
             int status = timestamps.get(dt);
             this.insert(dt, status);
-
         }
         if (optimize) {
             this.optimize();
         }
     }
 
-    /**
-     *
+    /*
      * @param timestamps a map of timestamp, status to be stored in the
      * timeline. the timestamps are in the form of datetime
      */
@@ -175,7 +159,6 @@ public class Timeline {
         if (optimize) {
             this.optimize();
         }
-
     }
 
     /**
@@ -350,11 +333,9 @@ public class Timeline {
         for (String[] timestamp : timestampList) {
 
             String time = timestamp[0];
-
             timestampMap.put(time, states.indexOf(timestamp[1]));
         }
         return timestampMap;
-
     }
 
     /**
@@ -378,7 +359,8 @@ public class Timeline {
             DateTime tmp_date = new DateTime();
             DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
             tmp_date = fmt.parseDateTime(timestamp[0]);
-            timestampMap.put(tmp_date, states.indexOf(timestamp[1]));
+            int status = states.indexOf(timestamp[1]);
+            timestampMap.put(tmp_date, status);
         }
         return timestampMap;
 
@@ -446,7 +428,6 @@ public class Timeline {
         int hash = 7;
         hash = 83 * hash + Objects.hashCode(this.date);
         hash = 83 * hash + Objects.hashCode(this.samples);
-        
         return hash;
     }
 
@@ -471,16 +452,6 @@ public class Timeline {
         return true;
     }
 
-    /**
-     *
-     * @param truthTable the truth table of the combination of various statuses
-     * with each other
-     * @param op , the operation
-     * @param a, the status a
-     * @param b, the status b
-     * @return , the result of the combination as defined from the truth table
-     * of the defined operation
-     */
     public int opInt(int[][][] truthTable, int op, int a, int b) {
         int result = -1;
         try {
@@ -492,7 +463,6 @@ public class Timeline {
 
         return result;
     }
-
 
     /**
      * aggregates a timeline with a timeline of downtime statuses, defined from

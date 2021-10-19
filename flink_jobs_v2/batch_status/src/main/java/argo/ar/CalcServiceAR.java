@@ -1,7 +1,6 @@
 package argo.ar;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -16,9 +15,11 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 
 import argo.avro.MetricProfile;
+
 import argo.batch.StatusTimeline;
 import argo.batch.TimeStatus;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
@@ -38,13 +39,13 @@ import utils.Utils;
  * Accepts a list of monitoring timelines and produces an endpoint timeline The
  * class is used as a RichGroupReduce Function in flink pipeline
  */
-public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, EndpointAR> {
+public class CalcServiceAR extends RichFlatMapFunction<StatusTimeline, ServiceAR> {
 
     private static final long serialVersionUID = 1L;
 
     final ParameterTool params;
 
-    public CalcEndpointAR(ParameterTool params) {
+    public CalcServiceAR(ParameterTool params) {
         this.params = params;
     }
 
@@ -110,7 +111,7 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
         this.repMgr.loadJsonString(conf);
 
         this.runDate = params.getRequired("run.date");
-
+                
     }
 
     /**
@@ -129,35 +130,15 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
      * endpoint timelines.
      */
     @Override
-    public void flatMap(StatusTimeline in, Collector<EndpointAR> out) throws Exception {
+    public void flatMap(StatusTimeline in, Collector<ServiceAR> out) throws Exception {
         DateTime runDateDt = Utils.convertStringtoDate("yyyy-MM-dd", this.runDate);
         // Initialize field values and aggregator
         String service = "";
         String endpointGroup = "";
-        String hostname = "";
         service = in.getService();
-        hostname = in.getHostname();
         endpointGroup = in.getGroup();
-
-        ArrayList<TimeStatus> timestatusList = in.getTimestamps();
-        TreeMap<DateTime, Integer> timestampMap = new TreeMap();
-        for (TimeStatus ts : timestatusList) {
-            timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
-        }
-
-        Timeline timeline = new Timeline();
-        timeline.insertDateTimeStamps(timestampMap, true);
-        HashMap<String, Timeline> timelineMap = new HashMap<>();
-        timelineMap.put("timeline", timeline);
-
-        ArrayList<String> downPeriod = this.downtimeMgr.getPeriod(hostname, service);
-        Timeline downTimeline = new Timeline();
-        downTimeline.createDownTimeline(downPeriod, this.opsMgr.getDefaultDownInt(), runDateDt);
-        timelineMap.put("down", downTimeline);
-        timeline.aggregateDownTime(downTimeline, this.opsMgr.getDefaultDownInt());
-        TimelineIntegrator tIntegrator = new TimelineIntegrator();
-
-        tIntegrator.calcAR(timeline.getSamples(), runDateDt, this.opsMgr.getIntStatus("OK"), this.opsMgr.getIntStatus("WARNING"), this.opsMgr.getDefaultUnknownInt(), this.opsMgr.getDefaultDownInt(), this.opsMgr.getDefaultMissingInt());
+    
+       
 //        // Availability = UP period / KNOWN period = UP period / (Total period –
 //		// UNKNOWN period)
 //		this.availability = round(((up / dt) / (1.0 - (unknown / dt))) * 100, 5, BigDecimal.ROUND_HALF_UP);
@@ -169,14 +150,30 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
 //		this.up_f = round(up / dt, 5, BigDecimal.ROUND_HALF_UP);
 //		this.unknown_f = round(unknown / dt, 5, BigDecimal.ROUND_HALF_UP);
 //		this.down_f = round(down / dt, 5, BigDecimal.ROUND_HALF_UP);
-        String groupType = this.repMgr.egroup;
-        int runDateInt = Integer.parseInt(this.runDate.replace("-", ""));
-        String info = this.egpMgr.getInfo(endpointGroup, groupType, hostname, service);
+      
+     ArrayList<TimeStatus> timestatusList = in.getTimestamps();
+   
+  TreeMap<DateTime, Integer> timestampMap = new TreeMap();
+        for (TimeStatus ts : timestatusList) {
+            timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
+        }
 
-        EndpointAR result = new EndpointAR(runDateInt, this.repMgr.id, hostname, service, endpointGroup, tIntegrator.getAvailability(), tIntegrator.getReliability(), tIntegrator.getUp_f(), tIntegrator.getUnknown_f(), tIntegrator.getDown_f(), info);
+        Timeline timeline = new Timeline();
+        timeline.insertDateTimeStamps(timestampMap, true);
+        HashMap<String, Timeline> timelineMap = new HashMap<>();
+        timelineMap.put("timeline", timeline);
 
+        TimelineIntegrator tIntegrator = new TimelineIntegrator();
+
+        tIntegrator.calcAR(timeline.getSamples(), runDateDt, this.opsMgr.getIntStatus("OK"), this.opsMgr.getIntStatus("WARNING"), this.opsMgr.getDefaultUnknownInt(), this.opsMgr.getDefaultDownInt(), this.opsMgr.getDefaultMissingInt());
+
+
+   int runDateInt = Integer.parseInt(this.runDate.replace("-", ""));
+	  ServiceAR result = new ServiceAR(runDateInt, this.repMgr.id,  service, endpointGroup, tIntegrator.getAvailability(), tIntegrator.getReliability(), tIntegrator.getUp_f(), tIntegrator.getUnknown_f(), tIntegrator.getDown_f());
+			
         // Output MonTimeline object
         out.collect(result);
+
     }
 
     public static double round(double input, int prec, int mode) {

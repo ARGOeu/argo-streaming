@@ -4,20 +4,16 @@
  * and open the template in the editor.
  */
 package utils;
-
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.TimeZone;
 import org.joda.time.DateTime;
+import org.joda.time.Minutes;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -31,14 +27,11 @@ public class Utils {
         DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
         String dateString = date.toString(dtf);
         return dateString;
-        
     }
 
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
         DateTimeFormatter formatter = DateTimeFormat.forPattern(format);
         DateTime dt = formatter.parseDateTime(dateStr);
-        
-        
         return dt;
     }
 
@@ -54,7 +47,7 @@ public class Utils {
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
-        return new DateTime( newCalendar.getTime());
+        return new DateTime(newCalendar.getTime());
     }
 
     public static boolean isPreviousDate(String format, Date nowDate, Date firstDate) throws ParseException {
@@ -103,10 +96,9 @@ public class Utils {
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
 
-        return  new DateTime(newCalendar.getTime());
+        return new DateTime(newCalendar.getTime());
     }
 
-   
     public static DateTime setTime(String format, DateTime dateStr, int hour, int min, int sec, int mill) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -119,7 +111,17 @@ public class Utils {
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, mill);
-        return new DateTime( newCalendar.getTime());
+        return new DateTime(newCalendar.getTime());
+    }
+
+    public static int calcDayMinutes(DateTime startDay, DateTime endDay) throws ParseException {
+
+        startDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", startDay, 0, 0, 0, 0);
+        endDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", endDay, 23, 59, 59, 59);
+
+        Minutes minutes = Minutes.minutesBetween(startDay, endDay);
+        int minutesInt = minutes.getMinutes();
+        return minutesInt;
     }
 
 }

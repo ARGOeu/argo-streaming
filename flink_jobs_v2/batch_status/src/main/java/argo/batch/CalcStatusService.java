@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
-
-
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
@@ -14,9 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.OperationsManager;
+import utils.Utils;
 
 import timelines.TimelineAggregator;
-import utils.Utils;
 
 /**
  * Accepts a list o status metrics grouped by the fields: endpoint group,
