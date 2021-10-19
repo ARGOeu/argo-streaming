@@ -184,14 +184,27 @@ public class ArgoStatusBatch {
         //Calculate endpoint timeline timestamps 
       
          
+          DataSet<StatusTimeline> statusServiceTimeline = statusEndpointTimeline.groupBy("group", "service")
+                .reduceGroup(new CalcServiceTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(apsDS, "aps");
+         
+
+        // Create status service data set
+        DataSet<StatusMetric> stServiceDS = statusServiceTimeline.flatMap(new CalcStatusService(params)).withBroadcastSet(mpsDS, "mps")
+                .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp").withBroadcastSet(opsDS, "ops")
+                .withBroadcastSet(apsDS, "aps");
+
 //        // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
         MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
         MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
-         MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
+        MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI, "status_services", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
+        MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
         // Store datasets to the designated outputs prepared above
         stDetailDS.output(metricMongoOut);
         stEndpointDS.output(endpointMongoOut);
-         endpointArDS.output(endpointARMongoOut);
+        stServiceDS.output(serviceMongoOut);
+        endpointArDS.output(endpointARMongoOut);
 
         String runDate = params.getRequired("run.date");
 

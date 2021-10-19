@@ -119,7 +119,6 @@ public class GroupGroupManager implements Serializable {
      *
      * @return
      */
-
     public int count() {
         return this.fList.size();
     }
@@ -142,8 +141,8 @@ public class GroupGroupManager implements Serializable {
     }
 
     /**
-     * Clear the filtered fList and initialize with all the GroupItems the
-     * list includes
+     * Clear the filtered fList and initialize with all the GroupItems the list
+     * includes
      */
     public void unfilter() {
         this.fList.clear();
@@ -274,7 +273,8 @@ public class GroupGroupManager implements Serializable {
      */
     @SuppressWarnings("unchecked")
     public void loadFromList(List<GroupGroup> ggp) {
-
+        this.list.clear();
+        this.fList.clear();
         // For each group of groups record
         for (GroupGroup item : ggp) {
             String type = item.getType();

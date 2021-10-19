@@ -4,8 +4,6 @@
  * and open the template in the editor.
  */
 package timelines;
-
-import timelines.TimelineUtils;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
