@@ -11,14 +11,11 @@ import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import argo.avro.MetricProfile;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import profilesmanager.AggregationProfileManager;
-import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
 
 import timelines.Timeline;
@@ -65,7 +62,7 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
         this.opsMgr.loadJsonString(ops);
 
         this.runDate = params.getRequired("run.date");
-         this.serviceFunctionsMap = this.apsMgr.retrieveServiceOperations();
+        this.serviceFunctionsMap = this.apsMgr.retrieveServiceOperations();
     }
 
     @Override
@@ -73,16 +70,13 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
 
         String service = "";
         String endpointGroup = "";
-        String hostname = "";
-
-        ArrayList<StatusMetric> statusMetrics = new ArrayList();
+        String function = "";
         HashMap<String, Timeline> timelinelist = new HashMap<>();
 
         for (StatusTimeline item : in) {
             service = item.getService();
             endpointGroup = item.getGroup();
-
-            statusMetrics = item.getStatusMetrics();
+            function = item.getFunction();
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
             for (TimeStatus timestatus : timestatusList) {
@@ -94,9 +88,8 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
 
             timelinelist.put(item.getHostname(), timeline);
         }
-
         String operation = serviceFunctionsMap.get(service);
-  
+
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist);
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));
 
@@ -107,15 +100,11 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
             TimeStatus timestatus = new TimeStatus(entry.getKey().getMillis(), entry.getValue());
             timestatuCol.add(timestatus);
         }
-        
-     
-        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, service, "", "", statusMetrics, timestatuCol);
+
+        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, "", "", timestatuCol);
 
         out.collect(statusMetricTimeline);
 
-      
-    
-
-}
+    }
 
 }

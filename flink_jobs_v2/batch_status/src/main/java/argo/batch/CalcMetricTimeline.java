@@ -30,6 +30,7 @@ import utils.Utils;
  * the datastore schema for status endpoint collection
  */
 public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, StatusTimeline> {
+
     private static final long serialVersionUID = 1L;
 
     final ParameterTool params;
@@ -46,6 +47,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
+
     @Override
     public void open(Configuration parameters) throws IOException {
         this.runDate = params.getRequired("run.date");
@@ -69,21 +71,19 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     public void reduce(Iterable<StatusMetric> in, Collector<StatusTimeline> out) throws Exception {
         int i = 0;
         String service = "";
-      
+        String function = "";
         String endpointGroup = "";
         String hostname = "";
         String metric = "";
         TreeMap<DateTime, Integer> timeStatusMap = new TreeMap<>();
-        ArrayList<StatusMetric> statusMetrics = new ArrayList();
         for (StatusMetric item : in) {
             service = item.getService();
             endpointGroup = item.getGroup();
             hostname = item.getHostname();
-
+            function = item.getFunction();
             metric = item.getMetric();
             String ts = item.getTimestamp();
             String status = item.getStatus();
-            statusMetrics.add(item);
             if (i == 0) {
                 int st = this.opsMgr.getIntStatus(item.getPrevState());
                 timeStatusMap.put(Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", item.getPrevTs()), st);
@@ -99,13 +99,13 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timeStatusMap, true);
         timeline.replacePreviousDateStatus(Utils.convertStringtoDate("yyyy-MM-dd", this.runDate), new ArrayList<>(this.opsMgr.getStates().keySet()), true);//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
-        ArrayList<TimeStatus> timestatusList=new ArrayList<TimeStatus>();
-        for(Entry<DateTime,Integer> entry: timeline.getSamples()){
-            TimeStatus timestatus=new TimeStatus(entry.getKey().getMillis(),entry.getValue());
+        ArrayList<TimeStatus> timestatusList = new ArrayList<TimeStatus>();
+        for (Entry<DateTime, Integer> entry : timeline.getSamples()) {
+            TimeStatus timestatus = new TimeStatus(entry.getKey().getMillis(), entry.getValue());
             timestatusList.add(timestatus);
         }
-        
-        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, service, hostname, metric, statusMetrics, timestatusList);
+
+        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList);
         out.collect(statusMetricTimeline);
 
     }

@@ -1,6 +1,4 @@
 package argo.batch;
-
-import argo.amr.ApiResource;
 import org.slf4j.LoggerFactory;
 
 import argo.amr.ApiResource;
@@ -154,23 +152,24 @@ public class ArgoStatusBatch {
         // data
         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
 
+        mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
+
         // Create status detail data set
-        DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
+        DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group",  "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps");
-        
-         //Create StatusMetricTimeline dataset for endpoints
-        DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname","metric") .sortGroup("timestamp", Order.ASCENDING)
+
+        //Create StatusMetricTimeline dataset for endpoints
+        DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group",  "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");
-        
-         String dbURI = params.getRequired("mongo.uri");
+        String dbURI = params.getRequired("mongo.uri");
         String dbMethod = params.getRequired("mongo.method");
 
       
    
         //Create StatusMetricTimeline dataset for endpoints
-        DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
+        DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group",  "service", "hostname")
                 .reduceGroup(new CalcEndpointTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
@@ -180,19 +179,16 @@ public class ArgoStatusBatch {
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
 
-    
         //Calculate endpoint a/r 
         DataSet<EndpointAR> endpointArDS = statusEndpointTimeline.flatMap(new CalcEndpointAR(params)).withBroadcastSet(mpsDS, "mps")
                 .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                 withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
         //Calculate endpoint timeline timestamps 
-      
-         
-          DataSet<StatusTimeline> statusServiceTimeline = statusEndpointTimeline.groupBy("group", "service")
+
+        DataSet<StatusTimeline> statusServiceTimeline = statusEndpointTimeline.groupBy("group",  "service")
                 .reduceGroup(new CalcServiceTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
-         
 
         // Create status service data set
         DataSet<StatusMetric> stServiceDS = statusServiceTimeline.flatMap(new CalcStatusService(params)).withBroadcastSet(mpsDS, "mps")
@@ -203,21 +199,37 @@ public class ArgoStatusBatch {
                 .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                 withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
 
+        DataSet<StatusTimeline> statusEndGroupFunctionTimeline = statusServiceTimeline.groupBy("group", "function")
+                .reduceGroup(new CalcGroupFunctionTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(apsDS, "aps");
+
+        DataSet<StatusTimeline> statusGroupTimeline = statusEndGroupFunctionTimeline.groupBy("group")
+                .reduceGroup(new CalcGroupTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(apsDS, "aps");
+
+        // Create status endpoint group data set
+        DataSet<StatusMetric> stEndGroupDS = statusGroupTimeline.flatMap(new CalcStatusEndGroup(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
 
 //        // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
         MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
         MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
         MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI, "status_services", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
-        MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
+        MongoStatusOutput endGroupMongoOut = new MongoStatusOutput(dbURI, "status_endpoint_groups", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT_GROUP, reportID);
         MongoServiceArOutput serviceARMongoOut = new MongoServiceArOutput(dbURI, "service_ar", dbMethod);
+
+        MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
 
         // Store datasets to the designated outputs prepared above
         stDetailDS.output(metricMongoOut);
         stEndpointDS.output(endpointMongoOut);
         stServiceDS.output(serviceMongoOut);
         endpointArDS.output(endpointARMongoOut);
+        stEndGroupDS.output(endGroupMongoOut);
         serviceArDS.output(serviceARMongoOut);
-        
         String runDate = params.getRequired("run.date");
 
         // Create a job title message to discern job in flink dashboard/cli

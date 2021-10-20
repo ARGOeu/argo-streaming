@@ -75,7 +75,7 @@ public class Utils {
         }
     }
 
-       public static DateTime createDate(String format, int year, int month, int day, int hour, int min, int sec) throws ParseException {
+    public static DateTime createDate(String format, int year, int month, int day, int hour, int min, int sec) throws ParseException {
 
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         SimpleDateFormat sdf = new SimpleDateFormat(format);
@@ -106,8 +106,8 @@ public class Utils {
         newCalendar.set(Calendar.MILLISECOND, mill);
         return new DateTime(newCalendar.getTime());
     }
-    public static int calcDayMinutes(DateTime startDay, DateTime endDay) throws ParseException {
 
+    public static int calcDayMinutes(DateTime startDay, DateTime endDay) throws ParseException {
         Minutes minutes = Minutes.minutesBetween(startDay, endDay);
         int minutesInt = minutes.getMinutes();
         return minutesInt;
@@ -119,7 +119,7 @@ public class Utils {
         endDay = Utils.setTime("yyyy-MM-dd'T'HH:mm:ss'Z'", endDay, 23, 59, 59, 59);
 
         Seconds seconds = Seconds.secondsBetween(startDay, endDay);
-        int secondsInt = seconds.getSeconds()+1;
+        int secondsInt = seconds.getSeconds() + 1;
         return secondsInt;
     }
 }

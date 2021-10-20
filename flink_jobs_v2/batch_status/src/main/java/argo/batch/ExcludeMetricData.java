@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import argo.avro.MetricData;
 import profilesmanager.RecomputationsManager;
-
 /**
  * Receives MetricData and filters them by excluding monitoring engine based on recomputation information
  * retrieved by broadcast variable "rec" and handled by an internal recomputation manager 

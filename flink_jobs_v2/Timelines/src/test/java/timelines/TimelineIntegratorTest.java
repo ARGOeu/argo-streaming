@@ -160,5 +160,4 @@ public class TimelineIntegratorTest {
         map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 21, 3, 5), 0);
         return map;
     }
-
 }
