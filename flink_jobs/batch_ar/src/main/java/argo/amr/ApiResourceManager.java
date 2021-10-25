@@ -73,7 +73,7 @@ public class ApiResourceManager {
 		this.proxy = "";
 		this.weightsID = "";
 		this.verify = true;
-		this.timeoutSec = 5;
+		this.timeoutSec = 30; // Timeout limit when contacting argo-web-api
 
 	}
 	
