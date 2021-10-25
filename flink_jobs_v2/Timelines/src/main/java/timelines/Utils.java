@@ -76,7 +76,6 @@ public class Utils {
     }
 
     public static DateTime createDate(String format, int year, int month, int day, int hour, int min, int sec) throws ParseException {
-
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         SimpleDateFormat sdf = new SimpleDateFormat(format);
         sdf.setTimeZone(TimeZone.getDefault());
@@ -106,8 +105,8 @@ public class Utils {
         newCalendar.set(Calendar.MILLISECOND, mill);
         return new DateTime(newCalendar.getTime());
     }
-
     public static int calcDayMinutes(DateTime startDay, DateTime endDay) throws ParseException {
+
         Minutes minutes = Minutes.minutesBetween(startDay, endDay);
         int minutesInt = minutes.getMinutes();
         return minutesInt;

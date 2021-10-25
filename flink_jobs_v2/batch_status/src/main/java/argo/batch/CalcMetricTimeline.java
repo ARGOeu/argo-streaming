@@ -30,7 +30,6 @@ import utils.Utils;
  * the datastore schema for status endpoint collection
  */
 public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, StatusTimeline> {
-
     private static final long serialVersionUID = 1L;
 
     final ParameterTool params;
@@ -47,7 +46,6 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
-
     @Override
     public void open(Configuration parameters) throws IOException {
         this.runDate = params.getRequired("run.date");

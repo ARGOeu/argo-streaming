@@ -44,7 +44,6 @@ public class Timeline {
 
 
     private LocalDate date;
-
     static Logger LOG = LoggerFactory.getLogger(Timeline.class);
 
     private TreeMap<DateTime, Integer> samples;

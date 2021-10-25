@@ -1,5 +1,4 @@
 package argo.batch;
-
 import java.io.IOException;
 import java.util.List;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
@@ -20,7 +19,6 @@ public class MapServices extends RichFlatMapFunction<StatusMetric, StatusMetric>
 
     private List<String> aps;
     private AggregationProfileManager apsMgr;
-
     @Override
     public void open(Configuration parameters) throws IOException {
 

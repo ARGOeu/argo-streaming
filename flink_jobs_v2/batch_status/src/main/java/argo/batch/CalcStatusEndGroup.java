@@ -84,10 +84,8 @@ public class CalcStatusEndGroup extends RichFlatMapFunction<StatusTimeline, Stat
             cur.setTimestamp(utils.Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp())));
 
             cur.setStatus(opsMgr.getStrStatus(item.getStatus()));
-
             out.collect(cur);
         }
 
     }
-
 }
