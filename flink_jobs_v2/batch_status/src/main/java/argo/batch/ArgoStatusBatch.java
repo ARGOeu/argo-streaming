@@ -16,12 +16,11 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import argo.trends.EndpointTrendsCounter;
 import flipflops.CalcEndpointFlipFlopTrends;
 import flipflops.CalcMetricFlipFlopTrends;
 import flipflops.EndpointTrends;
 import flipflops.MapEndpointTrends;
-
-import flipflops.CalcMetricFlipFlopTrends;
 import flipflops.MapMetricTrends;
 import flipflops.MetricTrends;
 import flipflops.MongoTrendsOutput;
@@ -288,7 +287,7 @@ public class ArgoStatusBatch {
         }
 
         if (calcAR) {
-         //Calculate endpoint a/r 
+            //Calculate endpoint a/r 
             DataSet<EndpointAR> endpointArDS = statusEndpointTimeline.flatMap(new CalcEndpointAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
@@ -341,6 +340,14 @@ public class ArgoStatusBatch {
         MongoTrendsOutput endppointFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_endpoints", MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportID, runDate, clearMongo);
         trends = noZeroserviceEndpointGroupData.map(new MapEndpointTrends());
         trends.output(endppointFlipFlopMongoOut);
+
+        //flatMap dataset to tuples and count the apperances of each status type to the timeline 
+        DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> endpointStatusTrendsData = serviceEndpointGroupData.flatMap(new EndpointTrendsCounter()).withBroadcastSet(opsDS, "ops");
+        //filter dataset for each status type and write to mongo db
+
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT, "status_trends_endpoints", endpointStatusTrendsData, "critical");
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT, "status_trends_endpoints", endpointStatusTrendsData, "warning");
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT, "status_trends_endpoints", endpointStatusTrendsData, "unknown");
 
         /**
          * **************************************************************************************************
