@@ -5,8 +5,6 @@ package flipflops;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-//import argo.pojos.Timeline;
-//import argo.functions.calctimelines.TimelineMerger;
 import argo.batch.StatusTimeline;
 import argo.batch.TimeStatus;
 import java.util.ArrayList;
@@ -45,7 +43,6 @@ public class CalcEndpointFlipFlopTrends implements FlatMapFunction<StatusTimelin
         //store the necessary info
         //collect all timelines in a list
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
-
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
         for (TimeStatus ts : timestatusList) {
             timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
