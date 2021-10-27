@@ -17,21 +17,30 @@ import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
 
+import flipflops.CalcMetricFlipFlopTrends;
+import flipflops.MapMetricTrends;
+import flipflops.MetricTrends;
+import flipflops.MongoTrendsOutput;
+import flipflops.StatusAndDurationFilter;
+import flipflops.Trends;
+import flipflops.ZeroMetricTrendsFilter;
+
 import org.slf4j.Logger;
 
 import java.util.List;
+import org.apache.flink.api.common.functions.MapFunction;
 
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.operators.DataSource;
+import org.apache.flink.api.java.tuple.Tuple7;
 
 import org.apache.flink.api.java.utils.ParameterTool;
 
 import org.apache.flink.core.fs.Path;
 import profilesmanager.ReportManager;
-
 /**
  * Implements an ARGO Status Batch Job in flink
  *
@@ -55,6 +64,11 @@ import profilesmanager.ReportManager;
 public class ArgoStatusBatch {
 
     static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
+    private static String dbURI;
+    private static String reportID;
+    private static Integer rankNum;
+    private static boolean clearMongo = false;
+    private static String runDate;
 
     public static void main(String[] args) throws Exception {
 
@@ -66,25 +80,6 @@ public class ArgoStatusBatch {
         // make parameters available in the web interface
         env.getConfig().setGlobalJobParameters(params);
         env.setParallelism(1);
-        String apiEndpoint = params.getRequired("api.endpoint");
-        String apiToken = params.getRequired("api.token");
-        String reportID = params.getRequired("report.id");
-
-        ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
-
-        // fetch
-        // set params
-        if (params.has("api.proxy")) {
-            amr.setProxy(params.get("api.proxy"));
-        }
-
-        if (params.has("api.timeout")) {
-            amr.setTimeoutSec(params.getInt("api.timeout"));
-        }
-
-        amr.setReportID(reportID);
-        amr.setDate(params.getRequired("run.date"));
-        amr.getRemoteAll();
 
         boolean calcStatus = true;
         if (params.has("calcStatus")) {
@@ -100,9 +95,49 @@ public class ArgoStatusBatch {
                 calcAR = false;
             }
         }
-        if (!calcStatus && !calcAR) {
+
+        boolean calcTrends = true;
+        if (params.has("calcTrends")) {
+            if (params.get("calcTrends").equals("OFF")) {
+                calcTrends = false;
+            }
+        }
+        boolean calcFlipFlops = true;
+        if (params.has("calcFlipFlops")) {
+            if (params.get("calcFlipFlops").equals("OFF")) {
+                calcFlipFlops = false;
+            }
+        }
+        if (!calcStatus && !calcAR && !calcTrends && !calcFlipFlops) {
             System.exit(0);
         }
+
+        if (params.get("N") != null) {
+            rankNum = params.getInt("N");
+        }
+        if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
+            clearMongo = true;
+        }
+        String apiEndpoint = params.getRequired("api.endpoint");
+        String apiToken = params.getRequired("api.token");
+        reportID = params.getRequired("report.id");
+
+        ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
+
+        // fetch
+        // set params
+        if (params.has("api.proxy")) {
+            amr.setProxy(params.get("api.proxy"));
+        }
+
+        if (params.has("api.timeout")) {
+            amr.setTimeoutSec(params.getInt("api.timeout"));
+        }
+        runDate = params.getRequired("run.date");
+
+        amr.setReportID(reportID);
+        amr.setDate(runDate);
+        amr.getRemoteAll();
 
         DataSource<String> cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
         DataSource<String> opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
@@ -112,9 +147,6 @@ public class ArgoStatusBatch {
             recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
         }
 
-        amr.setReportID(reportID);
-        amr.setDate(params.getRequired("run.date"));
-        amr.getRemoteAll();
         DataSource<String> confDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
 
         DataSet<Weight> weightDS = env.fromElements(new Weight());
@@ -187,7 +219,8 @@ public class ArgoStatusBatch {
         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
 
         mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
-        String dbURI = params.getRequired("mongo.uri");
+
+        dbURI = params.getRequired("mongo.uri");
         String dbMethod = params.getRequired("mongo.method");
 
         // Create status detail data set
@@ -251,6 +284,7 @@ public class ArgoStatusBatch {
 
         if (calcAR) {
 
+
             //Calculate endpoint a/r 
             DataSet<EndpointAR> endpointArDS = statusEndpointTimeline.flatMap(new CalcEndpointAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
@@ -260,8 +294,6 @@ public class ArgoStatusBatch {
             DataSet<ServiceAR> serviceArDS = statusServiceTimeline.flatMap(new CalcServiceAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
-
-///////////
             DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight");
@@ -273,8 +305,20 @@ public class ArgoStatusBatch {
             serviceArDS.output(serviceARMongoOut);
             endpointGroupArDS.output(endGroupARMongoOut);
         }
-        String runDate = params.getRequired("run.date");
+   
+            DataSet<MetricTrends> serviceEndpointMetricGroupData = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends()).withBroadcastSet(opsDS, "ops");
+            DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
+                if (rankNum != null) { //sort and rank data
+                    noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+                } else {
+                    noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
+                }
 
+                MongoTrendsOutput metricFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_metrics", MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportID, runDate, clearMongo);
+
+                DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapMetricTrends());
+                trends.output(metricFlipFlopMongoOut);
+      
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Status Batch job for tenant:");
@@ -286,6 +330,48 @@ public class ArgoStatusBatch {
 
         env.execute(jobTitleSB.toString());
 
+    }
+
+    private static void filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType mongoTrendsType, String uri, DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> data, String status) {
+
+        DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> filteredData = data.filter(new StatusAndDurationFilter(status)); //filter dataset by status type and status appearances>0
+
+        if (rankNum != null) {
+            filteredData = filteredData.sortPartition(6, Order.DESCENDING).setParallelism(1).first(rankNum);
+        } else {
+            filteredData = filteredData.sortPartition(6, Order.DESCENDING).setParallelism(1);
+        }
+        writeStatusTrends(filteredData, uri, mongoTrendsType, data, status); //write to mongo db
+
+    }
+
+    // write status trends to mongo db
+    private static void writeStatusTrends(DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> outputData, String uri, final MongoTrendsOutput.TrendsType mongoCase, DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> data, String status) {
+
+        //MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(dbURI, uri, mongoCase, reportID, runDate, clearMongo);
+
+        DataSet<Trends> trends = outputData.map(new MapFunction< Tuple7< String, String, String, String, String, Integer, Integer>, Trends>() {
+
+            @Override
+            public Trends map(Tuple7< String, String, String, String, String, Integer, Integer> in) throws Exception {
+                switch (mongoCase) {
+                    case TRENDS_STATUS_METRIC:
+                        return new Trends(in.f0, in.f1, in.f2, in.f3, in.f4, in.f5, in.f6);
+                    case TRENDS_STATUS_ENDPOINT:
+                        return new Trends(in.f0, in.f1, in.f2, null, in.f4, in.f5, in.f6);
+                    case TRENDS_STATUS_SERVICE:
+                        return new Trends(in.f0, in.f1, null, null, in.f4, in.f5, in.f6);
+                    case TRENDS_STATUS_GROUP:
+                        return new Trends(in.f0, null, null, null, in.f4, in.f5, in.f6);
+                    default:
+                        return null;
+                }
+            }
+        });
+        trends.output(metricMongoOut);
+
+        //   writeToMongo(collectionUri, filteredData);
     }
 
 }
