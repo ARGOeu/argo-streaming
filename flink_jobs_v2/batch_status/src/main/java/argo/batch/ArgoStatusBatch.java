@@ -20,10 +20,13 @@ import argo.flipflops.ServiceTrends;
 import argo.flipflops.ZeroServiceTrendsFilter;
 import argo.trends.EndpointTrendsCounter;
 import flipflops.CalcEndpointFlipFlopTrends;
+import flipflops.CalcGroupFlipFlopTrends;
 import flipflops.CalcMetricFlipFlopTrends;
 import flipflops.CalcServiceFlipFlopTrends;
 import flipflops.EndpointTrends;
+import flipflops.GroupTrends;
 import flipflops.MapEndpointTrends;
+import flipflops.MapGroupTrends;
 import flipflops.MapMetricTrends;
 import flipflops.MapServiceTrends;
 import flipflops.MetricTrends;
@@ -31,6 +34,7 @@ import flipflops.MongoTrendsOutput;
 import flipflops.StatusAndDurationFilter;
 import flipflops.Trends;
 import flipflops.ZeroEndpointTrendsFilter;
+import flipflops.ZeroGroupTrendsFilter;
 import flipflops.ZeroMetricTrendsFilter;
 
 import org.slf4j.Logger;
@@ -365,12 +369,11 @@ public class ArgoStatusBatch {
         } else {
             noZeroserviceGroupData = noZeroserviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
-        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_services", MongoTrendsOutput.TrendsType.TRENDS_SERVICE, reportID, runDate, clearMongo);
+        MongoTrendsOutput serviceMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_services", MongoTrendsOutput.TrendsType.TRENDS_SERVICE, reportID, runDate, clearMongo);
 
         trends = noZeroserviceGroupData.map(new MapServiceTrends());
-        
-        trends.output(metricMongoOut);
 
+        trends.output(serviceMongoOut);
 
         DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> serviceStatusTrendsData = serviceGroupData.flatMap(new ServiceTrendsCounter()).withBroadcastSet(opsDS, "ops");
         //filter dataset for each status type and write to mongo db
@@ -381,6 +384,20 @@ public class ArgoStatusBatch {
         /**
          * ********************************************************************************************
          */
+        //group data by group   and count flip flops
+        DataSet<GroupTrends> groupData = statusGroupTimeline.flatMap(new CalcGroupFlipFlopTrends());
+        DataSet<GroupTrends> noZerogroupData = groupData.filter(new ZeroGroupTrendsFilter());
+
+        if (rankNum != null) { //sort and rank data
+            noZerogroupData = noZerogroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+        } else {
+            noZerogroupData = noZerogroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
+        }
+        MongoTrendsOutput groupMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_endpoint_groups", MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportID, runDate, clearMongo);
+        trends = noZerogroupData.map(new MapGroupTrends());
+       
+        trends.output(groupMongoOut);
+
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Status Batch job for tenant:");

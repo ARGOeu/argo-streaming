@@ -1,4 +1,5 @@
 package flipflops;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -27,7 +28,7 @@ public class CalcEndpointFlipFlopTrends implements FlatMapFunction<StatusTimelin
     }
 
     static Logger LOG = LoggerFactory.getLogger(CalcEndpointFlipFlopTrends.class);
-    /**
+   /**
      *
      * @param in, a collection of MetricTrends as calculated on previous steps ,
      * from group, service, endpoint, metric groups
