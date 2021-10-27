@@ -50,6 +50,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import profilesmanager.ReportManager;
 import trends.MetricTrendsCounter;
+import trends.ServiceTrendsCounter;
 
 /**
  * Implements an ARGO Status Batch Job in flink
@@ -310,7 +311,7 @@ public class ArgoStatusBatch {
             endpointArDS.output(endpointARMongoOut);
             serviceArDS.output(serviceARMongoOut);
             endpointGroupArDS. output(endGroupARMongoOut);
-        }
+     }
 
         DataSet<MetricTrends> serviceEndpointMetricGroupData = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
         DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
@@ -341,7 +342,6 @@ public class ArgoStatusBatch {
             noZeroserviceEndpointGroupData = noZeroserviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
 
-
         MongoTrendsOutput endppointFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_endpoints", MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportID, runDate, clearMongo);
         trends = noZeroserviceEndpointGroupData.map(new MapEndpointTrends());
         trends.output(endppointFlipFlopMongoOut);
@@ -370,6 +370,14 @@ public class ArgoStatusBatch {
         trends = noZeroserviceGroupData.map(new MapServiceTrends());
         
         trends.output(metricMongoOut);
+
+
+        DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> serviceStatusTrendsData = serviceGroupData.flatMap(new ServiceTrendsCounter()).withBroadcastSet(opsDS, "ops");
+        //filter dataset for each status type and write to mongo db
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_SERVICE, "status_trends_services", serviceStatusTrendsData, "critical");
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_SERVICE, "status_trends_services", serviceStatusTrendsData, "warning");
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_SERVICE, "status_trends_services", serviceStatusTrendsData, "unknown");
+
         /**
          * ********************************************************************************************
          */
