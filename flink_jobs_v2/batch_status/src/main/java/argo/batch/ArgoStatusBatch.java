@@ -53,6 +53,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 
 import org.apache.flink.core.fs.Path;
 import profilesmanager.ReportManager;
+import trends.GroupTrendsCounter;
 import trends.MetricTrendsCounter;
 import trends.ServiceTrendsCounter;
 
@@ -397,6 +398,14 @@ public class ArgoStatusBatch {
         trends = noZerogroupData.map(new MapGroupTrends());
        
         trends.output(groupMongoOut);
+
+
+  //flatMap dataset to tuples and count the apperances of each status type to the timeline 
+        DataSet< Tuple7< String,String, String, String, String, Integer,Integer>> groupStatusTrendsData = groupData.flatMap(new GroupTrendsCounter()).withBroadcastSet(opsDS, "ops");
+        //filter dataset for each status type and write to mongo db
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, "status_trends_groups", groupStatusTrendsData, "critical");
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, "status_trends_groups", groupStatusTrendsData, "warning");
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, "status_trends_groups", groupStatusTrendsData, "unknown");
 
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
