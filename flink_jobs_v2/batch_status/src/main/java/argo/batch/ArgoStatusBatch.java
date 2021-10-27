@@ -1,5 +1,4 @@
 package argo.batch;
-import org.slf4j.LoggerFactory;
 
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +30,6 @@ import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.utils.ParameterTool;
 
 import org.apache.flink.core.fs.Path;
-import org.joda.time.DateTime;
 import profilesmanager.ReportManager;
 
 /**
@@ -48,6 +46,11 @@ import profilesmanager.ReportManager;
  * (api.argo.example.com) --api.token: access token to argo-web-api --api.proxy:
  * optional address for proxy to be used (http://proxy.example.com)
  * --api.timeout: set timeout (in seconds) when connecting to argo-web-api
+ * --calcStatus(Optional): set to be OFF or ON . ON to calculate and write
+ * timelines in mongo db , OFF to not calculate. If not set status timelines
+ * will be calculated and written --calcAR(Optional): set to be OFF or ON . ON
+ * to calculate and write ar results in mongo db , OFF to not calculateIf not
+ * set ar results will be calculated and written
  */
 public class ArgoStatusBatch {
 
@@ -83,6 +86,24 @@ public class ArgoStatusBatch {
         amr.setDate(params.getRequired("run.date"));
         amr.getRemoteAll();
 
+        boolean calcStatus = true;
+        if (params.has("calcStatus")) {
+            if (params.get("calcStatus").equals("OFF")) {
+                calcStatus = false;
+
+            }
+        }
+
+        boolean calcAR = true;
+        if (params.has("calcAR")) {
+            if (params.get("calcAR").equals("OFF")) {
+                calcAR = false;
+            }
+        }
+        if (!calcStatus && !calcAR) {
+            System.exit(0);
+        }
+
         DataSource<String> cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
         DataSource<String> opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
         DataSource<String> apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
@@ -95,13 +116,13 @@ public class ArgoStatusBatch {
         amr.setDate(params.getRequired("run.date"));
         amr.getRemoteAll();
         DataSource<String> confDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
-       
+
         DataSet<Weight> weightDS = env.fromElements(new Weight());
         Weight[] listWeights = amr.getListWeights();
-        
-        if(listWeights.length > 0) {
+
+        if (listWeights.length > 0) {
             weightDS = env.fromElements(amr.getListWeights());
-        }   
+        }
 
         DataSet<Downtime> downDS = env.fromElements(new Downtime());
         DataSource<String> thrDS = env.fromElements("");
@@ -166,9 +187,11 @@ public class ArgoStatusBatch {
         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
 
         mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
+        String dbURI = params.getRequired("mongo.uri");
+        String dbMethod = params.getRequired("mongo.method");
 
         // Create status detail data set
-        DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group",  "service", "hostname", "metric")
+        DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps");
 
@@ -177,43 +200,17 @@ public class ArgoStatusBatch {
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");
 
-        String dbURI = params.getRequired("mongo.uri");
-        String dbMethod = params.getRequired("mongo.method");
-
-      
-   
         //Create StatusMetricTimeline dataset for endpoints
-        DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group",  "service", "hostname")
+        DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
                 .reduceGroup(new CalcEndpointTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
-
-        //Calculate endpoint timeline timestamps 
-        DataSet<StatusMetric> stEndpointDS = statusEndpointTimeline.flatMap(new CalcStatusEndpoint(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
-                .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(apsDS, "aps");
-
-        //Calculate endpoint a/r 
-        DataSet<EndpointAR> endpointArDS = statusEndpointTimeline.flatMap(new CalcEndpointAR(params)).withBroadcastSet(mpsDS, "mps")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
-                withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
-        //Calculate endpoint timeline timestamps 
 
         DataSet<StatusTimeline> statusServiceTimeline = statusEndpointTimeline.groupBy("group", "service")
                 .reduceGroup(new CalcServiceTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
 
-        // Create status service data set
-        DataSet<StatusMetric> stServiceDS = statusServiceTimeline.flatMap(new CalcStatusService(params)).withBroadcastSet(mpsDS, "mps")
-                .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp").withBroadcastSet(opsDS, "ops")
-                .withBroadcastSet(apsDS, "aps");
-
-        DataSet<ServiceAR> serviceArDS = statusServiceTimeline.flatMap(new CalcServiceAR(params)).withBroadcastSet(mpsDS, "mps")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
-                withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
-
-///////////
         DataSet<StatusTimeline> statusEndGroupFunctionTimeline = statusServiceTimeline.groupBy("group", "function")
                 .reduceGroup(new CalcGroupFunctionTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
@@ -224,32 +221,58 @@ public class ArgoStatusBatch {
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
 
-        // Create status endpoint group data set
-        DataSet<StatusMetric> stEndGroupDS = statusGroupTimeline.flatMap(new CalcStatusEndGroup(params))
-                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
+        if (calcStatus) {
+            //Calculate endpoint timeline timestamps 
+            DataSet<StatusMetric> stEndpointDS = statusEndpointTimeline.flatMap(new CalcStatusEndpoint(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                    .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                    .withBroadcastSet(apsDS, "aps");
+// Create status service data set
+            DataSet<StatusMetric> stServiceDS = statusServiceTimeline.flatMap(new CalcStatusService(params)).withBroadcastSet(mpsDS, "mps")
+                    .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp").withBroadcastSet(opsDS, "ops")
+                    .withBroadcastSet(apsDS, "aps");
 
-        DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
-                withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf") .withBroadcastSet(weightDS, "weight");
+// Create status endpoint group data set
+            DataSet<StatusMetric> stEndGroupDS = statusGroupTimeline.flatMap(new CalcStatusEndGroup(params))
+                    .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                    .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
 
-//        // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
-        MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
-        MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
-        MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI, "status_services", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
-        MongoStatusOutput endGroupMongoOut = new MongoStatusOutput(dbURI, "status_endpoint_groups", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT_GROUP, reportID);
+            // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
+            MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
+            MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
+            MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI, "status_services", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
+            MongoStatusOutput endGroupMongoOut = new MongoStatusOutput(dbURI, "status_endpoint_groups", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT_GROUP, reportID);
 
-        MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
-        MongoServiceArOutput serviceARMongoOut = new MongoServiceArOutput(dbURI, "service_ar", dbMethod);
-        MongoEndGroupArOutput endGroupARMongoOut = new MongoEndGroupArOutput(dbURI, "endpoint_group_ar", dbMethod);
-        endpointArDS.output(endpointARMongoOut);
-        serviceArDS.output(serviceARMongoOut);
-        endpointGroupArDS.output(endGroupARMongoOut);
+            stDetailDS.output(metricMongoOut);
+            stEndpointDS.output(endpointMongoOut);
+            stServiceDS.output(serviceMongoOut);
+            stEndGroupDS.output(endGroupMongoOut);
 
-        stDetailDS.output(metricMongoOut);
-        stEndpointDS.output(endpointMongoOut);
-        stServiceDS.output(serviceMongoOut);
-        stEndGroupDS.output(endGroupMongoOut);
+        }
+
+        if (calcAR) {
+
+            //Calculate endpoint a/r 
+            DataSet<EndpointAR> endpointArDS = statusEndpointTimeline.flatMap(new CalcEndpointAR(params)).withBroadcastSet(mpsDS, "mps")
+                    .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
+                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
+            //Calculate endpoint timeline timestamps 
+
+            DataSet<ServiceAR> serviceArDS = statusServiceTimeline.flatMap(new CalcServiceAR(params)).withBroadcastSet(mpsDS, "mps")
+                    .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
+                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
+
+///////////
+            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
+                    .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
+                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight");
+
+            MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
+            MongoServiceArOutput serviceARMongoOut = new MongoServiceArOutput(dbURI, "service_ar", dbMethod);
+            MongoEndGroupArOutput endGroupARMongoOut = new MongoEndGroupArOutput(dbURI, "endpoint_group_ar", dbMethod);
+            endpointArDS.output(endpointARMongoOut);
+            serviceArDS.output(serviceARMongoOut);
+            endpointGroupArDS.output(endGroupARMongoOut);
+        }
         String runDate = params.getRequired("run.date");
 
         // Create a job title message to discern job in flink dashboard/cli
