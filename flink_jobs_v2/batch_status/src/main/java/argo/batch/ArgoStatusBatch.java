@@ -16,13 +16,10 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import flipflops.CalcEndpointFlipFlopTrends;
 import flipflops.CalcMetricFlipFlopTrends;
-import flipflops.MapMetricTrends;
-import flipflops.MetricTrends;
-import flipflops.MongoTrendsOutput;
-import flipflops.StatusAndDurationFilter;
-import flipflops.Trends;
-import flipflops.ZeroMetricTrendsFilter;
+import flipflops.EndpointTrends;
+import flipflops.MapEndpointTrends;
 
 import flipflops.CalcMetricFlipFlopTrends;
 import flipflops.MapMetricTrends;
@@ -30,6 +27,7 @@ import flipflops.MetricTrends;
 import flipflops.MongoTrendsOutput;
 import flipflops.StatusAndDurationFilter;
 import flipflops.Trends;
+import flipflops.ZeroEndpointTrendsFilter;
 import flipflops.ZeroMetricTrendsFilter;
 
 import org.slf4j.Logger;
@@ -147,7 +145,6 @@ public class ArgoStatusBatch {
         amr.setReportID(reportID);
         amr.setDate(runDate);
         amr.getRemoteAll();
-
         DataSource<String> cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
         DataSource<String> opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
         DataSource<String> apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
@@ -228,9 +225,8 @@ public class ArgoStatusBatch {
         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
 
         mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
-    
-    dbURI = params.getRequired("mongo.uri");
-       String dbMethod = params.getRequired("mongo.method");
+        dbURI = params.getRequired("mongo.uri");
+        String dbMethod = params.getRequired("mongo.method");
 
         // Create status detail data set
         DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
@@ -322,7 +318,6 @@ public class ArgoStatusBatch {
         }
 
         MongoTrendsOutput metricFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_metrics", MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportID, runDate, clearMongo);
-
         DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapMetricTrends());
         trends.output(metricFlipFlopMongoOut);
 
@@ -333,9 +328,23 @@ public class ArgoStatusBatch {
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "warning");
         filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "unknown");
 
-        MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
+        /*=============================================================================================*/
+        DataSet<EndpointTrends> serviceEndpointGroupData = statusEndpointTimeline.flatMap(new CalcEndpointFlipFlopTrends());
+        DataSet<EndpointTrends> noZeroserviceEndpointGroupData = serviceEndpointGroupData.filter(new ZeroEndpointTrendsFilter());
 
-        stDetailDS.output(metricMongoOut);
+        if (rankNum != null) { //sort and rank data
+            noZeroserviceEndpointGroupData = noZeroserviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+        } else {
+            noZeroserviceEndpointGroupData = noZeroserviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
+        }
+
+        MongoTrendsOutput endppointFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_endpoints", MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportID, runDate, clearMongo);
+        trends = noZeroserviceEndpointGroupData.map(new MapEndpointTrends());
+        trends.output(endppointFlipFlopMongoOut);
+
+        /**
+         * **************************************************************************************************
+         */
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Status Batch job for tenant:");

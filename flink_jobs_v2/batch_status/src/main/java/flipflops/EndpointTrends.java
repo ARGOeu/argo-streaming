@@ -8,30 +8,31 @@ package flipflops;
 import timelines.Timeline;
 
 /**
- * MetricTrends, describes the computed trend information extracted from the set
- * of the timelines at the level of group service endpoints metrics groups
+ * EndpointTrends, describes the computed trend information extracted from the
+ * timelines at the level of group service endpoints groups
  */
-public class MetricTrends {
+public class EndpointTrends {
 
     String group;
     String service;
     String endpoint;
-    String metric;
     Timeline timeline;
     Integer flipflops;
-
-    public MetricTrends() {
+ 
+    public EndpointTrends() {
     }
 
-    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops) {
+    public EndpointTrends(String group, String service, String endpoint, Timeline timeline, Integer flipflops) {
         this.group = group;
         this.service = service;
         this.endpoint = endpoint;
-        this.metric = metric;
         this.timeline = timeline;
         this.flipflops = flipflops;
     }
 
+ 
+
+    
     public String getGroup() {
         return group;
     }
@@ -56,14 +57,6 @@ public class MetricTrends {
         this.endpoint = endpoint;
     }
 
-    public String getMetric() {
-        return metric;
-    }
-
-    public void setMetric(String metric) {
-        this.metric = metric;
-    }
-
     public Timeline getTimeline() {
         return timeline;
     }
@@ -79,4 +72,5 @@ public class MetricTrends {
     public void setFlipflops(Integer flipflops) {
         this.flipflops = flipflops;
     }
+
 }

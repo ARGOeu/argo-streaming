@@ -16,22 +16,20 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import timelines.Timeline;
-
-
-
 /**
  * Accepts a list of monitoring timelines and produces an endpoint timeline The
  * class is used as a RichGroupReduce Function in flink pipeline
  */
 public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline, MetricTrends> {
+
     private static final long serialVersionUID = 1L;
 
-  
     public CalcMetricFlipFlopTrends() {
-   
+
     }
 
     static Logger LOG = LoggerFactory.getLogger(CalcMetricFlipFlopTrends.class);
+
     /**
      * The main operator business logic of transforming a collection of
      * MetricTimelines to an aggregated endpoint timeline
@@ -47,16 +45,15 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
      * @param out A Collector list of MonTimeline to acquire the produced
      * endpoint timelines.
      */
-
- @Override
+    @Override
     public void flatMap(StatusTimeline in, Collector<MetricTrends> out) throws Exception {
-       // Initialize field values and aggregator
+        // Initialize field values and aggregator
         String metric = "";
         String hostname = "";
         String service = "";
         String endpointGroup = "";
-        metric=in.getMetric();
-        hostname=in.getHostname();
+        metric = in.getMetric();
+        hostname = in.getHostname();
         service = in.getService();
         endpointGroup = in.getGroup();
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
@@ -69,9 +66,9 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timestampMap, true);
         HashMap<String, Timeline> timelineMap = new HashMap<>();
-        timelineMap.put("timeline", timeline);       
-
+        timelineMap.put("timeline", timeline);
         Integer flipflop = timeline.calcStatusChanges();
+
         if (endpointGroup != null && service != null && hostname != null && metric != null) {
 
             MetricTrends metricTrends = new MetricTrends(endpointGroup, service, hostname, metric, timeline, flipflop);
