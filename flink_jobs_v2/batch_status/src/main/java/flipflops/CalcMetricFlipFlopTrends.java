@@ -14,9 +14,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.TreeMap;
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
@@ -31,7 +30,7 @@ import timelines.Timeline;
  * Accepts a list of monitoring timelines and produces an endpoint timeline The
  * class is used as a RichGroupReduce Function in flink pipeline
  */
-public class CalcMetricFlipFlopTrends extends RichFlatMapFunction<StatusTimeline, MetricTrends> {
+public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline, MetricTrends> {
     private static final long serialVersionUID = 1L;
 
   
@@ -40,29 +39,7 @@ public class CalcMetricFlipFlopTrends extends RichFlatMapFunction<StatusTimeline
     }
 
     static Logger LOG = LoggerFactory.getLogger(CalcMetricFlipFlopTrends.class);
-    private List<String> ops;
-    private OperationsManager opsMgr;
-    private String runDate;
-
-    /**
-     * Initialization method of the RichGroupReduceFunction operator
-     * <p>
-     * This runs at the initialization of the operator and receives a
-     * configuration parameter object. It initializes all required structures
-     * used by this operator such as profile managers, operations managers,
-     * topology managers etc.
-     *
-     * @param parameters A flink Configuration object
-     */
-    @Override
-    public void open(Configuration parameters) throws IOException {
-        this.ops = getRuntimeContext().getBroadcastVariable("ops");
-         // Initialize operations manager
-        this.opsMgr = new OperationsManager();
-        this.opsMgr.loadJsonString(ops);
-
-     
-    }
+   
 
     /**
      * The main operator business logic of transforming a collection of

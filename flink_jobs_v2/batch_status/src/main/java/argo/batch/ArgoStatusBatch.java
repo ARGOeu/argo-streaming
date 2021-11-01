@@ -306,7 +306,7 @@ public class ArgoStatusBatch {
             endpointGroupArDS.output(endGroupARMongoOut);
         }
    
-            DataSet<MetricTrends> serviceEndpointMetricGroupData = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends()).withBroadcastSet(opsDS, "ops");
+            DataSet<MetricTrends> serviceEndpointMetricGroupData = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
             DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
                 if (rankNum != null) { //sort and rank data
                     noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
@@ -318,7 +318,7 @@ public class ArgoStatusBatch {
 
                 DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapMetricTrends());
                 trends.output(metricFlipFlopMongoOut);
-      
+                
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Status Batch job for tenant:");

@@ -163,7 +163,7 @@ public class TimelineIntegrator {
         }
         if (!added) {
 
-            endDt = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", startDt.toDate(), 23, 59, 59);
+            endDt = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", startDt.toDate(), 23, 59, 59).plusMinutes(1);
 
             DateTime[] statusDur = new DateTime[2];
             statusDur[0] = startDt;
