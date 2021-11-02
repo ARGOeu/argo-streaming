@@ -81,7 +81,7 @@ public class TimelineIntegrator {
      * @return , the num of the times the specific status appears on the
      * timeline
      */
-    private int[] countStatusAppearancesInSecs(Set<Entry<DateTime, Integer>>  samples,int status) throws ParseException {
+    public int[] countStatusAppearancesInSecs(Set<Entry<DateTime, Integer>>  samples,int status) throws ParseException {
 
         int[] statusInfo = new int[2];
         int count = 0;
@@ -163,7 +163,7 @@ public class TimelineIntegrator {
         }
         if (!added) {
 
-            endDt = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", startDt.toDate(), 23, 59, 59);
+            endDt = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", startDt.toDate(), 23, 59, 59).plusMinutes(1);
 
             DateTime[] statusDur = new DateTime[2];
             statusDur[0] = startDt;
@@ -198,7 +198,7 @@ public class TimelineIntegrator {
             //Minutes minutes = Minutes.minutesBetween(startDt, (endDt.plusMinutes(1)));
             minutesInt = minutesInt + min;
         }
-        return minutesInt + 1;
+        return minutesInt ;
     }
 
     /**
