@@ -20,11 +20,11 @@ public class MetricTrends {
     Timeline timeline;
     Integer flipflops;
 
-
     public MetricTrends() {
     }
 
-    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops){
+    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops) {
+        this.group = group;
         this.service = service;
         this.endpoint = endpoint;
         this.metric = metric;
@@ -82,5 +82,4 @@ public class MetricTrends {
         this.flipflops = flipflops;
     }
 
- 
 }

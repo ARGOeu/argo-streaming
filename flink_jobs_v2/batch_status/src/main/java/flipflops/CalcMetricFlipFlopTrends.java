@@ -1,8 +1,5 @@
 package flipflops;
 
-
-
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -10,18 +7,14 @@ package flipflops;
  */
 import argo.batch.StatusTimeline;
 import argo.batch.TimeStatus;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profilesmanager.OperationsManager;
 import timelines.Timeline;
 
 
@@ -39,8 +32,6 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
     }
 
     static Logger LOG = LoggerFactory.getLogger(CalcMetricFlipFlopTrends.class);
-   
-
     /**
      * The main operator business logic of transforming a collection of
      * MetricTimelines to an aggregated endpoint timeline
@@ -78,10 +69,9 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timestampMap, true);
         HashMap<String, Timeline> timelineMap = new HashMap<>();
-        timelineMap.put("timeline", timeline);      
+        timelineMap.put("timeline", timeline);       
 
         Integer flipflop = timeline.calcStatusChanges();
-
         if (endpointGroup != null && service != null && hostname != null && metric != null) {
 
             MetricTrends metricTrends = new MetricTrends(endpointGroup, service, hostname, metric, timeline, flipflop);

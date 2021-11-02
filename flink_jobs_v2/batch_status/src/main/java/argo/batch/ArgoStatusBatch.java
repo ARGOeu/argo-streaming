@@ -16,6 +16,13 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import flipflops.CalcMetricFlipFlopTrends;
+import flipflops.MapMetricTrends;
+import flipflops.MetricTrends;
+import flipflops.MongoTrendsOutput;
+import flipflops.StatusAndDurationFilter;
+import flipflops.Trends;
+import flipflops.ZeroMetricTrendsFilter;
 
 import flipflops.CalcMetricFlipFlopTrends;
 import flipflops.MapMetricTrends;
@@ -41,6 +48,8 @@ import org.apache.flink.api.java.utils.ParameterTool;
 
 import org.apache.flink.core.fs.Path;
 import profilesmanager.ReportManager;
+import trends.MetricTrendsCounter;
+
 /**
  * Implements an ARGO Status Batch Job in flink
  *
@@ -219,9 +228,9 @@ public class ArgoStatusBatch {
         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
 
         mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
-
-        dbURI = params.getRequired("mongo.uri");
-        String dbMethod = params.getRequired("mongo.method");
+    
+    dbURI = params.getRequired("mongo.uri");
+       String dbMethod = params.getRequired("mongo.method");
 
         // Create status detail data set
         DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
@@ -283,9 +292,7 @@ public class ArgoStatusBatch {
         }
 
         if (calcAR) {
-
-
-            //Calculate endpoint a/r 
+         //Calculate endpoint a/r 
             DataSet<EndpointAR> endpointArDS = statusEndpointTimeline.flatMap(new CalcEndpointAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
@@ -305,20 +312,30 @@ public class ArgoStatusBatch {
             serviceArDS.output(serviceARMongoOut);
             endpointGroupArDS.output(endGroupARMongoOut);
         }
-   
-            DataSet<MetricTrends> serviceEndpointMetricGroupData = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
-            DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
-                if (rankNum != null) { //sort and rank data
-                    noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
-                } else {
-                    noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
-                }
 
-                MongoTrendsOutput metricFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_metrics", MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportID, runDate, clearMongo);
+        DataSet<MetricTrends> serviceEndpointMetricGroupData = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
+        DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
+        if (rankNum != null) { //sort and rank data
+            noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+        } else {
+            noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
+        }
 
-                DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapMetricTrends());
-                trends.output(metricFlipFlopMongoOut);
-                
+        MongoTrendsOutput metricFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_metrics", MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportID, runDate, clearMongo);
+
+        DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapMetricTrends());
+        trends.output(metricFlipFlopMongoOut);
+
+        //flatMap dataset to tuples and count the apperances of each status type to the timeline 
+        DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> metricStatusTrendsData = serviceEndpointMetricGroupData.flatMap(new MetricTrendsCounter()).withBroadcastSet(opsDS, "ops");
+        //filter dataset for each status type and write to mongo db
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "critical");
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "warning");
+        filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "unknown");
+
+        MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
+
+        stDetailDS.output(metricMongoOut);
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Status Batch job for tenant:");
