@@ -1,5 +1,4 @@
 package flipflops;
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -21,15 +20,16 @@ import timelines.Timeline;
  * class is used as a RichGroupReduce Function in flink pipeline
  */
 public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline, MetricTrends> {
-
     private static final long serialVersionUID = 1L;
 
+  
     public CalcMetricFlipFlopTrends() {
-
+   
     }
 
     static Logger LOG = LoggerFactory.getLogger(CalcMetricFlipFlopTrends.class);
-
+   
+ 
     /**
      * The main operator business logic of transforming a collection of
      * MetricTimelines to an aggregated endpoint timeline
@@ -45,15 +45,16 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
      * @param out A Collector list of MonTimeline to acquire the produced
      * endpoint timelines.
      */
-    @Override
+
+ @Override
     public void flatMap(StatusTimeline in, Collector<MetricTrends> out) throws Exception {
-        // Initialize field values and aggregator
+       // Initialize field values and aggregator
         String metric = "";
         String hostname = "";
         String service = "";
         String endpointGroup = "";
-        metric = in.getMetric();
-        hostname = in.getHostname();
+        metric=in.getMetric();
+        hostname=in.getHostname();
         service = in.getService();
         endpointGroup = in.getGroup();
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();

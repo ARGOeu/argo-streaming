@@ -16,12 +16,16 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import argo.flipflops.ServiceTrends;
+import argo.flipflops.ZeroServiceTrendsFilter;
 import argo.trends.EndpointTrendsCounter;
 import flipflops.CalcEndpointFlipFlopTrends;
 import flipflops.CalcMetricFlipFlopTrends;
+import flipflops.CalcServiceFlipFlopTrends;
 import flipflops.EndpointTrends;
 import flipflops.MapEndpointTrends;
 import flipflops.MapMetricTrends;
+import flipflops.MapServiceTrends;
 import flipflops.MetricTrends;
 import flipflops.MongoTrendsOutput;
 import flipflops.StatusAndDurationFilter;
@@ -305,7 +309,7 @@ public class ArgoStatusBatch {
             MongoEndGroupArOutput endGroupARMongoOut = new MongoEndGroupArOutput(dbURI, "endpoint_group_ar", dbMethod);
             endpointArDS.output(endpointARMongoOut);
             serviceArDS.output(serviceARMongoOut);
-            endpointGroupArDS.output(endGroupARMongoOut);
+            endpointGroupArDS. output(endGroupARMongoOut);
         }
 
         DataSet<MetricTrends> serviceEndpointMetricGroupData = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
@@ -337,6 +341,7 @@ public class ArgoStatusBatch {
             noZeroserviceEndpointGroupData = noZeroserviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
         }
 
+
         MongoTrendsOutput endppointFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_endpoints", MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportID, runDate, clearMongo);
         trends = noZeroserviceEndpointGroupData.map(new MapEndpointTrends());
         trends.output(endppointFlipFlopMongoOut);
@@ -351,6 +356,22 @@ public class ArgoStatusBatch {
 
         /**
          * **************************************************************************************************
+         */
+        DataSet<ServiceTrends> serviceGroupData = statusServiceTimeline.flatMap(new CalcServiceFlipFlopTrends());
+        DataSet<ServiceTrends> noZeroserviceGroupData = serviceGroupData.filter(new ZeroServiceTrendsFilter());
+
+        if (rankNum != null) { //sort and rank data
+            noZeroserviceGroupData = noZeroserviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+        } else {
+            noZeroserviceGroupData = noZeroserviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
+        }
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_services", MongoTrendsOutput.TrendsType.TRENDS_SERVICE, reportID, runDate, clearMongo);
+
+        trends = noZeroserviceGroupData.map(new MapServiceTrends());
+        
+        trends.output(metricMongoOut);
+        /**
+         * ********************************************************************************************
          */
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();

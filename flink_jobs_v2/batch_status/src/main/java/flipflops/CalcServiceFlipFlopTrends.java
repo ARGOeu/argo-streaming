@@ -1,14 +1,15 @@
 package flipflops;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-//import argo.pojos.Timeline;
-//import argo.functions.calctimelines.TimelineMerger;
 import argo.batch.StatusTimeline;
 import argo.batch.TimeStatus;
+import argo.flipflops.ServiceTrends;
 import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -19,29 +20,22 @@ import org.slf4j.LoggerFactory;
 import timelines.Timeline;
 
 /**
- * CalcEndpointTrends, count status changes for each service endpoint group
+ * CalcServiceEndpointFlipFlop, count status changes for each service endpoint
+ * group
  */
-public class CalcEndpointFlipFlopTrends implements FlatMapFunction<StatusTimeline, EndpointTrends> {
+public class CalcServiceFlipFlopTrends implements FlatMapFunction<StatusTimeline, ServiceTrends> {
 
-    public CalcEndpointFlipFlopTrends() {
+    public CalcServiceFlipFlopTrends() {
+
     }
+    static Logger LOG = LoggerFactory.getLogger(CalcServiceFlipFlopTrends.class);
 
-    static Logger LOG = LoggerFactory.getLogger(CalcEndpointFlipFlopTrends.class);
-    /**
-     *
-     * @param in, a collection of MetricTrends as calculated on previous steps ,
-     * from group, service, endpoint, metric groups
-     * @param out, a collection of EndpointTrends containing the information of
-     * the computation on group ,service, endpoint groups
-     * @throws Exception
-     */
     @Override
-    public void flatMap(StatusTimeline in, Collector<EndpointTrends> out) throws Exception {
+    public void flatMap(StatusTimeline in, Collector<ServiceTrends> out) throws Exception {
+
         String group = in.getGroup();
         String service = in.getService();
-        String hostname = in.getHostname();
-        //store the necessary info
-        //collect all timelines in a list
+        //construct a timeline containing all the timestamps of each metric timeline
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
 
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
@@ -55,11 +49,10 @@ public class CalcEndpointFlipFlopTrends implements FlatMapFunction<StatusTimelin
         timelineMap.put("timeline", timeline);
         Integer flipflop = timeline.calcStatusChanges();
 
-        if (group != null && service != null && hostname != null) {
-
-            EndpointTrends endpointTrends = new EndpointTrends(group, service, hostname, timeline, flipflop);
-            out.collect(endpointTrends);
+        if (group != null && service != null) {
+            ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflop);
+            out.collect(serviceTrends);
         }
-
     }
+
 }
