@@ -5,26 +5,25 @@ package flipflops;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 import timelines.Timeline;
 
 /**
- * EndpointTrends, describes the computed trend information extracted from the
- * timelines at the level of group service endpoints groups
+ * MetricTrends, describes the computed trend information extracted from the set
+ * of the timelines at the level of group service endpoints metrics groups *
  */
-public class EndpointTrends {
+public class GroupTrends {
 
     String group;
-    String service;
-    String endpoint;
+
     Timeline timeline;
     Integer flipflops;
-    public EndpointTrends() {
+
+    public GroupTrends() {
     }
 
-    public EndpointTrends(String group, String service, String endpoint, Timeline timeline, Integer flipflops) {
+    public GroupTrends(String group, Timeline timeline, Integer flipflops) {
         this.group = group;
-        this.service = service;
-        this.endpoint = endpoint;
         this.timeline = timeline;
         this.flipflops = flipflops;
     }
@@ -35,22 +34,6 @@ public class EndpointTrends {
 
     public void setGroup(String group) {
         this.group = group;
-    }
-
-    public String getService() {
-        return service;
-    }
-
-    public void setService(String service) {
-        this.service = service;
-    }
-
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
     }
 
     public Timeline getTimeline() {
