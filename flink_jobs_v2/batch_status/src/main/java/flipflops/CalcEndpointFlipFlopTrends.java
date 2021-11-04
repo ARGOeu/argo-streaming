@@ -27,8 +27,6 @@ public class CalcEndpointFlipFlopTrends implements FlatMapFunction<StatusTimelin
     }
 
     static Logger LOG = LoggerFactory.getLogger(CalcEndpointFlipFlopTrends.class);
-  
-
     /**
      *
      * @param in, a collection of MetricTrends as calculated on previous steps ,
@@ -44,7 +42,6 @@ public class CalcEndpointFlipFlopTrends implements FlatMapFunction<StatusTimelin
         String hostname = in.getHostname();
         //store the necessary info
         //collect all timelines in a list
-        
        ArrayList<TimeStatus> timestatusList = in.getTimestamps();
 
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
