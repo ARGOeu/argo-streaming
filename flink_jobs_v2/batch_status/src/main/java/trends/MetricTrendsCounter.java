@@ -33,8 +33,8 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
     @Override
     public void open(Configuration parameters) throws IOException {
 
-          this.ops = getRuntimeContext().getBroadcastVariable("ops");
-          // Initialize operations manager
+        this.ops = getRuntimeContext().getBroadcastVariable("ops");
+        // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
     }
@@ -55,22 +55,21 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
         int unknownstatus = this.opsMgr.getIntStatus("UNKNOWN");
 
         Timeline timeline = t.getTimeline();
-         TimelineIntegrator timelineIntegrator=new TimelineIntegrator();
-        int[] criticalstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(),criticalstatus);
-        int[] warningstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(),warningstatus);
-        int[] unknownstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(),unknownstatus);
+        TimelineIntegrator timelineIntegrator = new TimelineIntegrator();
+        int[] criticalstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), criticalstatus);
+        int[] warningstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), warningstatus);
+        int[] unknownstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), unknownstatus);
 
         Tuple7< String, String, String, String, String, Integer, Integer> tupleCritical = new Tuple7<  String, String, String, String, String, Integer, Integer>(
                 t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1]);
         out.collect(tupleCritical);
 
         Tuple7<  String, String, String, String, String, Integer, Integer> tupleWarning = new Tuple7< String, String, String, String, String, Integer, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "WARNING",  warningstatusInfo[0], warningstatusInfo[1]);
-
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "WARNING", warningstatusInfo[0], warningstatusInfo[1]);
         out.collect(tupleWarning);
 
         Tuple7<  String, String, String, String, String, Integer, Integer> tupleUnknown = new Tuple7<  String, String, String, String, String, Integer, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNOWN",unknownstatusInfo[0], unknownstatusInfo[1]);
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1]);
         out.collect(tupleUnknown);
     }
 }
