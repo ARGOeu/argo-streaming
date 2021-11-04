@@ -87,10 +87,11 @@ public class ArgoStatusBatch {
 		
 		// begin with empty threshold datasource
 		DataSource<String> thrDS = env.fromElements("");
-		// if threshold filepath has been defined in cli parameters
-		if (params.has("thr")){
-			// read file and update threshold datasource
-			thrDS = env.readTextFile(params.getRequired("thr"));
+		
+		// check if report information from argo-web-api contains a threshold profile ID
+		if (!amr.getThresholdsID().equalsIgnoreCase("")){
+			// grab information about thresholds rules from argo-web-api
+			thrDS = env.fromElements(amr.getResourceJSON(ApiResource.THRESHOLDS));
 		}
 		
 		ConfigManager confMgr = new ConfigManager();
