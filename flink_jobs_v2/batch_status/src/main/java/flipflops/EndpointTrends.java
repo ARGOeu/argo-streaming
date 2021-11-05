@@ -18,6 +18,7 @@ public class EndpointTrends {
     String endpoint;
     Timeline timeline;
     Integer flipflops;
+
     public EndpointTrends() {
     }
 
