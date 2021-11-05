@@ -29,7 +29,6 @@ public class EndpointTrends {
         this.timeline = timeline;
         this.flipflops = flipflops;
     }
-
     public String getGroup() {
         return group;
     }
