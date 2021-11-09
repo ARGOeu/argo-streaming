@@ -39,7 +39,7 @@ public class RequestManager {
     public RequestManager(String proxy, String token) {
         this.proxy = proxy;
         this.token = token;
-        this.timeoutSec = 5;
+        this.timeoutSec = 30;
         this.verify = true;
     }
 

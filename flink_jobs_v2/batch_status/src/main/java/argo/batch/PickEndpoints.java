@@ -156,7 +156,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 					// if rule is indeed found 
 					if (rule != ""){
 						// get the retrieved values from the actual data
-						Map<String, Float> values = thrMgr.getThresholdValues(actualData);
+                                        	Map<String, Float> values = thrMgr.getThresholdValues(actualData);
 						// calculate 
 						String[] statusNext = thrMgr.getStatusByRuleAndValues(rule, this.opsMgr, "AND", values);
 						if (statusNext[0] == "") statusNext[0] = status;
@@ -166,8 +166,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData,StatusMetric> 
 							ruleApplied = statusNext[1];
 							status = statusNext[0];
 						}
-					}
-					
+					}				
 					
 				}
 				String info  = this.egpMgr.getInfo(groupname, egroupType, md.getHostname(), md.getService());

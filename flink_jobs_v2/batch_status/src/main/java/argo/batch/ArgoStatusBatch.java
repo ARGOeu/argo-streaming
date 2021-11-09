@@ -172,11 +172,12 @@ public class ArgoStatusBatch {
         }
 
         DataSet<Downtime> downDS = env.fromElements(new Downtime());
+        // begin with empty threshold datasource
         DataSource<String> thrDS = env.fromElements("");
-        // if threshold filepath has been defined in cli parameters
-        if (params.has("thr")) {
-            // read file and update threshold datasource
-            thrDS = env.readTextFile(params.getRequired("thr"));
+        // check if report information from argo-web-api contains a threshold profile ID
+        if (!amr.getThresholdsID().equalsIgnoreCase("")) {
+            // grab information about thresholds rules from argo-web-api
+            thrDS = env.fromElements(amr.getResourceJSON(ApiResource.THRESHOLDS));
         }
 
         ReportManager confMgr = new ReportManager();
@@ -315,8 +316,8 @@ public class ArgoStatusBatch {
             MongoEndGroupArOutput endGroupARMongoOut = new MongoEndGroupArOutput(dbURI, "endpoint_group_ar", dbMethod);
             endpointArDS.output(endpointARMongoOut);
             serviceArDS.output(serviceARMongoOut);
-            endpointGroupArDS. output(endGroupARMongoOut);
-     }
+            endpointGroupArDS.output(endGroupARMongoOut);
+        }
 
         if (calcFlipFlops || calcTrends) {
             DataSet<MetricTrends> serviceEndpointMetricGroupData = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
