@@ -339,8 +339,8 @@ public class ArgoStatusBatch {
                 }
 
                 MongoTrendsOutput metricFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_metrics", MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportID, runDate, clearMongo);
-                DataSet<Trends> trends = noZeroMetricFlipFlops.map(new MapMetricTrends());
-                trends = trends.flatMap(new MapTrendTags()).withBroadcastSet(mtagsDS, "mtags");
+
+                DataSet<Trends> trends = noZeroMetricFlipFlops.map(new MapMetricTrends()).withBroadcastSet(mtagsDS, "mtags");
                 trends.output(metricFlipFlopMongoOut);
 
                 DataSet<EndpointTrends> nonZeroEndpointFlipFlops = endpointTrends.filter(new ZeroEndpointTrendsFilter());
@@ -383,8 +383,7 @@ public class ArgoStatusBatch {
 
             if (calcStatusTrends) {
                 //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> metricStatusTrendsData = metricTrends.flatMap(new MetricTrendsCounter()).withBroadcastSet(opsDS, "ops");
-               metricStatusTrendsData= metricStatusTrendsData.flatMap(new MapTupleTags()).withBroadcastSet(mtagsDS, "mtags");
+                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> metricStatusTrendsData = metricTrends.flatMap(new MetricTrendsCounter()).withBroadcastSet(opsDS, "ops").withBroadcastSet(mtagsDS, "mtags");
                 //filter dataset for each status type and write to mongo db
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "critical");
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "warning");

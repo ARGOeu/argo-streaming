@@ -7,12 +7,14 @@ package trends;
  */
 import flipflops.MetricTrends;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple7;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
+import profilesmanager.MetricTagsManager;
 import profilesmanager.OperationsManager;
 import timelines.Timeline;
 import timelines.TimelineIntegrator;
@@ -22,11 +24,14 @@ import timelines.TimelineIntegrator;
  * appearances of the status CRITICAL, WARNING,UNKNOWN and produces a dataset of
  * tuples that contain these calculations
  */
-public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple8<String, String, String, String, String, Integer, Integer,String>> {
+public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple8<String, String, String, String, String, Integer, Integer, String>> {
 
     private List<String> ops;
 
     private OperationsManager opsMgr;
+    private List<String> mtags;
+
+    private MetricTagsManager mtagsMgr;
 
     public MetricTrendsCounter() {
     }
@@ -38,6 +43,11 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
+
+        this.mtags = getRuntimeContext().getBroadcastVariable("mtags");
+        this.mtagsMgr = new MetricTagsManager();
+        this.mtagsMgr.loadJsonString(mtags);
+
     }
 
     /**
@@ -61,16 +71,26 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
         int[] warningstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), warningstatus);
         int[] unknownstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), unknownstatus);
 
-        Tuple8<String, String, String, String, String, Integer, Integer,String> tupleCritical = new Tuple8<  String, String, String, String, String, Integer, Integer,String>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1],t.getTags());
+        ArrayList<String> tags = this.mtagsMgr.getTags(t.getMetric());
+        String tagInfo = "";
+        for (String tag : tags) {
+            if (tags.indexOf(tag) == 0) {
+                tagInfo = tagInfo + tag;
+            } else {
+                tagInfo = tagInfo + "," + tag;
+            }
+        }
+        Tuple8<String, String, String, String, String, Integer, Integer, String> tupleCritical = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1], tagInfo);
         out.collect(tupleCritical);
 
-        Tuple8<String, String, String, String, String, Integer, Integer,String> tupleWarning = new Tuple8< String, String, String, String, String, Integer, Integer,String>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "WARNING", warningstatusInfo[0], warningstatusInfo[1],t.getTags());
+        Tuple8<String, String, String, String, String, Integer, Integer, String> tupleWarning = new Tuple8< String, String, String, String, String, Integer, Integer, String>(
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "WARNING", warningstatusInfo[0], warningstatusInfo[1], tagInfo);
         out.collect(tupleWarning);
 
-        Tuple8<String, String, String, String, String, Integer, Integer,String> tupleUnknown = new Tuple8<  String, String, String, String, String, Integer, Integer,String>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1],t.getTags());
+        Tuple8<String, String, String, String, String, Integer, Integer, String> tupleUnknown = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1], tagInfo);
+
         out.collect(tupleUnknown);
     }
 }

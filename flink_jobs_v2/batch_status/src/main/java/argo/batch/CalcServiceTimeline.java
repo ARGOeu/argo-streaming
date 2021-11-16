@@ -101,7 +101,7 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
             timestatuCol.add(timestatus);
         }
 
-        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, "", "", timestatuCol,"");
+        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, "", "", timestatuCol);
 
         out.collect(statusMetricTimeline);
 

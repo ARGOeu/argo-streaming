@@ -75,7 +75,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         String endpointGroup = "";
         String hostname = "";
         String metric = "";
-        String tags = "";
+       
         TreeMap<DateTime, Integer> timeStatusMap = new TreeMap<>();
         for (StatusMetric item : in) {
             service = item.getService();
@@ -83,8 +83,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             hostname = item.getHostname();
             function = item.getFunction();
             metric = item.getMetric();
-            tags = item.getTags();
-            String ts = item.getTimestamp();
+             String ts = item.getTimestamp();
             String status = item.getStatus();
             if (i == 0) {
                 int st = this.opsMgr.getIntStatus(item.getPrevState());
@@ -107,7 +106,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             timestatusList.add(timestatus);
         }
 
-        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList, tags);
+        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList);
         out.collect(statusMetricTimeline);
 
     }
