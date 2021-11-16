@@ -14,6 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import junitx.framework.ListAssert;
+import profilesmanager.AggregationProfileManager;
 
 public class AvailabilityProfilesTest {
 

@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.TimeZone;
 
-import sync.AggregationProfileManager;
 import sync.DowntimeCache;
 import sync.EndpointGroupManagerV2;
 import sync.EndpointGroupManagerV2.EndpointItem;
@@ -32,6 +31,8 @@ import com.google.gson.Gson;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricProfile;
+
+import profilesmanager.AggregationProfileManager;
 
 
 /**
@@ -338,7 +339,7 @@ public class StatusManager {
 	 * @param opsJson
 	 *            operation profile contents
 	 */
-	public void loadAll(String runDate, ArrayList<Downtime> downList, ArrayList<GroupEndpoint> egpList, ArrayList<MetricProfile> mpsList, String apsJson,
+	public void loadAll(String runDate, ArrayList<Downtime> downList, ArrayList<GroupEndpoint> egpList, ArrayList<MetricProfile> mpsList, ArrayList<String> apsJson,
 			String opsJson) throws IOException {
 		aps.loadJsonString(apsJson);
 		ops.loadJsonString(opsJson);
