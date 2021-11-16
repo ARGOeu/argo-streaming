@@ -20,8 +20,6 @@ import org.slf4j.LoggerFactory;
 import java.util.TimeZone;
 
 import sync.DowntimeCache;
-import sync.MetricProfileManager;
-
 import com.esotericsoftware.minlog.Log;
 import com.google.gson.Gson;
 
@@ -31,6 +29,7 @@ import argo.avro.MetricProfile;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.EndpointGroupManager.EndpointItem;
+import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
 /**
  * Status Manager implements a live structure containing a topology of entities
