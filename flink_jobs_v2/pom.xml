@@ -16,6 +16,7 @@
         <module>Timelines</module>
         <module>ProfilesManager</module>
         <module>batch_status</module>
+        <module>stream_status</module>
     </modules>
     <dependencyManagement>
         <dependencies>
