@@ -1,5 +1,4 @@
 package argo.streaming;
-
 import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
 import java.time.Duration;

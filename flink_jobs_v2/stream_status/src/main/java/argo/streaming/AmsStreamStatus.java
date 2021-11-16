@@ -42,17 +42,15 @@ import com.google.gson.JsonParser;
 
 import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
-
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
 import org.apache.flink.core.fs.FileSystem;
+import profilesmanager.EndpointGroupManager;
 import status.StatusManager;
 import sync.MetricProfileManager;
-import profilesmanager.EndpointGroupManager;
-
 
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
@@ -154,7 +152,7 @@ public class AmsStreamStatus {
         String port = null;
 
         if (!parameterTool.getRequired("ams.port").equals("__NO_VALUE_KEY")) {
-             port = parameterTool.getRequired("ams.port");
+            port = parameterTool.getRequired("ams.port");
         }
         String token = parameterTool.getRequired("ams.token");
         String project = parameterTool.getRequired("ams.project");
@@ -254,7 +252,7 @@ public class AmsStreamStatus {
         }
 
         if (hasFsOutArgs(parameterTool)) {
-            events.writeAsText(parameterTool.get("fs.output"),FileSystem.WriteMode.OVERWRITE);
+            events.writeAsText(parameterTool.get("fs.output"), FileSystem.WriteMode.OVERWRITE);
             //events.print();
         }
 
@@ -301,6 +299,8 @@ public class AmsStreamStatus {
         public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
 
             ApiResourceManager amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+            amr.setDate(config.runDate);
+            amr.setTimeoutSec((int) config.timeout);
 
             if (config.apiProxy != null) {
                 amr.setProxy(config.apiProxy);
@@ -446,7 +446,8 @@ public class AmsStreamStatus {
             pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 
             ApiResourceManager amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
-
+            amr.setDate(config.runDate);
+            amr.setTimeoutSec((int) config.timeout);
             if (config.apiProxy != null) {
                 amr.setProxy(config.apiProxy);
             }
@@ -456,10 +457,10 @@ public class AmsStreamStatus {
 
             String opsJSON = amr.getResourceJSON(ApiResource.OPS);
             String apsJSON = amr.getResourceJSON(ApiResource.AGGREGATION);
-
+            ArrayList<String> opsList = new ArrayList();
+            opsList.add(opsJSON);
             ArrayList<String> apsList = new ArrayList();
             apsList.add(apsJSON);
-
             ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(amr.getListDowntimes()));
             ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(amr.getListMetrics()));
             ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
@@ -469,7 +470,7 @@ public class AmsStreamStatus {
             sm.setTimeout(config.timeout);
             sm.setReport(config.report);
             // load all the connector data
-            sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsJSON);
+            sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsList);
 
             // Set the default status as integer
             initStatus = sm.getOps().getIntStatus(config.initStatus);
