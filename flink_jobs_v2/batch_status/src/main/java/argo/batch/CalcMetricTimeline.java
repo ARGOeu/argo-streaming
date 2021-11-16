@@ -75,7 +75,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         String endpointGroup = "";
         String hostname = "";
         String metric = "";
-       
+        boolean hasThr = false;
         TreeMap<DateTime, Integer> timeStatusMap = new TreeMap<>();
         for (StatusMetric item : in) {
             service = item.getService();
@@ -83,7 +83,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             hostname = item.getHostname();
             function = item.getFunction();
             metric = item.getMetric();
-             String ts = item.getTimestamp();
+            String ts = item.getTimestamp();
             String status = item.getStatus();
             if (i == 0) {
                 int st = this.opsMgr.getIntStatus(item.getPrevState());
@@ -92,7 +92,9 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             }
             int st = this.opsMgr.getIntStatus(status);
             timeStatusMap.put(Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", ts), st);
-
+            if (!item.getOgStatus().equals("")) {
+                hasThr = true;
+            }
             i++;
 
         }
@@ -106,8 +108,9 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             timestatusList.add(timestatus);
         }
 
-        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList);
-        out.collect(statusMetricTimeline);
+        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList);
+        statusTimeline.setHasThr(hasThr);
+        out.collect(statusTimeline);
 
     }
 

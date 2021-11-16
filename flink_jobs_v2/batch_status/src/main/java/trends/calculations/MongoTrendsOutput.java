@@ -10,6 +10,7 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import java.util.Arrays;
 import org.bson.conversions.Bson;
 
 /**
@@ -110,14 +111,19 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
                 doc.append("flipflop", record.getFlipflop());
                 break;
             case TRENDS_METRIC:
+                String[] tagsArr = record.getTags().split(",");
+
                 doc.append("group", record.getGroup());
                 doc.append("service", record.getService());
                 doc.append("endpoint", record.getEndpoint());
                 doc.append("metric", record.getMetric());
-                doc.append("tags", record.getTags());
                 doc.append("flipflop", record.getFlipflop());
+                doc.append("tags", Arrays.asList(tagsArr));
+
                 break;
             case TRENDS_STATUS_METRIC:
+                tagsArr = record.getTags().split(",");
+
                 doc.append("group", record.getGroup());
                 doc.append("service", record.getService());
                 doc.append("endpoint", record.getEndpoint());
@@ -125,7 +131,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
                 doc.append("status", record.getStatus());
                 doc.append("duration", record.getDuration());
                 doc.append("trends", record.getTrends());
-                doc.append("tags", record.getTags());
+                doc.append("tags", Arrays.asList(tagsArr));
                 break;
             case TRENDS_STATUS_ENDPOINT:
                 doc.append("group", record.getGroup());

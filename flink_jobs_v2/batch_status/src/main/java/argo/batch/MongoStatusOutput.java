@@ -13,6 +13,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
+import java.util.Arrays;
 
 
 /**
@@ -99,6 +100,11 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 	 * Service or Endpoint Group ones.       
 	 */
 	private Document prepDoc(StatusMetric record) {
+	
+	           String hasThr = "NO";
+            if (record.getHasThr()) {
+                hasThr = "YES";
+            }    
 		Document doc = new Document("report",this.report)
 				.append("endpoint_group", record.getGroup());
 				
@@ -128,11 +134,11 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 			}
 				
 		} else if (this.sType == StatusType.STATUS_METRIC) {
-		
-			doc.append("service", record.getService())
+		String[] tagsArr=record.getTags().split(",");
+               	doc.append("service", record.getService())
 			.append("host", record.getHostname())
 			.append("metric", record.getMetric())
-                         .append("tags", record.getTags())
+                         .append("tags", Arrays.asList(tagsArr))
 			.append("message", record.getMessage())
 			.append("summary", record.getSummary())
 			.append("time_integer",record.getTimeInt()) 
@@ -148,8 +154,8 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 		
 		doc.append("status",record.getStatus())
 				.append("timestamp",record.getTimestamp())
-				.append("date_integer",record.getDateInt());
-		
+				.append("date_integer",record.getDateInt())
+		                .append("has_threshold_rule", hasThr);
 		return doc;
 	}
 	

@@ -24,31 +24,31 @@ import timelines.TimelineAggregator;
  * for status flavor collection
  */
 public class CalcStatusEndGroup extends RichFlatMapFunction<StatusTimeline, StatusMetric> {
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     final ParameterTool params;
-
+    
     public CalcStatusEndGroup(ParameterTool params) {
         this.params = params;
     }
-
+    
     static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
-
+    
     private List<String> aps;
     private List<String> ops;
-
+    
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
-
+    
     private String runDate;
     public HashMap<String, TimelineAggregator> groupEndpointAggr;
-
+    
     private boolean getGroup;
-
+    
     @Override
     public void open(Configuration parameters) throws IOException {
-
+        
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
@@ -65,27 +65,31 @@ public class CalcStatusEndGroup extends RichFlatMapFunction<StatusTimeline, Stat
         this.runDate = params.getRequired("run.date");
         // set the Structures
         this.groupEndpointAggr = new HashMap<String, TimelineAggregator>();
-
+        
         this.getGroup = true;
     }
-
+    
     @Override
     public void flatMap(StatusTimeline in, Collector<StatusMetric> out) throws Exception {
-
+        
         int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
-
+        
         String endpointGroup = in.getGroup();
         ArrayList<TimeStatus> timestamps = in.getTimestamps();
-
+        boolean hasThr = false;
+        if (in.hasThr()) {
+            hasThr = true;
+        }
+        
         for (TimeStatus item : timestamps) {
             StatusMetric cur = new StatusMetric();
             cur.setDateInt(dateInt);
             cur.setGroup(endpointGroup);
             cur.setTimestamp(utils.Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp())));
-
             cur.setStatus(opsMgr.getStrStatus(item.getStatus()));
+            cur.setHasThr(hasThr);
             out.collect(cur);
         }
-
+        
     }
 }

@@ -20,6 +20,7 @@ public class StatusMetric {
     private String ruleApplied; // threshold rule applied - empty if not 
     private String info; // extra endpoint information provided by the topology
     private String tags;
+    private boolean hasThr;
 
     public StatusMetric() {
         this.group = "";
@@ -40,6 +41,7 @@ public class StatusMetric {
         this.ruleApplied = "";
         this.info = "";
         this.tags = "";
+        this.hasThr = false;
     }
 
     public StatusMetric(String group, String function, String service, String hostname, String metric, String status, String timestamp,
@@ -63,6 +65,14 @@ public class StatusMetric {
         this.ruleApplied = ruleApplied;
         this.info = info;
         this.tags = tags;
+    }
+
+    public boolean getHasThr() {
+        return hasThr;
+    }
+
+    public void setHasThr(boolean hasThr) {
+        this.hasThr = hasThr;
     }
 
     public String getTags() {
@@ -212,7 +222,7 @@ public class StatusMetric {
     @Override
     public String toString() {
         return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + ","
-                + this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + ","+ this.tags+")";
+                + this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + "," + this.tags + ")";
     }
 
 }

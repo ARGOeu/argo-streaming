@@ -20,6 +20,7 @@ public class StatusTimeline implements Serializable {
     private String hostname;
     private String metric;
     ArrayList<TimeStatus> timestamps;
+    private boolean hasThr;
 
     public StatusTimeline() {
         group = "";
@@ -27,6 +28,7 @@ public class StatusTimeline implements Serializable {
         service = "";
         hostname = "";
         timestamps = new ArrayList<>();
+        hasThr = false;
     }
 
     public StatusTimeline(String group, String function, String service, String hostname, String metric, ArrayList<TimeStatus> timestamps) {
@@ -36,8 +38,17 @@ public class StatusTimeline implements Serializable {
         this.hostname = hostname;
         this.metric = metric;
         this.timestamps = timestamps;
+        hasThr = false;
     }
- 
+
+    public boolean hasThr() {
+        return hasThr;
+    }
+
+    public void setHasThr(boolean hasThr) {
+        this.hasThr = hasThr;
+    }
+
     public String getGroup() {
         return group;
     }
