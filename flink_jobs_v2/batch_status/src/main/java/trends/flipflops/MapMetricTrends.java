@@ -1,13 +1,13 @@
-package flipflops;
+package trends.flipflops;
 
+import trends.calculations.MetricTrends;
+import trends.calculations.Trends;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.configuration.Configuration;
 import profilesmanager.MetricTagsManager;
-import trends.calculations.MetricTrends;
-import trends.calculations.Trends;
 
 public class MapMetricTrends extends RichMapFunction<MetricTrends, Trends> {
 

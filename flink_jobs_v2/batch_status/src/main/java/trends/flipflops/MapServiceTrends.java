@@ -1,4 +1,6 @@
-package flipflops;
+package trends.flipflops;
+import trends.calculations.ServiceTrends;
+import trends.calculations.Trends;
 import org.apache.flink.api.common.functions.MapFunction;
 
 public class MapServiceTrends implements MapFunction<ServiceTrends, Trends> {

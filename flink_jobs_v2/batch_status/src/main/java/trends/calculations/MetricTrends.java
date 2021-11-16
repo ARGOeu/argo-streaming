@@ -1,30 +1,33 @@
+package trends.calculations;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package flipflops;
-
 import timelines.Timeline;
 
 /**
- * ServiceTrends, describes the computed trend information extracted from the
- * timelines at the level of group service endpoints groups
+ * MetricTrends, describes the computed trend information extracted from the set
+ * of the timelines at the level of group service endpoints metrics groups
  */
-public class ServiceTrends {
+public class MetricTrends {
 
     String group;
     String service;
+    String endpoint;
+    String metric;
     Timeline timeline;
     Integer flipflops;
-    String function;
 
-    public ServiceTrends() {
+    public MetricTrends() {
     }
 
-    public ServiceTrends(String group, String service, Timeline timeline, Integer flipflops) {
+    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops) {
         this.group = group;
         this.service = service;
+        this.endpoint = endpoint;
+        this.metric = metric;
         this.timeline = timeline;
         this.flipflops = flipflops;
     }
@@ -45,6 +48,22 @@ public class ServiceTrends {
         this.service = service;
     }
 
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    public String getMetric() {
+        return metric;
+    }
+
+    public void setMetric(String metric) {
+        this.metric = metric;
+    }
+
     public Timeline getTimeline() {
         return timeline;
     }
@@ -60,13 +79,4 @@ public class ServiceTrends {
     public void setFlipflops(Integer flipflops) {
         this.flipflops = flipflops;
     }
-
-    public String getFunction() {
-        return function;
-    }
-
-    public void setFunction(String function) {
-        this.function = function;
-    }
-
 }

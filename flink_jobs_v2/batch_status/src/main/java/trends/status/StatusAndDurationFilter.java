@@ -1,4 +1,4 @@
-package flipflops;
+package trends.status;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
