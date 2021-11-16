@@ -1,6 +1,8 @@
 package argo.streaming;
 
 
+import argo.amr.ApiResource;
+import argo.amr.ApiResourceManager;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -9,9 +11,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import argo.amr.ApiResource;
-import argo.amr.ApiResourceManager;
 
 /**
  * Custom source to connect to ArgoWebApi service. Uses API Resource Manager
