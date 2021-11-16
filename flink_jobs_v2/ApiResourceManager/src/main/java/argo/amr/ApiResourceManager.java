@@ -290,6 +290,20 @@ public class ApiResourceManager {
     }
 
     /**
+     * Retrieves the remote report configuration based on reportID main class
+     * attribute and stores the content in the enum map
+     */
+    public void getRemoteMetricTags() {
+        String path = "https://%s/api/v2/metrics/by_report/%s";
+        String fullURL = String.format(path, this.endpoint, this.reportName);
+        String content = this.requestManager.getResource(fullURL);
+        if (!content.equals("{}")) {
+
+            this.data.put(ApiResource.MTAGS, this.apiResponseParser.getJsonData(content, false));
+        }
+    }
+
+    /**
      * Returns local resource (after has been retrieved) content based on
      * resource type
      *
@@ -449,7 +463,7 @@ public class ApiResourceManager {
         this.getRemoteDowntimes();
         // get recomptations
 //        this.getRemoteRecomputations();
-
+        this.getRemoteMetricTags();
     }
 
 }

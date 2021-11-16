@@ -30,7 +30,6 @@ public class ApiResponseParser {
     private String aggregationID;
     private String opsID;
     private String threshID;
-   
 
     public ApiResponseParser() {
     }
@@ -41,7 +40,7 @@ public class ApiResponseParser {
         this.aggregationID = aggregationID;
         this.opsID = opsID;
         this.threshID = threshID;
-        
+
     }
 
     public String getReportName() {
@@ -92,6 +91,7 @@ public class ApiResponseParser {
      *
      */
     public String getJsonData(String content, boolean asArray) {
+       
         JsonParser jsonParser = new JsonParser();
         // Grab the first - and only line of json from ops data
         JsonElement jElement = jsonParser.parse(content);
@@ -145,7 +145,7 @@ public class ApiResponseParser {
      */
     public List<Downtime> getListDowntimes(String content) {
         List<Downtime> results = new ArrayList<Downtime>();
-       JsonParser jsonParser = new JsonParser();
+        JsonParser jsonParser = new JsonParser();
         JsonElement jElement = jsonParser.parse(content);
         JsonObject jRoot = jElement.getAsJsonObject();
         JsonArray jElements = jRoot.get("endpoints").getAsJsonArray();
@@ -161,7 +161,7 @@ public class ApiResponseParser {
         }
         return results;
 
-   }
+    }
 
     /**
      * Parses the Topology endpoint content retrieved from argo-web-api and
@@ -222,7 +222,7 @@ public class ApiResponseParser {
      * Parses the Weights content retrieved from argo-web-api and provides a
      * list of Weights avro objects to be used in the next steps of the pipeline
      */
-    public List<Weight>  getListWeights(String content) {
+    public List<Weight> getListWeights(String content) {
         List<Weight> results = new ArrayList<Weight>();
 
         JsonParser jsonParser = new JsonParser();
@@ -246,7 +246,7 @@ public class ApiResponseParser {
      * provides a list of MetricProfile avro objects to be used in the next
      * steps of the pipeline
      */
-    public  List<MetricProfile> getListMetrics(String content) {
+    public List<MetricProfile> getListMetrics(String content) {
         List<MetricProfile> results = new ArrayList<MetricProfile>();
 
         JsonParser jsonParser = new JsonParser();
