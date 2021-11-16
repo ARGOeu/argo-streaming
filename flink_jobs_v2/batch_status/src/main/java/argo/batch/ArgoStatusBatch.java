@@ -1,7 +1,5 @@
 package argo.batch;
 
-import org.slf4j.LoggerFactory;
-
 import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
 import argo.ar.CalcEndpointAR;
@@ -36,26 +34,23 @@ import flipflops.Trends;
 import flipflops.ZeroEndpointTrendsFilter;
 import flipflops.ZeroGroupTrendsFilter;
 import flipflops.ZeroMetricTrendsFilter;
-
-import org.slf4j.Logger;
-
-import java.util.List;
 import org.apache.flink.api.common.functions.MapFunction;
-
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.operators.DataSource;
-import org.apache.flink.api.java.tuple.Tuple7;
-
+import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.api.java.utils.ParameterTool;
-
 import org.apache.flink.core.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profilesmanager.ReportManager;
 import trends.GroupTrendsCounter;
 import trends.MetricTrendsCounter;
 import trends.ServiceTrendsCounter;
+
+import java.util.List;
 
 /**
  * Implements an ARGO Status Batch Job in flink
@@ -161,6 +156,11 @@ public class ArgoStatusBatch {
         if (amr.getResourceJSON(ApiResource.RECOMPUTATIONS) != null) {
             recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
         }
+        DataSource<String> mtagsDS = env.fromElements("");
+        if (amr.getResourceJSON(ApiResource.MTAGS) != null) {
+
+            mtagsDS = env.fromElements(amr.getResourceJSON(ApiResource.MTAGS));
+        }
 
         DataSource<String> confDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
 
@@ -179,7 +179,6 @@ public class ArgoStatusBatch {
             // grab information about thresholds rules from argo-web-api
             thrDS = env.fromElements(amr.getResourceJSON(ApiResource.THRESHOLDS));
         }
-
         ReportManager confMgr = new ReportManager();
         confMgr.loadJsonString(cfgDS.collect());
 
@@ -271,10 +270,13 @@ public class ArgoStatusBatch {
 
         if (calcStatus) {
             //Calculate endpoint timeline timestamps 
+            stDetailDS = stDetailDS.flatMap(new MapStatusMetricTags()).withBroadcastSet(mtagsDS, "mtags");
+
             DataSet<StatusMetric> stEndpointDS = statusEndpointTimeline.flatMap(new CalcStatusEndpoint(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                     .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                     .withBroadcastSet(apsDS, "aps");
 // Create status service data set
+
             DataSet<StatusMetric> stServiceDS = statusServiceTimeline.flatMap(new CalcStatusService(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp").withBroadcastSet(opsDS, "ops")
                     .withBroadcastSet(apsDS, "aps");
@@ -287,7 +289,7 @@ public class ArgoStatusBatch {
             // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
             MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
             MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
-            MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI, "status_services", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
+            MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI, "status_services", dbMethod, MongoStatusOutput.StatusType.STATUS_SERVICE, reportID);
             MongoStatusOutput endGroupMongoOut = new MongoStatusOutput(dbURI, "status_endpoint_groups", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT_GROUP, reportID);
 
             stDetailDS.output(metricMongoOut);
@@ -335,6 +337,7 @@ public class ArgoStatusBatch {
 
                 MongoTrendsOutput metricFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_metrics", MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportID, runDate, clearMongo);
                 DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapMetricTrends());
+                trends = trends.flatMap(new MapTrendTags()).withBroadcastSet(mtagsDS, "mtags");
                 trends.output(metricFlipFlopMongoOut);
 
                 DataSet<EndpointTrends> noZeroserviceEndpointGroupData = serviceEndpointGroupData.filter(new ZeroEndpointTrendsFilter());
@@ -377,7 +380,8 @@ public class ArgoStatusBatch {
 
             if (calcTrends) {
                 //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-                DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> metricStatusTrendsData = serviceEndpointMetricGroupData.flatMap(new MetricTrendsCounter()).withBroadcastSet(opsDS, "ops");
+                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> metricStatusTrendsData = serviceEndpointMetricGroupData.flatMap(new MetricTrendsCounter()).withBroadcastSet(opsDS, "ops");
+               metricStatusTrendsData= metricStatusTrendsData.flatMap(new MapTupleTags()).withBroadcastSet(mtagsDS, "mtags");
                 //filter dataset for each status type and write to mongo db
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "critical");
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "warning");
@@ -385,7 +389,7 @@ public class ArgoStatusBatch {
 
                 /*=============================================================================================*/
                 //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-                DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> endpointStatusTrendsData = serviceEndpointGroupData.flatMap(new EndpointTrendsCounter()).withBroadcastSet(opsDS, "ops");
+                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> endpointStatusTrendsData = serviceEndpointGroupData.flatMap(new EndpointTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
 
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT, "status_trends_endpoints", endpointStatusTrendsData, "critical");
@@ -395,7 +399,7 @@ public class ArgoStatusBatch {
                 /**
                  * **************************************************************************************************
                  */
-                DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> serviceStatusTrendsData = serviceGroupData.flatMap(new ServiceTrendsCounter()).withBroadcastSet(opsDS, "ops");
+                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> serviceStatusTrendsData = serviceGroupData.flatMap(new ServiceTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_SERVICE, "status_trends_services", serviceStatusTrendsData, "critical");
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_SERVICE, "status_trends_services", serviceStatusTrendsData, "warning");
@@ -406,7 +410,7 @@ public class ArgoStatusBatch {
                  */
                 //group data by group   and count flip flops
                 //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-                DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> groupStatusTrendsData = groupData.flatMap(new GroupTrendsCounter()).withBroadcastSet(opsDS, "ops");
+                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> groupStatusTrendsData = groupData.flatMap(new GroupTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, "status_trends_groups", groupStatusTrendsData, "critical");
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, "status_trends_groups", groupStatusTrendsData, "warning");
@@ -427,38 +431,38 @@ public class ArgoStatusBatch {
 
     }
 
-    private static void filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType mongoTrendsType, String uri, DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> data, String status) {
+    private static void filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType mongoTrendsType, String uri, DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> data, String status) {
 
-        DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> filteredData = data.filter(new StatusAndDurationFilter(status)); //filter dataset by status type and status appearances>0
+        DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> filteredData = data.filter(new StatusAndDurationFilter(status)); //filter dataset by status type and status appearances>0
 
         if (rankNum != null) {
-            filteredData = filteredData.sortPartition(6, Order.DESCENDING).setParallelism(1).first(rankNum);
+            filteredData = filteredData.sortPartition(7, Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            filteredData = filteredData.sortPartition(6, Order.DESCENDING).setParallelism(1);
+            filteredData = filteredData.sortPartition(7, Order.DESCENDING).setParallelism(1);
         }
         writeStatusTrends(filteredData, uri, mongoTrendsType, data, status); //write to mongo db
 
     }
 
     // write status trends to mongo db
-    private static void writeStatusTrends(DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> outputData, String uri, final MongoTrendsOutput.TrendsType mongoCase, DataSet< Tuple7< String, String, String, String, String, Integer, Integer>> data, String status) {
+    private static void writeStatusTrends(DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> outputData, String uri, final MongoTrendsOutput.TrendsType mongoCase, DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> data, String status) {
 
         //MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT
         MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(dbURI, uri, mongoCase, reportID, runDate, clearMongo);
 
-        DataSet<Trends> trends = outputData.map(new MapFunction< Tuple7< String, String, String, String, String, Integer, Integer>, Trends>() {
+        DataSet<Trends> trends = outputData.map(new MapFunction< Tuple8< String, String, String, String, String, Integer, Integer, String>, Trends>() {
 
             @Override
-            public Trends map(Tuple7< String, String, String, String, String, Integer, Integer> in) throws Exception {
+            public Trends map(Tuple8< String, String, String, String, String, Integer, Integer, String> in) throws Exception {
                 switch (mongoCase) {
                     case TRENDS_STATUS_METRIC:
-                        return new Trends(in.f0, in.f1, in.f2, in.f3, in.f4, in.f5, in.f6);
+                        return new Trends(in.f0, in.f1, in.f2, in.f3, in.f4, in.f5, in.f6, in.f7);
                     case TRENDS_STATUS_ENDPOINT:
-                        return new Trends(in.f0, in.f1, in.f2, null, in.f4, in.f5, in.f6);
+                        return new Trends(in.f0, in.f1, in.f2, null, in.f4, in.f5, in.f6, null);
                     case TRENDS_STATUS_SERVICE:
-                        return new Trends(in.f0, in.f1, null, null, in.f4, in.f5, in.f6);
+                        return new Trends(in.f0, in.f1, null, null, in.f4, in.f5, in.f6, null);
                     case TRENDS_STATUS_GROUP:
-                        return new Trends(in.f0, null, null, null, in.f4, in.f5, in.f6);
+                        return new Trends(in.f0, null, null, null, in.f4, in.f5, in.f6, null);
                     default:
                         return null;
                 }

@@ -1,4 +1,5 @@
 package argo.batch;
+
 import java.io.IOException;
 import java.util.List;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
@@ -12,13 +13,13 @@ import profilesmanager.AggregationProfileManager;
  */
 public class MapServices extends RichFlatMapFunction<StatusMetric, StatusMetric> {
 
-    //private AggregationProfileParser aggregationProfileParser;
     public MapServices() {
 
     }
 
     private List<String> aps;
     private AggregationProfileManager apsMgr;
+
     @Override
     public void open(Configuration parameters) throws IOException {
 
@@ -28,7 +29,7 @@ public class MapServices extends RichFlatMapFunction<StatusMetric, StatusMetric>
         // Initialize aggregation profile manager
         this.apsMgr = new AggregationProfileManager();
         this.apsMgr.loadJsonString(aps);
-        // Initialize operations manager      
+        // Initialize operations manager    
 
     }
 
@@ -46,7 +47,6 @@ public class MapServices extends RichFlatMapFunction<StatusMetric, StatusMetric>
         String service = t.getService();
 
         String function = this.apsMgr.retrieveFunctionsByService(service);
-
         StatusMetric newT = t;
         newT.setFunction(function);
         out.collect(newT);

@@ -30,6 +30,7 @@ import utils.Utils;
  * the datastore schema for status endpoint collection
  */
 public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, StatusTimeline> {
+
     private static final long serialVersionUID = 1L;
 
     final ParameterTool params;
@@ -46,6 +47,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
+
     @Override
     public void open(Configuration parameters) throws IOException {
         this.runDate = params.getRequired("run.date");
@@ -73,6 +75,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         String endpointGroup = "";
         String hostname = "";
         String metric = "";
+        String tags = "";
         TreeMap<DateTime, Integer> timeStatusMap = new TreeMap<>();
         for (StatusMetric item : in) {
             service = item.getService();
@@ -80,6 +83,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             hostname = item.getHostname();
             function = item.getFunction();
             metric = item.getMetric();
+            tags = item.getTags();
             String ts = item.getTimestamp();
             String status = item.getStatus();
             if (i == 0) {
@@ -103,7 +107,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             timestatusList.add(timestatus);
         }
 
-        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList);
+        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList, tags);
         out.collect(statusMetricTimeline);
 
     }
