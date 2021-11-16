@@ -18,10 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.TimeZone;
-
 import sync.DowntimeCache;
-import sync.EndpointGroupManagerV2;
-import sync.EndpointGroupManagerV2.EndpointItem;
 import sync.MetricProfileManager;
 import ops.OpsManager;
 
@@ -31,9 +28,9 @@ import com.google.gson.Gson;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricProfile;
-
 import profilesmanager.AggregationProfileManager;
-
+import profilesmanager.EndpointGroupManager;
+import profilesmanager.EndpointGroupManager.EndpointItem;
 
 /**
  * Status Manager implements a live structure containing a topology of entities
@@ -48,7 +45,7 @@ public class StatusManager {
 	private String report;
 
 	// Sync file structures necessary for status computation
-	public EndpointGroupManagerV2 egp = new EndpointGroupManagerV2();
+	public EndpointGroupManager egp = new EndpointGroupManager();
 	public MetricProfileManager mps = new MetricProfileManager();
 	AggregationProfileManager aps = new AggregationProfileManager();
 	OpsManager ops = new OpsManager();
@@ -198,7 +195,7 @@ public class StatusManager {
 	
 	}
 	
-	public void updateTopology(EndpointGroupManagerV2 egpNext) {
+	public void updateTopology(EndpointGroupManager egpNext) {
 		// find a list of lost items to remove them from status tree
 		ArrayList<String> lostItems = this.egp.compareToBeRemoved(egpNext);
 		
