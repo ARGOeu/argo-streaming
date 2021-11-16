@@ -49,8 +49,8 @@ import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
 import org.apache.flink.core.fs.FileSystem;
 import profilesmanager.EndpointGroupManager;
+import profilesmanager.MetricProfileManager;
 import status.StatusManager;
-import sync.MetricProfileManager;
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
  * kafka, fs) job required cli parameters --ams.endpoint : ARGO messaging api
@@ -149,7 +149,6 @@ public class AmsStreamStatus {
         // Initialize Input Source : ARGO Messaging Source
         String endpoint = parameterTool.getRequired("ams.endpoint");
         String port = null;
-
         if (!parameterTool.getRequired("ams.port").equals("__NO_VALUE_KEY")) {
             port = parameterTool.getRequired("ams.port");
         }

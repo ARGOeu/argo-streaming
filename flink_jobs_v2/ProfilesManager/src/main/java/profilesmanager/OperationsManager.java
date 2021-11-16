@@ -213,7 +213,7 @@ public class OperationsManager implements Serializable {
             br = new BufferedReader(new FileReader(jsonFile));
 
             JsonParser json_parser = new JsonParser();
-            JsonElement j_element = json_parser.parse(br);
+          JsonElement j_element = json_parser.parse(br);
             JsonObject jRoot = j_element.getAsJsonObject();
             JsonArray jData = jRoot.get("data").getAsJsonArray();
             JsonElement jItem = jData.get(0);
