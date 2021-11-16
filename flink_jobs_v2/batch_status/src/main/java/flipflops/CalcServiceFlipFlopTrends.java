@@ -7,7 +7,6 @@ package flipflops;
  */
 import argo.batch.StatusTimeline;
 import argo.batch.TimeStatus;
-import argo.flipflops.ServiceTrends;
 import java.util.ArrayList;
 
 import java.util.HashMap;
