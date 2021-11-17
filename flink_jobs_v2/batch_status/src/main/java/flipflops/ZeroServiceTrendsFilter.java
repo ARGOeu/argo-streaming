@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package argo.flipflops;
+package flipflops;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

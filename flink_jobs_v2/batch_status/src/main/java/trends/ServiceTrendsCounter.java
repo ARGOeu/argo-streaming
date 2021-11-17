@@ -3,7 +3,7 @@ package trends;
 
 
 import argo.batch.StatusMetricTimeline;
-import argo.flipflops.ServiceTrends;
+import flipflops.ServiceTrends;
 import java.io.IOException;
 import java.util.List;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;

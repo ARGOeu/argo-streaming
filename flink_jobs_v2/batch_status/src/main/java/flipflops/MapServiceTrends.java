@@ -1,6 +1,5 @@
 package flipflops;
 
-import argo.flipflops.ServiceTrends;
 import org.apache.flink.api.common.functions.MapFunction;
 
 public class MapServiceTrends implements MapFunction<ServiceTrends, Trends> {
