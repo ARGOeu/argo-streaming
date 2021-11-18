@@ -70,6 +70,7 @@ public class ApiResourceManagerTest {
         assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_DOWNTIMES.json"));
         assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_WEIGHTS.json"));
         assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/data_RECOMPUTATIONS.json"));
+        assertNotNull("Test file missing", ApiResourceManagerTest.class.getResource("/amr/metric_tags.json"));
     }
 
     @Test
@@ -85,6 +86,8 @@ public class ApiResourceManagerTest {
         String jsonDowntimes = loadResJSON("/amr/downtimes.json");
         String jsonWeights = loadResJSON("/amr/weights.json");
         String jsonRecomp = loadResJSON("/amr/recomputations.json");
+//        String jsonMetricTags = loadResJSON("/amr/metric_tags.json");
+        String jsonMetricTags = "{}";
 
         // get json data items
         String dataConfig = loadResJSON("/amr/data_CONFIG.json");
@@ -97,7 +100,8 @@ public class ApiResourceManagerTest {
         String dataDown = loadResJSON("/amr/data_DOWNTIMES.json");
         String dataWeights = loadResJSON("/amr/data_WEIGHTS.json");
         String dataRecomp = loadResJSON("/amr/data_RECOMPUTATIONS.json");
-
+        // String dataMetricTags = loadResJSON("/amr/data_RECOMPUTATIONS.json");
+        String dataMetricTags = null;
         stubFor(get(urlEqualTo("/api/v2/reports/f29eeb59-ab38-4aa0-b372-5d3c0709dfb2"))
                 .willReturn(aResponse().withBody(jsonReport)));
         stubFor(get(urlEqualTo("/api/v2/metric_profiles/92fa5d74-015c-4122-b8b9-7b344f3154d4?date=2020-11-01"))
@@ -118,14 +122,15 @@ public class ApiResourceManagerTest {
                 .willReturn(aResponse().withBody(jsonWeights)));
         stubFor(get(urlEqualTo("/api/v2/recomputations?date=2020-11-01"))
                 .willReturn(aResponse().withBody(jsonRecomp)));
-
+        stubFor(get(urlEqualTo("/api/v2/metrics/by_report/Critical"))
+                .willReturn(aResponse().withBody(jsonMetricTags)));
         ApiResourceManager amr = new ApiResourceManager("localhost:8443", "s3cr3t");
         amr.setDate("2020-11-01");
         amr.setReportID("f29eeb59-ab38-4aa0-b372-5d3c0709dfb2");
         amr.setToken("s3cr3t");
         amr.setWeightsID("3b9602ed-49ec-42f3-8df7-7c35331ebf69");
         amr.setVerify(false);
-   
+
         // Get the report configuration first and parse it
         amr.getRemoteConfig();
         amr.parseReport();
@@ -143,11 +148,13 @@ public class ApiResourceManagerTest {
         amr.getRemoteAggregation();
         amr.getRemoteOps();
         amr.getRemoteThresholds();
+        amr.getRemoteMetricTags();
 
         assertEquals("retrieved metric profile data", dataMetric, amr.getResourceJSON(ApiResource.METRIC));
         assertEquals("retrieved aggregation profile data", dataAggr, amr.getResourceJSON(ApiResource.AGGREGATION));
         assertEquals("retrieved ops profile data", dataOps, amr.getResourceJSON(ApiResource.OPS));
         assertEquals("retrieved thresholds profile data", dataThresh, amr.getResourceJSON(ApiResource.THRESHOLDS));
+        assertEquals("retrieved metric tag profile data", dataMetricTags, amr.getResourceJSON(ApiResource.MTAGS));
 
         // get remote topology
         amr.getRemoteTopoEndpoints();
@@ -177,7 +184,7 @@ public class ApiResourceManagerTest {
         amr2.setVerify(false);
 
         amr2.getRemoteAll();
-          // test amr2 downtime list
+        // test amr2 downtime list
         Downtime[] dtl = amr2.getListDowntimes();
         assertEquals("downtime list size", 3, dtl.length);
         assertEquals("downtime data", "WebPortal", dtl[0].getService());
@@ -194,7 +201,7 @@ public class ApiResourceManagerTest {
         assertEquals("downtime data", "2020-11-10T23:59:00Z", dtl[2].getEndTime());
 
         // test amr2 group endpoint list
-        GroupEndpoint[] gel =  amr2.getListGroupEndpoints();
+        GroupEndpoint[] gel = amr2.getListGroupEndpoints();
         assertEquals("group endpoint list size", 3, gel.length);
         assertEquals("group endpoint data", "SERVICEGROUPS", gel[0].getType());
         assertEquals("group endpoint data", "groupA", gel[0].getGroup());
@@ -221,7 +228,7 @@ public class ApiResourceManagerTest {
         assertEquals("group endpoint data", "FOO", gel[2].getTags().get("scope"));
 
         // test amr2 group groups list
-        GroupGroup[] ggl =  amr2.getListGroupGroups();
+        GroupGroup[] ggl = amr2.getListGroupGroups();
         assertEquals("group endpoint list size", 2, ggl.length);
         assertEquals("group endpoint data", "PROJECT", ggl[0].getType());
         assertEquals("group endpoint data", "ORG-A", ggl[0].getGroup());
@@ -236,7 +243,7 @@ public class ApiResourceManagerTest {
         assertEquals("group endpoint data", "Local", ggl[1].getTags().get("scope"));
 
         // test amr2 weights list
-        Weight[] wl =  amr2.getListWeights();
+        Weight[] wl = amr2.getListWeights();
         assertEquals("group endpoint list size", 4, wl.length);
         assertEquals("group endpoint data", "computationpower", wl[0].getType());
         assertEquals("group endpoint data", "GROUP-A", wl[0].getSite());
@@ -255,7 +262,7 @@ public class ApiResourceManagerTest {
         assertEquals("group endpoint data", "19838", wl[3].getWeight());
 
         // test amr2 metric profile list
-        MetricProfile[] mpl =  amr2.getListMetrics();
+        MetricProfile[] mpl = amr2.getListMetrics();
         assertEquals("group endpoint list size", 1, mpl.length);
         assertEquals("group endpoint data", "test-mon", mpl[0].getProfile());
         assertEquals("group endpoint data", "WebPortal", mpl[0].getService());

@@ -30,7 +30,7 @@ public class MetricTagsManager implements Serializable {
     private static final Logger LOG = Logger.getLogger(MetricTagsManager.class.getName());
 
     /**
-     * A constructor of a MetricTagsManager
+     * A constructor of a MetricTagsManager 
      */
     public MetricTagsManager() {
         metricTags = new HashMap<String, ArrayList<String>>();
