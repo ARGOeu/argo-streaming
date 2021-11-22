@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.List;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple7;
+import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import profilesmanager.OperationsManager;
@@ -21,7 +22,7 @@ import timelines.TimelineIntegrator;
  * appearances of the status CRITICAL, WARNING,UNKNOWN and produces a dataset of
  * tuples that contain these calculations
  */
-public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple7<String, String, String, String, String, Integer, Integer>> {
+public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple8<String, String, String, String, String, Integer, Integer,String>> {
 
     private List<String> ops;
 
@@ -49,7 +50,7 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
      * @throws Exception
      */
     @Override
-    public void flatMap(MetricTrends t, Collector<Tuple7<String, String, String, String, String, Integer, Integer>> out) throws Exception {
+    public void flatMap(MetricTrends t, Collector<Tuple8<String, String, String, String, String, Integer, Integer,String>> out) throws Exception {
         int criticalstatus = this.opsMgr.getIntStatus("CRITICAL");
         int warningstatus = this.opsMgr.getIntStatus("WARNING");
         int unknownstatus = this.opsMgr.getIntStatus("UNKNOWN");
@@ -60,16 +61,16 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
         int[] warningstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), warningstatus);
         int[] unknownstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), unknownstatus);
 
-        Tuple7< String, String, String, String, String, Integer, Integer> tupleCritical = new Tuple7<  String, String, String, String, String, Integer, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1]);
+        Tuple8<String, String, String, String, String, Integer, Integer,String> tupleCritical = new Tuple8<  String, String, String, String, String, Integer, Integer,String>(
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1],t.getTags());
         out.collect(tupleCritical);
 
-        Tuple7<  String, String, String, String, String, Integer, Integer> tupleWarning = new Tuple7< String, String, String, String, String, Integer, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "WARNING", warningstatusInfo[0], warningstatusInfo[1]);
+        Tuple8<String, String, String, String, String, Integer, Integer,String> tupleWarning = new Tuple8< String, String, String, String, String, Integer, Integer,String>(
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "WARNING", warningstatusInfo[0], warningstatusInfo[1],t.getTags());
         out.collect(tupleWarning);
 
-        Tuple7<  String, String, String, String, String, Integer, Integer> tupleUnknown = new Tuple7<  String, String, String, String, String, Integer, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1]);
+        Tuple8<String, String, String, String, String, Integer, Integer,String> tupleUnknown = new Tuple8<  String, String, String, String, String, Integer, Integer,String>(
+                t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1],t.getTags());
         out.collect(tupleUnknown);
     }
 }

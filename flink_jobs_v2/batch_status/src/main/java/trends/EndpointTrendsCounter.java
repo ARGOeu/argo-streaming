@@ -5,12 +5,12 @@ package argo.trends;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import argo.batch.StatusMetricTimeline;
 import flipflops.EndpointTrends;
 import java.io.IOException;
 import java.util.List;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple7;
+import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import profilesmanager.OperationsManager;
@@ -22,7 +22,7 @@ import timelines.TimelineIntegrator;
  * appearances of the status CRITICAL, WARNING,UNKNOWN and produces a dataset of
  * tuples that contain these calculations
  */
-public class EndpointTrendsCounter extends RichFlatMapFunction<EndpointTrends, Tuple7< String, String, String, String, String, Integer, Integer>> {
+public class EndpointTrendsCounter extends RichFlatMapFunction<EndpointTrends, Tuple8< String, String, String, String, String, Integer, Integer,String>> {
 
    private List<String> ops;
 
@@ -51,7 +51,7 @@ public class EndpointTrendsCounter extends RichFlatMapFunction<EndpointTrends, T
      * @throws Exception
      */
     @Override
-    public void flatMap(EndpointTrends t, Collector<  Tuple7< String, String, String, String, String, Integer, Integer>> out) throws Exception {
+    public void flatMap(EndpointTrends t, Collector<  Tuple8< String, String, String, String, String, Integer, Integer,String>> out) throws Exception {
 
         int criticalstatus = this.opsMgr.getIntStatus("CRITICAL");
         int warningstatus = this.opsMgr.getIntStatus("WARNING");
@@ -64,17 +64,20 @@ public class EndpointTrendsCounter extends RichFlatMapFunction<EndpointTrends, T
         int[] unknownstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), unknownstatus);
 
 
-        Tuple7< String, String, String, String, String, Integer, Integer> tupleCritical = new Tuple7<  String, String, String, String, String, Integer, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), null, "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1]);
+        Tuple8< String, String, String, String, String, Integer, Integer, String> tupleCritical = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+                t.getGroup(), t.getService(), t.getEndpoint(), null, "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1],"");
+
         out.collect(tupleCritical);
 
-        Tuple7<  String, String, String, String, String, Integer, Integer> tupleWarning = new Tuple7< String, String, String, String, String, Integer, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), null, "WARNING", warningstatusInfo[0], warningstatusInfo[1]);
+        Tuple8<  String, String, String, String, String, Integer, Integer, String> tupleWarning = new Tuple8< String, String, String, String, String, Integer, Integer, String>(
+                t.getGroup(), t.getService(), t.getEndpoint(), null, "WARNING", warningstatusInfo[0], warningstatusInfo[1],"");
 
         out.collect(tupleWarning);
 
-        Tuple7<  String, String, String, String, String, Integer, Integer> tupleUnknown = new Tuple7<  String, String, String, String, String, Integer, Integer>(
-                t.getGroup(), t.getService(), t.getEndpoint(), null, "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1]);
+        Tuple8<  String, String, String, String, String, Integer, Integer, String> tupleUnknown = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+                t.getGroup(), t.getService(), t.getEndpoint(), null, "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1],"");
+
+
         out.collect(tupleUnknown);
 
     }

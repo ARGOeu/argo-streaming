@@ -132,6 +132,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 			doc.append("service", record.getService())
 			.append("host", record.getHostname())
 			.append("metric", record.getMetric())
+                         .append("tags", record.getTags())
 			.append("message", record.getMessage())
 			.append("summary", record.getSummary())
 			.append("time_integer",record.getTimeInt()) 

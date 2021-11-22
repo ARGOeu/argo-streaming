@@ -10,6 +10,6 @@ public class MapMetricTrends implements MapFunction<MetricTrends, Trends> {
 
     @Override
     public Trends map(MetricTrends in) throws Exception {
-        return new Trends(in.getGroup(), in.getService(), in.getEndpoint(), in.getMetric(), in.getFlipflops());
+        return new Trends(in.getGroup(), in.getService(), in.getEndpoint(), in.getMetric(), in.getFlipflops(), in.getTags());
     }
 }

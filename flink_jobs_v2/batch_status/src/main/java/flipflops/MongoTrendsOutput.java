@@ -114,6 +114,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
                 doc.append("service", record.getService());
                 doc.append("endpoint", record.getEndpoint());
                 doc.append("metric", record.getMetric());
+                doc.append("tags", record.getTags());
                 doc.append("flipflop", record.getFlipflop());
                 break;
             case TRENDS_STATUS_METRIC:
@@ -124,6 +125,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
                 doc.append("status", record.getStatus());
                 doc.append("duration", record.getDuration());
                 doc.append("trends", record.getTrends());
+                doc.append("tags", record.getTags());
                 break;
             case TRENDS_STATUS_ENDPOINT:
                 doc.append("group", record.getGroup());
