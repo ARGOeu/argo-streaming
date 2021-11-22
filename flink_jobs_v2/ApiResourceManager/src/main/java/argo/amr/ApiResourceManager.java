@@ -298,8 +298,7 @@ public class ApiResourceManager {
         String fullURL = String.format(path, this.endpoint, this.reportName);
         String content = this.requestManager.getResource(fullURL);
         if (!content.equals("{}")) {
-
-            this.data.put(ApiResource.MTAGS, this.apiResponseParser.getJsonData(content, false));
+            this.data.put(ApiResource.MTAGS, this.apiResponseParser.getJsonData(content, true));
         }
     }
 

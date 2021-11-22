@@ -3,7 +3,7 @@ package argo.batch;
 public class StatusMetric {
 
     private String group;
-    private String function ;
+    private String function;
     private String service;
     private String hostname;
     private String metric;
@@ -19,6 +19,7 @@ public class StatusMetric {
     private String ogStatus; // original status from moniting host
     private String ruleApplied; // threshold rule applied - empty if not 
     private String info; // extra endpoint information provided by the topology
+    private String tags;
 
     public StatusMetric() {
         this.group = "";
@@ -38,10 +39,11 @@ public class StatusMetric {
         this.ogStatus = "";
         this.ruleApplied = "";
         this.info = "";
+        this.tags = "";
     }
 
     public StatusMetric(String group, String function, String service, String hostname, String metric, String status, String timestamp,
-            int dateInt, int timeInt, String summary, String message, String prevState, String prevTs, String actualData, String ogStatus, String ruleApplied, String info) {
+            int dateInt, int timeInt, String summary, String message, String prevState, String prevTs, String actualData, String ogStatus, String ruleApplied, String info, String tags) {
 
         this.group = group;
         this.function = function;
@@ -60,9 +62,16 @@ public class StatusMetric {
         this.ogStatus = ogStatus;
         this.ruleApplied = ruleApplied;
         this.info = info;
+        this.tags = tags;
     }
 
+    public String getTags() {
+        return tags;
+    }
 
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
 
     public String getGroup() {
         return group;
@@ -71,6 +80,7 @@ public class StatusMetric {
     public void setGroup(String group) {
         this.group = group;
     }
+
     public String getFunction() {
         return function;
     }
@@ -202,7 +212,7 @@ public class StatusMetric {
     @Override
     public String toString() {
         return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + ","
-                + this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + ")";
+                + this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + ","+ this.tags+")";
     }
 
 }

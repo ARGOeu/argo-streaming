@@ -6,6 +6,7 @@ package flipflops;
  * and open the template in the editor.
  */
 public class Trends {
+
     private String group;
     private String service;
     private String endpoint;
@@ -15,15 +16,17 @@ public class Trends {
     private String status;
     private int trends;
     private int duration;
+    private String tags;
 
-    public Trends(String group, String service, String endpoint, String metric, String status, int trends, int duration) {
+    public Trends(String group, String service, String endpoint, String metric, String status, int trends, int duration, String tags) {
         this.group = group;
         this.service = service;
         this.endpoint = endpoint;
         this.metric = metric;
         this.status = status;
         this.trends = trends;
-        this.duration=duration;
+        this.duration = duration;
+        this.tags = tags;
     }
 
     public Trends(String group, String service, String endpoint, String metric, String status, int trends) {
@@ -35,15 +38,14 @@ public class Trends {
         this.status = status;
         this.trends = trends;
     }
-    
-    
 
-    public Trends(String group, String service, String endpoint, String metric, int flipflop) {
+    public Trends(String group, String service, String endpoint, String metric, int flipflop,String tags) {
         this.group = group;
         this.service = service;
         this.endpoint = endpoint;
         this.metric = metric;
         this.flipflop = flipflop;
+        this.tags = tags;
     }
 
     public Trends(String group, int flipflop) {
@@ -63,6 +65,15 @@ public class Trends {
         this.endpoint = endpoint;
         this.flipflop = flipflop;
     }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+
 
     public String getGroup() {
         return group;
@@ -103,8 +114,7 @@ public class Trends {
     public void setFlipflop(int flipflop) {
         this.flipflop = flipflop;
     }
-    
-    
+
     public String getStatus() {
         return status;
     }
@@ -128,7 +138,5 @@ public class Trends {
     public void setDuration(int duration) {
         this.duration = duration;
     }
-    
-    
-    
+
 }
