@@ -53,8 +53,6 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
         String hostname = "";
         String service = "";
         String endpointGroup = "";
-        String tags = "";
-        tags = in.getTags();
         metric = in.getMetric();
         hostname = in.getHostname();
         service = in.getService();
@@ -74,7 +72,7 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
 
         if (endpointGroup != null && service != null && hostname != null && metric != null) {
 
-            MetricTrends metricTrends = new MetricTrends(endpointGroup, service, hostname, metric, timeline, flipflop,tags);
+            MetricTrends metricTrends = new MetricTrends(endpointGroup, service, hostname, metric, timeline, flipflop);
             out.collect(metricTrends);
         }
     }

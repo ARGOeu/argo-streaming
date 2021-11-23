@@ -17,29 +17,19 @@ public class MetricTrends {
     String service;
     String endpoint;
     String metric;
-    String tags;
     Timeline timeline;
     Integer flipflops;
 
     public MetricTrends() {
     }
 
-    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops, String tags) {
+    public MetricTrends(String group, String service, String endpoint, String metric, Timeline timeline, Integer flipflops) {
         this.group = group;
         this.service = service;
         this.endpoint = endpoint;
         this.metric = metric;
         this.timeline = timeline;
         this.flipflops = flipflops;
-        this.tags = tags;
-    }
-
-    public String getTags() {
-        return tags;
-    }
-
-    public void setTags(String tags) {
-        this.tags = tags;
     }
 
     public String getGroup() {
