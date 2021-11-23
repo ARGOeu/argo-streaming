@@ -66,7 +66,10 @@ import java.util.List;
  * (api.argo.example.com) --api.token: access token to argo-web-api --api.proxy:
  * optional address for proxy to be used (http://proxy.example.com)
  * --api.timeout: set timeout (in seconds) when connecting to argo-web-api
- * --calcStatus(Optional): set to be OFF or ON . ON to calculate and write
+ * --calcStatus(Optional): set to be OFF or ON . ON to calculate and write status timelines
+ * --calcAR(Optional): set to be OFF or ON . ON to calculate and write a/r results
+ * --calcFlipFlops(Optional): set to be OFF or ON . ON to calculate and write flipflop trends
+ * --calcStatusTrends(Optional): set to be OFF or ON . ON to calculate and write status trends 
  * timelines in mongo db , OFF to not calculate. If not set status timelines
  * will be calculated and written --calcAR(Optional): set to be OFF or ON . ON
  * to calculate and write ar results in mongo db , OFF to not calculateIf not
@@ -107,10 +110,10 @@ public class ArgoStatusBatch {
             }
         }
 
-        boolean calcTrends = true;
-        if (params.has("calcTrends")) {
-            if (params.get("calcTrends").equals("OFF")) {
-                calcTrends = false;
+        boolean calcStatusTrends = true;
+        if (params.has("calcStatusTrends")) {
+            if (params.get("calcStatusTrends").equals("OFF")) {
+                calcStatusTrends = false;
             }
         }
         boolean calcFlipFlops = true;
@@ -119,7 +122,7 @@ public class ArgoStatusBatch {
                 calcFlipFlops = false;
             }
         }
-        if (!calcStatus && !calcAR && !calcTrends && !calcFlipFlops && !calcTrends) {
+        if (!calcStatus && !calcAR && !calcStatusTrends && !calcFlipFlops && !calcStatusTrends) {
             System.exit(0);
         }
 
@@ -321,66 +324,66 @@ public class ArgoStatusBatch {
             endpointGroupArDS.output(endGroupARMongoOut);
         }
 
-        if (calcFlipFlops || calcTrends) {
-            DataSet<MetricTrends> serviceEndpointMetricGroupData = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
-            DataSet<EndpointTrends> serviceEndpointGroupData = statusEndpointTimeline.flatMap(new CalcEndpointFlipFlopTrends());
-            DataSet<ServiceTrends> serviceGroupData = statusServiceTimeline.flatMap(new CalcServiceFlipFlopTrends());
-            DataSet<GroupTrends> groupData = statusGroupTimeline.flatMap(new CalcGroupFlipFlopTrends());
+        if (calcFlipFlops || calcStatusTrends) {
+            DataSet<MetricTrends> metricTrends = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
+            DataSet<EndpointTrends> endpointTrends = statusEndpointTimeline.flatMap(new CalcEndpointFlipFlopTrends());
+            DataSet<ServiceTrends> serviceTrends = statusServiceTimeline.flatMap(new CalcServiceFlipFlopTrends());
+            DataSet<GroupTrends> groupTrends = statusGroupTimeline.flatMap(new CalcGroupFlipFlopTrends());
             if (calcFlipFlops) {
 
-                DataSet<MetricTrends> noZeroServiceEndpointMetricGroupData = serviceEndpointMetricGroupData.filter(new ZeroMetricTrendsFilter());
+                DataSet<MetricTrends> noZeroMetricFlipFlops= metricTrends.filter(new ZeroMetricTrendsFilter());
                 if (rankNum != null) { //sort and rank data
-                    noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+                    noZeroMetricFlipFlops = noZeroMetricFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
                 } else {
-                    noZeroServiceEndpointMetricGroupData = noZeroServiceEndpointMetricGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
+                    noZeroMetricFlipFlops = noZeroMetricFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
                 }
 
                 MongoTrendsOutput metricFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_metrics", MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportID, runDate, clearMongo);
-                DataSet<Trends> trends = noZeroServiceEndpointMetricGroupData.map(new MapMetricTrends());
+                DataSet<Trends> trends = noZeroMetricFlipFlops.map(new MapMetricTrends());
                 trends = trends.flatMap(new MapTrendTags()).withBroadcastSet(mtagsDS, "mtags");
                 trends.output(metricFlipFlopMongoOut);
 
-                DataSet<EndpointTrends> noZeroserviceEndpointGroupData = serviceEndpointGroupData.filter(new ZeroEndpointTrendsFilter());
+                DataSet<EndpointTrends> nonZeroEndpointFlipFlops = endpointTrends.filter(new ZeroEndpointTrendsFilter());
 
                 if (rankNum != null) { //sort and rank data
-                    noZeroserviceEndpointGroupData = noZeroserviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+                    nonZeroEndpointFlipFlops = nonZeroEndpointFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
                 } else {
-                    noZeroserviceEndpointGroupData = noZeroserviceEndpointGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
+                    nonZeroEndpointFlipFlops = nonZeroEndpointFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
                 }
 
-                MongoTrendsOutput endppointFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_endpoints", MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportID, runDate, clearMongo);
-                trends = noZeroserviceEndpointGroupData.map(new MapEndpointTrends());
-                trends.output(endppointFlipFlopMongoOut);
-                DataSet<ServiceTrends> noZeroserviceGroupData = serviceGroupData.filter(new ZeroServiceTrendsFilter());
+                MongoTrendsOutput endpointFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_endpoints", MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportID, runDate, clearMongo);
+                trends = nonZeroEndpointFlipFlops.map(new MapEndpointTrends());
+                trends.output(endpointFlipFlopMongoOut);
+                DataSet<ServiceTrends> noZeroServiceFlipFlops = serviceTrends.filter(new ZeroServiceTrendsFilter());
 
                 if (rankNum != null) { //sort and rank data
-                    noZeroserviceGroupData = noZeroserviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+                    noZeroServiceFlipFlops = noZeroServiceFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
                 } else {
-                    noZeroserviceGroupData = noZeroserviceGroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
+                    noZeroServiceFlipFlops = noZeroServiceFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
                 }
                 MongoTrendsOutput serviceMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_services", MongoTrendsOutput.TrendsType.TRENDS_SERVICE, reportID, runDate, clearMongo);
 
-                trends = noZeroserviceGroupData.map(new MapServiceTrends());
+                trends = noZeroServiceFlipFlops.map(new MapServiceTrends());
 
                 trends.output(serviceMongoOut);
 
-                DataSet<GroupTrends> noZerogroupData = groupData.filter(new ZeroGroupTrendsFilter());
+                DataSet<GroupTrends> noZeroGroupFlipFlops = groupTrends.filter(new ZeroGroupTrendsFilter());
 
                 if (rankNum != null) { //sort and rank data
-                    noZerogroupData = noZerogroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
+                    noZeroGroupFlipFlops = noZeroGroupFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
                 } else {
-                    noZerogroupData = noZerogroupData.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
+                    noZeroGroupFlipFlops = noZeroGroupFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
                 }
                 MongoTrendsOutput groupMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_endpoint_groups", MongoTrendsOutput.TrendsType.TRENDS_GROUP, reportID, runDate, clearMongo);
-                trends = noZerogroupData.map(new MapGroupTrends());
+                trends = noZeroGroupFlipFlops.map(new MapGroupTrends());
 
                 trends.output(groupMongoOut);
 
             }
 
-            if (calcTrends) {
+            if (calcStatusTrends) {
                 //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> metricStatusTrendsData = serviceEndpointMetricGroupData.flatMap(new MetricTrendsCounter()).withBroadcastSet(opsDS, "ops");
+                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> metricStatusTrendsData = metricTrends.flatMap(new MetricTrendsCounter()).withBroadcastSet(opsDS, "ops");
                metricStatusTrendsData= metricStatusTrendsData.flatMap(new MapTupleTags()).withBroadcastSet(mtagsDS, "mtags");
                 //filter dataset for each status type and write to mongo db
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "critical");
@@ -389,7 +392,7 @@ public class ArgoStatusBatch {
 
                 /*=============================================================================================*/
                 //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> endpointStatusTrendsData = serviceEndpointGroupData.flatMap(new EndpointTrendsCounter()).withBroadcastSet(opsDS, "ops");
+                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> endpointStatusTrendsData = endpointTrends.flatMap(new EndpointTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
 
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_ENDPOINT, "status_trends_endpoints", endpointStatusTrendsData, "critical");
@@ -399,7 +402,7 @@ public class ArgoStatusBatch {
                 /**
                  * **************************************************************************************************
                  */
-                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> serviceStatusTrendsData = serviceGroupData.flatMap(new ServiceTrendsCounter()).withBroadcastSet(opsDS, "ops");
+                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> serviceStatusTrendsData = serviceTrends.flatMap(new ServiceTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_SERVICE, "status_trends_services", serviceStatusTrendsData, "critical");
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_SERVICE, "status_trends_services", serviceStatusTrendsData, "warning");
@@ -410,7 +413,7 @@ public class ArgoStatusBatch {
                  */
                 //group data by group   and count flip flops
                 //flatMap dataset to tuples and count the apperances of each status type to the timeline 
-                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> groupStatusTrendsData = groupData.flatMap(new GroupTrendsCounter()).withBroadcastSet(opsDS, "ops");
+                DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> groupStatusTrendsData = groupTrends.flatMap(new GroupTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, "status_trends_groups", groupStatusTrendsData, "critical");
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, "status_trends_groups", groupStatusTrendsData, "warning");
