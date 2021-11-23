@@ -1,13 +1,13 @@
-package argo.trends;
+package trends.status;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-import flipflops.EndpointTrends;
+
+
+import argo.batch.StatusMetricTimeline;
+import trends.calculations.ServiceTrends;
 import java.io.IOException;
 import java.util.List;
+
+import trends.calculations.ServiceTrends;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple7;
 import org.apache.flink.api.java.tuple.Tuple8;
@@ -17,18 +17,24 @@ import profilesmanager.OperationsManager;
 import timelines.Timeline;
 import timelines.TimelineIntegrator;
 
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
 /**
- * EndpointTrendsCounter calculates on the dataset's timeline the num of
+ * ServiceTrendsCounter calculates on the dataset's timeline the num of
  * appearances of the status CRITICAL, WARNING,UNKNOWN and produces a dataset of
  * tuples that contain these calculations
  */
-public class EndpointTrendsCounter extends RichFlatMapFunction<EndpointTrends, Tuple8< String, String, String, String, String, Integer, Integer,String>> {
+public class  ServiceTrendsCounter extends RichFlatMapFunction<ServiceTrends, Tuple8< String, String, String, String, String, Integer, Integer,String>> {
 
-   private List<String> ops;
+    private List<String> ops;
 
     private OperationsManager opsMgr;
 
-    public EndpointTrendsCounter() {
+    public ServiceTrendsCounter() {
     }
 
     @Override
@@ -40,45 +46,41 @@ public class EndpointTrendsCounter extends RichFlatMapFunction<EndpointTrends, T
         this.opsMgr.loadJsonString(ops);
     }
 
-
     /**
      * if the service exist in one or more function groups , timeline trends are
      * produced for each function that the service belongs and the function info
-     * is added to the timelinetrend
+     * is added to the timeline trend
      *
      * @param t
      * @param out
      * @throws Exception
      */
     @Override
-    public void flatMap(EndpointTrends t, Collector<  Tuple8< String, String, String, String, String, Integer, Integer,String>> out) throws Exception {
+    public void flatMap(ServiceTrends t, Collector<Tuple8< String, String, String, String, String, Integer, Integer,String>> out) throws Exception {
 
         int criticalstatus = this.opsMgr.getIntStatus("CRITICAL");
         int warningstatus = this.opsMgr.getIntStatus("WARNING");
         int unknownstatus = this.opsMgr.getIntStatus("UNKNOWN");
 
+       
         Timeline timeline = t.getTimeline();
         TimelineIntegrator timelineIntegrator = new TimelineIntegrator();
         int[] criticalstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), criticalstatus);
         int[] warningstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), warningstatus);
         int[] unknownstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), unknownstatus);
 
-
-        Tuple8< String, String, String, String, String, Integer, Integer, String> tupleCritical = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
-                t.getGroup(), t.getService(), t.getEndpoint(), null, "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1],"");
-
+     
+        Tuple8< String, String, String, String, String, Integer, Integer,String> tupleCritical = new Tuple8< String, String, String, String, String, Integer, Integer,String>(
+                t.getGroup(), t.getService(), null, null, "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1],"");
         out.collect(tupleCritical);
 
-        Tuple8<  String, String, String, String, String, Integer, Integer, String> tupleWarning = new Tuple8< String, String, String, String, String, Integer, Integer, String>(
-                t.getGroup(), t.getService(), t.getEndpoint(), null, "WARNING", warningstatusInfo[0], warningstatusInfo[1],"");
+        Tuple8< String, String, String, String, String, Integer, Integer,String> tupleWarning = new Tuple8< String, String, String, String, String, Integer, Integer,String>(
+                t.getGroup(), t.getService(), null, null, "WARNING", warningstatusInfo[0], warningstatusInfo[1],"");
 
         out.collect(tupleWarning);
 
-        Tuple8<  String, String, String, String, String, Integer, Integer, String> tupleUnknown = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
-                t.getGroup(), t.getService(), t.getEndpoint(), null, "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1],"");
-
-
+      Tuple8< String, String, String, String, String, Integer, Integer,String> tupleUnknown = new Tuple8< String, String, String, String, String, Integer, Integer,String>(
+                t.getGroup(), t.getService(), null, null, "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1],"");
         out.collect(tupleUnknown);
-
     }
 }

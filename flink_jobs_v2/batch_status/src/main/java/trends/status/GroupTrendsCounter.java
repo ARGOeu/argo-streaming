@@ -1,4 +1,4 @@
-package trends;
+package trends.status;
 
 
 
@@ -7,7 +7,7 @@ package trends;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import flipflops.GroupTrends;
+import trends.calculations.GroupTrends;
 
 import java.io.IOException;
 import java.util.List;

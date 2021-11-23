@@ -1,4 +1,4 @@
-package flipflops;
+package trends.calculations;
 
 import java.io.IOException;
 

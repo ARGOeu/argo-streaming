@@ -14,26 +14,26 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
-import flipflops.ServiceTrends;
-import flipflops.ZeroServiceTrendsFilter;
-import argo.trends.EndpointTrendsCounter;
-import flipflops.CalcEndpointFlipFlopTrends;
-import flipflops.CalcGroupFlipFlopTrends;
-import flipflops.CalcMetricFlipFlopTrends;
-import flipflops.CalcServiceFlipFlopTrends;
-import flipflops.EndpointTrends;
-import flipflops.GroupTrends;
-import flipflops.MapEndpointTrends;
-import flipflops.MapGroupTrends;
-import flipflops.MapMetricTrends;
-import flipflops.MapServiceTrends;
-import flipflops.MetricTrends;
-import flipflops.MongoTrendsOutput;
-import flipflops.StatusAndDurationFilter;
-import flipflops.Trends;
-import flipflops.ZeroEndpointTrendsFilter;
-import flipflops.ZeroGroupTrendsFilter;
-import flipflops.ZeroMetricTrendsFilter;
+import trends.calculations.ServiceTrends;
+import trends.flipflops.ZeroServiceFlipFlopFilter;
+import trends.status.EndpointTrendsCounter;
+import trends.calculations.CalcEndpointFlipFlopTrends;
+import trends.calculations.CalcGroupFlipFlopTrends;
+import trends.calculations.CalcMetricFlipFlopTrends;
+import trends.calculations.CalcServiceFlipFlopTrends;
+import trends.calculations.EndpointTrends;
+import trends.calculations.GroupTrends;
+import trends.flipflops.MapEndpointTrends;
+import trends.flipflops.MapGroupTrends;
+import trends.flipflops.MapMetricTrends;
+import trends.flipflops.MapServiceTrends;
+import trends.calculations.MetricTrends;
+import trends.calculations.MongoTrendsOutput;
+import trends.status.StatusAndDurationFilter;
+import trends.calculations.Trends;
+import trends.flipflops.ZeroEndpointFlipFlopFilter;
+import trends.flipflops.ZeroGroupFlipFlopFilter;
+import trends.flipflops.ZeroMetricFlipFlopFilter;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
@@ -46,9 +46,9 @@ import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profilesmanager.ReportManager;
-import trends.GroupTrendsCounter;
-import trends.MetricTrendsCounter;
-import trends.ServiceTrendsCounter;
+import trends.status.GroupTrendsCounter;
+import trends.status.MetricTrendsCounter;
+import trends.status.ServiceTrendsCounter;
 
 import java.util.List;
 
@@ -331,7 +331,7 @@ public class ArgoStatusBatch {
             DataSet<GroupTrends> groupTrends = statusGroupTimeline.flatMap(new CalcGroupFlipFlopTrends());
             if (calcFlipFlops) {
 
-                DataSet<MetricTrends> noZeroMetricFlipFlops= metricTrends.filter(new ZeroMetricTrendsFilter());
+                DataSet<MetricTrends> noZeroMetricFlipFlops= metricTrends.filter(new ZeroMetricFlipFlopFilter());
                 if (rankNum != null) { //sort and rank data
                     noZeroMetricFlipFlops = noZeroMetricFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
                 } else {
@@ -343,7 +343,7 @@ public class ArgoStatusBatch {
                 DataSet<Trends> trends = noZeroMetricFlipFlops.map(new MapMetricTrends()).withBroadcastSet(mtagsDS, "mtags");
                 trends.output(metricFlipFlopMongoOut);
 
-                DataSet<EndpointTrends> nonZeroEndpointFlipFlops = endpointTrends.filter(new ZeroEndpointTrendsFilter());
+                DataSet<EndpointTrends> nonZeroEndpointFlipFlops = endpointTrends.filter(new ZeroEndpointFlipFlopFilter());
 
                 if (rankNum != null) { //sort and rank data
                     nonZeroEndpointFlipFlops = nonZeroEndpointFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
@@ -354,7 +354,7 @@ public class ArgoStatusBatch {
                 MongoTrendsOutput endpointFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_endpoints", MongoTrendsOutput.TrendsType.TRENDS_ENDPOINT, reportID, runDate, clearMongo);
                 trends = nonZeroEndpointFlipFlops.map(new MapEndpointTrends());
                 trends.output(endpointFlipFlopMongoOut);
-                DataSet<ServiceTrends> noZeroServiceFlipFlops = serviceTrends.filter(new ZeroServiceTrendsFilter());
+                DataSet<ServiceTrends> noZeroServiceFlipFlops = serviceTrends.filter(new ZeroServiceFlipFlopFilter());
 
                 if (rankNum != null) { //sort and rank data
                     noZeroServiceFlipFlops = noZeroServiceFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
@@ -367,7 +367,7 @@ public class ArgoStatusBatch {
 
                 trends.output(serviceMongoOut);
 
-                DataSet<GroupTrends> noZeroGroupFlipFlops = groupTrends.filter(new ZeroGroupTrendsFilter());
+                DataSet<GroupTrends> noZeroGroupFlipFlops = groupTrends.filter(new ZeroGroupFlipFlopFilter());
 
                 if (rankNum != null) { //sort and rank data
                     noZeroGroupFlipFlops = noZeroGroupFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);

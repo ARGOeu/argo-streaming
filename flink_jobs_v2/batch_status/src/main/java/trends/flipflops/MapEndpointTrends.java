@@ -1,5 +1,7 @@
-package flipflops;
+package trends.flipflops;
 
+import trends.calculations.EndpointTrends;
+import trends.calculations.Trends;
 import org.apache.flink.api.common.functions.MapFunction;
 
 public class MapEndpointTrends implements MapFunction<EndpointTrends, Trends> {
