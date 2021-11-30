@@ -4,10 +4,10 @@ package trends.flipflops;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import trends.calculations.MetricTrends;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import trends.calculations.MetricTrends;
 
 /**
 * ZeroMetricTrendsFilter, filters MetricTrends data and rejects the ones with flipflop=0

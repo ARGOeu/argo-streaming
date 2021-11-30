@@ -69,7 +69,11 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
             item.setPrevState(prevStatus);
             item.setPrevTs(prevTimestamp);
             if (item.getTimestamp().split("T")[0].compareToIgnoreCase(this.runDate) == 0) {
-                out.collect(item);
+                if (!item.getOgStatus().equals("")) {
+                    item.setHasThr(true);
+                    out.collect(item);
+                }
+
             }
 
             prevStatus = item.getStatus();

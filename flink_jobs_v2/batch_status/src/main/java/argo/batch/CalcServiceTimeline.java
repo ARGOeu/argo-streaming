@@ -72,7 +72,7 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
         String endpointGroup = "";
         String function = "";
         HashMap<String, Timeline> timelinelist = new HashMap<>();
-
+        boolean hasThr = false;
         for (StatusTimeline item : in) {
             service = item.getService();
             endpointGroup = item.getGroup();
@@ -87,6 +87,9 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
             timeline.insertDateTimeStamps(samples, true);
 
             timelinelist.put(item.getHostname(), timeline);
+            if (item.hasThr()) {
+                hasThr = true;
+            }
         }
         String operation = serviceFunctionsMap.get(service);
 
@@ -101,9 +104,9 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
             timestatuCol.add(timestatus);
         }
 
-        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, function, service, "", "", timestatuCol);
-
-        out.collect(statusMetricTimeline);
+        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, "", "", timestatuCol);
+        statusTimeline.setHasThr(hasThr);
+        out.collect(statusTimeline);
 
     }
 }

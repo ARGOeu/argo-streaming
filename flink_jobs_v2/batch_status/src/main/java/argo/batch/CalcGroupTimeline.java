@@ -70,20 +70,23 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
         String endpointGroup = "";
 
         HashMap<String, Timeline> timelinelist = new HashMap<>();
+        boolean hasThr = false;
 
         for (StatusTimeline item : in) {
             endpointGroup = item.getGroup();
-                ArrayList<TimeStatus> timestatusList = item.getTimestamps();
-                TreeMap<DateTime, Integer> samples = new TreeMap<>();
-                for (TimeStatus timestatus : timestatusList) {
-                    DateTime dt = new DateTime(timestatus.getTimestamp());
-                    samples.put(dt, timestatus.getStatus());
-                }
-                Timeline timeline = new Timeline();
-                timeline.insertDateTimeStamps(samples, true);
+            ArrayList<TimeStatus> timestatusList = item.getTimestamps();
+            TreeMap<DateTime, Integer> samples = new TreeMap<>();
+            for (TimeStatus timestatus : timestatusList) {
+                DateTime dt = new DateTime(timestatus.getTimestamp());
+                samples.put(dt, timestatus.getStatus());
+            }
+            Timeline timeline = new Timeline();
+            timeline.insertDateTimeStamps(samples, true);
 
-                timelinelist.put(item.getFunction(), timeline);
-            
+            timelinelist.put(item.getFunction(), timeline);
+            if (item.hasThr()) {
+                hasThr = true;
+            }
         }
 
         String groupOperation = this.apsMgr.retrieveProfileOperation();
@@ -99,8 +102,9 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
             timestatuCol.add(timestatus);
         }
 
-        StatusTimeline statusMetricTimeline = new StatusTimeline(endpointGroup, "", "", "", "", timestatuCol);
-        out.collect(statusMetricTimeline);
+        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, "", "", "", "", timestatuCol);
+        statusTimeline.setHasThr(hasThr);
+        out.collect(statusTimeline);
 
     }
 }
