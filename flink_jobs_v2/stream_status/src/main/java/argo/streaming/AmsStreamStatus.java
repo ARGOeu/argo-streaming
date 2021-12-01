@@ -1,5 +1,6 @@
 package argo.streaming;
-
+import argo.amr.ApiResource;
+import argo.amr.ApiResourceManager;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -7,7 +8,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.avro.io.DatumReader;
@@ -41,18 +41,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import argo.amr.ApiResource;
-import argo.amr.ApiResourceManager;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
-import org.apache.flink.core.fs.FileSystem;
 import status.StatusManager;
 import sync.EndpointGroupManagerV2;
 import sync.MetricProfileManager;
-
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
  * kafka, fs) job required cli parameters --ams.endpoint : ARGO messaging api
@@ -165,7 +161,7 @@ public class AmsStreamStatus {
 
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
         amr.setDate(parameterTool.get("run.date"));
-        amr.setTimeout(30);
+        amr.setTimeoutSec(30);
         // fetch
 
         // set params
@@ -308,8 +304,8 @@ public class AmsStreamStatus {
             amr.setReportID(config.reportID);
             amr.getRemoteAll();
 
-            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile> (Arrays.asList(amr.getListMetrics()));
-            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint> (Arrays.asList(amr.getListGroupEndpoints()));
+            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(amr.getListMetrics()));
+            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
 
             mps = new MetricProfileManager();
             mps.loadFromList(mpsList);

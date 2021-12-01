@@ -3,7 +3,6 @@ package argo.streaming;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -19,7 +18,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import argo.amr.ApiResource;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricProfile;

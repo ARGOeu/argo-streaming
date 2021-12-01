@@ -56,13 +56,13 @@ public class StatusConfig implements Serializable {
 	   this.amsProject = pt.getRequired("ams.project");
 	   this.apiEndpoint = pt.getRequired("api.endpoint");
 	   
-	   
-	  // this.aps = pt.getRequired("sync.apr");
-	   //this.mps = pt.getRequired("sync.mps");
-	   //this.egp = pt.getRequired("sync.egp");
-	   //this.ops = pt.getRequired("sync.ops");
+//	   this.aps = pt.getRequired("sync.apr");
+//	   this.mps = pt.getRequired("sync.mps");
+//	   this.egp = pt.getRequired("sync.egp");
+//	   this.ops = pt.getRequired("sync.ops");
 	   this.runDate = pt.getRequired("run.date");
-	   //this.downtime = pt.getRequired("sync.downtime");
+//	   this.downtime = pt.getRequired("sync.downtime");
+
 	   this.report = pt.getRequired("report");
 	   // Optional timeout parameter
 	   if (pt.has("timeout")){
