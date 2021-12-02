@@ -1,6 +1,5 @@
 package argo.streaming;
-import argo.amr.ApiResource;
-import argo.amr.ApiResourceManager;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -8,6 +7,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.avro.io.DatumReader;
@@ -41,14 +41,19 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import argo.amr.ApiResource;
+import argo.amr.ApiResourceManager;
+
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
+import org.apache.flink.core.fs.FileSystem;
 import status.StatusManager;
 import sync.EndpointGroupManagerV2;
 import sync.MetricProfileManager;
+
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
  * kafka, fs) job required cli parameters --ams.endpoint : ARGO messaging api
@@ -147,6 +152,7 @@ public class AmsStreamStatus {
         // Initialize Input Source : ARGO Messaging Source
         String endpoint = parameterTool.getRequired("ams.endpoint");
         String port = null;
+
         if (!parameterTool.getRequired("ams.port").equals("__NO_VALUE_KEY")) {
              port = parameterTool.getRequired("ams.port");
         }
@@ -163,7 +169,6 @@ public class AmsStreamStatus {
         amr.setDate(parameterTool.get("run.date"));
         amr.setTimeoutSec(30);
         // fetch
-
         // set params
         if (parameterTool.has("api.proxy")) {
             amr.setProxy(parameterTool.get("api.proxy"));
@@ -249,7 +254,7 @@ public class AmsStreamStatus {
         }
 
         if (hasFsOutArgs(parameterTool)) {
-            events.writeAsText(parameterTool.get("fs.output"));
+            events.writeAsText(parameterTool.get("fs.output"),FileSystem.WriteMode.OVERWRITE);
             //events.print();
         }
 
@@ -373,7 +378,7 @@ public class AmsStreamStatus {
                 curItem.f0 = groupItem;
                 curItem.f1 = item;
                 out.collect(curItem);
-                //System.out.println("item enriched: " + curItem.toString());
+                System.out.println("item enriched: " + curItem.toString());
             }
 
         }
@@ -451,6 +456,10 @@ public class AmsStreamStatus {
 
             String opsJSON = amr.getResourceJSON(ApiResource.OPS);
             String apsJSON = amr.getResourceJSON(ApiResource.AGGREGATION);
+
+            ArrayList<String> apsList = new ArrayList();
+            apsList.add(apsJSON);
+
             ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(amr.getListDowntimes()));
             ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(amr.getListMetrics()));
             ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
@@ -460,7 +469,7 @@ public class AmsStreamStatus {
             sm.setTimeout(config.timeout);
             sm.setReport(config.report);
             // load all the connector data
-            sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsJSON, opsJSON);
+            sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsJSON);
 
             // Set the default status as integer
             initStatus = sm.getOps().getIntStatus(config.initStatus);
