@@ -71,8 +71,8 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
             if (item.getTimestamp().split("T")[0].compareToIgnoreCase(this.runDate) == 0) {
                 if (!item.getOgStatus().equals("")) {
                     item.setHasThr(true);
-                    out.collect(item);
                 }
+                out.collect(item);
 
             }
 
