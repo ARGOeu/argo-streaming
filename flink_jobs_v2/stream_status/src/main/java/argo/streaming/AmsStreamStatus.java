@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.avro.io.DatumReader;
@@ -51,8 +50,9 @@ import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
 import org.apache.flink.core.fs.FileSystem;
 import status.StatusManager;
-import sync.EndpointGroupManagerV2;
 import sync.MetricProfileManager;
+import profilesmanager.EndpointGroupManager;
+
 
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
@@ -281,7 +281,7 @@ public class AmsStreamStatus {
 
         private static final long serialVersionUID = 1L;
 
-        public EndpointGroupManagerV2 egp;
+        public EndpointGroupManager egp;
         public MetricProfileManager mps;
 
         public StatusConfig config;
@@ -325,7 +325,7 @@ public class AmsStreamStatus {
                     egpTrim.add(egpItem);
                 }
             }
-            egp = new EndpointGroupManagerV2();
+            egp = new EndpointGroupManager();
             egp.loadFromList(egpTrim);
 
         }
@@ -394,7 +394,7 @@ public class AmsStreamStatus {
             } else if (value.f0.equalsIgnoreCase("group_endpoints")) {
                 // Update egp
                 ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpointJSON(value.f1);
-                egp = new EndpointGroupManagerV2();
+                egp = new EndpointGroupManager();
 
                 String validMetricProfile = mps.getProfiles().get(0);
                 ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
@@ -549,7 +549,7 @@ public class AmsStreamStatus {
                     }
                 }
                 // load next topology into a temporary endpoint group manager
-                EndpointGroupManagerV2 egpNext = new EndpointGroupManagerV2();
+                EndpointGroupManager egpNext = new EndpointGroupManager();
                 egpNext.loadFromList(egpTrim);
 
                 // Use existing topology manager inside status manager to make a comparison

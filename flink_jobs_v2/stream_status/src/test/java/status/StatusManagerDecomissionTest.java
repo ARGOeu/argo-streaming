@@ -15,14 +15,10 @@ import java.util.Date;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import profilesmanager.EndpointGroupManager;
 
-import status.StatusManager.StatusNode;
-import sync.EndpointGroupManagerV2;
-import sync.EndpointGroupManagerV2Test;
 
 public class StatusManagerDecomissionTest {
 
@@ -42,13 +38,13 @@ public class StatusManagerDecomissionTest {
 		// Assert that files are present
 		assertNotNull("Test file missing", StatusManagerDecomissionTest.class.getResource("/ops/ap1.json"));
 		assertNotNull("Test file missing",
-				EndpointGroupManagerV2Test.class.getResource("/avro/group_endpoints_v2.avro"));
+				StatusManagerDecomissionTest.class.getResource("/avro/group_endpoints_v2.avro"));
 		assertNotNull("Test file missing",
-				EndpointGroupManagerV2Test.class.getResource("/avro/gp_day01.avro"));
+				StatusManagerDecomissionTest.class.getResource("/avro/gp_day01.avro"));
 		assertNotNull("Test file missing",
-				EndpointGroupManagerV2Test.class.getResource("/avro/gp_day02.avro"));	
+				StatusManagerDecomissionTest.class.getResource("/avro/gp_day02.avro"));	
 		assertNotNull("Test file missing",
-				EndpointGroupManagerV2Test.class.getResource("/avro/gp_day03.avro"));	
+				StatusManagerDecomissionTest.class.getResource("/avro/gp_day03.avro"));	
 	}
 
 	@Test
@@ -79,10 +75,10 @@ public class StatusManagerDecomissionTest {
 		sm.loadAllFiles("2019-06-01", avroDownFile, avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
 		
 		// Prepare Resource File
-		URL resAvroFile = EndpointGroupManagerV2Test.class.getResource("/avro/gp_day01.avro");
+		URL resAvroFile = StatusManagerDecomissionTest.class.getResource("/avro/gp_day01.avro");
 		File avroFile = new File(resAvroFile.toURI());
 		// Instantiate class
-		EndpointGroupManagerV2 geDay01 = new EndpointGroupManagerV2();
+		EndpointGroupManager geDay01 = new EndpointGroupManager();
 		// Test loading file for day3 - topology change
 		geDay01.loadAvro(avroFile);
 		
@@ -98,10 +94,10 @@ public class StatusManagerDecomissionTest {
 		
 		
 		// Prepare Resource File
-		resAvroFile = EndpointGroupManagerV2Test.class.getResource("/avro/gp_day03.avro");
+		resAvroFile = StatusManagerDecomissionTest.class.getResource("/avro/gp_day03.avro");
 		avroFile = new File(resAvroFile.toURI());
 		// Instantiate class
-		EndpointGroupManagerV2 geDay03 = new EndpointGroupManagerV2();
+		EndpointGroupManager geDay03 = new EndpointGroupManager();
 		// Test loading file for day3 - topology change
 		geDay03.loadAvro(avroFile);
 		
