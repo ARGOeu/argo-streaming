@@ -7,6 +7,7 @@ import argo.ar.CalcGroupAR;
 import argo.ar.CalcServiceAR;
 import argo.ar.EndpointAR;
 import argo.ar.EndpointGroupAR;
+import argo.ar.ExcludeGroupMetrics;
 import argo.ar.ServiceAR;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
@@ -66,14 +67,15 @@ import java.util.List;
  * (api.argo.example.com) --api.token: access token to argo-web-api --api.proxy:
  * optional address for proxy to be used (http://proxy.example.com)
  * --api.timeout: set timeout (in seconds) when connecting to argo-web-api
- * --calcStatus(Optional): set to be OFF or ON . ON to calculate and write status timelines
- * --calcAR(Optional): set to be OFF or ON . ON to calculate and write a/r results
- * --calcFlipFlops(Optional): set to be OFF or ON . ON to calculate and write flipflop trends
- * --calcStatusTrends(Optional): set to be OFF or ON . ON to calculate and write status trends 
- * timelines in mongo db , OFF to not calculate. If not set status timelines
- * will be calculated and written --calcAR(Optional): set to be OFF or ON . ON
- * to calculate and write ar results in mongo db , OFF to not calculateIf not
- * set ar results will be calculated and written
+ * --calcStatus(Optional): set to be OFF or ON . ON to calculate and write
+ * status timelines --calcAR(Optional): set to be OFF or ON . ON to calculate
+ * and write a/r results --calcFlipFlops(Optional): set to be OFF or ON . ON to
+ * calculate and write flipflop trends --calcStatusTrends(Optional): set to be
+ * OFF or ON . ON to calculate and write status trends timelines in mongo db ,
+ * OFF to not calculate. If not set status timelines will be calculated and
+ * written --calcAR(Optional): set to be OFF or ON . ON to calculate and write
+ * ar results in mongo db , OFF to not calculateIf not set ar results will be
+ * calculated and written
  */
 public class ArgoStatusBatch {
 
@@ -312,7 +314,10 @@ public class ArgoStatusBatch {
             DataSet<ServiceAR> serviceArDS = statusServiceTimeline.flatMap(new CalcServiceAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
-            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
+
+            DataSet<StatusTimeline> statusGroupTimelineAR = statusGroupTimeline.flatMap(new ExcludeGroupMetrics(params)).withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
+
+            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimelineAR.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight");
 
@@ -331,7 +336,7 @@ public class ArgoStatusBatch {
             DataSet<GroupTrends> groupTrends = statusGroupTimeline.flatMap(new CalcGroupFlipFlopTrends());
             if (calcFlipFlops) {
 
-                DataSet<MetricTrends> noZeroMetricFlipFlops= metricTrends.filter(new ZeroMetricFlipFlopFilter());
+                DataSet<MetricTrends> noZeroMetricFlipFlops = metricTrends.filter(new ZeroMetricFlipFlopFilter());
                 if (rankNum != null) { //sort and rank data
                     noZeroMetricFlipFlops = noZeroMetricFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
                 } else {
