@@ -640,7 +640,7 @@ public class TimelineTest {
         return map;
 //
     }
-    private TreeMap<DateTime, Integer> createTimestampList4() throws ParseException {
+private TreeMap<DateTime, Integer> createTimestampList4() throws ParseException {
         TreeMap<DateTime, Integer> map = new TreeMap<>();
         map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0), 3);
 
