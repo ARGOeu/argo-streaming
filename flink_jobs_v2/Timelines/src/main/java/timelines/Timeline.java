@@ -476,7 +476,6 @@ public class Timeline {
         return result;
     }
 
-
     /**
      *
      *Fills a timeline with a given status for specific periods, replacing status of timestamp's in the period with the given status 
@@ -486,11 +485,10 @@ public class Timeline {
      * periods
      *
      */
-    public void fillWithStatus(String start,String end, Integer intStatus) throws ParseException {
+    public void fillWithStatus(String start, String end, Integer intStatus) throws ParseException {
 
-       
         DateTime startDay = this.date.toDateTimeAtStartOfDay();
-        DateTime endDay = startDay.withTime(23, 59,59,0);
+        DateTime endDay = startDay.withTime(23, 59, 59, 0);
 
         //for (String[] period : periods) {
         DateTime startDt = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", start);
