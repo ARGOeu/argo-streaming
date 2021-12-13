@@ -4,9 +4,11 @@
  * and open the template in the editor.
  */
 package timelines;
+
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -354,6 +356,303 @@ public class TimelineTest {
         // fail("The test case is a prototype.");
     }
 
+    /**
+     * Test of calcStatusChanges method, of class Timeline.
+     */
+    @Test
+    public void testFillStatus() throws ParseException {
+        System.out.println("fillStatus");
+        DateTimeFormatter dtf = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+        Timeline instance = new Timeline();
+        instance.insertDateTimeStamps(createTimestampList2(), true);
+
+        String[] period1 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 14, 0, 5, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 14, 0, 8, 0).toString(dtf)
+        };
+
+        String[] period2 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 4, 0).toString(dtf)
+        };
+
+        String[] period3 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 59, 0).toString(dtf)
+        };
+
+        String[] period4 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 20, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 22, 59, 0).toString(dtf)
+        };
+
+        String[] period5 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 16, 20, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 16, 23, 0, 0).toString(dtf)
+        };
+
+        ArrayList<String[]> periods = new ArrayList<>();
+
+        periods.add(period1);
+        periods.add(period2);
+        periods.add(period3);
+        periods.add(period4);
+        periods.add(period5);
+        for (String[] period : periods) {
+            instance.fillWithStatus(period[0],period[1], 2);
+            instance.optimize();
+        }
+        TreeMap<DateTime, Integer> expResult = createUnknownTimeline();
+        Set<Entry<DateTime, Integer>> result = instance.getSamples();
+        assertEquals(expResult.entrySet(), result);
+
+        period1 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 14, 0, 5, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 14, 0, 8, 0).toString(dtf)
+        };
+
+        period2 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 4, 0).toString(dtf)
+        };
+
+        period3 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 59, 0).toString(dtf)
+        };
+
+        period4 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 20, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 23, 59, 0).toString(dtf)
+        };
+
+        period5 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 16, 20, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 16, 23, 59, 0).toString(dtf)
+        };
+
+        periods = new ArrayList<>();
+
+        periods.add(period1);
+        periods.add(period2);
+        periods.add(period3);
+        periods.add(period4);
+        periods.add(period5);
+        instance = new Timeline();
+        instance.insertDateTimeStamps(createTimestampList2(), true);
+        for (String[] period : periods) {
+            instance.fillWithStatus(period[0],period[1], 2);
+            instance.optimize();
+        }
+
+        expResult = createUnknownTimeline2();
+        result = instance.getSamples();
+        assertEquals(expResult.entrySet(), result);
+
+        period1 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 14, 0, 5, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 14, 0, 8, 0).toString(dtf)
+        };
+
+        period2 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 2, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 4, 0).toString(dtf)
+        };
+
+        period3 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 59, 0).toString(dtf)
+        };
+
+        period4 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 20, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 23, 59, 0).toString(dtf)
+        };
+
+        period5 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 16, 20, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 16, 23, 59, 0).toString(dtf)
+        };
+
+        periods = new ArrayList<>();
+
+        periods.add(period1);
+        periods.add(period2);
+        periods.add(period3);
+        periods.add(period4);
+        periods.add(period5);
+        instance = new Timeline();
+        instance.insertDateTimeStamps(createTimestampList2(), true);
+        for (String[] period : periods) {
+           instance.fillWithStatus(period[0],period[1], 2);
+            instance.optimize();
+        }
+        expResult = createUnknownTimeline3();
+        result = instance.getSamples();
+        assertEquals(expResult.entrySet(), result);
+        period1 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 14, 0, 5, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 16, 0, 0, 0).toString(dtf)
+        };
+
+        periods = new ArrayList<>();
+
+        periods.add(period1);
+        instance = new Timeline();
+        instance.insertDateTimeStamps(createTimestampList2(), true);
+
+        for (String[] period : periods) {
+             instance.fillWithStatus(period[0],period[1], 2);
+            instance.optimize();
+        }
+        expResult = createUnknownTimeline4();
+        result = instance.getSamples();
+        assertEquals(expResult.entrySet(), result);
+
+        period1 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 14, 0, 5, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 14, 0, 8, 0).toString(dtf)
+        };
+
+        period2 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 2, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 4, 0).toString(dtf)
+        };
+
+        period3 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 59, 0).toString(dtf)
+        };
+
+        period4 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 20, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 23, 59, 0).toString(dtf)
+        };
+
+        period5 = new String[]{
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 16, 20, 0, 0).toString(dtf),
+            Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 16, 23, 59, 0).toString(dtf)
+        };
+
+        periods = new ArrayList<>();
+
+        periods.add(period1);
+        periods.add(period2);
+        periods.add(period3);
+        periods.add(period4);
+        periods.add(period5);
+        instance = new Timeline();
+        instance.insertDateTimeStamps(createTimestampList4(), true);
+
+        for (String[] period : periods) {
+            instance.fillWithStatus(period[0],period[1], 2);
+            instance.optimize();
+        }
+        expResult = createUnknownTimeline5();
+        result = instance.getSamples();
+        assertEquals(expResult.entrySet(), result);
+
+        // TODO review the generated test code and remove the default call to fail.
+        //  fail("The test case is a prototype.");
+    }
+
+    private TreeMap<DateTime, Integer> createUnknownTimeline() throws ParseException {
+        TreeMap<DateTime, Integer> map = new TreeMap<>();
+
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0), 2);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 5, 0), 3);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 12, 23), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 0, 0), 2);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 0, 0), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 20, 15), 0);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 20, 0, 0), 2);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 23, 0, 0), 0);
+        return map;
+//
+    }
+
+    private TreeMap<DateTime, Integer> createUnknownTimeline2() throws ParseException {
+        TreeMap<DateTime, Integer> map = new TreeMap<>();
+
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0), 2);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 5, 0), 3);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 12, 23), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 0, 0), 2);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 0, 0), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 20, 15), 0);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 20, 0, 0), 2);
+
+        return map;
+//
+    }
+
+    private TreeMap<DateTime, Integer> createUnknownTimeline3() throws ParseException {
+        TreeMap<DateTime, Integer> map = new TreeMap<>();
+
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0), 3);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 2, 0), 2);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 5, 0), 3);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 12, 23), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 0, 0), 2);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 0, 0), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 20, 15), 0);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 20, 0, 0), 2);
+
+        return map;
+//
+    }
+
+    private TreeMap<DateTime, Integer> createUnknownTimeline4() throws ParseException {
+        TreeMap<DateTime, Integer> map = new TreeMap<>();
+
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0), 2);
+        return map;
+//
+    }
+
+    private TreeMap<DateTime, Integer> createUnknownTimeline5() throws ParseException {
+        TreeMap<DateTime, Integer> map = new TreeMap<>();
+
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0), 3);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 2, 0), 2);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 5, 0), 3);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 12, 23), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 0, 0), 2);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 0, 0), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 20, 15), 0);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 20, 0, 0), 2);
+
+        return map;
+//
+    }
+
+    private TreeMap<DateTime, Integer> createTimestampList2() throws ParseException {
+        TreeMap<DateTime, Integer> map = new TreeMap<>();
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0), 3);
+
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 12, 23), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 1, 5, 10), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 20, 15), 0);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 31, 1), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 50, 4), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 21, 3, 5), 0);
+        return map;
+//
+    }
+    private TreeMap<DateTime, Integer> createTimestampList4() throws ParseException {
+        TreeMap<DateTime, Integer> map = new TreeMap<>();
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0), 3);
+
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 12, 23), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 1, 5, 10), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 5, 20, 15), 0);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 4, 31, 1), 1);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 3, 50, 4), 0);
+        map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 21, 3, 5), 0);
+        return map;
+//
+    }
     private TreeMap<DateTime, Integer> createTimestampList() throws ParseException {
         TreeMap<DateTime, Integer> map = new TreeMap<>();
 
@@ -497,5 +796,4 @@ public class TimelineTest {
         return map;
     }
 
-  
 }

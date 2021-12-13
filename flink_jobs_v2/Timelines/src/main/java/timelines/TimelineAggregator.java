@@ -1,6 +1,7 @@
 package timelines;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -180,34 +181,6 @@ public class TimelineAggregator {
 
     public void setInputs(Map<String, Timeline> inputs) {
         this.inputs = inputs;
-    }
-
-    public void fillUnknown(String endpointGroup, String runDate, Integer unknownStatus) throws ParseException {
-        long runDateInMillis = Utils.convertStringtoDate("yyyy-MM-dd", runDate).getMillis();
-        Timeline timeline = this.inputs.get(endpointGroup);
-        if (timeline == null) {
-            return;
-        }
-
-        Set<Map.Entry<DateTime, Integer>> samples = timeline.getSamples();
-
-        for (Entry<DateTime, Integer> entry : samples) {
-        }
-        for (Entry<DateTime, Integer> entry : samples) {
-            boolean isInPeriod = false;
-
-            DateTime dt = entry.getKey();
-            if (!dt.isAfter(runDateInMillis) && !dt.isBefore(runDateInMillis)) {
-                isInPeriod = true;
-            }
-            if (isInPeriod) {
-                entry.setValue(unknownStatus);
-            }
-
-        }
-        timeline.optimize();
-        this.output = timeline;
-
     }
 
 }

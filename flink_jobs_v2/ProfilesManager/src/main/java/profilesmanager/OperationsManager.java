@@ -312,7 +312,6 @@ public class OperationsManager implements Serializable {
         JsonElement j_element = json_parser.parse(opsJson.get(0));
         readJson(j_element);
     }
-
     public int[][][] getTruthTable() {
         return truthTable;
     }

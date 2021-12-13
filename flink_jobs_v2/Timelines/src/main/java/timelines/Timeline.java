@@ -9,6 +9,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
@@ -42,7 +43,6 @@ import org.slf4j.LoggerFactory;
  */
 public class Timeline {
 
-
     private LocalDate date;
     static Logger LOG = LoggerFactory.getLogger(Timeline.class);
 
@@ -62,7 +62,6 @@ public class Timeline {
      * would define the date of the timeline *
      *
      */
-
     public Timeline(String timestamp) {
         DateTime tmp_date = new DateTime();
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -136,13 +135,22 @@ public class Timeline {
     }
 
     public void insertStringTimeStamps(TreeMap<String, Integer> timestamps, boolean optimize) {
+        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         for (String dt : timestamps.keySet()) {
             int status = timestamps.get(dt);
             this.insert(dt, status);
         }
+
         if (optimize) {
             this.optimize();
         }
+        if (this.date == null) {
+            DateTime tmp_date = new DateTime();
+            tmp_date = this.samples.firstKey();
+            tmp_date = tmp_date.withTime(0, 0, 0, 0);
+            this.date = tmp_date.toLocalDate();
+        }
+
     }
 
     /*
@@ -156,6 +164,12 @@ public class Timeline {
         }
         if (optimize) {
             this.optimize();
+        }
+        if (this.date == null) {
+            DateTime tmp_date = new DateTime();
+            tmp_date = this.samples.firstKey();
+            tmp_date = tmp_date.withTime(0, 0, 0, 0);
+            this.date = tmp_date.toLocalDate();
         }
     }
 
@@ -462,73 +476,59 @@ public class Timeline {
         return result;
     }
 
+
     /**
-     * aggregates a timeline with a timeline of downtime statuses, defined from
-     * the downtime data source
      *
-     * @param downtimeline the timeline containing the defined downtime
-     * timestamps
-     * @param downDefaultInt the downtime status
+     *Fills a timeline with a given status for specific periods, replacing status of timestamp's in the period with the given status 
+     * @param start, the start date,
+     * @param  end, the end date,
+     * @param intStatus, the status to fill the timeline for the specific
+     * periods
+     *
      */
-    public void aggregateDownTime(Timeline downtimeline, int downDefaultInt) {
-        if (downtimeline.isEmpty()) {
+    public void fillWithStatus(String start,String end, Integer intStatus) throws ParseException {
+
+       
+        DateTime startDay = this.date.toDateTimeAtStartOfDay();
+        DateTime endDay = startDay.withTime(23, 59,59,0);
+
+        //for (String[] period : periods) {
+        DateTime startDt = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", start);
+        DateTime endDt = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", end);
+
+        DateTime floor = samples.floorKey(startDt);
+        DateTime ceiling = samples.ceilingKey(endDt);
+
+        if (endDt.isBefore(startDay) || startDt.isAfter(endDay)) { //exclude periods out of the runDate range
             return;
         }
-        if (this.isEmpty()) {
-            this.bulkInsert(downtimeline.getSamples());
-            // Optimize even when we have a single timeline for aggregation
-            this.optimize();
-            return;
+        if (startDt.isBefore(startDay)) { //if a periods start is before 00:00:00 , set the periods's start the 00:00:00
+            startDt = startDay;
+        }
+        if (endDt.isAfter(endDay)) { // if a periods end is after the 23:59:59 , set the period's end the 23:59:59
+            endDt = endDay;
         }
 
-        Timeline result = new Timeline();
+        boolean addCeiling = false;
+        int endFloorStatus = -1;
+        if (ceiling == null || ceiling.isAfter(endDt.getMillis())) { //if a timestamp exists after the period then keep the initial timeline's status for that period to be used later
+            addCeiling = true;
+            DateTime endFloor = samples.floorKey(endDt);
+            endFloorStatus = this.samples.get(endFloor);
 
-        // Slice for first
-        for (DateTime point : this.getPoints()) {
-            result.insert(point, -1);
         }
-        // Slice for second 
-        for (DateTime point : downtimeline.getPoints()) {
-            result.insert(point, -1);
+        if (floor == null || !floor.equals(startDt.getMillis())) { // if start period does not match with the initial timeline's timestamp then need to add the start to the timeline with the specified status
+            this.samples.put(startDt, intStatus);                       //else the timestamp already contained and in next step its status will be replaced
+        }
+        //if a timestamp exists after a period then this timestamp should be added with the initial status of that period taken from the initial timeline
+        if (addCeiling && endDt.plusMinutes(1).isBefore(endDay)) {
+            this.samples.put(endDt.plusMinutes(1), endFloorStatus);
         }
 
-        // Iterate over result and ask
-        for (DateTime point : result.getPoints()) {
-            int a = this.get(point);
-            int b = downtimeline.get(point);
-            int x = a;
-
-            if (a == downDefaultInt || b == downDefaultInt) {
-                x = downDefaultInt;
+        for (DateTime dt : samples.keySet()) {
+            if (!dt.isBefore(startDt) && !dt.isAfter(endDt)) { //if timestamps exist between the period then replace the timestamps with the specified status
+                this.samples.replace(dt, intStatus);
             }
-            result.insert(point, x);
-
-        }
-
-        result.optimize();
-
-        // Engrave the result in this timeline
-        this.clear();
-        this.bulkInsert(result.getSamples());
-    }
-
-    public void createDownTimeline(ArrayList<String> downPeriod, int defaultDownStatus, DateTime runDateDt) throws ParseException {
-        DateTime endDay = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", runDateDt.toDate(), 23, 59, 59);
-
-        Timeline downTimeline = null;
-        if (downPeriod != null) {
-
-            DateTime startDown = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", downPeriod.get(0));
-            DateTime endDown = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", downPeriod.get(1));
-            endDown = endDown.plusMinutes(1);
-            TreeMap<DateTime, Integer> downSample = new TreeMap();
-            downSample.put(startDown, defaultDownStatus);
-            if (!endDown.isAfter(endDay.getMillis())) {
-                downSample.put(endDown, -1);
-            }
-            // We have downtime declared
-            downTimeline = new Timeline();
-            downTimeline.insertDateTimeStamps(downSample, true);
         }
     }
 }

@@ -20,8 +20,10 @@ import argo.avro.Weight;
 import argo.batch.StatusTimeline;
 import argo.batch.TimeStatus;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.joda.time.DateTime;
@@ -31,6 +33,7 @@ import profilesmanager.EndpointGroupManager;
 import profilesmanager.GroupGroupManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
+import profilesmanager.RecomputationsManager;
 import profilesmanager.ReportManager;
 import timelines.Timeline;
 import timelines.TimelineIntegrator;
@@ -70,6 +73,8 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
     private ReportManager confMgr;
     private List<Weight> weight;
     private String ggroupType;
+    private RecomputationsManager recMgr;
+    private List<String> rec;
 
     /**
      * Initialization method of the RichGroupReduceFunction operator
@@ -82,7 +87,7 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
      * @param parameters A flink Configuration object
      */
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
         // Get data from broadcast variables
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
@@ -120,6 +125,10 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
         this.weight = getRuntimeContext().getBroadcastVariable("weight");
 
         this.ggroupType = this.repMgr.ggroup;
+        this.rec = getRuntimeContext().getBroadcastVariable("rec");
+        // Initialize metric profile manager
+        this.recMgr = new RecomputationsManager();
+        this.recMgr.loadJsonString(rec);
 
     }
 
@@ -142,11 +151,10 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
     public void flatMap(StatusTimeline in, Collector<EndpointGroupAR> out) throws Exception {
         DateTime runDateDt = Utils.convertStringtoDate("yyyy-MM-dd", this.runDate);
         // Initialize field values and aggregator
-        String service = "";
         String endpointGroup = "";
-        service = in.getService();
         endpointGroup = in.getGroup();
         String supergroup = this.ggpMgr.getGroup(this.ggroupType, endpointGroup);
+
 //        // Availability = UP period / KNOWN period = UP period / (Total period –
 //		// UNKNOWN period)
 //		this.availability = round(((up / dt) / (1.0 - (unknown / dt))) * 100, 5, BigDecimal.ROUND_HALF_UP);
@@ -158,7 +166,6 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
 //		this.up_f = round(up / dt, 5, BigDecimal.ROUND_HALF_UP);
 //		this.unknown_f = round(unknown / dt, 5, BigDecimal.ROUND_HALF_UP);
 //		this.down_f = round(down / dt, 5, BigDecimal.ROUND_HALF_UP);
-
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
 
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
@@ -168,9 +175,16 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
 
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timestampMap, true);
+        
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
-
+        if (this.recMgr.isExcluded(in.getGroup())) {
+            ArrayList<Map<String, String>> periods = this.recMgr.getPeriods(in.getGroup(), this.runDate);
+            for (Map<String, String> interval : periods) {
+                timeline.fillWithStatus(interval.get("start"), interval.get("end"),this.opsMgr.getDefaultUnknownInt());
+                timeline.optimize();
+            }
+        }
         TimelineIntegrator tIntegrator = new TimelineIntegrator();
 
         tIntegrator.calcAR(timeline.getSamples(), runDateDt, this.opsMgr.getIntStatus("OK"), this.opsMgr.getIntStatus("WARNING"), this.opsMgr.getDefaultUnknownInt(), this.opsMgr.getDefaultDownInt(), this.opsMgr.getDefaultMissingInt());
@@ -181,7 +195,6 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
 
         // Output MonTimeline object
         out.collect(result);
-
     }
 
     public static double round(double input, int prec, int mode) {

@@ -39,6 +39,7 @@ import utils.Utils;
  * class is used as a RichGroupReduce Function in flink pipeline
  */
 public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, EndpointAR> {
+
     private static final long serialVersionUID = 1L;
 
     final ParameterTool params;
@@ -137,7 +138,6 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
         service = in.getService();
         hostname = in.getHostname();
         endpointGroup = in.getGroup();
-
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
         for (TimeStatus ts : timestatusList) {
@@ -150,10 +150,9 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
         timelineMap.put("timeline", timeline);
 
         ArrayList<String> downPeriod = this.downtimeMgr.getPeriod(hostname, service);
-        Timeline downTimeline = new Timeline();
-        downTimeline.createDownTimeline(downPeriod, this.opsMgr.getDefaultDownInt(), runDateDt);
-        timelineMap.put("down", downTimeline);
-        timeline.aggregateDownTime(downTimeline, this.opsMgr.getDefaultDownInt());
+        if (downPeriod != null && !downPeriod.isEmpty()) {
+            timeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt());
+        }
         TimelineIntegrator tIntegrator = new TimelineIntegrator();
 
         tIntegrator.calcAR(timeline.getSamples(), runDateDt, this.opsMgr.getIntStatus("OK"), this.opsMgr.getIntStatus("WARNING"), this.opsMgr.getDefaultUnknownInt(), this.opsMgr.getDefaultDownInt(), this.opsMgr.getDefaultMissingInt());
@@ -174,8 +173,8 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
 
         EndpointAR result = new EndpointAR(runDateInt, this.repMgr.id, hostname, service, endpointGroup, tIntegrator.getAvailability(), tIntegrator.getReliability(), tIntegrator.getUp_f(), tIntegrator.getUnknown_f(), tIntegrator.getDown_f(), info);
 
-        // Output MonTimeline object
         out.collect(result);
+
     }
 
     public static double round(double input, int prec, int mode) {
