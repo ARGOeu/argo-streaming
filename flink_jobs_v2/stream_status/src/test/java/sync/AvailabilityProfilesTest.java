@@ -8,8 +8,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import ops.OpsManagerTest;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -27,7 +25,7 @@ public class AvailabilityProfilesTest {
 	@Test
 	public void test() throws URISyntaxException, IOException {
 		// Prepare Resource File
-		URL resJsonFile = OpsManagerTest.class.getResource("/ops/ap1.json");
+		URL resJsonFile = AvailabilityProfilesTest.class.getResource("/ops/ap1.json");
 		File jsonFile = new File(resJsonFile.toURI());
 		// Instatiate class
 		AggregationProfileManager avp = new AggregationProfileManager();

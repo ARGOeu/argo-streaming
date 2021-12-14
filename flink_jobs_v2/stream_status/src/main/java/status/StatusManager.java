@@ -18,9 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.TimeZone;
+
 import sync.DowntimeCache;
 import sync.MetricProfileManager;
-import ops.OpsManager;
 
 import com.esotericsoftware.minlog.Log;
 import com.google.gson.Gson;
@@ -31,6 +31,7 @@ import argo.avro.MetricProfile;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.EndpointGroupManager.EndpointItem;
+import profilesmanager.OperationsManager;
 
 /**
  * Status Manager implements a live structure containing a topology of entities
@@ -48,7 +49,7 @@ public class StatusManager {
 	public EndpointGroupManager egp = new EndpointGroupManager();
 	public MetricProfileManager mps = new MetricProfileManager();
 	AggregationProfileManager aps = new AggregationProfileManager();
-	OpsManager ops = new OpsManager();
+	OperationsManager ops = new OperationsManager();
 	private Long timeout = 86400000L;
 	
 	// Add downtime manager cache - 5 slots are enough for status manager case
@@ -86,7 +87,7 @@ public class StatusManager {
 	}
 
 	// Get Operation Manager
-	public OpsManager getOps() {
+	public OperationsManager getOps() {
 		return this.ops;
 	}
 
@@ -337,7 +338,7 @@ public class StatusManager {
 	 *            operation profile contents
 	 */
 	public void loadAll(String runDate, ArrayList<Downtime> downList, ArrayList<GroupEndpoint> egpList, ArrayList<MetricProfile> mpsList, ArrayList<String> apsJson,
-			String opsJson) throws IOException {
+			ArrayList<String> opsJson) throws IOException {
 		aps.loadJsonString(apsJson);
 		ops.loadJsonString(opsJson);
 		mps.loadFromList(mpsList);
@@ -694,7 +695,7 @@ public class StatusManager {
 	 * @return	Map<String,ArrayList<String>> a hashmap of two string arraylists keyed: "metrics", "statuses"
 	 *            
 	 */
-	public Map<String,ArrayList<String>> getMetricStatuses(StatusNode endpoint, OpsManager ops) {
+	public Map<String,ArrayList<String>> getMetricStatuses(StatusNode endpoint, OperationsManager ops) {
 		Map<String, ArrayList<String>> results = new HashMap<String,ArrayList<String>>();
 		
 		ArrayList<String> metrics = new ArrayList<String>();
@@ -734,7 +735,7 @@ public class StatusManager {
 	 * @return	Map<String,ArrayList<String>> a hashmap of three string arraylists keyed: "endpoints", "services", "statuses"
 	 *            
 	 */
-	public Map<String,ArrayList<String>> getGroupEndpointStatuses(StatusNode egroup, OpsManager ops) {
+	public Map<String,ArrayList<String>> getGroupEndpointStatuses(StatusNode egroup, OperationsManager ops) {
 		Map<String, ArrayList<String>> results = new HashMap<String,ArrayList<String>>();
 		ArrayList<String> endpoints = new ArrayList<String>();
 		ArrayList<String> services = new ArrayList<String>();

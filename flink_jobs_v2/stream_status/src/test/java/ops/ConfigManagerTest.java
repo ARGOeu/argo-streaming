@@ -22,7 +22,7 @@ public class ConfigManagerTest {
 	@Test
 	public void test() throws URISyntaxException, IOException {
 		// Load the resource file
-		URL resJsonFile = OpsManagerTest.class.getResource("/ops/config.json");
+		URL resJsonFile = ConfigManagerTest.class.getResource("/ops/config.json");
 		File jsonFile = new File(resJsonFile.toURI());
 
 		// Instantiate a new ConfigManager and load the test file
