@@ -185,7 +185,7 @@ public class TimelineAggregatorTest {
         map.put(name2, new Timeline(timestamp2));
 
         TimelineAggregator instance = new TimelineAggregator(map);
-        instance.aggregate(createTruthTable(), 0);
+        instance.aggregate(createTruthTable(), 0, 6);
         TreeMap<DateTime, Integer> expRes = new TreeMap<>();
         Timeline exptimeline = new Timeline();
         exptimeline.insert(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 31, 12, 50, 0), 0);
@@ -224,7 +224,7 @@ public class TimelineAggregatorTest {
         }
         instance.setInputs(inputs);
 
-        instance.aggregate(truthTable, op);
+        instance.aggregate(truthTable, op,6);
 
         Set<Entry<DateTime, Integer>> expRes = timelinejson.getOutputTimeline().entrySet();
         Set<Entry<DateTime, Integer>> res = instance.getOutput().getSamples();

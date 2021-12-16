@@ -11,95 +11,103 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class RecomputationManagerTest {
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        // Assert that files are present
+        assertNotNull("Test file missing", RecomputationManagerTest.class.getResource("/profiles/recomp.json"));
+    }
 
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
-		// Assert that files are present
-		assertNotNull("Test file missing", RecomputationManagerTest.class.getResource("/profiles/recomp.json"));
-	}
+    @Test
+    public void test() throws URISyntaxException, ParseException, IOException {
+        // Prepare Resource File
+        URL resJsonFile = RecomputationManagerTest.class.getResource("/profiles/recomp.json");
+        File jsonFile = new File(resJsonFile.toURI());
 
-	@Test
-	public void test() throws URISyntaxException, ParseException, IOException {
-		// Prepare Resource File
-		URL resJsonFile = RecomputationManagerTest.class.getResource("/profiles/recomp.json");
-		File jsonFile = new File(resJsonFile.toURI());
+        RecomputationsManager recMgr = new RecomputationsManager();
+        recMgr.loadJson(jsonFile);
 
-		RecomputationsManager recMgr = new RecomputationsManager();
-		recMgr.loadJson(jsonFile);
-		
+        assertEquals(recMgr.isExcluded("GR-01-AUTH"), true);
+        assertEquals(recMgr.isExcluded("HG-03-AUTH"), true);
+        assertEquals(recMgr.isExcluded("GR-04-IASA"), false);
 
-		assertEquals(recMgr.isExcluded("GR-01-AUTH"), true);
-		assertEquals(recMgr.isExcluded("HG-03-AUTH"), true);
-		assertEquals(recMgr.isExcluded("GR-04-IASA"), false);
+        // Check period functionality
+        ArrayList<Map<String, String>> gr01list = new ArrayList<Map<String, String>>();
+        ArrayList<Map<String, String>> siteAlist = new ArrayList<Map<String, String>>();
+        ArrayList<Map<String, String>> siteBlist = new ArrayList<Map<String, String>>();
+        ArrayList<Map<String, String>> siteClist = new ArrayList<Map<String, String>>();
 
-		// Check period functionality
-		ArrayList<Map<String,String>> gr01list = new ArrayList<Map<String,String>>();
-		ArrayList<Map<String,String>> siteAlist = new ArrayList<Map<String,String>>();
-		ArrayList<Map<String,String>> siteBlist = new ArrayList<Map<String,String>>();
-		ArrayList<Map<String,String>> siteClist = new ArrayList<Map<String,String>>();
-		
-		Map<String,String> gr01map = new HashMap<String,String>();
-		
-		Map<String,String> siteA1map = new HashMap<String, String>();
-		Map<String,String> siteA2map = new HashMap<String, String>();
-		
-		
-		
-		Map<String,String> siteBmap = new HashMap<String,String>();
-		Map<String,String> siteCmap = new HashMap<String,String>();
-	
-		// Check period functionality
-		
-		gr01map.put("start", "2013-12-08T12:03:44Z");
-		gr01map.put("end", "2013-12-10T12:03:44Z");
-		
-		siteA1map.put("start", "2013-12-08T12:03:44Z");
-		siteA1map.put("end", "2013-12-08T13:03:44Z");
-		
-		siteA2map.put("start", "2013-12-08T16:03:44Z");
-		siteA2map.put("end", "2013-12-08T18:03:44Z");
-		
-		siteBmap.put("start", "2013-12-08T12:03:44Z");
-		siteBmap.put("end", "2013-12-08T13:03:44Z");
-		
-		siteCmap.put("start", "2013-12-08T16:03:44Z");
-		siteCmap.put("end", "2013-12-08T18:03:44Z");
-		
-		gr01list.add(gr01map);
-	    siteAlist.add(siteA1map);
-	    siteAlist.add(siteA2map);
-	    siteBlist.add(siteBmap);
-	    siteClist.add(siteCmap);
-	    
-	    Assert.assertEquals(recMgr.getPeriods("GR-01-AUTH", "2013-12-08"),gr01list);
-	    Assert.assertEquals(recMgr.getPeriods("SITE-A", "2013-12-08"),siteAlist);
-	    Assert.assertEquals(recMgr.getPeriods("SITE-B", "2013-12-08"),siteBlist);
-	    
-	    // check monitoring exclusions
-	    Assert.assertEquals(false,recMgr.isMonExcluded("monA", "2013-12-08T11:03:43Z"));
-	    Assert.assertEquals(false,recMgr.isMonExcluded("monA", "2013-12-08T11:03:44Z"));
-	    Assert.assertEquals(true,recMgr.isMonExcluded("monA", "2013-12-08T12:06:44Z"));
-	    Assert.assertEquals(true,recMgr.isMonExcluded("monA", "2013-12-08T14:05:44Z"));
-	    Assert.assertEquals(true,recMgr.isMonExcluded("monA", "2013-12-08T15:02:44Z"));
-	    Assert.assertEquals(false,recMgr.isMonExcluded("monA", "2013-12-08T15:03:45Z"));
-	    
-	    // check monitoring exclusions
-	    Assert.assertEquals(false,recMgr.isMonExcluded("monB", "2013-12-08T11:03:43Z"));
-	    Assert.assertEquals(false,recMgr.isMonExcluded("monB", "2013-12-08T11:03:44Z"));
-	    Assert.assertEquals(false,recMgr.isMonExcluded("monB", "2013-12-08T12:06:44Z"));
-	    Assert.assertEquals(false,recMgr.isMonExcluded("monB", "2013-12-08T14:05:44Z"));
-	    Assert.assertEquals(false,recMgr.isMonExcluded("monB", "2013-12-08T15:02:44Z"));
-	    Assert.assertEquals(false,recMgr.isMonExcluded("monB", "2013-12-08T15:03:45Z"));
-	    
+        Map<String, String> gr01map = new HashMap<String, String>();
 
-            
-	}
+        Map<String, String> siteA1map = new HashMap<String, String>();
+        Map<String, String> siteA2map = new HashMap<String, String>();
+
+        Map<String, String> siteBmap = new HashMap<String, String>();
+        Map<String, String> siteCmap = new HashMap<String, String>();
+
+        // Check period functionality
+        gr01map.put("start", "2013-12-08T12:03:44Z");
+        gr01map.put("end", "2013-12-10T12:03:44Z");
+
+        siteA1map.put("start", "2013-12-08T12:03:44Z");
+        siteA1map.put("end", "2013-12-08T13:03:44Z");
+
+        siteA2map.put("start", "2013-12-08T16:03:44Z");
+        siteA2map.put("end", "2013-12-08T18:03:44Z");
+
+        siteBmap.put("start", "2013-12-08T12:03:44Z");
+        siteBmap.put("end", "2013-12-08T13:03:44Z");
+
+        siteCmap.put("start", "2013-12-08T16:03:44Z");
+        siteCmap.put("end", "2013-12-08T18:03:44Z");
+
+        gr01list.add(gr01map);
+        siteAlist.add(siteA1map);
+        siteAlist.add(siteA2map);
+        siteBlist.add(siteBmap);
+        siteClist.add(siteCmap);
+
+        Assert.assertEquals(recMgr.getPeriods("GR-01-AUTH", "2013-12-08"), gr01list);
+        Assert.assertEquals(recMgr.getPeriods("SITE-A", "2013-12-08"), siteAlist);
+        Assert.assertEquals(recMgr.getPeriods("SITE-B", "2013-12-08"), siteBlist);
+
+        // check monitoring exclusions
+        Assert.assertEquals(false, recMgr.isMonExcluded("monA", "2013-12-08T11:03:43Z"));
+        Assert.assertEquals(false, recMgr.isMonExcluded("monA", "2013-12-08T11:03:44Z"));
+        Assert.assertEquals(true, recMgr.isMonExcluded("monA", "2013-12-08T12:06:44Z"));
+        Assert.assertEquals(true, recMgr.isMonExcluded("monA", "2013-12-08T14:05:44Z"));
+        Assert.assertEquals(true, recMgr.isMonExcluded("monA", "2013-12-08T15:02:44Z"));
+        Assert.assertEquals(false, recMgr.isMonExcluded("monA", "2013-12-08T15:03:45Z"));
+
+        // check monitoring exclusions
+        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T11:03:43Z"));
+        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T11:03:44Z"));
+        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T12:06:44Z"));
+        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T14:05:44Z"));
+        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T15:02:44Z"));
+        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T15:03:45Z"));
+        RecomputationsManager.ExcludedMetric exMetric1 = recMgr.new ExcludedMetric(null, null, null, "metric1", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
+        RecomputationsManager.ExcludedMetric exMetric2 = recMgr.new ExcludedMetric(null, null, "host2.example.com", "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
+        RecomputationsManager.ExcludedMetric exMetric3 = recMgr.new ExcludedMetric("grnet", null, null, "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
+        RecomputationsManager.ExcludedMetric exMetric4 = recMgr.new ExcludedMetric("grnet", "cloud.storage", null, "webcheck", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
+        ArrayList<RecomputationsManager.ExcludedMetric> exMetrics = new ArrayList<>();
+        exMetrics.add(exMetric1);
+        exMetrics.add(exMetric2);
+        exMetrics.add(exMetric3);
+        exMetrics.add(exMetric4);
+        Assert.assertEquals(exMetrics, recMgr.excludedMetrics);
+
+        Assert.assertEquals(exMetric1, recMgr.findMetricExcluded(null, null, null, "metric1"));
+        Assert.assertEquals(exMetric2, recMgr.findMetricExcluded(null, null, "host2.example.com", "metric2"));
+        Assert.assertEquals(exMetric3, recMgr.findMetricExcluded("grnet", null, null, "metric2"));
+        Assert.assertEquals(exMetric4, recMgr.findMetricExcluded("grnet", "cloud.storage", null, "webcheck"));
+        Assert.assertEquals(null, recMgr.findMetricExcluded("grnet", null, null, "webcheck"));
+       
+
+    }
 
 }

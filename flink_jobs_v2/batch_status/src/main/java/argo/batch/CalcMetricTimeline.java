@@ -13,12 +13,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import argo.avro.MetricProfile;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
+import profilesmanager.RecomputationsManager;
 
 import timelines.Timeline;
 import utils.Utils;
@@ -47,14 +49,18 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
+//    private List<String> rec;
+//    private RecomputationsManager recMgr;
 
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
+//        this.rec = getRuntimeContext().getBroadcastVariable("rec");
+
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
         this.mpsMgr.loadFromList(mps);
@@ -65,6 +71,9 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
+
+//        this.recMgr = new RecomputationsManager();
+//        this.recMgr.loadJsonString(rec);
     }
 
     @Override
@@ -102,6 +111,12 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timeStatusMap, true);
         timeline.replacePreviousDateStatus(Utils.convertStringtoDate("yyyy-MM-dd", this.runDate), new ArrayList<>(this.opsMgr.getStates().keySet()), true);//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
+
+               //  RecomputationsManager.ExcludedMetric excludedMetric = this.recMgr.findMetricExcluded(endpointGroup, service, hostname, metric);
+//            if (excludedMetric != null) {
+//                timeline.fillWithStatus(excludedMetric.getStartPeriod(), excludedMetric.getEndPeriod(), this.opsMgr.getDefaultExcludedInt());
+//                timeline.optimize();
+//            }
         ArrayList<TimeStatus> timestatusList = new ArrayList<TimeStatus>();
         for (Entry<DateTime, Integer> entry : timeline.getSamples()) {
             TimeStatus timestatus = new TimeStatus(entry.getKey().getMillis(), entry.getValue());
@@ -111,7 +126,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList);
         statusTimeline.setHasThr(hasThr);
         out.collect(statusTimeline);
-
     }
+ 
 
 }

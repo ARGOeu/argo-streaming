@@ -45,11 +45,11 @@ public class OperationsManager implements Serializable {
     private String defaultMissingState;
     private String defaultUnknownState;
 
+    private final String defaultExcludedState = "EXCLUDED";
     private boolean order;
-    //  private final String url = "/operations_profiles";
-
+  
     /**
-     * Constructs an OperationsManager object initializing fields 
+     * Constructs an OperationsManager object initializing fields
      */
     public OperationsManager() {
         this.states = new HashMap<String, Integer>();
@@ -74,6 +74,10 @@ public class OperationsManager implements Serializable {
         return this.getIntStatus(this.defaultUnknownState);
     }
 
+    public int getDefaultExcludedInt() {
+        return this.revStates.size()-1;
+    }
+
     public int getDefaultDownInt() {
         return this.getIntStatus(this.defaultDownState);
     }
@@ -85,11 +89,10 @@ public class OperationsManager implements Serializable {
     public int getDefaultMissingInt() {
         return this.getIntStatus(this.defaultMissingState);
     }
-    
-/**
- * Clears the OperationsManager fields
- */
- 
+
+    /**
+     * Clears the OperationsManager fields
+     */
     public void clear() {
         this.states = new HashMap<String, Integer>();
         this.ops = new HashMap<String, Integer>();
@@ -99,13 +102,16 @@ public class OperationsManager implements Serializable {
         this.truthTable = null;
     }
 
-/**
-* Retrieves the status which is a combination of 2 statuses based on the truth table of the operation, as an int
-* @param op , the operation (e.g 0, 1)
-* @param a , the 1st status (e.g 3 )
-* @param b , the 2nd status (e.g 2) 
-* @return the final status which is the combination of the two statuses retrieved from the operation's truth table
-*/
+    /**
+     * Retrieves the status which is a combination of 2 statuses based on the
+     * truth table of the operation, as an int
+     *
+     * @param op , the operation (e.g 0, 1)
+     * @param a , the 1st status (e.g 3 )
+     * @param b , the 2nd status (e.g 2)
+     * @return the final status which is the combination of the two statuses
+     * retrieved from the operation's truth table
+     */
     public int opInt(int op, int a, int b) {
         int result = -1;
         try {
@@ -117,13 +123,17 @@ public class OperationsManager implements Serializable {
 
         return result;
     }
-/**
- * Retrieves the status which is a combination of 2 statuses based on the truth table of the operation, as an int
- * @param op , the operation in the form of a string (e.g AND , OR)
- * @param a ,  the 1st status in the form of a string (e.g OK , MISSING)
- * @param b , the 2nd status in the form of a string (e.g OK, MISSING)
- * @return  . the final status which is the combination of the two statuses retrieved from the operation's truth table
- */
+
+    /**
+     * Retrieves the status which is a combination of 2 statuses based on the
+     * truth table of the operation, as an int
+     *
+     * @param op , the operation in the form of a string (e.g AND , OR)
+     * @param a , the 1st status in the form of a string (e.g OK , MISSING)
+     * @param b , the 2nd status in the form of a string (e.g OK, MISSING)
+     * @return . the final status which is the combination of the two statuses
+     * retrieved from the operation's truth table
+     */
     public int opInt(String op, String a, String b) {
 
         int opInt = this.ops.get(op);
@@ -132,25 +142,31 @@ public class OperationsManager implements Serializable {
 
         return this.truthTable[opInt][aInt][bInt];
     }
-/**
- * Retrieves the status which is a combination of 2 statuses based on the truth table of the operation, as a string
- * @param op , the operation as an int (e.g 0, 1)
- * @param a , the 1st status as an int (e.g 1, 3)
- * @param b , the 2nd status as an int (e.g 1, 3)
- * @return  the final status  which is the combination of the two statuses , as a string,
- *          retrieved from the operation's truth table
- */
+
+    /**
+     * Retrieves the status which is a combination of 2 statuses based on the
+     * truth table of the operation, as a string
+     *
+     * @param op , the operation as an int (e.g 0, 1)
+     * @param a , the 1st status as an int (e.g 1, 3)
+     * @param b , the 2nd status as an int (e.g 1, 3)
+     * @return the final status which is the combination of the two statuses ,
+     * as a string, retrieved from the operation's truth table
+     */
     public String op(int op, int a, int b) {
         return this.revStates.get(this.truthTable[op][a][b]);
     }
-/**
- * Retrieves the status which is a combination of 2 statuses based on the truth table of the operation, as a string
- * @param op, the operation as a string (e.g AND, OR)
- * @param a , the 1st status as a string  (e.g OK, MISSING)
- * @param b, the 1st status as a string  (e.g OK , MISSING)
- * @return the final status  which is the combination of the two statuses , as a string,
- *          retrieved from the operation's truth table
- */
+
+    /**
+     * Retrieves the status which is a combination of 2 statuses based on the
+     * truth table of the operation, as a string
+     *
+     * @param op, the operation as a string (e.g AND, OR)
+     * @param a , the 1st status as a string (e.g OK, MISSING)
+     * @param b, the 1st status as a string (e.g OK , MISSING)
+     * @return the final status which is the combination of the two statuses ,
+     * as a string, retrieved from the operation's truth table
+     */
     public String op(String op, String a, String b) {
         int opInt = this.ops.get(op);
         int aInt = this.states.get(a);
@@ -158,35 +174,45 @@ public class OperationsManager implements Serializable {
 
         return this.revStates.get(this.truthTable[opInt][aInt][bInt]);
     }
-/**
-* Maps a status as string to an int based on the position of the status in the stored list of statuses
- * @param status a status as an int (e.g 1 ,2)
- * @return  the status as a string 
- */
+
+    /**
+     * Maps a status as string to an int based on the position of the status in
+     * the stored list of statuses
+     *
+     * @param status a status as an int (e.g 1 ,2)
+     * @return the status as a string
+     */
     public String getStrStatus(int status) {
         return this.revStates.get(status);
     }
-/**
-  * Maps a status as string to an int 
- * @param status ,a status as a string  (e.g OK,MISSING)
- * @return  the status as an int
- */
+
+    /**
+     * Maps a status as string to an int
+     *
+     * @param status ,a status as a string (e.g OK,MISSING)
+     * @return the status as an int
+     */
     public int getIntStatus(String status) {
         return this.states.get(status);
     }
-/**
- * Maps an operation as int to a string based on the position of the operation in the stored list of operations
- * @param op , an operation as an int
- * @return  the operation as a string 
- */
+
+    /**
+     * Maps an operation as int to a string based on the position of the
+     * operation in the stored list of operations
+     *
+     * @param op , an operation as an int
+     * @return the operation as a string
+     */
     public String getStrOperation(int op) {
         return this.revOps.get(op);
     }
-/**
- * Maps an operation as string to an int 
- * @param op, an operation as a string
- * @return  the operation as an int
- */
+
+    /**
+     * Maps an operation as string to an int
+     *
+     * @param op, an operation as a string
+     * @return the operation as an int
+     */
     public int getIntOperation(String op) {
         return this.ops.get(op);
     }
@@ -199,11 +225,15 @@ public class OperationsManager implements Serializable {
     public ArrayList<String> availableOps() {
         return this.revOps;
     }
-/**
- * reads from a json file and stores the necessary information to the OperationsManager  object fields
- * @param jsonFile a json file containing information about the operation profiles
- * @throws IOException 
- */
+
+    /**
+     * reads from a json file and stores the necessary information to the
+     * OperationsManager object fields
+     *
+     * @param jsonFile a json file containing information about the operation
+     * profiles
+     * @throws IOException
+     */
     public void loadJson(File jsonFile) throws IOException {
         // Clear data
         this.clear();
@@ -232,10 +262,13 @@ public class OperationsManager implements Serializable {
         }
 
     }
-/**
- * reads from a JsonElement and stores the necessary information to the OperationsManager object fields
- * @param j_element  , a JsonElement containing the operations profiles data
- */
+
+    /**
+     * reads from a JsonElement and stores the necessary information to the
+     * OperationsManager object fields
+     *
+     * @param j_element , a JsonElement containing the operations profiles data
+     */
     private void readJson(JsonElement j_element) {
         JsonObject j_obj = j_element.getAsJsonObject();
         JsonArray j_states = j_obj.getAsJsonArray("available_states");
@@ -295,14 +328,18 @@ public class OperationsManager implements Serializable {
                 }
             }
         }
+        addExcludedState();
 
     }
-/**
- * Calls a JsonParser to read from a list of strings containing the operations profiles data , extracts the JsonElement and 
- * calls the readJson() to read and store the operations profiles data
- * @param opsJson , a list of strings
- * @throws JsonParseException 
- */
+
+    /**
+     * Calls a JsonParser to read from a list of strings containing the
+     * operations profiles data , extracts the JsonElement and calls the
+     * readJson() to read and store the operations profiles data
+     *
+     * @param opsJson , a list of strings
+     * @throws JsonParseException
+     */
     public void loadJsonString(List<String> opsJson) throws JsonParseException {
         // Clear data
         this.clear();
@@ -312,6 +349,14 @@ public class OperationsManager implements Serializable {
         JsonElement j_element = json_parser.parse(opsJson.get(0));
         readJson(j_element);
     }
+
+    private void addExcludedState() {
+        this.revStates.add(defaultExcludedState);
+
+        this.states.put(defaultExcludedState,this.revStates.size()-1);
+//        this.defaultExcludedInt = this.revStates.size();
+    }
+
     public int[][][] getTruthTable() {
         return truthTable;
     }
@@ -387,5 +432,10 @@ public class OperationsManager implements Serializable {
     public static Logger getLOG() {
         return LOG;
     }
+
+    public String getDefaultExcludedState() {
+        return defaultExcludedState;
+    }
+
 
 }

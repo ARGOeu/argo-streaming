@@ -155,14 +155,14 @@ public class TimelineAggregator {
      * aggregates the input timelines into one combined output including all the
      * timestamp status combinations as produced from the input timelines
      */
-    public void aggregate(int[][][] truthTable, int op) {
+    public void aggregate(int[][][] truthTable, int op, int excludedInt) {
         if (this.output != null) {
             this.output.clear();
         }
 
         //Iterate through all available input timelines and aggregate
         for (Timeline item : this.inputs.values()) {
-            this.output.aggregate(item, truthTable, op);
+            this.output.aggregate(item, truthTable, op, excludedInt);
         }
 
     }

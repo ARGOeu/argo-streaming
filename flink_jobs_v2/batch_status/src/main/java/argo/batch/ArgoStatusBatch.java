@@ -14,6 +14,8 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import java.io.File;
+import java.net.URL;
 import trends.calculations.ServiceTrends;
 import trends.flipflops.ZeroServiceFlipFlopFilter;
 import trends.status.EndpointTrendsCounter;
@@ -160,6 +162,10 @@ public class ArgoStatusBatch {
         if (amr.getResourceJSON(ApiResource.RECOMPUTATIONS) != null) {
             recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
         }
+        URL resJsonFile = ArgoStatusBatch.class.getResource("/amr/recomp2.json");
+        //File jsonFile = new File(resJsonFile.toURI());
+        recDS = env.readTextFile(resJsonFile.toString());
+
         DataSource<String> mtagsDS = env.fromElements("");
         if (amr.getResourceJSON(ApiResource.MTAGS) != null) {
 
@@ -244,7 +250,7 @@ public class ArgoStatusBatch {
         // Create status detail data set
         DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
-                .withBroadcastSet(mpsDS, "mps");
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
 
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
@@ -314,8 +320,7 @@ public class ArgoStatusBatch {
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
 
-           // DataSet<StatusTimeline> statusGroupTimelineAR = statusGroupTimeline.flatMap(new ExcludeGroupMetrics(params)).withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
-
+            // DataSet<StatusTimeline> statusGroupTimelineAR = statusGroupTimeline.flatMap(new ExcludeGroupMetrics(params)).withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
             DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");

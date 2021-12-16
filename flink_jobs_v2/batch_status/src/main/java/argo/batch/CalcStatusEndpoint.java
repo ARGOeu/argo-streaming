@@ -92,6 +92,7 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
             cur.setInfo(info);
             cur.setHasThr(hasThr);
             cur.setTimestamp(Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp())));
+            System.out.println("item status-- "+item.getStatus());
             cur.setStatus(opsMgr.getStrStatus(item.getStatus()));
             out.collect(cur);
         }

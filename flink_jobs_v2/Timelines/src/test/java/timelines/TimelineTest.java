@@ -292,7 +292,7 @@ public class TimelineTest {
         int[][][] truthTable = createTruthTable();
         int op = 0;
         Timeline instance = new Timeline();
-        instance.aggregate(second, truthTable, op);
+        instance.aggregate(second, truthTable, op,6 );
         Set<Map.Entry<DateTime, Integer>> expResult = createMerged().entrySet();
         Set<Map.Entry<DateTime, Integer>> result = instance.getSamples();
         assertEquals(expResult, result);
