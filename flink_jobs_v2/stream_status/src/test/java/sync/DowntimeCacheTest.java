@@ -18,6 +18,7 @@ import argo.avro.Downtime;
 import argo.streaming.SyncParse;
 
 import org.apache.commons.codec.binary.Base64;
+import profilesmanager.DowntimeManager;
 
 public class DowntimeCacheTest {
 
@@ -90,8 +91,6 @@ public class DowntimeCacheTest {
 		dm13.loadFromList(downtimeMap.get("2018-05-13"));
 		dm14.loadFromList(downtimeMap.get("2018-05-14"));
 		
-		
-	
 		assertEquals(dm13.toString(),dc2.getDowntimeManager("2018-05-13").toString());
 		assertEquals(dm14.toString(),dc2.getDowntimeManager("2018-05-14").toString());
 		

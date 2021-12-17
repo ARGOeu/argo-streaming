@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 import argo.avro.Downtime;
+import profilesmanager.DowntimeManager;
 
 /**
  * Downtime Cache holds multiple DowntimeManagers and it's used to keep track of

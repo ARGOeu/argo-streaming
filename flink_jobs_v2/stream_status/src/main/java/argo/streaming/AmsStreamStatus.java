@@ -51,7 +51,6 @@ import org.apache.flink.core.fs.FileSystem;
 import profilesmanager.EndpointGroupManager;
 import status.StatusManager;
 import sync.MetricProfileManager;
-
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
  * kafka, fs) job required cli parameters --ams.endpoint : ARGO messaging api
