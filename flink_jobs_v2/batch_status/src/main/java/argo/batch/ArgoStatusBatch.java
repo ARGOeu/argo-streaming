@@ -7,7 +7,6 @@ import argo.ar.CalcGroupAR;
 import argo.ar.CalcServiceAR;
 import argo.ar.EndpointAR;
 import argo.ar.EndpointGroupAR;
-import argo.ar.ExcludeGroupMetrics;
 import argo.ar.ServiceAR;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
@@ -315,11 +314,11 @@ public class ArgoStatusBatch {
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf");
 
-            DataSet<StatusTimeline> statusGroupTimelineAR = statusGroupTimeline.flatMap(new ExcludeGroupMetrics(params)).withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
+           // DataSet<StatusTimeline> statusGroupTimelineAR = statusGroupTimeline.flatMap(new ExcludeGroupMetrics(params)).withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
 
-            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimelineAR.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
+            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
-                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight");
+                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
 
             MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
             MongoServiceArOutput serviceARMongoOut = new MongoServiceArOutput(dbURI, "service_ar", dbMethod);
