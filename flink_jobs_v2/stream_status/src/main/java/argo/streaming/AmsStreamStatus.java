@@ -149,7 +149,6 @@ public class AmsStreamStatus {
         // Initialize Input Source : ARGO Messaging Source
         String endpoint = parameterTool.getRequired("ams.endpoint");
         String port = null;
-
         if (!parameterTool.getRequired("ams.port").equals("__NO_VALUE_KEY")) {
             port = parameterTool.getRequired("ams.port");
         }

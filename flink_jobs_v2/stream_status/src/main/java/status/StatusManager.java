@@ -31,6 +31,7 @@ import profilesmanager.EndpointGroupManager;
 import profilesmanager.EndpointGroupManager.EndpointItem;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
+
 /**
  * Status Manager implements a live structure containing a topology of entities
  * and the related statuses for each one
