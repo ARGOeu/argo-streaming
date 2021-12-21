@@ -90,7 +90,6 @@ public class DowntimeCacheTest {
 		DowntimeManager dm14 = new DowntimeManager();
 		dm13.loadFromList(downtimeMap.get("2018-05-13"));
 		dm14.loadFromList(downtimeMap.get("2018-05-14"));
-		
 		assertEquals(dm13.toString(),dc2.getDowntimeManager("2018-05-13").toString());
 		assertEquals(dm14.toString(),dc2.getDowntimeManager("2018-05-14").toString());
 		
