@@ -45,6 +45,23 @@ public class OperationsManagerTest {
     public void tearDown() {
     }
 
+
+
+    /**
+     * Test of getDefaultDown method, of class OperationsManager.
+     */
+    @Test
+    public void testGetDefaultExcluded() throws IOException {
+        System.out.println("getDefaultExcluded");
+        OperationsManager instance = new OperationsManager();
+        instance.loadJson(new File(OperationsManagerTest.class.getResource("/profiles/operations.json").getFile()));
+        String expResult = "EXCLUDED";
+        String result = instance.getDefaultExcludedState();
+        assertEquals(expResult, result);
+        // TODO review the generated test code and remove the default call to fail.
+        //fail("The test case is a prototype.");
+    }
+
     /**
      * Test of loadOperationProfile method, of class OperationsParser.
      */
@@ -74,6 +91,23 @@ public class OperationsManagerTest {
 
         String expResult = "UNKNOWN";
         String result = instance.getDefaultUnknown();
+        assertEquals(expResult, result);
+        // TODO review the generated test code and remove the default call to fail.
+        //fail("The test case is a prototype.");
+    }
+
+
+    /**
+     * Test of getDefaultExcludedInt method, of class OperationsManager.
+     */
+    @Test
+    public void testGetDefaultExcludedInt() throws IOException {
+        System.out.println("getDefaultExcludedInt");
+        OperationsManager instance = new OperationsManager();
+        instance.loadJson(new File(OperationsManagerTest.class.getResource("/profiles/operations.json").getFile()));
+
+        int expResult = 6;
+        int result = instance.getDefaultExcludedInt();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         //fail("The test case is a prototype.");
@@ -317,6 +351,7 @@ public class OperationsManagerTest {
         expResult.add("MISSING");
         expResult.add("CRITICAL");
         expResult.add("DOWNTIME");
+        expResult.add("EXCLUDED");
 
         ArrayList<String> result = instance.availableStates();
         assertEquals(expResult, result);
@@ -378,8 +413,8 @@ public class OperationsManagerTest {
         System.out.println("getTruthTable");
         OperationsManager instance = new OperationsManager();
         instance.loadJson(new File(OperationsManagerTest.class.getResource("/profiles/operations.json").getFile()));
-        Utils utils=new Utils();
-        
+        Utils utils = new Utils();
+
         int[][][] expResult = utils.readTruthTable();
         int[][][] result = instance.getTruthTable();
         assertArrayEquals(expResult, result);
@@ -393,9 +428,8 @@ public class OperationsManagerTest {
     @Test
     public void testSetTruthTable() throws IOException, FileNotFoundException, ParseException {
         System.out.println("setTruthTable");
-             Utils utils=new Utils();
-        
-   
+        Utils utils = new Utils();
+
         int[][][] truthTable = utils.readTruthTable();
         OperationsManager instance = new OperationsManager();
         instance.setTruthTable(truthTable);
@@ -419,6 +453,8 @@ public class OperationsManagerTest {
         expResult.put("MISSING", 3);
         expResult.put("CRITICAL", 4);
         expResult.put("DOWNTIME", 5);
+
+        expResult.put("EXCLUDED",6);
         HashMap<String, Integer> result = instance.getStates();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
@@ -438,6 +474,7 @@ public class OperationsManagerTest {
         states.put("MISSING", 3);
         states.put("CRITICAL", 4);
         states.put("DOWNTIME", 5);
+       
         OperationsManager instance = new OperationsManager();
         instance.setStates(states);
         // TODO review the generated test code and remove the default call to fail.
@@ -494,6 +531,8 @@ public class OperationsManagerTest {
         expResult.add("MISSING");
         expResult.add("CRITICAL");
         expResult.add("DOWNTIME");
+
+        expResult.add("EXCLUDED");
         ArrayList<String> result = instance.getRevStates();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
@@ -513,7 +552,7 @@ public class OperationsManagerTest {
         revStates.add("MISSING");
         revStates.add("CRITICAL");
         revStates.add("DOWNTIME");
-
+     
         OperationsManager instance = new OperationsManager();
         instance.setRevStates(revStates);
         // TODO review the generated test code and remove the default call to fail.
@@ -564,6 +603,21 @@ public class OperationsManagerTest {
 
         String expResult = "DOWNTIME";
         String result = instance.getDefaultDownState();
+        assertEquals(expResult, result);
+        // TODO review the generated test code and remove the default call to fail.
+        //fail("The test case is a prototype.");
+    }
+/**
+     * Test of testGetDefaultExcludedState method, of class OperationsManager.
+     */
+    @Test
+    public void testGetDefaultExcludedState() throws IOException {
+        System.out.println("getDefaultExcludedState");
+        OperationsManager instance = new OperationsManager();
+        instance.loadJson(new File(OperationsManagerTest.class.getResource("/profiles/operations.json").getFile()));
+
+        String expResult = "EXCLUDED";
+        String result = instance.getDefaultExcludedState();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         //fail("The test case is a prototype.");
