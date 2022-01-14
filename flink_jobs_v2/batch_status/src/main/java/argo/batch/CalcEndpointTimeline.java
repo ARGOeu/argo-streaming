@@ -104,7 +104,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
             }
         }
 
-        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist);
+        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt());
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline

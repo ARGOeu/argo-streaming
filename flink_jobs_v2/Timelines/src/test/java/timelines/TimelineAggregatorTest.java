@@ -184,7 +184,7 @@ public class TimelineAggregatorTest {
         map.put(name, new Timeline(timestamp));
         map.put(name2, new Timeline(timestamp2));
 
-        TimelineAggregator instance = new TimelineAggregator(map);
+        TimelineAggregator instance = new TimelineAggregator(map, 6);
         instance.aggregate(createTruthTable(), 0);
         TreeMap<DateTime, Integer> expRes = new TreeMap<>();
         Timeline exptimeline = new Timeline();
@@ -211,6 +211,7 @@ public class TimelineAggregatorTest {
         ArrayList<String> states = timelinejson.getStates();
 
         TimelineAggregator instance = new TimelineAggregator();
+        instance.setExcludedInt(6);
 
         HashMap<String, Timeline> inputs = new HashMap();
         int counter = 1;

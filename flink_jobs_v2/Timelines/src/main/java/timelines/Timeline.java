@@ -47,6 +47,7 @@ public class Timeline {
     static Logger LOG = LoggerFactory.getLogger(Timeline.class);
 
     private TreeMap<DateTime, Integer> samples;
+    private int excludedInt = -1;
 
     /**
      * Constructs an empty timeline
@@ -284,6 +285,7 @@ public class Timeline {
      * @param truthTable
      * @param op aggregate a set of timestamp,status pairs that are stored in a
      * timeline with a set of timestamp,status pairs of a different timeline,
+     * @param excludedint , the int value of excluded status
      */
     public void aggregate(Timeline second, int[][][] truthTable, int op) {
         if (this.isEmpty()) {
@@ -310,13 +312,21 @@ public class Timeline {
             int b = second.get(point);
             if (a != -1 && b != -1) {
                 int x = -1;
-                x = truthTable[op][a][b];
-                if (x == -1) {
-                    x = truthTable[op][b][a];
+                if (a == this.excludedInt || b ==  this.excludedInt) {
+                    if (a ==  this.excludedInt) {
+                        x = b;
+                    } else if (b ==  this.excludedInt) {
+                        x = a;
+                    }
+                } else {
+                    x = truthTable[op][a][b];
+                    if (x == -1) {
+                        x = truthTable[op][b][a];
+                    }
                 }
-
                 result.insert(point, x);
             }
+
         }
 
         result.optimize();
@@ -421,6 +431,10 @@ public class Timeline {
         DateTime firsTime = date;
         firsTime = firsTime.withTime(0, 0, 0, 0);
         DateTime firstEntry = this.samples.lowerKey(firsTime);
+        if (this.date.isBefore(firsTime.toLocalDate())) {
+
+            this.date = firsTime.toLocalDate();
+        }
 
         if (firstEntry != null && !firstEntry.equals(firsTime)) {
             int previousStatus = this.samples.get(firstEntry);
@@ -476,21 +490,21 @@ public class Timeline {
         return result;
     }
 
-
     /**
      *
-     *Fills a timeline with a given status for specific periods, replacing status of timestamp's in the period with the given status 
+     * Fills a timeline with a given status for specific periods, replacing
+     * status of timestamp's in the period with the given status
+     *
      * @param start, the start date,
-     * @param  end, the end date,
+     * @param end, the end date,
      * @param intStatus, the status to fill the timeline for the specific
      * periods
      *
      */
-    public void fillWithStatus(String start,String end, Integer intStatus) throws ParseException {
+    public void fillWithStatus(String start, String end, Integer intStatus) throws ParseException {
 
-       
         DateTime startDay = this.date.toDateTimeAtStartOfDay();
-        DateTime endDay = startDay.withTime(23, 59,59,0);
+        DateTime endDay = startDay.withTime(23, 59, 59, 0);
 
         //for (String[] period : periods) {
         DateTime startDt = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", start);
@@ -531,4 +545,13 @@ public class Timeline {
             }
         }
     }
+
+    public int getExcludedInt() {
+        return excludedInt;
+    }
+
+    public void setExcludedInt(int excludedInt) {
+        this.excludedInt = excludedInt;
+    }
+    
 }
