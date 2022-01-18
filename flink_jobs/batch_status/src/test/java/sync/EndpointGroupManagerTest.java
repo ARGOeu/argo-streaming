@@ -69,7 +69,7 @@ public class EndpointGroupManagerTest {
 		String exp1 = "URL:host1.example.foo/path/to/service1,DN:foo DN";
 		String exp2 = "URL:host1.example.foo/path/to/service2";
 		String exp3 = "URL:host2.example.foo/path/to/service1";
-		String exp4 = "ext.Value:extension1,URL:host2.example.foo/path/to/service2";
+		String exp4 = "URL:host2.example.foo/path/to/service2,ext_Value:extension1";
 		String exp5 = "";
 		String exp6 = "URL:host4.example.foo/path/to/service1";
 		

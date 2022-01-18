@@ -99,9 +99,9 @@ public class EndpointGroupManager {
 	
 		for (String tName : tags.keySet()) {
 			
-			if (tName.startsWith("info.")) {
+			if (tName.startsWith("info_")) {
 				
-				String infoName = tName.replaceFirst("info.", "");
+				String infoName = tName.replaceFirst("info_", "");
 				
 				String value = tags.get(tName);
 				
