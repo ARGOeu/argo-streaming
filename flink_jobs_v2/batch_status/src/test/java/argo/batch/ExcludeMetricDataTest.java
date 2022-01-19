@@ -64,7 +64,7 @@ public class ExcludeMetricDataTest {
 		        DataSet<MetricData> md = env.fromElements(md01,md02,md03,md04,md05,md06,md07,md08,md09);
 		        // Clean the metric data by testing the ExcludeMetricData flatmap function with 
 		        // recomputation information to exclude bad-mon01.example.org data from 02:00 to 06:00 (broadcast variable)
-		        DataSet<MetricData> clearMd = md.flatMap(new ExcludeMetricData(null)).withBroadcastSet(recDS, "rec");
+		        DataSet<MetricData> clearMd = md.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
 		        
 		        // collect the final result in a list
 		        List<MetricData> resulted = clearMd.collect();

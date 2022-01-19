@@ -26,10 +26,8 @@ public class ExcludeMetricData extends RichFlatMapFunction<MetricData,MetricData
 
 	private static final long serialVersionUID = 1L;
 
-	final ParameterTool params;
 	
-	public ExcludeMetricData(ParameterTool params){
-		this.params = params;
+	public ExcludeMetricData(){
 	}
 	
 	static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
