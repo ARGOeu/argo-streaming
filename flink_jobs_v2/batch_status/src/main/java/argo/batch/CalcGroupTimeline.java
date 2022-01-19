@@ -90,7 +90,6 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
         }
 
         String groupOperation = this.apsMgr.retrieveProfileOperation();
-
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist,this.opsMgr.getDefaultExcludedInt());
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(groupOperation));
 
