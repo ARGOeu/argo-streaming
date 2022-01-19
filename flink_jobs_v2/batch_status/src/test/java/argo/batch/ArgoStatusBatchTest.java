@@ -26,6 +26,7 @@ import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
+import org.apache.flink.api.java.io.DiscardingOutputFormat;
 import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.FileSystem;
@@ -36,9 +37,9 @@ import profilesmanager.ReportManager;
 
 /**
  *
- * ArgoStatusBatchTest tests the ArgoStatusBatch implementation 
- * comparing for each step of calculations the generated datasets and compares them 
- * with input expected datasets
+ * ArgoStatusBatchTest tests the ArgoStatusBatch implementation comparing for
+ * each step of calculations the generated datasets and compares them with input
+ * expected datasets
  */
 public class ArgoStatusBatchTest {
 
@@ -83,7 +84,6 @@ public class ArgoStatusBatchTest {
         List<String> confData = cfgDS.collect();
         ReportManager cfgMgr = new ReportManager();
         cfgMgr.loadJsonString(confData);
-
         DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
         DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
         DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
@@ -121,9 +121,9 @@ public class ArgoStatusBatchTest {
         List<MetricData> result = pdataCleanDS.collect();
 
         Assert.assertEquals(expResult, result);
-        
+
         //**** Test calculation of last record of  previous data
-            DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
+        DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
                 .sortGroup("timestamp", Order.DESCENDING).first(1);
 
         URL lpdataURL = ArgoStatusBatchTest.class.getResource("/test/lpdata.avro");
@@ -138,13 +138,20 @@ public class ArgoStatusBatchTest {
 
         Assert.assertTrue(explpdata.containsAll(resultlpdata));
 
-        
-        
-        pdataMin.writeAsText("../resources/test/output/results.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        //************* Test unioned metric data of previous and current date ************
+        DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
+        URL unionpdataURL = ArgoStatusBatchTest.class.getResource("/test/uniondata.avro");
+
+        Path unionpin = new Path(unionpdataURL.getPath());
+        AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat<MetricData>(unionpin, MetricData.class);
+
+        DataSet<MetricData> unionpdataDS = env.createInput(unionpdataAvro);
+
+        Assert.assertTrue(unionpdataDS.collect().containsAll(mdataPrevTotalDS.collect()));
+
+        mdataPrevTotalDS.output(new DiscardingOutputFormat<MetricData>());
 
         env.execute();
-        //System.out.println(env.getExecutionPlan());
-
     }
 
     public List<StatusMetric> prepareInputData(List<StatusMetric> input) {
@@ -204,6 +211,7 @@ public class ArgoStatusBatchTest {
 
         return amr;
     }
+
     public void checkExecution(ParameterTool params) {
 
         boolean calcStatus = true;
@@ -237,40 +245,5 @@ public class ArgoStatusBatchTest {
             System.exit(0);
         }
 
-    }
-
-    /**
-     * Parses the Metric profile content retrieved from argo-web-api and
-     * provides a list of MetricProfile avro objects to be used in the next
-     * steps of the pipeline
-     */
-    public StatusMetric[] getListStatusMetric(String content) {
-        List<StatusMetric> results = new ArrayList<StatusMetric>();
-
-        JsonParser jsonParser = new JsonParser();
-        JsonElement jElement = jsonParser.parse(content);
-        JsonArray jRoot = jElement.getAsJsonArray();
-        for (int i = 0; i < jRoot.size(); i++) {
-            JsonObject jItem = jRoot.get(i).getAsJsonObject();
-
-            String group = jItem.get("group").getAsString();
-            String service = jItem.get("service").getAsString();
-            String hostname = jItem.get("hostname").getAsString();
-
-            String metric = jItem.get("metric").getAsString();
-            String status = jItem.get("status").getAsString();
-            String timestamp = jItem.get("timestamp").getAsString();
-            StatusMetric stm = new StatusMetric();
-            stm.setGroup(group);
-            stm.setService(service);
-            stm.setHostname(hostname);
-            stm.setMetric(metric);
-            stm.setStatus(status);
-            stm.setTimestamp(timestamp);
-            results.add(stm);
-        }
-        StatusMetric[] rArr = new StatusMetric[results.size()];
-        rArr = results.toArray(rArr);
-        return rArr;
     }
 }
