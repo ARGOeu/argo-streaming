@@ -322,6 +322,4 @@ public class StatusMetric {
         return hash;
     }
     
-    
-
 }
