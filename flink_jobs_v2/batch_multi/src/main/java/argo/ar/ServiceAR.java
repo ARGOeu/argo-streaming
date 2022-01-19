@@ -1,5 +1,7 @@
 package argo.ar;
 
+import java.util.Objects;
+
 public class ServiceAR {
 
     private int dateInt;
@@ -104,5 +106,4 @@ public class ServiceAR {
     public String toString() {
         return "(" + this.dateInt + "," + this.report  + "," + this.name + "," + this.group + "," + this.a + "," + this.r + "," + this.up + "," + this.unknown + "," + this.down + ")";
     }
-
 }

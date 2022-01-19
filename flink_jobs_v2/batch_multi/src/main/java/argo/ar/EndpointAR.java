@@ -1,5 +1,7 @@
 package argo.ar;
 
+import java.util.Objects;
+
 
 
 public class EndpointAR {
@@ -14,7 +16,7 @@ public class EndpointAR {
 	private double up;
 	private double unknown;
 	private double down;
-    private String info;
+        private String info;
 	
 	public EndpointAR(int _dateInt, String _report, String _name, String _service, String _group, double _a, double _r, double _up, double _unknown, double _down, String _info){
 		this.dateInt = _dateInt;
@@ -108,5 +110,4 @@ public class EndpointAR {
 	public String toString() {
 		return "(" + this.dateInt+ "," + this.report + "," + this.name + "," + this.service + "," + this.group + "," + this.a + "," + this.r + ","  + this.up + ","  + this.unknown + ","  + this.down  + ")";
 	}
-
 }

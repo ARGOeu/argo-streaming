@@ -2,6 +2,12 @@ package argo.batch;
 
 import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
+import argo.ar.CalcEndpointAR;
+import argo.ar.CalcGroupAR;
+import argo.ar.CalcServiceAR;
+import argo.ar.EndpointAR;
+import argo.ar.EndpointGroupAR;
+import argo.ar.ServiceAR;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
@@ -30,7 +36,6 @@ import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
-import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.Test;
 import profilesmanager.ReportManager;
@@ -164,7 +169,7 @@ public class ArgoMultiJobTest {
 
         //************* Test unioned metric data of previous and current date ************
         DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
- 
+
         URL unionpdataURL = ArgoMultiJobTest.class.getResource("/test/uniondata.avro");
         Path unionpin = new Path(unionpdataURL.getPath());
         AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat(unionpin, MetricData.class);
@@ -342,16 +347,17 @@ public class ArgoMultiJobTest {
         }
 
         Integer rankNum = null;
+        List<String> metricExpectedData = loadExpectedDataFromFile("/test/metricstatistics.json", env);
+        List<String> endpointExpectedData = loadExpectedDataFromFile("/test/endpointstatistics.json", env);
+        List<String> serviceExpectedData = loadExpectedDataFromFile("/test/servicestatistics.json", env);
+        List<String> groupExpectedData = loadExpectedDataFromFile("/test/groupstatistics.json", env);
+
         //*************** Test flip flops
         if (calcFlipFlops || calcStatusTrends) {
             DataSet<MetricTrends> metricTrends = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
             DataSet<EndpointTrends> endpointTrends = statusEndpointTimeline.flatMap(new CalcEndpointFlipFlopTrends());
             DataSet<ServiceTrends> serviceTrends = statusServiceTimeline.flatMap(new CalcServiceFlipFlopTrends());
             DataSet<GroupTrends> groupTrends = statusGroupTimeline.flatMap(new CalcGroupFlipFlopTrends());
-            List<String> metricExpectedData = loadExpectedDataFromFile("/test/metricstatistics.json", env);
-            List<String> endpointExpectedData = loadExpectedDataFromFile("/test/endpointstatistics.json", env);
-            List<String> serviceExpectedData = loadExpectedDataFromFile("/test/servicestatistics.json", env);
-            List<String> groupExpectedData = loadExpectedDataFromFile("/test/groupstatistics.json", env);
             if (calcFlipFlops) {
 
                 DataSet<MetricTrends> noZeroMetricFlipFlops = metricTrends.filter(new ZeroMetricFlipFlopFilter());
@@ -364,7 +370,7 @@ public class ArgoMultiJobTest {
 
                 DataSet<Trends> trends = noZeroMetricFlipFlops.map(new MapMetricTrends()).withBroadcastSet(mtagsDS, "mtags");
                 List<Trends> expMetricStatisticRes = loadExpectedFlipFlopData(metricExpectedData, LEVEL.METRIC, env);
-                Assert.assertEquals(TestUtils.compareLists(expMetricStatisticRes,trends.collect()),true);
+                Assert.assertEquals(TestUtils.compareLists(expMetricStatisticRes, trends.collect()), true);
 
                 DataSet<EndpointTrends> nonZeroEndpointFlipFlops = endpointTrends.filter(new ZeroEndpointFlipFlopFilter());
 
@@ -415,7 +421,7 @@ public class ArgoMultiJobTest {
                 //filter dataset for each status type and write to mongo db
                 List<Tuple8< String, String, String, String, String, Integer, Integer, String>> expEndpTrendsRes = loadExpectedTrendData(endpointExpectedData, LEVEL.HOSTNAME, env);
 
-                Assert.assertEquals(TestUtils.compareLists(expEndpTrendsRes,endpointStatusTrendsData.collect()),true);
+                Assert.assertEquals(TestUtils.compareLists(expEndpTrendsRes, endpointStatusTrendsData.collect()), true);
                 DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> serviceStatusTrendsData = serviceTrends.flatMap(new ServiceTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
                 List<Tuple8< String, String, String, String, String, Integer, Integer, String>> expServTrendsRes = loadExpectedTrendData(serviceExpectedData, LEVEL.SERVICE, env);
@@ -430,10 +436,48 @@ public class ArgoMultiJobTest {
             }
 
         }
+        if (calcAR) {
+            //Calculate endpoint a/r 
+            DataSet<EndpointAR> endpointArDS = statusEndpointTimeline.flatMap(new CalcEndpointAR(params)).withBroadcastSet(mpsDS, "mps")
+                    .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
+                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(cfgDS, "conf");
+            //Calculate endpoint timeline timestamps 
+            List<TestUtils.ArItem> endpArData = loadExpectedArData(endpointExpectedData, LEVEL.HOSTNAME, env);
+            List<EndpointAR> expectedEndpAr = TestUtils.prepareEndpointAR(endpArData, params.get("run.date"));
 
+            Assert.assertEquals(TestUtils.compareLists(expectedEndpAr,endpointArDS.collect()), true);
+
+            DataSet<ServiceAR> serviceArDS = statusServiceTimeline.flatMap(new CalcServiceAR(params)).withBroadcastSet(mpsDS, "mps")
+                    .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
+                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(cfgDS, "conf");
+
+            List<TestUtils.ArItem> servArData = loadExpectedArData(serviceExpectedData, LEVEL.SERVICE, env);
+            List<ServiceAR> expectedServAr = TestUtils.prepareServiceAR(servArData, params.get("run.date"));
+
+            Assert.assertEquals(TestUtils.compareLists(expectedServAr, serviceArDS.collect()), true);
+            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
+                    .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
+                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(cfgDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
+            List<TestUtils.ArItem> groupArData = loadExpectedArData(groupExpectedData, LEVEL.GROUP, env);
+            List<EndpointGroupAR> expectedGroupAr = TestUtils.prepareGroupR(groupArData, params.get("run.date"), cfgMgr.ggroup, ggpDS.collect());
+
+            Assert.assertEquals(TestUtils.compareLists(expectedGroupAr,endpointGroupArDS.collect()), true);
+
+        }
         stDetailDS.output(new DiscardingOutputFormat<StatusMetric>());
-
         env.execute();
+
+    }
+
+    private List<TestUtils.ArItem> loadExpectedArData(List<String> dataList, LEVEL level, ExecutionEnvironment env) throws Exception {
+        List<TestUtils.ArItem> dataResult = new ArrayList();
+
+        if (!dataList.isEmpty()) {
+            DataSet<TestUtils.StatisticsItem> resultDS = env.fromElements(TestUtils.getListStatisticData(dataList.get(0)));
+            dataResult = TestUtils.prepareAR(resultDS.collect(), level);
+
+        }
+        return dataResult;
 
     }
 
