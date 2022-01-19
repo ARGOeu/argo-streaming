@@ -117,10 +117,7 @@ public class ArgoStatusBatchTest {
         AvroInputFormat<MetricData> exppdataAvro = new AvroInputFormat<MetricData>(exppin, MetricData.class);
         DataSet<MetricData> exppdataDS = env.createInput(exppdataAvro);
 
-        List<MetricData> expResult = exppdataDS.collect();
-        List<MetricData> result = pdataCleanDS.collect();
-
-        Assert.assertEquals(expResult, result);
+        Assert.assertEquals(exppdataDS.collect(), pdataCleanDS.collect());
 
         //**** Test calculation of last record of  previous data
         DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
@@ -133,28 +130,67 @@ public class ArgoStatusBatchTest {
 
         DataSet<MetricData> lpdataDS = env.createInput(lpdataAvro);
 
-        List<MetricData> explpdata = lpdataDS.collect();
-        List<MetricData> resultlpdata = pdataMin.collect();
-
-        Assert.assertTrue(explpdata.containsAll(resultlpdata));
+        Assert.assertTrue(lpdataDS.collect().containsAll(pdataMin.collect()));
 
         //************* Test unioned metric data of previous and current date ************
         DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
-        URL unionpdataURL = ArgoStatusBatchTest.class.getResource("/test/uniondata.avro");
 
+        URL unionpdataURL = ArgoStatusBatchTest.class.getResource("/test/uniondata.avro");
         Path unionpin = new Path(unionpdataURL.getPath());
         AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat<MetricData>(unionpin, MetricData.class);
-
         DataSet<MetricData> unionpdataDS = env.createInput(unionpdataAvro);
 
         Assert.assertTrue(unionpdataDS.collect().containsAll(mdataPrevTotalDS.collect()));
+        //***************************Test FillMIssing
+
+        DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf");
+
+        URL expFillMissdataURL = ArgoStatusBatchTest.class.getResource("/test/fillmissing.json");
+        DataSet<String> fillMissString = env.readTextFile(expFillMissdataURL.toString());
+        List<String> fillMissingList = fillMissString.collect();
+        List<StatusMetric> expFillMissRes = new ArrayList();
+        if (!fillMissingList.isEmpty()) {
+            DataSet<StatusMetric> expFillMissDS = env.fromElements(getListStatusMetric(fillMissingList.get(0)));
+
+            expFillMissRes = prepareInputData(expFillMissDS.collect());
+
+        }
+        List<StatusMetric> resultList = fillMissDS.collect();
+
+        Assert.assertTrue(expFillMissRes.containsAll(resultList));
 
         mdataPrevTotalDS.output(new DiscardingOutputFormat<MetricData>());
 
         env.execute();
+
     }
 
     public List<StatusMetric> prepareInputData(List<StatusMetric> input) {
+
+        for (StatusMetric sm : input) {
+            sm.setActualData("");
+            sm.setFunction("");
+            sm.setHasThr(false);
+            sm.setInfo("");
+            sm.setMessage("");
+            sm.setOgStatus("");
+            sm.setPrevState("");
+            sm.setRuleApplied("");
+            sm.setSummary("");
+            sm.setTags("");
+            String timestamp2 = sm.getTimestamp().split("Z")[0];
+            String[] tsToken = timestamp2.split("T");
+            int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
+            int timeInt = Integer.parseInt(tsToken[1].replace(":", ""));
+            sm.setDateInt(dateInt);
+            sm.setTimeInt(timeInt);
+        }
+        return input;
+    }
+
+    public List<StatusMetric> preparePickData(List<StatusMetric> input) {
 
         for (StatusMetric sm : input) {
             sm.setActualData(null);
@@ -246,4 +282,40 @@ public class ArgoStatusBatchTest {
         }
 
     }
+
+    /**
+     * Parses the Metric profile content retrieved from argo-web-api and
+     * provides a list of MetricProfile avro objects to be used in the next
+     * steps of the pipeline
+     */
+    public StatusMetric[] getListStatusMetric(String content) {
+        List<StatusMetric> results = new ArrayList<StatusMetric>();
+
+        JsonParser jsonParser = new JsonParser();
+        JsonElement jElement = jsonParser.parse(content);
+        JsonArray jRoot = jElement.getAsJsonArray();
+        for (int i = 0; i < jRoot.size(); i++) {
+            JsonObject jItem = jRoot.get(i).getAsJsonObject();
+
+            String group = jItem.get("group").getAsString();
+            String service = jItem.get("service").getAsString();
+            String hostname = jItem.get("hostname").getAsString();
+
+            String metric = jItem.get("metric").getAsString();
+            String status = jItem.get("status").getAsString();
+            String timestamp = jItem.get("timestamp").getAsString();
+            StatusMetric stm = new StatusMetric();
+            stm.setGroup(group);
+            stm.setService(service);
+            stm.setHostname(hostname);
+            stm.setMetric(metric);
+            stm.setStatus(status);
+            stm.setTimestamp(timestamp);
+            results.add(stm);
+        }
+        StatusMetric[] rArr = new StatusMetric[results.size()];
+        rArr = results.toArray(rArr);
+        return rArr;
+    }
+
 }
