@@ -119,7 +119,6 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
         if (downPeriod != null && !downPeriod.isEmpty()) {
             mergedTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt());
         }
-
         ArrayList<TimeStatus> timestatuCol = new ArrayList();
         for (Map.Entry<DateTime, Integer> entry : mergedTimeline.getSamples()) {
             TimeStatus timestatus = new TimeStatus(entry.getKey().getMillis(), entry.getValue());

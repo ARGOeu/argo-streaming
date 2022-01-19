@@ -133,8 +133,7 @@ public class ArgoMultiJobTest {
         if (listDowntimes.length > 0) {
             downDS = env.fromElements(amr.getListDowntimes());
         }
-
-        URL mdataURL = ArgoMultiJobTest.class.getResource("/test/mdata.avro");
+        URL mdataURL = ArgoMultiJobTest.class.getResource("/test/metricdata_exclude.avro");
 
         Path in = new Path(mdataURL.getPath());
         AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat<MetricData>(in, MetricData.class);
@@ -169,11 +168,11 @@ public class ArgoMultiJobTest {
 
         //************* Test unioned metric data of previous and current date ************
         DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
-
-        URL unionpdataURL = ArgoMultiJobTest.class.getResource("/test/uniondata.avro");
+        URL unionpdataURL = ArgoMultiJobTest.class.getResource("/test/uniondata_exclude.avro");
         Path unionpin = new Path(unionpdataURL.getPath());
         AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat(unionpin, MetricData.class);
         DataSet<MetricData> unionpdataDS = env.createInput(unionpdataAvro);
+
         Assert.assertEquals(TestUtils.compareLists(unionpdataDS.collect(), mdataPrevTotalDS.collect()), true);
 
         //***************************Test FillMIssing
@@ -205,7 +204,6 @@ public class ArgoMultiJobTest {
             DataSet<StatusMetric> expPickDataDS = env.fromElements(getListStatusMetric(pickDataList.get(0)));
             expPickDataRes = preparePickData(expPickDataDS.collect());
         }
-        List<StatusMetric> listC = expPickDataRes;
         Assert.assertEquals(TestUtils.compareLists(expPickDataRes, mdataTrimDS.collect()), true);
 
         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
@@ -445,7 +443,7 @@ public class ArgoMultiJobTest {
             List<TestUtils.ArItem> endpArData = loadExpectedArData(endpointExpectedData, LEVEL.HOSTNAME, env);
             List<EndpointAR> expectedEndpAr = TestUtils.prepareEndpointAR(endpArData, params.get("run.date"));
 
-            Assert.assertEquals(TestUtils.compareLists(expectedEndpAr,endpointArDS.collect()), true);
+            Assert.assertEquals(TestUtils.compareLists(expectedEndpAr, endpointArDS.collect()), true);
 
             DataSet<ServiceAR> serviceArDS = statusServiceTimeline.flatMap(new CalcServiceAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
@@ -461,7 +459,7 @@ public class ArgoMultiJobTest {
             List<TestUtils.ArItem> groupArData = loadExpectedArData(groupExpectedData, LEVEL.GROUP, env);
             List<EndpointGroupAR> expectedGroupAr = TestUtils.prepareGroupR(groupArData, params.get("run.date"), cfgMgr.ggroup, ggpDS.collect());
 
-            Assert.assertEquals(TestUtils.compareLists(expectedGroupAr,endpointGroupArDS.collect()), true);
+            Assert.assertEquals(TestUtils.compareLists(expectedGroupAr, endpointGroupArDS.collect()), true);
 
         }
         stDetailDS.output(new DiscardingOutputFormat<StatusMetric>());

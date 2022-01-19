@@ -90,7 +90,6 @@ public class CalcGroupFunctionTimeline extends RichGroupReduceFunction<StatusTim
                 hasThr = true;
             }
         }
-
         String operation = functionOperations.get(function);  //for each function an operation exists , so retrieve the corresponding truth table
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist,this.opsMgr.getDefaultExcludedInt(), runDate);
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));

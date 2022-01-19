@@ -175,7 +175,6 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
             String[] tsToken = timestamp2.split("T");
             int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
             int timeInt = Integer.parseInt(tsToken[1].replace(":", ""));
-            mn.setGroup(item.f0);
             mn.setService(item.f1);
             mn.setHostname(item.f2);
             mn.setMetric(item.f3);
