@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
@@ -53,7 +54,6 @@ public class ArgoStatusBatchTest {
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(2);
         System.setProperty("run.date", "2022-01-14");
-     
         final ParameterTool params = ParameterTool.fromSystemProperties();
 
         checkExecution(params);
@@ -121,10 +121,30 @@ public class ArgoStatusBatchTest {
         List<MetricData> result = pdataCleanDS.collect();
 
         Assert.assertEquals(expResult, result);
-        pdataCleanDS.writeAsText("../resources/test/output/results.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        
+        //**** Test calculation of last record of  previous data
+            DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
+                .sortGroup("timestamp", Order.DESCENDING).first(1);
+
+        URL lpdataURL = ArgoStatusBatchTest.class.getResource("/test/lpdata.avro");
+
+        Path lpin = new Path(lpdataURL.getPath());
+        AvroInputFormat<MetricData> lpdataAvro = new AvroInputFormat<MetricData>(lpin, MetricData.class);
+
+        DataSet<MetricData> lpdataDS = env.createInput(lpdataAvro);
+
+        List<MetricData> explpdata = lpdataDS.collect();
+        List<MetricData> resultlpdata = pdataMin.collect();
+
+        Assert.assertTrue(explpdata.containsAll(resultlpdata));
+
+        
+        
+        pdataMin.writeAsText("../resources/test/output/results.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute();
-     
+        //System.out.println(env.getExecutionPlan());
+
     }
 
     public List<StatusMetric> prepareInputData(List<StatusMetric> input) {
@@ -184,9 +204,6 @@ public class ArgoStatusBatchTest {
 
         return amr;
     }
-
-   
-   
     public void checkExecution(ParameterTool params) {
 
         boolean calcStatus = true;
@@ -256,5 +273,4 @@ public class ArgoStatusBatchTest {
         rArr = results.toArray(rArr);
         return rArr;
     }
-  
 }
