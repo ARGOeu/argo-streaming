@@ -56,8 +56,8 @@ public class EndpointGroupManager {
 		HashMap<String, String> tags = this.getGroupTags(group, type, hostname, service);
 		if (tags == null) return info;
 		for (String tName : tags.keySet()) {
-			if (tName.startsWith("info.")) {
-				String infoName = tName.replaceFirst("info.", "");
+			if (tName.startsWith("info_")) {
+				String infoName = tName.replaceFirst("info_", "");
 				
 				String value = tags.get(tName);
 				if (!value.equalsIgnoreCase("")) {

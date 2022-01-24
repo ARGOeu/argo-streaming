@@ -69,9 +69,11 @@ public class EndpointGroupManagerTest {
 		String exp1 = "URL:host1.example.foo/path/to/service1,DN:foo DN";
 		String exp2 = "URL:host1.example.foo/path/to/service2";
 		String exp3 = "URL:host2.example.foo/path/to/service1";
-		String exp4 = "ext.Value:extension1,URL:host2.example.foo/path/to/service2";
+		String exp4 = "URL:host2.example.foo/path/to/service2,ext_Value:extension1";
 		String exp5 = "";
 		String exp6 = "URL:host4.example.foo/path/to/service1";
+		
+		
 		
 		assertEquals("wrong tags", exp1,ge2.getInfo("groupA", "SERVICEGROUPS", "host1.example.foo_11", "services.url"));
 		assertEquals("wrong tags", exp2,ge2.getInfo("groupB", "SERVICEGROUPS", "host1.example.foo_22", "services.url"));
@@ -79,6 +81,8 @@ public class EndpointGroupManagerTest {
 		assertEquals("wrong tags", exp4,ge2.getInfo("groupD", "SERVICEGROUPS", "host2.example.foo_44", "services.url"));
 		assertEquals("wrong tags", exp5,ge2.getInfo("groupE", "SERVICEGROUPS", "host3.example.foo_55", "services.url"));
 		assertEquals("wrong tags", exp6,ge2.getInfo("groupF", "SERVICEGROUPS", "host4.example.foo_66", "services.url"));
+		
+		
 	}
 
 }
