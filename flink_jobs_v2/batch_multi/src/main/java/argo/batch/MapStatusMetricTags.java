@@ -54,7 +54,6 @@ public class MapStatusMetricTags extends RichFlatMapFunction<StatusMetric, Statu
         if (!t.getOgStatus().equals("")) {
             newT.setHasThr(true);
         }
-
         out.collect(newT);
 
     }
