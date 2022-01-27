@@ -165,7 +165,6 @@ public class ArgoMultiJobTest {
         }
         Assert.assertEquals(TestUtils.compareLists(expFillMissRes, fillMissDS.collect()), true);
 
-        //Assert.assertTrue(expFillMissRes.containsAll(fillMissDS.collect()));
         //**************** Test PickEndpoints
         DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
@@ -275,11 +274,80 @@ public class ArgoMultiJobTest {
                 expectedMTagsRes = prepareMTagsData(expMTagsDS.collect());
             }
             Assert.assertEquals(TestUtils.compareLists(expectedMTagsRes, stDetailDS.collect()), true);
+      
+             DataSet<StatusMetric> stEndpointDS = statusEndpointTimeline.flatMap(new CalcStatusEndpoint(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                    .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                    .withBroadcastSet(apsDS, "aps");
+// Create status service data set
+
+            URL statusendpURL = ArgoMultiJob.class.getResource("/test/statusendpoint.json");
+            DataSet<String> statusendpString = env.readTextFile(statusendpURL.toString());
+            List<String> statusendpList = statusendpString.collect();
+            List<StatusMetric> expStatusEndpRes = new ArrayList();
+            if (!statusendpList.isEmpty()) {
+                DataSet<StatusMetric> expStatusEndpDS = env.fromElements(getListCalcPrevData(statusendpList.get(0)));
+                expStatusEndpRes = prepareStatusData(expStatusEndpDS.collect());
+
+            }
+            Assert.assertEquals(TestUtils.compareLists(expStatusEndpRes,stEndpointDS.collect()),true);
+
+            DataSet<StatusMetric> stServiceDS = statusServiceTimeline.flatMap(new CalcStatusService(params)).withBroadcastSet(mpsDS, "mps")
+                    .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp").withBroadcastSet(opsDS, "ops")
+                    .withBroadcastSet(apsDS, "aps");
+            URL statusserviceURL = ArgoMultiJob.class.getResource("/test/statusservice.json");
+            DataSet<String> statusserviceString = env.readTextFile(statusserviceURL.toString());
+            List<String> statusServList = statusserviceString.collect();
+            List<StatusMetric> expStatusServRes = new ArrayList();
+            if (!statusServList.isEmpty()) {
+                DataSet<StatusMetric> expStatusServDS = env.fromElements(getListCalcPrevData(statusServList.get(0)));
+                expStatusServRes = prepareStatusData(expStatusServDS.collect());
+
+            }
+            Assert.assertEquals(TestUtils.compareLists(expStatusServRes,stServiceDS.collect()),true);
+            DataSet<StatusMetric> stEndGroupDS = statusGroupTimeline.flatMap(new CalcStatusEndGroup(params))
+                    .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                    .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
+
+            URL statusgroupURL = ArgoMultiJob.class.getResource("/test/statusgroup.json");
+            DataSet<String> statusgroupString = env.readTextFile(statusgroupURL.toString());
+            List<String> statusGroupList = statusgroupString.collect();
+            List<StatusMetric> expStatusGroupRes = new ArrayList();
+            if (!statusGroupList.isEmpty()) {
+                DataSet<StatusMetric> expStatusGroupDS = env.fromElements(getListCalcPrevData(statusGroupList.get(0)));
+                expStatusGroupRes = prepareStatusData(expStatusGroupDS.collect());
+            }
+
+            List<StatusMetric> groups=stEndGroupDS.collect();
+            Assert.assertEquals(TestUtils.compareLists(expStatusGroupRes,stEndGroupDS.collect()),true);
         }
-        mdataPrevTotalDS.output(new DiscardingOutputFormat<MetricData>());
-        env.execute();
+        stDetailDS.output(new DiscardingOutputFormat<StatusMetric>());
+
+            
+            env.execute();
 
     }
+        public List<StatusMetric> prepareStatusData(List<StatusMetric> input) {
+
+        for (StatusMetric sm : input) {
+            sm.setActualData("");
+            sm.setHasThr(false);
+            sm.setInfo("");
+            sm.setMessage("");
+            sm.setOgStatus("");
+            sm.setRuleApplied("");
+            sm.setSummary("");
+            sm.setTags("");
+            String timestamp2 = sm.getTimestamp().split("Z")[0];
+            String[] tsToken = timestamp2.split("T");
+            int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
+            //        int timeInt = Integer.parseInt(tsToken[1].replace(":", ""));
+            sm.setDateInt(dateInt);
+            //   sm.setTimeInt(timeInt);
+
+        }
+        return input;
+    }
+
 
     public List<StatusMetric> prepareInputData(List<StatusMetric> input) {
 
@@ -472,6 +540,11 @@ public class ArgoMultiJobTest {
      * provides a list of MetricProfile avro objects to be used in the next
      * steps of the pipeline
      */
+   /**
+     * Parses the Metric profile content retrieved from argo-web-api and
+     * provides a list of MetricProfile avro objects to be used in the next
+     * steps of the pipeline
+     */
     public StatusMetric[] getListCalcPrevData(String content) {
         List<StatusMetric> results = new ArrayList<StatusMetric>();
 
@@ -482,12 +555,13 @@ public class ArgoMultiJobTest {
             JsonObject jItem = jRoot.get(i).getAsJsonObject();
 
             String group = jItem.get("group").getAsString();
-            String service = jItem.get("service").getAsString();
-            String hostname = jItem.get("hostname").getAsString();
-            String function = "";
             String prevTs = "";
             String prevState = "";
             String tags = "";
+            String metric = "";
+            String hostname = "";
+            String service = "";
+            String function = "";
 
             if (jItem.has("function")) {
                 function = jItem.get("function").getAsString();
@@ -502,7 +576,17 @@ public class ArgoMultiJobTest {
             if (jItem.has("tags") && !jItem.get("tags").isJsonNull()) {
                 tags = jItem.get("tags").getAsString();
             }
-            String metric = jItem.get("metric").getAsString();
+            if (jItem.has("metric") && !jItem.get("metric").isJsonNull()) {
+                metric = jItem.get("metric").getAsString();
+            }
+
+            if (jItem.has("hostname") && !jItem.get("hostname").isJsonNull()) {
+                hostname = jItem.get("hostname").getAsString();
+            }
+            if (jItem.has("service") && !jItem.get("service").isJsonNull()) {
+                service = jItem.get("service").getAsString();
+            }
+
             String status = jItem.get("status").getAsString();
             String timestamp = jItem.get("timestamp").getAsString();
 

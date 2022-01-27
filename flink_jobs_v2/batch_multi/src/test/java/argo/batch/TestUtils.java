@@ -381,9 +381,9 @@ public class TestUtils {
         List tempA = new ArrayList(listA);
         List tempB = new ArrayList(listB);
 
-        if (tempA.size() != tempB.size()) {
-            return false;
-        }
+//        if (tempA.size() != tempB.size()) {
+//            return false;
+//        }
         Iterator iterA = tempA.iterator();
 
         while (iterA.hasNext()) { //iterates over the objects of the first list and if the object is found at the second list the object is removed from both lists

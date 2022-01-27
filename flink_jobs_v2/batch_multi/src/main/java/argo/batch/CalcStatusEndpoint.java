@@ -24,17 +24,17 @@ import timelines.Utils;
  * the datastore schema for status endpoint collection
  */
 public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, StatusMetric> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     final ParameterTool params;
-    
+
     public CalcStatusEndpoint(ParameterTool params) {
         this.params = params;
     }
-    
+
     static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
-    
+
     private List<MetricProfile> mps;
     private List<String> aps;
     private List<String> ops;
@@ -42,10 +42,10 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
-    
+
     @Override
     public void open(Configuration parameters) throws IOException {
-        
+
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
@@ -56,27 +56,23 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
         this.mpsMgr.loadFromList(mps);
         // Initialize aggregation profile manager
         this.apsMgr = new AggregationProfileManager();
-        
+
         this.apsMgr.loadJsonString(aps);
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
-        
+
         this.runDate = params.getRequired("run.date");
     }
-    
+
     @Override
     public void flatMap(StatusTimeline in, Collector<StatusMetric> out) throws Exception {
-        String service = "";
-        String function = "";
-        String endpointGroup = "";
-        String hostname = "";
         String info = "";
         int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
-        function = "";
-        service = in.getService();
-        endpointGroup = in.getGroup();
-        hostname = in.getHostname();
+        String function = in.getFunction();
+        String service = in.getService();
+        String endpointGroup = in.getGroup();
+        String hostname = in.getHostname();
         ArrayList<TimeStatus> timestamps = in.getTimestamps();
         boolean hasThr = false;
         if (in.hasThr()) {
@@ -95,7 +91,7 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
             cur.setStatus(opsMgr.getStrStatus(item.getStatus()));
             out.collect(cur);
         }
-        
+
     }
-    
+
 }
