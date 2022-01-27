@@ -71,7 +71,9 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
         int[] warningstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), warningstatus);
         int[] unknownstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), unknownstatus);
 
-        ArrayList<String> tags = this.mtagsMgr.getTags(t.getMetric());
+        ArrayList<String> tags = (ArrayList)this.mtagsMgr.getTags(t.getMetric()).clone();
+        tags.add("MS");
+        tags.add("ACS");
         String tagInfo = "";
         for (String tag : tags) {
             if (tags.indexOf(tag) == 0) {
@@ -80,6 +82,7 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
                 tagInfo = tagInfo + "," + tag;
             }
         }
+       
         Tuple8<String, String, String, String, String, Integer, Integer, String> tupleCritical = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
                 t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "CRITICAL", criticalstatusInfo[0], criticalstatusInfo[1], tagInfo);
         out.collect(tupleCritical);
