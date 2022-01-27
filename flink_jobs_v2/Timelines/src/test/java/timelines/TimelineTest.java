@@ -326,13 +326,13 @@ public class TimelineTest {
         DateTime date = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0);
         Timeline instance = new Timeline();
         instance.insertDateTimeStamps(createTimestampList(), true);
-        HashMap<String, Integer> availStates = new HashMap<>();
-        availStates.put("OK", 0);
-        availStates.put("WARNING", 1);
-        availStates.put("UKNOWN", 2);
-        availStates.put("MISSING", 3);
-        availStates.put("CRITICAL", 4);
-        availStates.put("DOWNTIME", 5);
+        HashMap<String,Integer> availStates = new HashMap<>();
+        availStates.put("OK",0);
+        availStates.put("WARNING",1);
+        availStates.put("UKNOWN",2);
+        availStates.put("MISSING",3);
+        availStates.put("CRITICAL",4);
+        availStates.put("DOWNTIME",5);
 
         instance.replacePreviousDateStatus(date, availStates, true);
         // TODO review the generated test code and remove the default call to fail.
