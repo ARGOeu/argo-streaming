@@ -175,8 +175,6 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
                 String info = this.egpMgr.getInfo(groupname, egroupType, md.getHostname(), md.getService());
 
                 StatusMetric sm = new StatusMetric(groupname, "", md.getService(), md.getHostname(), md.getMetric(), status, md.getTimestamp(), dateInt, timeInt, md.getSummary(), md.getMessage(), "", "", actualData, ogStatus, ruleApplied, info, "");
-
-
                 out.collect(sm);
             }
 

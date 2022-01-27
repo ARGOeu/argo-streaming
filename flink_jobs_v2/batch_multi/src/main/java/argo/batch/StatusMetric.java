@@ -227,7 +227,6 @@ public class StatusMetric {
                 + this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + "," + this.tags + ")";
     }  
 
-
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -300,26 +299,25 @@ public class StatusMetric {
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 59 * hash + Objects.hashCode(this.group);
-        hash = 59 * hash + Objects.hashCode(this.function);
-        hash = 59 * hash + Objects.hashCode(this.service);
-        hash = 59 * hash + Objects.hashCode(this.hostname);
-        hash = 59 * hash + Objects.hashCode(this.metric);
-        hash = 59 * hash + Objects.hashCode(this.status);
-        hash = 59 * hash + Objects.hashCode(this.timestamp);
-        hash = 59 * hash + this.dateInt;
-        hash = 59 * hash + this.timeInt;
-        hash = 59 * hash + Objects.hashCode(this.summary);
-        hash = 59 * hash + Objects.hashCode(this.message);
-        hash = 59 * hash + Objects.hashCode(this.prevState);
-        hash = 59 * hash + Objects.hashCode(this.prevTs);
-        hash = 59 * hash + Objects.hashCode(this.actualData);
-        hash = 59 * hash + Objects.hashCode(this.ogStatus);
-        hash = 59 * hash + Objects.hashCode(this.ruleApplied);
-        hash = 59 * hash + Objects.hashCode(this.info);
-        hash = 59 * hash + Objects.hashCode(this.tags);
-        hash = 59 * hash + (this.hasThr ? 1 : 0);
+        hash = 17 * hash + Objects.hashCode(this.group);
+        hash = 17 * hash + Objects.hashCode(this.function);
+        hash = 17 * hash + Objects.hashCode(this.service);
+        hash = 17 * hash + Objects.hashCode(this.hostname);
+        hash = 17 * hash + Objects.hashCode(this.metric);
+        hash = 17 * hash + Objects.hashCode(this.status);
+        hash = 17 * hash + Objects.hashCode(this.timestamp);
+        hash = 17 * hash + this.dateInt;
+        hash = 17 * hash + this.timeInt;
+        hash = 17 * hash + Objects.hashCode(this.summary);
+        hash = 17 * hash + Objects.hashCode(this.message);
+        hash = 17 * hash + Objects.hashCode(this.prevState);
+        hash = 17 * hash + Objects.hashCode(this.prevTs);
+        hash = 17 * hash + Objects.hashCode(this.actualData);
+        hash = 17 * hash + Objects.hashCode(this.ogStatus);
+        hash = 17 * hash + Objects.hashCode(this.ruleApplied);
+        hash = 17 * hash + Objects.hashCode(this.info);
+        hash = 17 * hash + Objects.hashCode(this.tags);
+        hash = 17 * hash + (this.hasThr ? 1 : 0);
         return hash;
     }
-    
 }
