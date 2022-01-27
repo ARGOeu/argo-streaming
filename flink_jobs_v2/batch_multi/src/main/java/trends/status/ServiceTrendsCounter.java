@@ -2,14 +2,11 @@ package trends.status;
 
 
 
-import argo.batch.StatusMetricTimeline;
-import trends.calculations.ServiceTrends;
 import java.io.IOException;
 import java.util.List;
 
 import trends.calculations.ServiceTrends;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
-import org.apache.flink.api.java.tuple.Tuple7;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
