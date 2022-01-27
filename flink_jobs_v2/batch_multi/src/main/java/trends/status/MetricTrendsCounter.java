@@ -93,5 +93,6 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
                 t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1], tagInfo);
 
         out.collect(tupleUnknown);
-    }
+      }
+   // }
 }

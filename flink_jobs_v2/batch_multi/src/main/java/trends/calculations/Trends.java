@@ -1,5 +1,7 @@
 package trends.calculations;
 
+import java.util.Objects;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -139,4 +141,9 @@ public class Trends {
         this.duration = duration;
     }
 
+    @Override
+    public String toString() {
+        return "(" + this.group + "," + this.service + "," + this.endpoint + "," + this.metric + "," + this.status + "," + this.flipflop + ","
+                + this.status + "," + this.duration + ")";
+    }
 }

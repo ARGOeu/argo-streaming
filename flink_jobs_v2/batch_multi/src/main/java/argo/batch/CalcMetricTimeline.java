@@ -98,7 +98,6 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             i++;
 
         }
-
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timeStatusMap, false);
         timeline.replacePreviousDateStatus(Utils.convertStringtoDate("yyyy-MM-dd", this.runDate), this.opsMgr.getStates(), false);//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry

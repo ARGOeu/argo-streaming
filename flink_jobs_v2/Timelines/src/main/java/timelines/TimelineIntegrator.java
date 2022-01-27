@@ -1,4 +1,3 @@
-
 package timelines;
 
 import java.math.BigDecimal;
@@ -9,19 +8,21 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.joda.time.DateTime;
-/**
 
-* TimelineIntegrator class implements an integrator which is able to apply calculations on timelines
-regarding status duration and a/r results
+/**
+ *
+ * TimelineIntegrator class implements an integrator which is able to apply
+ * calculations on timelines regarding status duration and a/r results
  */
 
 public class TimelineIntegrator {
-    public double availability=0;
-    public double reliability=0;
 
-    public double up_f=0;
-    public double unknown_f=0;
-    public double down_f=0;
+    public double availability = 0;
+    public double reliability = 0;
+
+    public double up_f = 0;
+    public double unknown_f = 0;
+    public double down_f = 0;
 
     public static double round(double input, int prec, int mode) {
         try {
@@ -42,12 +43,13 @@ public class TimelineIntegrator {
         this.availability = 0;
         this.reliability = 0;
     }
-    public void calcAR(Set<Entry<DateTime, Integer>> samples,DateTime runDate, int okSt, int warningSt, int unknownSt, int downSt, int missingSt) throws ParseException {
-        int[] okstatusInfo = countStatusAppearancesInSecs(samples,okSt);
-        int[] warningstatusInfo = countStatusAppearancesInSecs(samples,warningSt);
-        int[] unknownstatusInfo = countStatusAppearancesInSecs(samples,unknownSt);
-        int[] downstatusInfo =countStatusAppearancesInSecs(samples,downSt);
-        int[] missingInfo = countStatusAppearancesInSecs(samples,missingSt);
+
+    public void calcAR(Set<Entry<DateTime, Integer>> samples, DateTime runDate, int okSt, int warningSt, int unknownSt, int downSt, int missingSt) throws ParseException {
+        int[] okstatusInfo = countStatusAppearancesInSecs(samples, okSt);
+        int[] warningstatusInfo = countStatusAppearancesInSecs(samples, warningSt);
+        int[] unknownstatusInfo = countStatusAppearancesInSecs(samples, unknownSt);
+        int[] downstatusInfo = countStatusAppearancesInSecs(samples, downSt);
+        int[] missingInfo = countStatusAppearancesInSecs(samples, missingSt);
         int daySeconds = Utils.calcDaySeconds(runDate, runDate);
         int[] upstatusInfo = new int[2];
         upstatusInfo[0] = okstatusInfo[0] + warningstatusInfo[0];
@@ -81,7 +83,7 @@ public class TimelineIntegrator {
      * @return , the num of the times the specific status appears on the
      * timeline
      */
-    public int[] countStatusAppearancesInSecs(Set<Entry<DateTime, Integer>>  samples,int status) throws ParseException {
+    public int[] countStatusAppearancesInSecs(Set<Entry<DateTime, Integer>> samples, int status) throws ParseException {
 
         int[] statusInfo = new int[2];
         int count = 0;
@@ -133,7 +135,7 @@ public class TimelineIntegrator {
      * @return , the num of the times the specific status appears on the
      * timeline
      */
-    public int[] countStatusAppearances(Set<Entry<DateTime, Integer>> samples,int status) throws ParseException {
+    public int[] countStatusAppearances(Set<Entry<DateTime, Integer>> samples, int status) throws ParseException {
         int[] statusInfo = new int[2];
         int count = 0;
         ArrayList<DateTime[]> durationTimes = new ArrayList<>();
@@ -143,7 +145,9 @@ public class TimelineIntegrator {
         boolean added = true;
         for (Map.Entry<DateTime, Integer> entry : samples) {
             if (status == entry.getValue()) {
-                startDt = entry.getKey();
+                if (startDt == null) {
+                    startDt = entry.getKey();
+                }
                 count++;
                 added = false;
             } else {
@@ -198,7 +202,7 @@ public class TimelineIntegrator {
             //Minutes minutes = Minutes.minutesBetween(startDt, (endDt.plusMinutes(1)));
             minutesInt = minutesInt + min;
         }
-        return minutesInt ;
+        return minutesInt;
     }
 
     /**
@@ -264,6 +268,5 @@ public class TimelineIntegrator {
     public void setDown_f(double down_f) {
         this.down_f = down_f;
     }
-
 
 }
