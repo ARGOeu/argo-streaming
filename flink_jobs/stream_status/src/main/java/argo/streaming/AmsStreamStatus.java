@@ -169,7 +169,7 @@ public class AmsStreamStatus {
 	
 		String apiEndpoint = parameterTool.getRequired("api.endpoint");
 		String apiToken = parameterTool.getRequired("api.token");
-		String reportID = parameterTool.getRequired("report.id");
+		String reportID = parameterTool.getRequired("report.uuid");
 		int apiInterval = parameterTool.getInt("api.interval");
 		
 		ApiResourceManager amr = new ApiResourceManager(apiEndpoint,apiToken);
@@ -324,8 +324,8 @@ public class AmsStreamStatus {
 			amr.getRemoteAll();
 			
 
-			ArrayList<MetricProfile> mpsList = (ArrayList<MetricProfile>) (Arrays.asList(amr.getListMetrics()));
-			ArrayList<GroupEndpoint> egpList = (ArrayList<GroupEndpoint>) (Arrays.asList(amr.getListGroupEndpoints()));
+			ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(amr.getListMetrics()));
+			ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
 
 			mps = new MetricProfileManager();
 			mps.loadFromList(mpsList);
@@ -487,9 +487,9 @@ public class AmsStreamStatus {
 			
 			String opsJSON = amr.getResourceJSON(ApiResource.OPS);
 			String apsJSON = amr.getResourceJSON(ApiResource.AGGREGATION);
-			ArrayList<Downtime> downList = (ArrayList<Downtime>)(Arrays.asList(amr.getListDowntimes()));
-			ArrayList<MetricProfile> mpsList = (ArrayList<MetricProfile>)(Arrays.asList(amr.getListMetrics()));
-			ArrayList<GroupEndpoint> egpListFull = (ArrayList<GroupEndpoint>)(Arrays.asList(amr.getListGroupEndpoints()));
+			ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(amr.getListDowntimes()));
+			ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(amr.getListMetrics()));
+			ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
 			
 			// create a new status manager
 			sm = new StatusManager();

@@ -57,12 +57,8 @@ public class StatusConfig implements Serializable {
 	   this.apiEndpoint = pt.getRequired("api.endpoint");
 	   
 	   
-	   this.aps = pt.getRequired("sync.apr");
-	   this.mps = pt.getRequired("sync.mps");
-	   this.egp = pt.getRequired("sync.egp");
-	   this.ops = pt.getRequired("sync.ops");
+
 	   this.runDate = pt.getRequired("run.date");
-	   this.downtime = pt.getRequired("sync.downtime");
 	   this.report = pt.getRequired("report");
 	   // Optional timeout parameter
 	   if (pt.has("timeout")){
@@ -82,8 +78,8 @@ public class StatusConfig implements Serializable {
 	   // Optional set daily parameter
 	   
 	   this.apiEndpoint = pt.getRequired("api.endpoint");
-	   this.apiToken = pt.getRequired("apiToken");
-	   this.reportID = pt.getRequired("reportID");
+	   this.apiToken = pt.getRequired("api.token");
+	   this.reportID = pt.getRequired("report.uuid");
 	   
 	   if (pt.has("api.proxy")) this.apiProxy = pt.get("api.proxy","");
 	   if (pt.has("api.verify")) this.apiVerify = pt.getBoolean("api.verify",false);
