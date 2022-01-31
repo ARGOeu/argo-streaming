@@ -13,7 +13,8 @@
             "tags": {
                 "monitored": "1",
                 "production": "1",
-                "scope": "EGI"
+                "scope": "EGI",
+                "info_URL":"host2.example.foo/path/to/service2"
             }
         },
         {
@@ -217,7 +218,8 @@
             "tags": {
                 "monitored": "1",
                 "production": "1",
-                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb"
+                "scope": "EGI, wlcg, tier1, alice, atlas, lhcb",
+                "info_": "this is an info"
             }
         },
         {

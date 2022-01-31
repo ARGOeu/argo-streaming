@@ -244,14 +244,14 @@ public class EndpointGroupManager implements Serializable {
 
     /**
      * Searches the tags of a group endpoint with the specific group, type,
-     * hostname, service and if the tags map contains keys with "info." in them
+     * hostname, service and if the tags map contains keys with "info_" in them
      * then it returns the values combinations
      *
      * @param group the group
      * @param type the type
      * @param hostname the hostname
      * @param service the service
-     * @return a string where all values of a "info." tag are combined and
+     * @return a string where all values of a "info_" tag are combined and
      * represented
      */
     public String getInfo(String group, String type, String hostname, String service) {
@@ -265,9 +265,8 @@ public class EndpointGroupManager implements Serializable {
 
         for (String tName : tags.keySet()) {
 
-            if (tName.startsWith("info.")) {
-
-                String infoName = tName.replaceFirst("info.", "");
+            if (tName.startsWith("info_")) {
+                String infoName = tName.replaceFirst("info_", "");
 
                 String value = tags.get(tName);
 
