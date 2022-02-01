@@ -8,8 +8,7 @@ import org.apache.flink.util.Collector;
 import profilesmanager.AggregationProfileManager;
 
 /**
- * MapServices produces TimelineTrends for each service,that maps to the groups
- * of functions as described in aggregation profile groups endpoint , metric
+ * MapServices enriches StatusMetric objects with a function as described in aggregation profile, according to the corresponding service of the object
  */
 public class MapServices extends RichFlatMapFunction<StatusMetric, StatusMetric> {
 
