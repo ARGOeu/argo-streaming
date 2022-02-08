@@ -23,6 +23,7 @@ import profilesmanager.GroupGroupManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
 import profilesmanager.ReportManager;
+
 /**
  * Accepts a list of metric data objects and produces a list of missing mon data
  * objects
@@ -116,7 +117,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
             }
 
         }
-
+     
     }
 
     /**
@@ -143,13 +144,12 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
 
         String timestamp = this.runDate + "T00:00:00Z";
         String state = this.opsMgr.getDefaultMissing();
-
         for (MetricData item : in) {
 
             service = item.getService();
             hostname = item.getHostname();
             metric = item.getMetric();
-
+        
             // Filter By endpoint group if belongs to supergroup
             ArrayList<String> groupnames = egpMgr.getGroup(egroupType, hostname, service);
 
@@ -188,7 +188,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
             mn.setTimestamp(timestamp);
             mn.setDateInt(dateInt);
             mn.setTimeInt(timeInt);
-
+     
             out.collect(mn);
         }
     }
