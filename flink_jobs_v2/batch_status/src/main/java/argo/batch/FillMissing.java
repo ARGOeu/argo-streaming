@@ -117,7 +117,6 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
             }
 
         }
-     
     }
 
     /**
@@ -149,8 +148,6 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
             service = item.getService();
             hostname = item.getHostname();
             metric = item.getMetric();
-        
-            // Filter By endpoint group if belongs to supergroup
             ArrayList<String> groupnames = egpMgr.getGroup(egroupType, hostname, service);
 
             for (String groupname : groupnames) {
@@ -188,7 +185,6 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
             mn.setTimestamp(timestamp);
             mn.setDateInt(dateInt);
             mn.setTimeInt(timeInt);
-     
             out.collect(mn);
         }
     }

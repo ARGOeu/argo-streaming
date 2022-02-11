@@ -225,5 +225,6 @@ public class StatusMetric {
     public String toString() {
         return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + ","
                 + this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + "," + this.tags + ")";
-    }
+    }  
+
 }
