@@ -34,7 +34,6 @@ public class CalcServiceFlipFlopTrends implements FlatMapFunction<StatusTimeline
 
         String group = in.getGroup();
         String service = in.getService();
-   
         //construct a timeline containing all the timestamps of each metric timeline
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
 
@@ -42,7 +41,6 @@ public class CalcServiceFlipFlopTrends implements FlatMapFunction<StatusTimeline
         for (TimeStatus ts : timestatusList) {
             timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
         }
-
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timestampMap, true);
         HashMap<String, Timeline> timelineMap = new HashMap<>();

@@ -69,20 +69,6 @@ public class TimelineAggregatorTest {
     }
 
     /**
-     * Test of tsFromDate method, of class TimelineAggregator.
-     */
-//    @Test
-//    public void testTsFromDate() {
-//        System.out.println("tsFromDate");
-//        String date = "";
-//        TimelineAggregator instance = new TimelineAggregator();
-//        String expResult = "";
-//        String result = instance.tsFromDate(date);
-//        assertEquals(expResult, result);
-//        // TODO review the generated test code and remove the default call to fail.
-//
-//    }
-    /**
      * Test of createTimeline method, of class TimelineAggregator.
      */
     @Test
@@ -119,7 +105,6 @@ public class TimelineAggregatorTest {
         Timeline exptimeline = new Timeline(timestamp);
         exptimeline.insert(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 31, 0, 0, 0), 0);
         expRes.put(name, exptimeline);
-
         assertEquals(expRes.toString(), instance.getInputs().toString());
 
         // TODO review the generated test code and remove the default call to fail.
@@ -155,7 +140,7 @@ public class TimelineAggregatorTest {
         expRes.put(name2, exptimeline);
         expRes.put(name, exptimeline2);
 
-        assertEquals(expRes, instance.getInputs());
+        assertEquals(expRes.toString(), instance.getInputs().toString());
     }
 
     /**
@@ -172,7 +157,7 @@ public class TimelineAggregatorTest {
 
         LocalDate expResult = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 31, 12, 50, 0).toLocalDate();
         LocalDate result = instance.getDate();
-        assertEquals(expResult, result);
+        assertEquals(expResult.toString(), result.toString());
         // TODO review the generated test code and remove the default call to fail.
         //fail("The test case is a prototype.");
     }
@@ -198,7 +183,7 @@ public class TimelineAggregatorTest {
         exptimeline.insert(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 31, 12, 50, 0), 0);
         Set<Map.Entry<DateTime, Integer>> expResult = expRes.entrySet();
         Set<Map.Entry<DateTime, Integer>> result = instance.getSamples();
-        assertEquals(expResult, result);
+        assertEquals(expResult.toString(), result.toString());
         // TODO review the generated test code and remove the default call to fail.
         //fail("The test case is a prototype.");
     }
@@ -238,7 +223,7 @@ public class TimelineAggregatorTest {
 
         Set<Entry<DateTime, Integer>> expRes = timelinejson.getOutputTimeline().entrySet();
         Set<Entry<DateTime, Integer>> res = instance.getOutput().getSamples();
-        assertEquals(expRes, res);
+        assertEquals(expRes.toString(), res.toString());
         // TODO review the generated test code and remove the default call to fail.
         //  fail("The test case is a prototype.");
     }

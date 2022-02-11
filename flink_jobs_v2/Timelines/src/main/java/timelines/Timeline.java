@@ -443,40 +443,11 @@ public class Timeline {
                 if (!this.samples.containsKey(firsTime)) {
                     this.samples.put(firsTime, availStates.get("MISSING"));
                 }
-          }
+            }
         }
         if (optimize) {
             this.optimize();
         }
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 83 * hash + Objects.hashCode(this.date);
-        hash = 83 * hash + Objects.hashCode(this.samples);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Timeline other = (Timeline) obj;
-        if (!Objects.equals(this.date, other.date)) {
-            return false;
-        }
-        if (!Objects.equals(this.samples, other.samples)) {
-            return false;
-        }
-        return true;
     }
 
     public int opInt(int[][][] truthTable, int op, int a, int b) {
@@ -586,4 +557,10 @@ public class Timeline {
 
         return opTimeline.samples.keySet().size() - 1;
     }
+
+    @Override
+    public String toString() {
+        return "Timeline{" + "date=" + this.date + ", excludedInt=" + this.excludedInt + " , samples=" + this.samples + '}';
+    }
+
 }

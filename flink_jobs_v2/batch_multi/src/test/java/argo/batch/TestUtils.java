@@ -3,6 +3,7 @@ package argo.batch;
 import argo.ar.EndpointAR;
 import argo.ar.EndpointGroupAR;
 import argo.ar.ServiceAR;
+import argo.avro.Downtime;
 import argo.avro.GroupGroup;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -26,6 +27,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profilesmanager.AggregationProfileManager;
+import profilesmanager.DowntimeManager;
 import profilesmanager.GroupGroupManager;
 import profilesmanager.OperationsManager;
 import timelines.Timeline;
@@ -58,7 +60,7 @@ public class TestUtils {
      * @throws ParseException
      * @throws IOException
      */
-    public static ArrayList<StatusTimeline> prepareLevelTimeline(List<StatusTimeline> list, List<String> opsDS, List<String> aggrDS, LEVEL level) throws ParseException, IOException {
+    public static ArrayList<StatusTimeline> prepareLevelTimeline(List<StatusTimeline> list, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level) throws ParseException, IOException {
 
         String group = "", function = "", service = "", hostname = "", metric = "";
 
@@ -159,18 +161,19 @@ public class TestUtils {
         if (!added) {
             alltimelines.add(tl);
         }
-        ArrayList<StatusTimeline> timelines = parseEndpTimelines(alltimelines, opsDS, aggrDS, level);
+        ArrayList<StatusTimeline> timelines = parseEndpTimelines(alltimelines, opsDS, aggrDS, downDS, runDate, level);
 
         return timelines;
     }
 
-    private static ArrayList<StatusTimeline> parseEndpTimelines(ArrayList<ArrayList<StatusTimeline>> timelist, List<String> opsDS, List<String> aggrDS, LEVEL level) throws ParseException, IOException {
+    private static ArrayList<StatusTimeline> parseEndpTimelines(ArrayList<ArrayList<StatusTimeline>> timelist, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level) throws ParseException, IOException {
         OperationsManager opsMgr = new OperationsManager();
         opsMgr.loadJsonString(opsDS);
 
         AggregationProfileManager aggrMgr = new AggregationProfileManager();
         aggrMgr.loadJsonString(aggrDS);
-
+        DowntimeManager downMgr = new DowntimeManager();
+        downMgr.loadFromList(downDS);
         int i = 0;
         ArrayList<StatusTimeline> timelines = new ArrayList<>();
 
@@ -213,9 +216,18 @@ public class TestUtils {
                         op = opsMgr.getIntOperation(aggrMgr.retrieveProfileOperation());
 
                     }
-                       initialTimeline.setExcludedInt(opsMgr.getDefaultExcludedInt());
-                 
+                    initialTimeline.setDateStr(runDate);
+                    initialTimeline.setExcludedInt(opsMgr.getDefaultExcludedInt());
+
                     initialTimeline.aggregate(timeline, opsMgr.getTruthTable(), op);
+                    if (level.equals(LEVEL.HOSTNAME)) {
+                        ArrayList<String> downPeriod = downMgr.getPeriod(hostname, service);
+                        if (downPeriod != null && !downPeriod.isEmpty()) {
+                            initialTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), opsMgr.getDefaultDownInt());
+                        }
+
+                    }
+
                 }
                 count++;
             }
@@ -387,7 +399,7 @@ public class TestUtils {
             return 0;
         }
     }
-   //compares the elements of two lists to decide if the lists are the same
+    //compares the elements of two lists to decide if the lists are the same
 
     public static boolean compareLists(List listA, List listB) {
 
@@ -424,14 +436,13 @@ public class TestUtils {
             }
         }
         boolean isEq = false;
-        
-        
+
         if (tempA.isEmpty() && tempB.isEmpty()) { //if the two lists are empty , this means that all objects were found on both lists and the lists are equal
             isEq = true;
         }
         return isEq;
     }
-    
+
     /**
      * Parses the Metric profile content retrieved from argo-web-api and
      * provides a list of MetricProfile avro objects to be used in the next
@@ -489,7 +500,6 @@ public class TestUtils {
         rArr = results.toArray(rArr);
         return rArr;
     }
-
 
     public static class StatisticsItem {
 
@@ -570,7 +580,7 @@ public class TestUtils {
 
     }
 
- public static List<Trends> prepareFlipFlops(List<StatisticsItem> statisticList, LEVEL level) {
+    public static List<Trends> prepareFlipFlops(List<StatisticsItem> statisticList, LEVEL level) {
 
         ArrayList<Trends> trendsList = new ArrayList<>();
         for (StatisticsItem item : statisticList) {
@@ -650,7 +660,7 @@ public class TestUtils {
 
         return trendsList;
     }
-    
+
     public static class ArItem {
 
         private String group;
@@ -789,12 +799,8 @@ public class TestUtils {
                 missingDur = statistics.get("MISSING")[1] * 60;
             }
             int daySeconds = 86400;
-
-            //int[] upstatusInfo = new int[2];
             double upstatus = 0;
             upstatus = okDur + warningDur;
-//        upstatusInfo[0] = okstatusInfo[0] + warningstatusInfo[0];
-//        upstatusInfo[1] = okstatusInfo[1] + warningstatusInfo[1];
 
             double knownPeriod = (double) daySeconds - (double) unknownDur - (double) missingDur;
             double knownScheduled = knownPeriod - (double) downtimeDur;
@@ -818,7 +824,6 @@ public class TestUtils {
             ArItem aritem = new ArItem(group, service, hostname, availability, reliability, up_f, unknown_f, down_f);
             arList.add(aritem);
         }
-        //   }
         return arList;
 
     }

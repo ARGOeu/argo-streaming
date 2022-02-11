@@ -127,6 +127,7 @@ public class CalcServiceAR extends RichFlatMapFunction<StatusTimeline, ServiceAR
         String endpointGroup = "";
         service = in.getService();
         endpointGroup = in.getGroup();
+        
 //        // Availability = UP period / KNOWN period = UP period / (Total period –
 //		// UNKNOWN period)
 //		this.availability = round(((up / dt) / (1.0 - (unknown / dt))) * 100, 5, BigDecimal.ROUND_HALF_UP);

@@ -1,6 +1,6 @@
 package argo.batch;
 
-
+import java.util.Objects;
 
 public class EndpointGroupAR {
 	
@@ -96,5 +96,4 @@ public class EndpointGroupAR {
 	public String toString() {
 		return "(" + this.dateInt+ "," + this.report + "," + this.name + "," + this.group + "," + this.weight + "," + this.a + "," + this.r + ","  + this.up + ","  + this.unknown + ","  + this.down  + ")";
 	}
-
 }
