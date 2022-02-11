@@ -58,13 +58,13 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
         service = in.getService();
         endpointGroup = in.getGroup();
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
-
+     
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
         for (TimeStatus ts : timestatusList) {
             timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
         }
 
-        Timeline timeline = new Timeline();
+          Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timestampMap, true);
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
@@ -75,6 +75,7 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
             MetricTrends metricTrends = new MetricTrends(endpointGroup, service, hostname, metric, timeline, flipflop);
             out.collect(metricTrends);
         }
-    }
+        }
+   
 
 }

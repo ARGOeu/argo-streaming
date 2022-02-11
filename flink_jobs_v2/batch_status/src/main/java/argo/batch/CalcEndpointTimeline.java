@@ -103,7 +103,6 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
                 hasThr = true;
             }
         }
-
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt());
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));
 

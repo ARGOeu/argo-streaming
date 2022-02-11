@@ -7,6 +7,7 @@ package argo.batch;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  *
@@ -106,6 +107,45 @@ public class StatusTimeline implements Serializable {
             resultsTimeStatus += st.toString();
         }
         return "StatusTimeline{" + "group=" + group + ", service=" + service + ", hostname=" + hostname + ", metric=" + metric + ", statusMetrics=" + resultsStatusMetrics + ", timestamps=" + resultsTimeStatus + '}';
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final StatusTimeline other = (StatusTimeline) obj;
+        if (this.hasThr != other.hasThr) {
+            return false;
+        }
+        if (!Objects.equals(this.group, other.group)) {
+            return false;
+        }
+        if (!Objects.equals(this.function, other.function)) {
+            return false;
+        }
+        if (!Objects.equals(this.service, other.service)) {
+            return false;
+        }
+        if (!Objects.equals(this.hostname, other.hostname)) {
+            return false;
+        }
+        if (!Objects.equals(this.metric, other.metric)) {
+            return false;
+        }
+        return Objects.equals(this.timestamps, other.timestamps);
     }
 
 }

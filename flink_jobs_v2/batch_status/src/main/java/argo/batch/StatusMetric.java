@@ -225,9 +225,7 @@ public class StatusMetric {
     public String toString() {
         return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + ","
                 + this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + "," + this.tags + ")";
-    }  
-
-
+    }
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -321,7 +319,4 @@ public class StatusMetric {
         hash = 59 * hash + (this.hasThr ? 1 : 0);
         return hash;
     }
-    
-    
-
 }

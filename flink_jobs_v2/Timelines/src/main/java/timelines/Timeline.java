@@ -7,6 +7,7 @@ package timelines;
  */
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -296,6 +297,7 @@ public class Timeline {
         }
 
         Timeline result = new Timeline();
+        result.setExcludedInt(this.excludedInt);
 
         // Slice for first
         for (DateTime point : this.getPoints()) {
@@ -426,11 +428,11 @@ public class Timeline {
      * checks if in the map the midnight exists and if not it is added with
      * status "MISSING"
      */
-    public void replacePreviousDateStatus(DateTime date, ArrayList<String> availStates, boolean optimize) {
+    public void replacePreviousDateStatus(DateTime date,HashMap<String, Integer> availStates, boolean optimize) {
 
         DateTime firsTime = date;
         firsTime = firsTime.withTime(0, 0, 0, 0);
-        DateTime firstEntry = this.samples.lowerKey(firsTime);
+        DateTime firstEntry = this.samples.floorKey(firsTime);
         if (this.date.isBefore(firsTime.toLocalDate())) {
 
             this.date = firsTime.toLocalDate();
@@ -442,7 +444,7 @@ public class Timeline {
             this.samples.remove(firstEntry);
 
         } else if (firstEntry == null) {
-            this.samples.put(firsTime, availStates.indexOf("MISSING"));
+            this.samples.put(firsTime, availStates.get("MISSING"));
         }
         if (optimize) {
             this.optimize();

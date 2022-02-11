@@ -21,7 +21,7 @@ public class TimelineAggregator {
 
     private Timeline output;
     private Map<String, Timeline> inputs;
-    private int excludedInt=-1;
+    private int excludedInt = -1;
 
     /**
      *
@@ -55,13 +55,14 @@ public class TimelineAggregator {
     /**
      *
      * @param inputs, a map of timelines Constructs a TimelineAggregator object,
-     * @param excludedInt , the int value of the excludedStatus
-     * containing the timelines
+     * @param excludedInt , the int value of the excludedStatus containing the
+     * timelines
      */
     public TimelineAggregator(Map<String, Timeline> inputs, int excludedInt) {
         this.inputs = inputs;
         this.output = new Timeline();
-        this.excludedInt=excludedInt;
+        this.excludedInt = excludedInt;
+        this.output.setExcludedInt(excludedInt);
     }
 
     /**
@@ -175,7 +176,7 @@ public class TimelineAggregator {
 
         //Iterate through all available input timelines and aggregate
         for (Timeline item : this.inputs.values()) {
-          //  item.setExcludedInt(excludedInt);
+         //   item.setExcludedInt(excludedInt);
             this.output.aggregate(item, truthTable, op);
         }
 

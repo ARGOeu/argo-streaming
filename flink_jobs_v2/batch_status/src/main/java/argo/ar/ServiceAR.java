@@ -1,5 +1,7 @@
 package argo.ar;
 
+import java.util.Objects;
+
 public class ServiceAR {
 
     private int dateInt;
@@ -103,6 +105,60 @@ public class ServiceAR {
  
     public String toString() {
         return "(" + this.dateInt + "," + this.report  + "," + this.name + "," + this.group + "," + this.a + "," + this.r + "," + this.up + "," + this.unknown + "," + this.down + ")";
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 71 * hash + this.dateInt;
+        hash = 71 * hash + Objects.hashCode(this.report);
+        hash = 71 * hash + Objects.hashCode(this.name);
+        hash = 71 * hash + Objects.hashCode(this.group);
+        hash = 71 * hash + (int) (Double.doubleToLongBits(this.a) ^ (Double.doubleToLongBits(this.a) >>> 32));
+        hash = 71 * hash + (int) (Double.doubleToLongBits(this.r) ^ (Double.doubleToLongBits(this.r) >>> 32));
+        hash = 71 * hash + (int) (Double.doubleToLongBits(this.up) ^ (Double.doubleToLongBits(this.up) >>> 32));
+        hash = 71 * hash + (int) (Double.doubleToLongBits(this.unknown) ^ (Double.doubleToLongBits(this.unknown) >>> 32));
+        hash = 71 * hash + (int) (Double.doubleToLongBits(this.down) ^ (Double.doubleToLongBits(this.down) >>> 32));
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ServiceAR other = (ServiceAR) obj;
+        if (this.dateInt != other.dateInt) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.a) != Double.doubleToLongBits(other.a)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.r) != Double.doubleToLongBits(other.r)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.up) != Double.doubleToLongBits(other.up)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.unknown) != Double.doubleToLongBits(other.unknown)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.down) != Double.doubleToLongBits(other.down)) {
+            return false;
+        }
+        if (!Objects.equals(this.report, other.report)) {
+            return false;
+        }
+        if (!Objects.equals(this.name, other.name)) {
+            return false;
+        }
+        return Objects.equals(this.group, other.group);
     }
 
 }

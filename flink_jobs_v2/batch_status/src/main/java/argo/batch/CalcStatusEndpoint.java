@@ -73,7 +73,7 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
         String hostname = "";
         String info = "";
         int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
-        function = "";
+        function = in.getFunction();
         service = in.getService();
         endpointGroup = in.getGroup();
         hostname = in.getHostname();

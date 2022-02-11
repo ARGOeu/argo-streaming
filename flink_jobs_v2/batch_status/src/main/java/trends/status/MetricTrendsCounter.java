@@ -61,6 +61,7 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
      */
     @Override
     public void flatMap(MetricTrends t, Collector<Tuple8<String, String, String, String, String, Integer, Integer,String>> out) throws Exception {
+    //  if(t.getGroup().equals("Group_1") && t.getService().equals("Service_1B") && t.getEndpoint().equals("Hostname_4") && t.getMetric().equals("Metric_B")){
         int criticalstatus = this.opsMgr.getIntStatus("CRITICAL");
         int warningstatus = this.opsMgr.getIntStatus("WARNING");
         int unknownstatus = this.opsMgr.getIntStatus("UNKNOWN");
@@ -71,7 +72,7 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
         int[] warningstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), warningstatus);
         int[] unknownstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), unknownstatus);
 
-        ArrayList<String> tags = this.mtagsMgr.getTags(t.getMetric());
+        ArrayList<String> tags = (ArrayList)this.mtagsMgr.getTags(t.getMetric()).clone();
         String tagInfo = "";
         for (String tag : tags) {
             if (tags.indexOf(tag) == 0) {
@@ -92,5 +93,5 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
                 t.getGroup(), t.getService(), t.getEndpoint(), t.getMetric(), "UNKNOWN", unknownstatusInfo[0], unknownstatusInfo[1], tagInfo);
 
         out.collect(tupleUnknown);
-    }
-}
+      }
+  }
