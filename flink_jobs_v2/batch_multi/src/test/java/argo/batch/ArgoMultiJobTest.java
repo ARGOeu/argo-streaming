@@ -113,7 +113,12 @@ public class ArgoMultiJobTest {
 
         DataSet<Downtime> downDS = env.fromElements(new Downtime());
         // begin with empty threshold datasource
+
         DataSource<String> thrDS = env.fromElements("");
+        if (amr.getResourceJSON(ApiResource.THRESHOLDS) != null) {
+            thrDS = env.fromElements(amr.getResourceJSON(ApiResource.THRESHOLDS));
+        }
+
         ReportManager confMgr = new ReportManager();
         confMgr.loadJsonString(cfgDS.collect());
 
@@ -168,6 +173,7 @@ public class ArgoMultiJobTest {
 
         //************* Test unioned metric data of previous and current date ************
         DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
+
         URL unionpdataURL = ArgoMultiJobTest.class.getResource("/test/uniondata_exclude.avro");
         Path unionpin = new Path(unionpdataURL.getPath());
         AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat(unionpin, MetricData.class);
@@ -204,6 +210,7 @@ public class ArgoMultiJobTest {
             DataSet<StatusMetric> expPickDataDS = env.fromElements(getListStatusMetric(pickDataList.get(0)));
             expPickDataRes = preparePickData(expPickDataDS.collect());
         }
+
         Assert.assertEquals(TestUtils.compareLists(expPickDataRes, mdataTrimDS.collect()), true);
 
         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
@@ -354,7 +361,9 @@ public class ArgoMultiJobTest {
         if (calcFlipFlops || calcStatusTrends) {
             DataSet<MetricTrends> metricTrends = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
             DataSet<EndpointTrends> endpointTrends = statusEndpointTimeline.flatMap(new CalcEndpointFlipFlopTrends());
+
             DataSet<ServiceTrends> serviceTrends = statusServiceTimeline.flatMap(new CalcServiceFlipFlopTrends());
+            
             DataSet<GroupTrends> groupTrends = statusGroupTimeline.flatMap(new CalcGroupFlipFlopTrends());
             if (calcFlipFlops) {
 
@@ -389,9 +398,9 @@ public class ArgoMultiJobTest {
                 } else {
                     noZeroServiceFlipFlops = noZeroServiceFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
                 }
-
+              
                 trends = noZeroServiceFlipFlops.map(new MapServiceTrends());
-
+             
                 List<Trends> expServStatisticRes = loadExpectedFlipFlopData(serviceExpectedData, LEVEL.SERVICE, env);
                 Assert.assertEquals(TestUtils.compareLists(expServStatisticRes, trends.collect()), true);
 
@@ -428,8 +437,6 @@ public class ArgoMultiJobTest {
                 DataSet< Tuple8< String, String, String, String, String, Integer, Integer, String>> groupStatusTrendsData = groupTrends.flatMap(new GroupTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
                 List<Tuple8< String, String, String, String, String, Integer, Integer, String>> expGroupTrendsRes = loadExpectedTrendData(groupExpectedData, LEVEL.GROUP, env);
-                List<Tuple8< String, String, String, String, String, Integer, Integer, String>> results = groupStatusTrendsData.collect();
-
                 Assert.assertEquals(TestUtils.compareLists(expGroupTrendsRes, groupStatusTrendsData.collect()), true);
             }
 
@@ -467,18 +474,6 @@ public class ArgoMultiJobTest {
 
     }
 
-    private List<TestUtils.ArItem> loadExpectedArData(List<String> dataList, LEVEL level, ExecutionEnvironment env) throws Exception {
-        List<TestUtils.ArItem> dataResult = new ArrayList();
-
-        if (!dataList.isEmpty()) {
-            DataSet<TestUtils.StatisticsItem> resultDS = env.fromElements(TestUtils.getListStatisticData(dataList.get(0)));
-            dataResult = TestUtils.prepareAR(resultDS.collect(), level);
-
-        }
-        return dataResult;
-
-    }
-
     private List<String> loadExpectedDataFromFile(String filename, ExecutionEnvironment env) throws Exception {
         URL fileURL = ArgoMultiJobTest.class.getResource(filename);
         DataSet<String> fileString = env.readTextFile(fileURL.toString());
@@ -510,39 +505,34 @@ public class ArgoMultiJobTest {
 
     }
 
-    public List<StatusMetric> prepareStatusData(List<StatusMetric> input) {
+    private List<TestUtils.ArItem> loadExpectedArData(List<String> dataList, LEVEL level, ExecutionEnvironment env) throws Exception {
+        List<TestUtils.ArItem> dataResult = new ArrayList();
 
-        for (StatusMetric sm : input) {
-            sm.setActualData("");
-            sm.setHasThr(false);
-            sm.setInfo("");
-            sm.setMessage("");
-            sm.setOgStatus("");
-            sm.setRuleApplied("");
-            sm.setSummary("");
-            sm.setTags("");
-            String timestamp2 = sm.getTimestamp().split("Z")[0];
-            String[] tsToken = timestamp2.split("T");
-            int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
-            //        int timeInt = Integer.parseInt(tsToken[1].replace(":", ""));
-            sm.setDateInt(dateInt);
-            //   sm.setTimeInt(timeInt);
+        if (!dataList.isEmpty()) {
+            DataSet<TestUtils.StatisticsItem> resultDS = env.fromElements(TestUtils.getListStatisticData(dataList.get(0)));
+            dataResult = TestUtils.prepareAR(resultDS.collect(), level);
 
         }
-        return input;
+        return dataResult;
     }
 
     public List<StatusMetric> prepareInputData(List<StatusMetric> input) {
 
         for (StatusMetric sm : input) {
-            sm.setActualData("");
+            if (sm.getActualData() == null) {
+                sm.setActualData("");
+            }
             sm.setFunction("");
             sm.setHasThr(false);
             sm.setInfo("");
             sm.setMessage("");
-            sm.setOgStatus("");
+            if (sm.getOgStatus() == null) {
+                sm.setOgStatus("");
+            }
             sm.setPrevState("");
-            sm.setRuleApplied("");
+            if (sm.getRuleApplied() == null) {
+                sm.setRuleApplied("");
+            }
             sm.setSummary("");
             sm.setTags("");
             String timestamp2 = sm.getTimestamp().split("Z")[0];
@@ -558,12 +548,19 @@ public class ArgoMultiJobTest {
     public List<StatusMetric> prepareMTagsData(List<StatusMetric> input) {
 
         for (StatusMetric sm : input) {
-            sm.setActualData(null);
-            sm.setHasThr(false);
+            if (sm.getActualData().equals("")) {
+                sm.setActualData(null);
+            }
+
+            //  sm.setHasThr(false);
             sm.setInfo("");
             sm.setMessage(null);
-            sm.setOgStatus("");
-            sm.setRuleApplied("");
+//            if (sm.getOgStatus().equals("")) {
+//                sm.setOgStatus(null);
+//            }
+//            if (sm.getRuleApplied().equals("")) {
+//                sm.setRuleApplied(null);
+//            }
             sm.setSummary(null);
             String timestamp2 = sm.getTimestamp().split("Z")[0];
             String[] tsToken = timestamp2.split("T");
@@ -578,12 +575,19 @@ public class ArgoMultiJobTest {
     public List<StatusMetric> preparePickData(List<StatusMetric> input) {
 
         for (StatusMetric sm : input) {
-            sm.setActualData(null);
-            sm.setHasThr(false);
+
+            if (sm.getActualData().equals("")) {
+                sm.setActualData(null);
+            }
+
             sm.setInfo("");
             sm.setMessage(null);
-            sm.setOgStatus("");
-            sm.setRuleApplied("");
+            if (sm.getOgStatus() == null) {
+                sm.setOgStatus("");
+            }
+            if (sm.getRuleApplied() == null) {
+                sm.setRuleApplied("");
+            }
             sm.setSummary(null);
             sm.setTags("");
             String timestamp2 = sm.getTimestamp().split("Z")[0];
@@ -596,9 +600,30 @@ public class ArgoMultiJobTest {
         return input;
     }
 
+    public List<StatusMetric> prepareStatusData(List<StatusMetric> input) {
+
+        for (StatusMetric sm : input) {
+            sm.setInfo("");
+            sm.setMessage("");
+            sm.setSummary("");
+            sm.setTags("");
+            sm.setActualData("");
+            sm.setRuleApplied("");
+            sm.setOgStatus("");
+            String timestamp2 = sm.getTimestamp().split("Z")[0];
+            String[] tsToken = timestamp2.split("T");
+            int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
+            sm.setDateInt(dateInt);
+            //   sm.setTimeInt(timeInt);
+
+        }
+        return input;
+    }
+
     public static String loadResJSON(String resURL) {
 
-        InputStream jsonInputStream = ArgoMultiJobTest.class.getResourceAsStream(resURL);
+        InputStream jsonInputStream = ArgoMultiJobTest.class
+                .getResourceAsStream(resURL);
         String content = new BufferedReader(new InputStreamReader(jsonInputStream, StandardCharsets.UTF_8))
                 .lines()
                 .collect(Collectors.joining("\n"));
@@ -619,7 +644,7 @@ public class ArgoMultiJobTest {
         String downtimeData = amr.getApiResponseParser().getJsonData(loadResJSON("/test/downtimes.json"), false);
         String recompData = amr.getApiResponseParser().getJsonData(loadResJSON("/test/recomp.json"), true);
         String mtagsData = amr.getApiResponseParser().getJsonData(loadResJSON("/test/metrics.json"), true);
-
+        String thrData = amr.getApiResponseParser().getJsonData(loadResJSON("/test/threshold.json"), false);
         amr.getData().put(ApiResource.AGGREGATION, aggrData);
         amr.getData().put(ApiResource.OPS, opsData);
         amr.getData().put(ApiResource.CONFIG, configData);
@@ -629,6 +654,7 @@ public class ArgoMultiJobTest {
         amr.getData().put(ApiResource.DOWNTIMES, downtimeData);
         amr.getData().put(ApiResource.RECOMPUTATIONS, recompData);
         amr.getData().put(ApiResource.MTAGS, mtagsData);
+        amr.getData().put(ApiResource.THRESHOLDS, thrData);
 
         return amr;
     }
@@ -641,41 +667,6 @@ public class ArgoMultiJobTest {
             }
         }
         return true;
-
-    }
-
-    public void checkExecution(ParameterTool params) {
-
-        boolean calcStatus = true;
-        if (params.has("calcStatus")) {
-            if (params.get("calcStatus").equals("OFF")) {
-                calcStatus = false;
-
-            }
-        }
-
-        boolean calcAR = true;
-        if (params.has("calcAR")) {
-            if (params.get("calcAR").equals("OFF")) {
-                calcAR = false;
-            }
-        }
-
-        boolean calcStatusTrends = true;
-        if (params.has("calcStatusTrends")) {
-            if (params.get("calcStatusTrends").equals("OFF")) {
-                calcStatusTrends = false;
-            }
-        }
-        boolean calcFlipFlops = true;
-        if (params.has("calcFlipFlops")) {
-            if (params.get("calcFlipFlops").equals("OFF")) {
-                calcFlipFlops = false;
-            }
-        }
-        if (!calcStatus && !calcAR && !calcStatusTrends && !calcFlipFlops && !calcStatusTrends) {
-            System.exit(0);
-        }
 
     }
 
@@ -697,8 +688,24 @@ public class ArgoMultiJobTest {
             String service = jItem.get("service").getAsString();
             String hostname = jItem.get("hostname").getAsString();
             String function = "";
+            String ruleApplied = "";
+            String ogstatus = "";
+            String actualdata = "";
+
             if (jItem.has("function")) {
                 function = jItem.get("function").getAsString();
+            }
+            if (jItem.has("ogstatus")) {
+                ogstatus = jItem.get("ogstatus").getAsString();
+
+            }
+            if (jItem.has("rule_applied")) {
+                ruleApplied = jItem.get("rule_applied").getAsString();
+
+            }
+            if (jItem.has("actual_data")) {
+                actualdata = jItem.get("actual_data").getAsString();
+
             }
             String metric = jItem.get("metric").getAsString();
             String status = jItem.get("status").getAsString();
@@ -711,6 +718,9 @@ public class ArgoMultiJobTest {
             stm.setStatus(status);
             stm.setTimestamp(timestamp);
             stm.setFunction(function);
+            stm.setRuleApplied(ruleApplied);
+            stm.setOgStatus(ogstatus);
+            stm.setActualData(actualdata);
             results.add(stm);
         }
         StatusMetric[] rArr = new StatusMetric[results.size()];
@@ -718,11 +728,6 @@ public class ArgoMultiJobTest {
         return rArr;
     }
 
-    /**
-     * Parses the Metric profile content retrieved from argo-web-api and
-     * provides a list of MetricProfile avro objects to be used in the next
-     * steps of the pipeline
-     */
     /**
      * Parses the Metric profile content retrieved from argo-web-api and
      * provides a list of MetricProfile avro objects to be used in the next
@@ -745,6 +750,21 @@ public class ArgoMultiJobTest {
             String hostname = "";
             String service = "";
             String function = "";
+            String ruleApplied = "";
+            String ogstatus = "";
+            String actualdata = "";
+            boolean hasThr = false;
+
+            if (jItem.has("metric") && !jItem.get("metric").isJsonNull()) {
+                metric = jItem.get("metric").getAsString();
+            }
+
+            if (jItem.has("hostname") && !jItem.get("hostname").isJsonNull()) {
+                hostname = jItem.get("hostname").getAsString();
+            }
+            if (jItem.has("service") && !jItem.get("service").isJsonNull()) {
+                service = jItem.get("service").getAsString();
+            }
 
             if (jItem.has("function")) {
                 function = jItem.get("function").getAsString();
@@ -759,15 +779,18 @@ public class ArgoMultiJobTest {
             if (jItem.has("tags") && !jItem.get("tags").isJsonNull()) {
                 tags = jItem.get("tags").getAsString();
             }
-            if (jItem.has("metric") && !jItem.get("metric").isJsonNull()) {
-                metric = jItem.get("metric").getAsString();
-            }
+            if (jItem.has("ogstatus")) {
+                ogstatus = jItem.get("ogstatus").getAsString();
 
-            if (jItem.has("hostname") && !jItem.get("hostname").isJsonNull()) {
-                hostname = jItem.get("hostname").getAsString();
             }
-            if (jItem.has("service") && !jItem.get("service").isJsonNull()) {
-                service = jItem.get("service").getAsString();
+            if (jItem.has("rule_applied")) {
+                ruleApplied = jItem.get("rule_applied").getAsString();
+                hasThr = true;
+
+            }
+            if (jItem.has("actual_data")) {
+                actualdata = jItem.get("actual_data").getAsString();
+
             }
 
             String status = jItem.get("status").getAsString();
@@ -784,10 +807,15 @@ public class ArgoMultiJobTest {
             stm.setPrevState(prevState);
             stm.setPrevTs(prevTs);
             stm.setTags(tags);
+            stm.setRuleApplied(ruleApplied);
+            stm.setOgStatus(ogstatus);
+            stm.setActualData(actualdata);
+            stm.setHasThr(hasThr);
             results.add(stm);
         }
         StatusMetric[] rArr = new StatusMetric[results.size()];
         rArr = results.toArray(rArr);
         return rArr;
     }
+
 }

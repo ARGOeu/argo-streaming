@@ -91,6 +91,7 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
                 hasThr = true;
             }
         }
+         
         String operation = serviceFunctionsMap.get(service);
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist,this.opsMgr.getDefaultExcludedInt(),runDate);
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));

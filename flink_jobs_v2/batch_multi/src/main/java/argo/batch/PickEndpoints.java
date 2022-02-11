@@ -151,7 +151,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
                 String ogStatus = "";
                 String ruleApplied = "";
 
-                if (actualData != null) {
+                 if (actualData != null) {
                     // Check for relevant rule
                     String rule = thrMgr.getMostRelevantRule(groupname, md.getHostname(), md.getMetric());
                     // if rule is indeed found 
@@ -165,7 +165,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
                         }
                         LOG.info("{},{},{} data:({}) {} --> {}", groupname, md.getHostname(), md.getMetric(), values, status, statusNext[0]);
                         if (status != statusNext[0]) {
-                            ogStatus = status;
+                             ogStatus = status;
                             ruleApplied = statusNext[1];
                             status = statusNext[0];
                         }

@@ -443,8 +443,7 @@ public class Timeline {
                 if (!this.samples.containsKey(firsTime)) {
                     this.samples.put(firsTime, availStates.get("MISSING"));
                 }
-
-            }
+          }
         }
         if (optimize) {
             this.optimize();
