@@ -117,7 +117,7 @@ public class ArgoStatusBatchTest {
         AvroInputFormat<MetricData> exppdataAvro = new AvroInputFormat<MetricData>(exppin, MetricData.class);
         DataSet<MetricData> exppdataDS = env.createInput(exppdataAvro);
 
-        Assert.assertEquals(exppdataDS.collect(), pdataCleanDS.collect());
+       Assert.assertEquals(exppdataDS.collect(), pdataCleanDS.collect());
 
         //**** Test calculation of last record of  previous data
         DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
@@ -134,13 +134,12 @@ public class ArgoStatusBatchTest {
 
         //************* Test unioned metric data of previous and current date ************
         DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
-
         URL unionpdataURL = ArgoStatusBatchTest.class.getResource("/test/uniondata.avro");
         Path unionpin = new Path(unionpdataURL.getPath());
         AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat<MetricData>(unionpin, MetricData.class);
         DataSet<MetricData> unionpdataDS = env.createInput(unionpdataAvro);
-
         Assert.assertTrue(unionpdataDS.collect().containsAll(mdataPrevTotalDS.collect()));
+     
         //***************************Test FillMIssing
 
         DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
@@ -155,15 +154,34 @@ public class ArgoStatusBatchTest {
             DataSet<StatusMetric> expFillMissDS = env.fromElements(getListStatusMetric(fillMissingList.get(0)));
 
             expFillMissRes = prepareInputData(expFillMissDS.collect());
-
         }
-        List<StatusMetric> resultList = fillMissDS.collect();
 
-        Assert.assertTrue(expFillMissRes.containsAll(resultList));
+        Assert.assertTrue(expFillMissRes.containsAll(fillMissDS.collect()));
 
+        //**************** Test PickEndpoints
+        DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
+                .withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
+
+        URL expPickdataURL = ArgoStatusBatchTest.class.getResource("/test/pickdata.json");
+        DataSet<String> expPickDataString = env.readTextFile(expPickdataURL.toString());
+        List<String> pickDataList = expPickDataString.collect();
+        List<StatusMetric> expPickDataRes = new ArrayList();
+        if (!pickDataList.isEmpty()) {
+            DataSet<StatusMetric> expPickDataDS = env.fromElements(getListStatusMetric(pickDataList.get(0)));
+            expPickDataRes = preparePickData(expPickDataDS.collect());
+        }
+
+        Assert.assertTrue(expPickDataRes.containsAll(mdataTrimDS.collect()));
+         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
+        
+       
+        Assert.assertTrue(expPickDataRes.containsAll(mdataTotalDS.collect()));
         mdataPrevTotalDS.output(new DiscardingOutputFormat<MetricData>());
 
         env.execute();
+        //System.out.println(env.getExecutionPlan());
 
     }
 
@@ -247,7 +265,6 @@ public class ArgoStatusBatchTest {
 
         return amr;
     }
-
     public void checkExecution(ParameterTool params) {
 
         boolean calcStatus = true;
