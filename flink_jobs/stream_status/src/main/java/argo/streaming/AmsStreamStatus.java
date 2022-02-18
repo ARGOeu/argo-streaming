@@ -181,6 +181,10 @@ public class AmsStreamStatus {
 			amr.setProxy(parameterTool.get("api.proxy"));
 		}
 		
+		if (parameterTool.has("api.timeout")) {
+			amr.setTimeoutSec(parameterTool.getInt("api.timeout"));
+		}
+		
 		amr.setReportID(reportID);
 		amr.getRemoteAll();
 		
