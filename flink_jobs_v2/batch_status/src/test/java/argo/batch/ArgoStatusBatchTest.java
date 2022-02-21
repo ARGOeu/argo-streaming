@@ -29,7 +29,6 @@ import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.io.DiscardingOutputFormat;
 import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,7 +36,7 @@ import profilesmanager.ReportManager;
 
 /**
  *
- * ArgoStatusBatchTest tests the ArgoStatusBatch implementation comparing for
+ * * ArgoStatusBatchTest tests the ArgoStatusBatch implementation comparing for
  * each step of calculations the generated datasets and compares them with input
  * expected datasets
  */
@@ -87,7 +86,6 @@ public class ArgoStatusBatchTest {
         DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
         DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
         DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
-
         GroupGroup[] listGroups = amr.getListGroupGroups();
         if (listGroups.length > 0) {
             ggpDS = env.fromElements(amr.getListGroupGroups());
@@ -117,7 +115,7 @@ public class ArgoStatusBatchTest {
         AvroInputFormat<MetricData> exppdataAvro = new AvroInputFormat<MetricData>(exppin, MetricData.class);
         DataSet<MetricData> exppdataDS = env.createInput(exppdataAvro);
 
-       Assert.assertEquals(exppdataDS.collect(), pdataCleanDS.collect());
+        Assert.assertEquals(exppdataDS.collect(), pdataCleanDS.collect());
 
         //**** Test calculation of last record of  previous data
         DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
@@ -139,9 +137,8 @@ public class ArgoStatusBatchTest {
         AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat<MetricData>(unionpin, MetricData.class);
         DataSet<MetricData> unionpdataDS = env.createInput(unionpdataAvro);
         Assert.assertTrue(unionpdataDS.collect().containsAll(mdataPrevTotalDS.collect()));
-     
-        //***************************Test FillMIssing
 
+        //***************************Test FillMIssing
         DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf");
@@ -152,7 +149,6 @@ public class ArgoStatusBatchTest {
         List<StatusMetric> expFillMissRes = new ArrayList();
         if (!fillMissingList.isEmpty()) {
             DataSet<StatusMetric> expFillMissDS = env.fromElements(getListStatusMetric(fillMissingList.get(0)));
-
             expFillMissRes = prepareInputData(expFillMissDS.collect());
         }
 
@@ -174,14 +170,25 @@ public class ArgoStatusBatchTest {
         }
 
         Assert.assertTrue(expPickDataRes.containsAll(mdataTrimDS.collect()));
-         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
-        
-       
-        Assert.assertTrue(expPickDataRes.containsAll(mdataTotalDS.collect()));
-        mdataPrevTotalDS.output(new DiscardingOutputFormat<MetricData>());
 
+        DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
+        Assert.assertTrue(expPickDataRes.containsAll(mdataTotalDS.collect()));
+
+        //********************* Test Map Services
+        mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
+
+        URL mapServicesURL = ArgoStatusBatchTest.class.getResource("/test/mapservices.json");
+        DataSet<String> mapServicesString = env.readTextFile(mapServicesURL.toString());
+        List<String> mapServicesList = mapServicesString.collect();
+        List<StatusMetric> expMapServicesRes = new ArrayList();
+        if (!mapServicesList.isEmpty()) {
+            DataSet<StatusMetric> expMapServicesDS = env.fromElements(getListStatusMetric(mapServicesList.get(0)));
+            expMapServicesRes = preparePickData(expMapServicesDS.collect());
+        }
+        Assert.assertTrue(expMapServicesRes.containsAll(mdataTotalDS.collect()));
+
+        mdataPrevTotalDS.output(new DiscardingOutputFormat<MetricData>());
         env.execute();
-        //System.out.println(env.getExecutionPlan());
 
     }
 
@@ -212,7 +219,6 @@ public class ArgoStatusBatchTest {
 
         for (StatusMetric sm : input) {
             sm.setActualData(null);
-            sm.setFunction("");
             sm.setHasThr(false);
             sm.setInfo("");
             sm.setMessage(null);
@@ -265,6 +271,7 @@ public class ArgoStatusBatchTest {
 
         return amr;
     }
+
     public void checkExecution(ParameterTool params) {
 
         boolean calcStatus = true;
@@ -317,7 +324,10 @@ public class ArgoStatusBatchTest {
             String group = jItem.get("group").getAsString();
             String service = jItem.get("service").getAsString();
             String hostname = jItem.get("hostname").getAsString();
-
+            String function = "";
+            if (jItem.has("function")) {
+                function = jItem.get("function").getAsString();
+            }
             String metric = jItem.get("metric").getAsString();
             String status = jItem.get("status").getAsString();
             String timestamp = jItem.get("timestamp").getAsString();
@@ -328,6 +338,7 @@ public class ArgoStatusBatchTest {
             stm.setMetric(metric);
             stm.setStatus(status);
             stm.setTimestamp(timestamp);
+            stm.setFunction(function);
             results.add(stm);
         }
         StatusMetric[] rArr = new StatusMetric[results.size()];
