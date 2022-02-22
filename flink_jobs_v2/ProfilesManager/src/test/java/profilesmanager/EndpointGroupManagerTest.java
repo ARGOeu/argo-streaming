@@ -129,7 +129,7 @@ public class EndpointGroupManagerTest {
         JsonElement jsonElement = loadJson(new File(EndpointGroupManagerTest.class.getResource("/profiles/topgroupendpoint.json").getFile()));
         instance.loadGroupEndpointProfile(jsonElement.getAsJsonArray());
 
-        String expResult = "";
+        String expResult = "URL:host2.example.foo/path/to/service2";
         String result = instance.getInfo(group, type, hostname, service);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
@@ -156,6 +156,7 @@ public class EndpointGroupManagerTest {
         expResult.put("monitored", "1");
         expResult.put("production", "1");
         expResult.put("scope", "EGI");
+        expResult.put("info_URL","host2.example.foo/path/to/service2");
         HashMap<String, String> result = instance.getGroupTags(group, type, hostname, service);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.

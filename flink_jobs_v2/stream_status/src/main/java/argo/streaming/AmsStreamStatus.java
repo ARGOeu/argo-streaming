@@ -51,6 +51,7 @@ import org.apache.flink.core.fs.FileSystem;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
 import status.StatusManager;
+
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
  * kafka, fs) job required cli parameters --ams.endpoint : ARGO messaging api
@@ -158,7 +159,7 @@ public class AmsStreamStatus {
 
         String apiEndpoint = parameterTool.getRequired("api.endpoint");
         String apiToken = parameterTool.getRequired("api.token");
-        String reportID = parameterTool.getRequired("report.id");
+        String reportID = parameterTool.getRequired("report.uuid");
         int apiInterval = parameterTool.getInt("api.interval");
 
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
