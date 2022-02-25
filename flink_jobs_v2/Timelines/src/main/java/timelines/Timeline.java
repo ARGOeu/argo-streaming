@@ -431,7 +431,7 @@ public class Timeline {
 
         DateTime firsTime = date;
         firsTime = firsTime.withTime(0, 0, 0, 0);
-        DateTime firstEntry = this.samples.lowerKey(firsTime);
+        DateTime firstEntry = this.samples.floorKey(firsTime);
         if (this.date.isBefore(firsTime.toLocalDate())) {
 
             this.date = firsTime.toLocalDate();
@@ -557,4 +557,22 @@ public class Timeline {
         this.excludedInt = excludedInt;
     }
 
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public void setDateStr(String date) {
+        this.date = getLocalDate(date);
+         
+    }
+
+    private LocalDate getLocalDate(String date) {
+        DateTime tmp_date = new DateTime();
+        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
+        tmp_date = fmt.parseDateTime(date);
+        tmp_date.withTime(0, 0, 0, 0);
+        LocalDate localdate = tmp_date.toLocalDate();
+        return localdate;
+
+    }
 }

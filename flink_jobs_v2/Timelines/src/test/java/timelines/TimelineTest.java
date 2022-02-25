@@ -294,7 +294,7 @@ public class TimelineTest {
         int op = 0;
         Timeline instance = new Timeline();
         instance.setExcludedInt(6);
-        instance.aggregate(second, truthTable, op );
+        instance.aggregate(second, truthTable, op);
         Set<Map.Entry<DateTime, Integer>> expResult = createMerged().entrySet();
         Set<Map.Entry<DateTime, Integer>> result = instance.getSamples();
         assertEquals(expResult, result);
@@ -326,13 +326,13 @@ public class TimelineTest {
         DateTime date = Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0);
         Timeline instance = new Timeline();
         instance.insertDateTimeStamps(createTimestampList(), true);
-          HashMap<String,Integer> availStates = new HashMap<>();
-        availStates.put("OK",0);
-        availStates.put("WARNING",1);
-        availStates.put("UKNOWN",2);
-        availStates.put("MISSING",3);
-        availStates.put("CRITICAL",4);
-        availStates.put("DOWNTIME",5);
+        HashMap<String, Integer> availStates = new HashMap<>();
+        availStates.put("OK", 0);
+        availStates.put("WARNING", 1);
+        availStates.put("UKNOWN", 2);
+        availStates.put("MISSING", 3);
+        availStates.put("CRITICAL", 4);
+        availStates.put("DOWNTIME", 5);
 
         instance.replacePreviousDateStatus(date, availStates, true);
         // TODO review the generated test code and remove the default call to fail.
@@ -402,7 +402,7 @@ public class TimelineTest {
         periods.add(period4);
         periods.add(period5);
         for (String[] period : periods) {
-            instance.fillWithStatus(period[0],period[1], 2);
+            instance.fillWithStatus(period[0], period[1], 2);
             instance.optimize();
         }
         TreeMap<DateTime, Integer> expResult = createUnknownTimeline();
@@ -444,7 +444,7 @@ public class TimelineTest {
         instance = new Timeline();
         instance.insertDateTimeStamps(createTimestampList2(), true);
         for (String[] period : periods) {
-            instance.fillWithStatus(period[0],period[1], 2);
+            instance.fillWithStatus(period[0], period[1], 2);
             instance.optimize();
         }
 
@@ -487,7 +487,7 @@ public class TimelineTest {
         instance = new Timeline();
         instance.insertDateTimeStamps(createTimestampList2(), true);
         for (String[] period : periods) {
-           instance.fillWithStatus(period[0],period[1], 2);
+            instance.fillWithStatus(period[0], period[1], 2);
             instance.optimize();
         }
         expResult = createUnknownTimeline3();
@@ -505,7 +505,7 @@ public class TimelineTest {
         instance.insertDateTimeStamps(createTimestampList2(), true);
 
         for (String[] period : periods) {
-             instance.fillWithStatus(period[0],period[1], 2);
+            instance.fillWithStatus(period[0], period[1], 2);
             instance.optimize();
         }
         expResult = createUnknownTimeline4();
@@ -548,7 +548,7 @@ public class TimelineTest {
         instance.insertDateTimeStamps(createTimestampList4(), true);
 
         for (String[] period : periods) {
-            instance.fillWithStatus(period[0],period[1], 2);
+            instance.fillWithStatus(period[0], period[1], 2);
             instance.optimize();
         }
         expResult = createUnknownTimeline5();
@@ -642,6 +642,7 @@ public class TimelineTest {
         return map;
 //
     }
+
     private TreeMap<DateTime, Integer> createTimestampList4() throws ParseException {
         TreeMap<DateTime, Integer> map = new TreeMap<>();
         map.put(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 15, 0, 0, 0), 3);
@@ -655,6 +656,7 @@ public class TimelineTest {
         return map;
 //
     }
+
     private TreeMap<DateTime, Integer> createTimestampList() throws ParseException {
         TreeMap<DateTime, Integer> map = new TreeMap<>();
 
