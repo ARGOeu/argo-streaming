@@ -62,6 +62,7 @@ public class TimelineAggregator {
         this.inputs = inputs;
         this.output = new Timeline();
         this.excludedInt=excludedInt;
+        this.output.setExcludedInt(excludedInt);
     }
 
     /**
@@ -175,7 +176,7 @@ public class TimelineAggregator {
 
         //Iterate through all available input timelines and aggregate
         for (Timeline item : this.inputs.values()) {
-          //  item.setExcludedInt(excludedInt);
+            item.setExcludedInt(this.excludedInt);
             this.output.aggregate(item, truthTable, op);
         }
 

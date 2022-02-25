@@ -7,9 +7,9 @@ package timelines;
  */
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
@@ -296,6 +296,7 @@ public class Timeline {
         }
 
         Timeline result = new Timeline();
+        result.setExcludedInt(this.excludedInt);
 
         // Slice for first
         for (DateTime point : this.getPoints()) {
@@ -312,10 +313,10 @@ public class Timeline {
             int b = second.get(point);
             if (a != -1 && b != -1) {
                 int x = -1;
-                if (a == this.excludedInt || b ==  this.excludedInt) {
-                    if (a ==  this.excludedInt) {
+                if (a == this.excludedInt || b == this.excludedInt) {
+                    if (a == this.excludedInt) {
                         x = b;
-                    } else if (b ==  this.excludedInt) {
+                    } else if (b == this.excludedInt) {
                         x = a;
                     }
                 } else {
@@ -426,7 +427,7 @@ public class Timeline {
      * checks if in the map the midnight exists and if not it is added with
      * status "MISSING"
      */
-    public void replacePreviousDateStatus(DateTime date, ArrayList<String> availStates, boolean optimize) {
+    public void replacePreviousDateStatus(DateTime date, HashMap<String, Integer> availStates, boolean optimize) {
 
         DateTime firsTime = date;
         firsTime = firsTime.withTime(0, 0, 0, 0);
@@ -442,7 +443,9 @@ public class Timeline {
             this.samples.remove(firstEntry);
 
         } else if (firstEntry == null) {
-            this.samples.put(firsTime, availStates.indexOf("MISSING"));
+          if(!this.samples.containsKey(firsTime)){
+              this.samples.put(firsTime, availStates.get("MISSING"));
+          }
         }
         if (optimize) {
             this.optimize();
@@ -553,5 +556,5 @@ public class Timeline {
     public void setExcludedInt(int excludedInt) {
         this.excludedInt = excludedInt;
     }
-    
+
 }
