@@ -15,7 +15,7 @@
         <module>ApiResourceManager</module>
         <module>Timelines</module>
         <module>ProfilesManager</module>
-        <module>batch_status</module>
+        <module>batch_multi</module>
         <module>stream_status</module>
     </modules>
     <dependencyManagement>
