@@ -41,7 +41,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
         this.params = params;
     }
 
-    static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
+    static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 
     private List<MetricProfile> mps;
     private List<GroupEndpoint> egp;

@@ -36,13 +36,13 @@ import profilesmanager.ReportManager;
 
 /**
  *
- * * ArgoStatusBatchTest tests the ArgoStatusBatch implementation comparing for
- * each step of calculations the generated datasets and compares them with input
- * expected datasets
+ * * ArgoMultiJobTest tests the ArgoStatusBatch implementation comparing for
+ each step of calculations the generated datasets and compares them with input
+ expected datasets
  */
-public class ArgoStatusBatchTest {
+public class ArgoMultiJobTest {
 
-    public ArgoStatusBatchTest() {
+    public ArgoMultiJobTest() {
     }
 
     /**
@@ -96,20 +96,20 @@ public class ArgoStatusBatchTest {
             downDS = env.fromElements(amr.getListDowntimes());
         }
 
-        URL mdataURL = ArgoStatusBatchTest.class.getResource("/test/mdata.avro");
+        URL mdataURL = ArgoMultiJobTest.class.getResource("/test/mdata.avro");
 
         Path in = new Path(mdataURL.getPath());
         AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat<MetricData>(in, MetricData.class);
         DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
 
-        URL pdataURL = ArgoStatusBatchTest.class.getResource("/test/pdata.avro");
+        URL pdataURL = ArgoMultiJobTest.class.getResource("/test/pdata.avro");
 
         Path pin = new Path(pdataURL.getPath());
         AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
         DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 
         DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
-        URL exppdataURL = ArgoStatusBatchTest.class.getResource("/test/exppdata.avro");
+        URL exppdataURL = ArgoMultiJobTest.class.getResource("/test/exppdata.avro");
 
         Path exppin = new Path(exppdataURL.getPath());
         AvroInputFormat<MetricData> exppdataAvro = new AvroInputFormat<MetricData>(exppin, MetricData.class);
@@ -121,7 +121,7 @@ public class ArgoStatusBatchTest {
         DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
                 .sortGroup("timestamp", Order.DESCENDING).first(1);
 
-        URL lpdataURL = ArgoStatusBatchTest.class.getResource("/test/lpdata.avro");
+        URL lpdataURL = ArgoMultiJobTest.class.getResource("/test/lpdata.avro");
 
         Path lpin = new Path(lpdataURL.getPath());
         AvroInputFormat<MetricData> lpdataAvro = new AvroInputFormat<MetricData>(lpin, MetricData.class);
@@ -132,7 +132,7 @@ public class ArgoStatusBatchTest {
 
         //************* Test unioned metric data of previous and current date ************
         DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
-        URL unionpdataURL = ArgoStatusBatchTest.class.getResource("/test/uniondata.avro");
+        URL unionpdataURL = ArgoMultiJobTest.class.getResource("/test/uniondata.avro");
         Path unionpin = new Path(unionpdataURL.getPath());
         AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat<MetricData>(unionpin, MetricData.class);
         DataSet<MetricData> unionpdataDS = env.createInput(unionpdataAvro);
@@ -143,7 +143,7 @@ public class ArgoStatusBatchTest {
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf");
 
-        URL expFillMissdataURL = ArgoStatusBatchTest.class.getResource("/test/fillmissing.json");
+        URL expFillMissdataURL = ArgoMultiJobTest.class.getResource("/test/fillmissing.json");
         DataSet<String> fillMissString = env.readTextFile(expFillMissdataURL.toString());
         List<String> fillMissingList = fillMissString.collect();
         List<StatusMetric> expFillMissRes = new ArrayList();
@@ -160,7 +160,7 @@ public class ArgoStatusBatchTest {
                 .withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
 
-        URL expPickdataURL = ArgoStatusBatchTest.class.getResource("/test/pickdata.json");
+        URL expPickdataURL = ArgoMultiJobTest.class.getResource("/test/pickdata.json");
         DataSet<String> expPickDataString = env.readTextFile(expPickdataURL.toString());
         List<String> pickDataList = expPickDataString.collect();
         List<StatusMetric> expPickDataRes = new ArrayList();
@@ -177,7 +177,7 @@ public class ArgoStatusBatchTest {
         //********************* Test Map Services
         mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
 
-        URL mapServicesURL = ArgoStatusBatchTest.class.getResource("/test/mapservices.json");
+        URL mapServicesURL = ArgoMultiJobTest.class.getResource("/test/mapservices.json");
         DataSet<String> mapServicesString = env.readTextFile(mapServicesURL.toString());
         List<String> mapServicesList = mapServicesString.collect();
         List<StatusMetric> expMapServicesRes = new ArrayList();
@@ -239,7 +239,7 @@ public class ArgoStatusBatchTest {
 
     public static String loadResJSON(String resURL) {
 
-        InputStream jsonInputStream = ArgoStatusBatchTest.class.getResourceAsStream(resURL);
+        InputStream jsonInputStream = ArgoMultiJobTest.class.getResourceAsStream(resURL);
         String content = new BufferedReader(new InputStreamReader(jsonInputStream, StandardCharsets.UTF_8))
                 .lines()
                 .collect(Collectors.joining("\n"));

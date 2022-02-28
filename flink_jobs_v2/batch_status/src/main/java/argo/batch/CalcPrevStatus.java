@@ -32,7 +32,7 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
         this.params = params;
     }
     
-    static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
+    static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
     
     private List<MetricProfile> mps;
     private List<GroupEndpoint> egp;

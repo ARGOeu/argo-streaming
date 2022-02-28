@@ -30,7 +30,7 @@ public class ExcludeMetricData extends RichFlatMapFunction<MetricData,MetricData
 	public ExcludeMetricData(){
 	}
 	
-	static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
+	static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 	
 	private List<String> rec;
 	private RecomputationsManager recMgr;
