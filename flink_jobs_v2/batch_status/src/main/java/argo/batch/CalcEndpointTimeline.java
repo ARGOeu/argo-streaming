@@ -1,5 +1,6 @@
 package argo.batch;
 
+import argo.avro.Downtime;
 import java.io.IOException;
 import java.util.List;
 
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import profilesmanager.AggregationProfileManager;
+import profilesmanager.DowntimeManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
 
@@ -50,6 +52,8 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
     private OperationsManager opsMgr;
     private String runDate;
     private String operation;
+    private DowntimeManager downtimeMgr;
+    private List<Downtime> downtime;
 
     @Override
     public void open(Configuration parameters) throws IOException {
@@ -69,7 +73,10 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
-
+        this.downtime = getRuntimeContext().getBroadcastVariable("down");
+        this.downtimeMgr = new DowntimeManager();
+        this.downtimeMgr.loadFromList(downtime);
+     
         this.runDate = params.getRequired("run.date");
         this.operation = this.apsMgr.getMetricOpByProfile();
 
@@ -103,11 +110,15 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
                 hasThr = true;
             }
         }
-
-        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt());
+        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt(), runDate);
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
+
+        ArrayList<String> downPeriod = this.downtimeMgr.getPeriod(hostname, service);
+        if (downPeriod != null && !downPeriod.isEmpty()) {
+            mergedTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt());
+        }
 
         ArrayList<TimeStatus> timestatuCol = new ArrayList();
         for (Map.Entry<DateTime, Integer> entry : mergedTimeline.getSamples()) {

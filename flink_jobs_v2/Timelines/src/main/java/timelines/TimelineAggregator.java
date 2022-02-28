@@ -21,7 +21,8 @@ public class TimelineAggregator {
 
     private Timeline output;
     private Map<String, Timeline> inputs;
-    private int excludedInt=-1;
+    private int excludedInt = -1;
+    private LocalDate date;
 
     /**
      *
@@ -31,6 +32,17 @@ public class TimelineAggregator {
     public TimelineAggregator(String timestamp) throws ParseException {
         this.output = new Timeline(timestamp);
         this.inputs = new HashMap<String, Timeline>();
+
+    }
+
+    private LocalDate getLocalDate(String date) {
+        DateTime tmp_date = new DateTime();
+        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
+        tmp_date = fmt.parseDateTime(date);
+        tmp_date.withTime(0, 0, 0, 0);
+        LocalDate localdate = tmp_date.toLocalDate();
+        return localdate;
+
     }
 
     /**
@@ -38,6 +50,7 @@ public class TimelineAggregator {
      */
     public TimelineAggregator() {
         this.output = new Timeline();
+        this.output.setDate(this.date);
         this.inputs = new HashMap<String, Timeline>();
 
     }
@@ -55,13 +68,15 @@ public class TimelineAggregator {
     /**
      *
      * @param inputs, a map of timelines Constructs a TimelineAggregator object,
-     * @param excludedInt , the int value of the excludedStatus
-     * containing the timelines
+     * @param excludedInt , the int value of the excludedStatus containing the
+     * timelines
      */
-    public TimelineAggregator(Map<String, Timeline> inputs, int excludedInt) {
+    public TimelineAggregator(Map<String, Timeline> inputs, int excludedInt, String rundate) {
         this.inputs = inputs;
         this.output = new Timeline();
-        this.excludedInt=excludedInt;
+        this.date=getLocalDate(rundate);
+        this.output.setDate(this.date);
+        this.excludedInt = excludedInt;
         this.output.setExcludedInt(excludedInt);
     }
 
@@ -100,6 +115,7 @@ public class TimelineAggregator {
     public void createTimeline(String name, String timestamp, int prevState) {
         Timeline temp = new Timeline(timestamp, prevState);
         this.inputs.put(name, temp);
+
     }
 
     /**
@@ -206,4 +222,12 @@ public class TimelineAggregator {
         this.excludedInt = excludedInt;
     }
 
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public void setDateStr(String date) {
+
+        this.date = this.getLocalDate(date);
+    }
 }

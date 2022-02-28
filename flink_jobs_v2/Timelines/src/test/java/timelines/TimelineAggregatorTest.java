@@ -184,7 +184,7 @@ public class TimelineAggregatorTest {
         map.put(name, new Timeline(timestamp));
         map.put(name2, new Timeline(timestamp2));
 
-        TimelineAggregator instance = new TimelineAggregator(map, 6);
+        TimelineAggregator instance = new TimelineAggregator(map, 6, "2021-01-31");
         instance.aggregate(createTruthTable(), 0);
         TreeMap<DateTime, Integer> expRes = new TreeMap<>();
         Timeline exptimeline = new Timeline();

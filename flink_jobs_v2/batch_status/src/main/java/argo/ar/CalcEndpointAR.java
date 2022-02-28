@@ -11,7 +11,6 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 
@@ -24,7 +23,6 @@ import java.util.TreeMap;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.joda.time.DateTime;
 import profilesmanager.AggregationProfileManager;
-import profilesmanager.DowntimeManager;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.GroupGroupManager;
 import profilesmanager.MetricProfileManager;
@@ -55,13 +53,11 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
     private List<String> ops;
     private List<GroupEndpoint> egp;
     private List<GroupGroup> ggp;
-    private List<Downtime> downtime;
     private MetricProfileManager mpsMgr;
     private AggregationProfileManager apsMgr;
     private EndpointGroupManager egpMgr;
     private GroupGroupManager ggpMgr;
     private OperationsManager opsMgr;
-    private DowntimeManager downtimeMgr;
     private ReportManager repMgr;
     private String runDate;
 
@@ -83,7 +79,6 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
         this.egp = getRuntimeContext().getBroadcastVariable("egp");
         this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
-        this.downtime = getRuntimeContext().getBroadcastVariable("down");
         this.conf = getRuntimeContext().getBroadcastVariable("conf");
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
@@ -103,9 +98,6 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
         this.ggpMgr = new GroupGroupManager();
         this.ggpMgr.loadFromList(ggp);
 
-        // Initialize downtime manager
-        this.downtimeMgr = new DowntimeManager();
-        this.downtimeMgr.loadFromList(downtime);
         this.repMgr = new ReportManager();
         this.repMgr.loadJsonString(conf);
 
@@ -149,10 +141,6 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
 
-        ArrayList<String> downPeriod = this.downtimeMgr.getPeriod(hostname, service);
-        if (downPeriod != null && !downPeriod.isEmpty()) {
-            timeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt());
-        }
         TimelineIntegrator tIntegrator = new TimelineIntegrator();
 
         tIntegrator.calcAR(timeline.getSamples(), runDateDt, this.opsMgr.getIntStatus("OK"), this.opsMgr.getIntStatus("WARNING"), this.opsMgr.getDefaultUnknownInt(), this.opsMgr.getDefaultDownInt(), this.opsMgr.getDefaultMissingInt());
