@@ -31,7 +31,7 @@ public class CalcStatusService extends RichFlatMapFunction<StatusTimeline, Statu
         this.params = params;
     }
 
-    static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
+    static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 
     private List<String> aps;
     private List<String> ops;

@@ -78,9 +78,9 @@ import java.util.List;
  * ar results in mongo db , OFF to not calculateIf not set ar results will be
  * calculated and written
  */
-public class ArgoStatusBatch {
+public class ArgoMultiJob {
 
-    static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
+    static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
     private static String dbURI;
     private static String reportID;
     private static Integer rankNum;

@@ -38,7 +38,7 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
         this.params = params;
     }
 
-    static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
+    static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 
     private List<String> aps;
     private List<String> ops;
