@@ -31,7 +31,8 @@ language governing permissions and limitations under the License. -->
         <slf4j.version>1.7.7</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <hadoop.version>2.6.0</hadoop.version>
-        
+        <project.date>19700101</project.date>
+        <buildNumber>1</buildNumber>
     </properties>
 
     <repositories>
@@ -424,7 +425,7 @@ language governing permissions and limitations under the License. -->
                 </configuration>
             </plugin>
         </plugins>
-        <finalName>${project.artifactId}-${project.version}.${buildNumber}-${date}</finalName>
+        <finalName>${project.artifactId}-${project.version}.${buildNumber}-${project.date}</finalName>
 
 
         <!-- If you want to use Java 8 Lambda Expressions uncomment the following 
