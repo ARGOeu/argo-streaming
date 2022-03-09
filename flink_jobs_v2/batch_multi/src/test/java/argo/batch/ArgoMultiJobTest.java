@@ -18,9 +18,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
@@ -124,18 +122,18 @@ public class ArgoMultiJobTest {
         URL lpdataURL = ArgoMultiJobTest.class.getResource("/test/lpdata.avro");
 
         Path lpin = new Path(lpdataURL.getPath());
-        AvroInputFormat<MetricData> lpdataAvro = new AvroInputFormat<MetricData>(lpin, MetricData.class);
+        AvroInputFormat<MetricData> lpdataAvro = new AvroInputFormat(lpin, MetricData.class);
 
         DataSet<MetricData> lpdataDS = env.createInput(lpdataAvro);
-
         Assert.assertTrue(lpdataDS.collect().containsAll(pdataMin.collect()));
 
         //************* Test unioned metric data of previous and current date ************
         DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
         URL unionpdataURL = ArgoMultiJobTest.class.getResource("/test/uniondata.avro");
         Path unionpin = new Path(unionpdataURL.getPath());
-        AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat<MetricData>(unionpin, MetricData.class);
+        AvroInputFormat<MetricData> unionpdataAvro = new AvroInputFormat(unionpin, MetricData.class);
         DataSet<MetricData> unionpdataDS = env.createInput(unionpdataAvro);
+
         Assert.assertTrue(unionpdataDS.collect().containsAll(mdataPrevTotalDS.collect()));
 
         //***************************Test FillMIssing
@@ -168,6 +166,7 @@ public class ArgoMultiJobTest {
             DataSet<StatusMetric> expPickDataDS = env.fromElements(getListStatusMetric(pickDataList.get(0)));
             expPickDataRes = preparePickData(expPickDataDS.collect());
         }
+//        List<MetricData> result = mdataPrevTotalDS.collect();
 
         Assert.assertTrue(expPickDataRes.containsAll(mdataTrimDS.collect()));
 
@@ -185,8 +184,25 @@ public class ArgoMultiJobTest {
             DataSet<StatusMetric> expMapServicesDS = env.fromElements(getListStatusMetric(mapServicesList.get(0)));
             expMapServicesRes = preparePickData(expMapServicesDS.collect());
         }
+
         Assert.assertTrue(expMapServicesRes.containsAll(mdataTotalDS.collect()));
 
+        //************** Test CalcPrevStatus
+        DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
+                .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
+
+        URL calcPrevStatusURL = ArgoMultiJob.class.getResource("/test/expCalcPrevStatus.json");
+        DataSet<String> calcPrevStatusString = env.readTextFile(calcPrevStatusURL.toString());
+        List<String> calcPrevStatusList = calcPrevStatusString.collect();
+        List<StatusMetric> expCalcPrevStatusRes = new ArrayList();
+        if (!calcPrevStatusList.isEmpty()) {
+            DataSet<StatusMetric> expCalcPrepStatusDS = env.fromElements(getListCalcPrevData(calcPrevStatusList.get(0)));
+            expCalcPrevStatusRes = preparePickData(expCalcPrepStatusDS.collect());
+        }
+
+        Assert.assertTrue(expCalcPrevStatusRes.containsAll(stDetailDS.collect()));
+   
         mdataPrevTotalDS.output(new DiscardingOutputFormat<MetricData>());
         env.execute();
 
@@ -223,7 +239,6 @@ public class ArgoMultiJobTest {
             sm.setInfo("");
             sm.setMessage(null);
             sm.setOgStatus("");
-            sm.setPrevState("");
             sm.setRuleApplied("");
             sm.setSummary(null);
             sm.setTags("");
@@ -346,4 +361,53 @@ public class ArgoMultiJobTest {
         return rArr;
     }
 
+    /**
+     * Parses the Metric profile content retrieved from argo-web-api and
+     * provides a list of MetricProfile avro objects to be used in the next
+     * steps of the pipeline
+     */
+    public StatusMetric[] getListCalcPrevData(String content) {
+        List<StatusMetric> results = new ArrayList<StatusMetric>();
+
+        JsonParser jsonParser = new JsonParser();
+        JsonElement jElement = jsonParser.parse(content);
+        JsonArray jRoot = jElement.getAsJsonArray();
+        for (int i = 0; i < jRoot.size(); i++) {
+            JsonObject jItem = jRoot.get(i).getAsJsonObject();
+
+            String group = jItem.get("group").getAsString();
+            String service = jItem.get("service").getAsString();
+            String hostname = jItem.get("hostname").getAsString();
+            String function = "";
+            String prevTs = "";
+            String prevState = "";
+
+            if (jItem.has("function")) {
+                function = jItem.get("function").getAsString();
+            }
+            if (jItem.has("prevState")) {
+                prevState = jItem.get("prevState").getAsString();
+            }
+            if (jItem.has("prevTs")) {
+                prevTs = jItem.get("prevTs").getAsString();
+            }
+            String metric = jItem.get("metric").getAsString();
+            String status = jItem.get("status").getAsString();
+            String timestamp = jItem.get("timestamp").getAsString();
+            StatusMetric stm = new StatusMetric();
+            stm.setGroup(group);
+            stm.setService(service);
+            stm.setHostname(hostname);
+            stm.setMetric(metric);
+            stm.setStatus(status);
+            stm.setTimestamp(timestamp);
+            stm.setFunction(function);
+            stm.setPrevState(prevState);
+            stm.setPrevTs(prevTs);
+            results.add(stm);
+        }
+        StatusMetric[] rArr = new StatusMetric[results.size()];
+        rArr = results.toArray(rArr);
+        return rArr;
+    }
 }

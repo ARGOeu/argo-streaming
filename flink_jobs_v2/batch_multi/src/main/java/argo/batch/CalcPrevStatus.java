@@ -23,17 +23,15 @@ import profilesmanager.RecomputationsManager;
 import utils.Utils;
 
 public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, StatusMetric> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     final ParameterTool params;
-    
+
     public CalcPrevStatus(ParameterTool params) {
         this.params = params;
     }
-    
     static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
-    
     private List<MetricProfile> mps;
     private List<GroupEndpoint> egp;
     private List<GroupGroup> ggp;
@@ -43,12 +41,12 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
     private RecomputationsManager recMgr;
     private List<String> ops;
     private OperationsManager opsMgr;
-    
+
     @Override
     public void open(Configuration parameters) throws IOException, ParseException {
         // Get data from broadcast variable
         this.runDate = params.getRequired("run.date");
-        
+
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
         this.rec = getRuntimeContext().getBroadcastVariable("rec");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
@@ -61,9 +59,9 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
         this.recMgr.loadJsonString(rec);
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
-        
+
     }
-    
+
     @Override
     public void reduce(Iterable<StatusMetric> in, Collector<StatusMetric> out) throws Exception {
         // group input is sorted 
@@ -72,7 +70,6 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
         boolean gotPrev = false;
         for (StatusMetric item : in) {
             // If haven't captured yet previous timestamp
-
             if (!gotPrev) {
                 if (item.getTimestamp().split("T")[0].compareToIgnoreCase(this.runDate) != 0) {
                     // set prevTimestamp to this
@@ -82,7 +79,7 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
                     continue;
                 }
             }
-            
+
             item.setPrevState(prevStatus);
             item.setPrevTs(prevTimestamp);
             if (item.getTimestamp().split("T")[0].compareToIgnoreCase(this.runDate) == 0) {
@@ -100,11 +97,9 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
                 }
                 out.collect(item);
             }
-            
+
             prevStatus = item.getStatus();
             prevTimestamp = item.getTimestamp();
         }
-        
     }
-    
 }

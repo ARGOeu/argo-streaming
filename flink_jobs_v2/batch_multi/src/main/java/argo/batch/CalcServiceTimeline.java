@@ -71,14 +71,14 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
         String service = "";
         String endpointGroup = "";
         String function = "";
-        HashMap<String, Timeline> timelinelist = new HashMap<>();
+        HashMap<String, Timeline> timelinelist = new HashMap<String,Timeline>();
         boolean hasThr = false;
         for (StatusTimeline item : in) {
             service = item.getService();
             endpointGroup = item.getGroup();
             function = item.getFunction();
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
-            TreeMap<DateTime, Integer> samples = new TreeMap<>();
+            TreeMap<DateTime, Integer> samples = new TreeMap<DateTime,Integer>();
             for (TimeStatus timestatus : timestatusList) {
                 DateTime dt = new DateTime(timestatus.getTimestamp());
                 samples.put(dt, timestatus.getStatus());
