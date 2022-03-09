@@ -35,9 +35,13 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
 	private MongoClient mClient;
 	private MongoDatabase mDB;
 	private MongoCollection<Document> mCol;
-
+        private boolean clearMongo;
+        private String report;
+        private int date;
+   
+ 
 	// constructor
-	public MongoEndpointArOutput(String uri, String col, String method) {
+	public MongoEndpointArOutput(String uri, String col, String method, String report, String date, boolean clearMongo) {
 
 		if (method.equalsIgnoreCase("upsert")) {
 			this.method = MongoMethod.UPSERT;
@@ -54,22 +58,35 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
 		this.mongoPort = port;
 		this.dbName = mURI.getDatabase();
 		this.colName = col;
+                this.clearMongo = clearMongo;
+    
 	}
 
 	// constructor
-	public MongoEndpointArOutput(String host, int port, String db, String col, MongoMethod method) {
+	public MongoEndpointArOutput(String host, int port, String db, String col, MongoMethod method, String report, String date, boolean clearMongo) {
 		this.mongoHost = host;
 		this.mongoPort = port;
 		this.dbName = db;
 		this.colName = col;
 		this.method = method;
-	}
+                this.clearMongo = clearMongo;
+    	}
 
 	private void initMongo() {
 		this.mClient = new MongoClient(mongoHost, mongoPort);
 		this.mDB = mClient.getDatabase(dbName);
 		this.mCol = mDB.getCollection(colName);
+                if (this.clearMongo) {
+                  deleteDoc();
+                 }
+    
 	}
+        private void deleteDoc() {
+
+        Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date", this.date));
+        mCol.deleteMany(filter);
+    }
+
 
 	/**
 	 * Initialize MongoDB remote connection

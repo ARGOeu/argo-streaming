@@ -85,6 +85,7 @@ public class ArgoMultiJob {
     private static String reportID;
     private static Integer rankNum;
     private static boolean clearMongo = false;
+
     private static String runDate;
 
     public static void main(String[] args) throws Exception {
@@ -135,6 +136,7 @@ public class ArgoMultiJob {
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }
+
         String apiEndpoint = params.getRequired("api.endpoint");
         String apiToken = params.getRequired("api.token");
         reportID = params.getRequired("report.id");
@@ -208,12 +210,12 @@ public class ArgoMultiJob {
         }
         // todays metric data
         Path in = new Path(params.getRequired("mdata"));
-        AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat<MetricData>(in, MetricData.class);
+        AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat(in, MetricData.class);
         DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
 
         // previous metric data
         Path pin = new Path(params.getRequired("pdata"));
-        AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
+        AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat(pin, MetricData.class);
         DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 
         DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
@@ -294,10 +296,10 @@ public class ArgoMultiJob {
                     .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
 
             // Initialize four mongo outputs (metric,endpoint,service,endpoint_group)
-            MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID);
-            MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID);
-            MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI, "status_services", dbMethod, MongoStatusOutput.StatusType.STATUS_SERVICE, reportID);
-            MongoStatusOutput endGroupMongoOut = new MongoStatusOutput(dbURI, "status_endpoint_groups", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT_GROUP, reportID);
+            MongoStatusOutput metricMongoOut = new MongoStatusOutput(dbURI, "status_metrics", dbMethod, MongoStatusOutput.StatusType.STATUS_METRIC, reportID, runDate, clearMongo);
+            MongoStatusOutput endpointMongoOut = new MongoStatusOutput(dbURI, "status_endpoints", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT, reportID, runDate, clearMongo);
+            MongoStatusOutput serviceMongoOut = new MongoStatusOutput(dbURI, "status_services", dbMethod, MongoStatusOutput.StatusType.STATUS_SERVICE, reportID, runDate, clearMongo);
+            MongoStatusOutput endGroupMongoOut = new MongoStatusOutput(dbURI, "status_endpoint_groups", dbMethod, MongoStatusOutput.StatusType.STATUS_ENDPOINT_GROUP, reportID, runDate, clearMongo);
 
             stDetailDS.output(metricMongoOut);
             stEndpointDS.output(endpointMongoOut);
@@ -322,9 +324,9 @@ public class ArgoMultiJob {
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
 
-            MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod);
-            MongoServiceArOutput serviceARMongoOut = new MongoServiceArOutput(dbURI, "service_ar", dbMethod);
-            MongoEndGroupArOutput endGroupARMongoOut = new MongoEndGroupArOutput(dbURI, "endpoint_group_ar", dbMethod);
+            MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod, reportID, runDate, clearMongo);
+            MongoServiceArOutput serviceARMongoOut = new MongoServiceArOutput(dbURI, "service_ar", dbMethod, reportID, runDate, clearMongo);
+            MongoEndGroupArOutput endGroupARMongoOut = new MongoEndGroupArOutput(dbURI, "endpoint_group_ar", dbMethod, reportID, runDate, clearMongo);
             endpointArDS.output(endpointARMongoOut);
             serviceArDS.output(serviceARMongoOut);
             endpointGroupArDS.output(endGroupARMongoOut);
