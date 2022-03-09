@@ -43,9 +43,14 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 	private MongoClient mClient;
 	private MongoDatabase mDB;
 	private MongoCollection<Document> mCol;
+        private boolean clearMongo;
+        private int date;
+   
 
 	// constructor
-	public MongoStatusOutput(String uri, String col, String method, StatusType sType, String report) {
+	public MongoStatusOutput(String uri, String col, String method, StatusType sType, String report, String date, boolean clearMongo) {
+                 this.date = Integer.parseInt(date.replace("-", ""));
+                 this.report = report;
 
 		if (method.equalsIgnoreCase("upsert")) {
 			this.method = MongoMethod.UPSERT;
@@ -65,25 +70,43 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 		this.mongoPort = port;
 		this.dbName = mURI.getDatabase();
 		this.colName = col;
+                this.clearMongo = clearMongo;
+    
 	}
 
 	// constructor
 	public MongoStatusOutput(String host, int port, String db, String col, MongoMethod method, StatusType sType,
-			String report) {
-		this.mongoHost = host;
+			String report, String date, boolean clearMongo) {
+		
+                this.date = Integer.parseInt(date.replace("-", ""));
+                this.report = report;
+
+                this.mongoHost = host;
 		this.mongoPort = port;
 		this.dbName = db;
 		this.colName = col;
 		this.method = method;
 		this.sType = sType;
 		this.report = report;
+                this.clearMongo = clearMongo;
+    
 	}
 
 	private void initMongo() {
 		this.mClient = new MongoClient(mongoHost, mongoPort);
 		this.mDB = mClient.getDatabase(dbName);
 		this.mCol = mDB.getCollection(colName);
+                if (this.clearMongo) {
+                 deleteDoc();
+               }
+    
 	}
+
+        private void deleteDoc() {
+
+        Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date_integer", this.date));
+        mCol.deleteMany(filter);
+    }
 
 	/**
 	 * Initialize MongoDB remote connection
