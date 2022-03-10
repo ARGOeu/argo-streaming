@@ -5,4 +5,4 @@
 .classpath
 /nbproject
 nbactions.xml
-
+/src/main/resources/test/results.txt
