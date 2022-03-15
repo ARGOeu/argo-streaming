@@ -2,9 +2,9 @@
 import sys
 import os
 import argparse
-from datetime import datetime, date, timedelta
 from snakebite.client import Client
 
+from datetime import datetime, date, timedelta
 import logging
 from urllib.parse import urlparse
 from utils.argo_mongo import ArgoMongoClient
@@ -90,10 +90,10 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
     cmd_command.append("-c")
 
     # Job's class inside the jar
-    cmd_command.append(config.get("CLASSES", "batch-status"))
+    cmd_command.append(config.get("CLASSES", "batch-multi"))
 
     # jar to be sumbitted to flink
-    cmd_command.append(config.get("JARS", "batch-status"))
+    cmd_command.append(config.get("JARS", "batch-multi"))
 
     # date the report will run for
     cmd_command.append("--run.date")
@@ -107,11 +107,11 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
         mongo_endpoint=mongo_endpoint, tenant=args.tenant)
     cmd_command.append(mongo_uri.geturl())
 
-    if args.method == "insert" and dry_run == False:
-        argo_mongo_client = ArgoMongoClient(args, config, ["status_metrics", "status_endpoints", "status_services",
-                                                           "status_endpoint_groups"])
+    # if args.method == "insert" and dry_run == False:
+    #     argo_mongo_client = ArgoMongoClient(args, config, ["status_metrics", "status_endpoints", "status_services",
+    #                                                        "status_endpoint_groups"])
 
-        argo_mongo_client.mongo_clean_status(mongo_uri, dry_run)
+    #     argo_mongo_client.mongo_clean_status(mongo_uri, dry_run)
 
     # MongoDB method to be used when storing the results, either insert or upsert
     cmd_command.append("--mongo.method")
@@ -132,8 +132,6 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
     cmd_command.append("--api.token")
     cmd_command.append(config.get("API",args.tenant + "_key"))
 
-    # get report id
-
     cmd_command.append("--report.id")
     cmd_command.append(config.get("TENANTS:"+args.tenant,"report_"+args.report))
 
@@ -143,6 +141,22 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
         cmd_command.append("--api.proxy")
         cmd_command.append(proxy.geturl())
 
+    # check clear
+    if args.clear_results is not None:
+        cmd_command.append("--clearMongo")
+        cmd_command.append("true")
+
+    # check what to compute
+    if args.calculate is not None:
+        if "ar" not in args.calculate:
+            cmd_command.append("--calcAR")
+            cmd_command.append("OFF")
+        if "status" not in args.calculate:
+            cmd_command.append("--calcStatus")
+            cmd_command.append("OFF")
+        if "trends" not in args.calculate:
+            cmd_command.append("--calcTrends")
+            cmd_command.append("OFF")
     return cmd_command
 
 
@@ -182,21 +196,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t", "--tenant", metavar="STRING", help="Name of the tenant", required=True, dest="tenant")
     parser.add_argument(
-        "-r", "--report", metavar="STRING", help="Report status", required=True, dest="report")
+        "-r", "--report", metavar="STRING", help="Name of the report", required=True, dest="report")
     parser.add_argument(
         "-d", "--date", metavar="DATE(YYYY-MM-DD)", help="Date to run the job for", required=False, dest="date", default=today)
     parser.add_argument(
         "-m", "--method", metavar="KEYWORD(insert|upsert)", help="Insert or Upsert data in mongoDB", required=False, dest="method", default="insert")
     parser.add_argument(
+        "-x", "--calculate", metavar="STRING", help="Comma separated list of what to calculate (ar,status,trends)", required=True, dest="calculate", default="ar,status,trends")
+    parser.add_argument(
         "-c", "--config", metavar="PATH", help="Path for the config file", dest="config")
     parser.add_argument(
         "-u", "--sudo", help="Run the submit job as superuser",  action="store_true")
-    parser.add_argument("--historic-profiles", help="use historic profiles",
-                        dest="historic", action="store_true")
-    parser.add_argument("--profile-check", help="check if profiles are up to date before running job",
-                        dest="profile_check", action="store_true")
-    parser.add_argument("--thresholds", help="check and use threshold rule file if exists",
-                        dest="thresholds", action="store_true")
+    parser.add_argument("--clear-prev-results", help="Clear previous results from datastore",
+                        action="store_true", dest="clear_results")
     parser.add_argument("--dry-run", help="Runs in test mode without actually submitting the job",
                         action="store_true", dest="dry_run")
 
