@@ -47,6 +47,7 @@ import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
+import java.util.List;
 import org.apache.flink.core.fs.FileSystem;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
@@ -134,6 +135,11 @@ public class AmsStreamStatus {
         return true;
     }
 
+    public static boolean hasAmsPubArgs(ParameterTool paramTool) {
+        String amsPubArgs[] = {"ams.project.publish", "ams.token.publish", "ams.topic"};
+        return hasArgs(amsPubArgs, paramTool);
+    }
+
     /**
      * Main dataflow of flink job
      */
@@ -159,9 +165,8 @@ public class AmsStreamStatus {
 
         String apiEndpoint = parameterTool.getRequired("api.endpoint");
         String apiToken = parameterTool.getRequired("api.token");
-        String reportID = parameterTool.getRequired("report.uuid");
+        String reportID = parameterTool.getRequired("report.id");
         int apiInterval = parameterTool.getInt("api.interval");
-
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
         amr.setDate(parameterTool.get("run.date"));
         amr.setTimeoutSec(30);
@@ -216,7 +221,7 @@ public class AmsStreamStatus {
                 .flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
 
         DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf));
-
+        DataStream<String> eventsClone = events;
         if (hasKafkaArgs(parameterTool)) {
             // Initialize kafka parameters
             String kafkaServers = parameterTool.get("kafka.servers");
@@ -253,6 +258,15 @@ public class AmsStreamStatus {
         if (hasFsOutArgs(parameterTool)) {
             events.writeAsText(parameterTool.get("fs.output"), FileSystem.WriteMode.OVERWRITE);
             //events.print();
+        }
+        if (hasAmsPubArgs(parameterTool)) {
+            String topic = parameterTool.get("ams.topic");
+            String tokenpub = parameterTool.get("ams.token.publish");
+            String projectpub = parameterTool.get("ams.project.publish");
+
+            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval);
+            events = events.flatMap(new TrimEvent());
+            events.addSink(ams);
         }
 
         // Create a job title message to discern job in flink dashboard/cli

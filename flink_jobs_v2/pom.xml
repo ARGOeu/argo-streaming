@@ -17,6 +17,7 @@
         <module>ProfilesManager</module>
         <module>batch_multi</module>
         <module>stream_status</module>
+         <module>AmsPublisher</module>
     </modules>
     <dependencyManagement>
         <dependencies>
