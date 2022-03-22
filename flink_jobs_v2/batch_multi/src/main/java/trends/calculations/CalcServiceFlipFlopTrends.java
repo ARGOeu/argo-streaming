@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import timelines.Timeline;
 
+
 /**
  * CalcServiceEndpointFlipFlop, count status changes for each service endpoint
  * group
@@ -46,7 +47,7 @@ public class CalcServiceFlipFlopTrends implements FlatMapFunction<StatusTimeline
         timeline.insertDateTimeStamps(timestampMap, true);
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
-        Integer flipflop = timeline.calcStatusChanges();
+        int flipflop = timeline.calcStatusChanges();
 
         if (group != null && service != null) {
             ServiceTrends serviceTrends = new ServiceTrends(group, service, timeline, flipflop);

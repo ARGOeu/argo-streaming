@@ -52,7 +52,7 @@ public class CalcEndpointFlipFlopTrends implements FlatMapFunction<StatusTimelin
         timeline.insertDateTimeStamps(timestampMap, true);
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
-        Integer flipflop = timeline.calcStatusChanges();
+        int flipflop = timeline.calcStatusChanges();
 
         if (group != null && service != null && hostname != null) {
 

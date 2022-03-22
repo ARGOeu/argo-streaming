@@ -65,11 +65,11 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
         }
 
         Timeline timeline = new Timeline();
-        timeline.insertDateTimeStamps(timestampMap, true);
+        timeline.insertDateTimeStamps(timestampMap, false);
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
-        Integer flipflop = timeline.calcStatusChanges();
-
+        int flipflop = timeline.calcStatusChanges();
+    
         if (endpointGroup != null && service != null && hostname != null && metric != null) {
 
             MetricTrends metricTrends = new MetricTrends(endpointGroup, service, hostname, metric, timeline, flipflop);
