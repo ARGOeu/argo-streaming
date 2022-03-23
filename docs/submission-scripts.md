@@ -7,6 +7,7 @@
 | ar_job_submit.py            | Python wrapper over the flink batch AR job.            | [Details](#batch-ar)      |
 | status_job_submit.py        | Python wrapper over the flink batch Status jon.        | [Details](#batch-status)  |
 | stream_status_job_submit.py | Python wrapper over flink sumbit status streaming job. | [Details](#stream-status) |
+| multi_job_submit.py         | Python wrapper over flink multi batch job.             | [Details](#batch-multi) |
 
 <a id="ingest-metric"></a>
 
@@ -115,6 +116,37 @@ Status streaming job receives metric and sync data from AMS calculates and gener
 `--profile-check: (optional) Check if profiles used in computation are out of date and update them`
 
 `--thresholds: (optional) Check if threshold rules are defined and use them during computations`
+
+<a id="batch-multi"></a>
+
+## Multi Batch Job
+
+Multi job submission is a batch job that will run and finish on the cluster and calculates ar, status and trends in one take.
+
+`multi_job_submit.py -t <Tenant> -c <ConfigPath> -u<Sudoless> -r<Report> -d<Date> -m<Method> --clear-prev-results --calculate ar,status,trends`
+
+`-t : Specify the tenant the job will run for`
+
+`-c : Check if config path has been given as a cli argument, else check /etc/argo-streaming/conf/conf.cfg else check conf folder inside the repo`
+
+`-u : If specified the flink command will run without sudo`
+
+`-r : The type of report, e.g. Critical`
+
+`-d : The date we want the job to run for. Format should be YYYY-MM-DD`
+
+`-m : How mongoDB will handle the generated results. Either insert or upsert`
+
+`--clear-prev-results : Empty existing daily results in datastore before writing the new ones`
+
+`--calculate : Comma separated list of what to calculate (values between: ar,status,trends)`
+
+`--profile-check: (optional) Check if profiles used in computation are out of date and update them`
+
+`--historic: (optional) status job submission script will use the historic versions of the available profiles according to the (-d) date parameter`
+
+`--thresholds: (optional) Check if threshold rules are defined and use them during computations`
+
 
 ### Important
 

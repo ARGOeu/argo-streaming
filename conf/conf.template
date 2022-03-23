@@ -48,6 +48,7 @@ ams-ingest-sync: test_class
 batch-ar: test_class
 batch-status: test_class
 stream-status: test_class
+batch-multi: multi_class
 
 [JARS]
 # Specify jar to run during job submit
@@ -56,6 +57,7 @@ ams-ingest-sync: test.jar
 batch-ar: test.jar
 batch-status: test.jar
 stream-status: test.jar
+batch-multi: multi.jar
 
 
 [AMS]
