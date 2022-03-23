@@ -25,21 +25,25 @@ import java.util.Map;
  */
 public class ApiResponseParser {
 
+    private String tenant;
     private String reportName;
     private String metricID;
     private String aggregationID;
     private String opsID;
     private String threshID;
+    private String egroup;
 
     public ApiResponseParser() {
     }
 
-    public ApiResponseParser(String reportName, String metricID, String aggregationID, String opsID, String threshID) {
+    public ApiResponseParser(String reportName, String metricID, String aggregationID, String opsID, String threshID, String tenant, String egroup) {
         this.reportName = reportName;
         this.metricID = metricID;
         this.aggregationID = aggregationID;
         this.opsID = opsID;
         this.threshID = threshID;
+        this.tenant = tenant;
+        this.egroup = egroup;
 
     }
 
@@ -83,6 +87,23 @@ public class ApiResponseParser {
         this.threshID = threshID;
     }
 
+    public String getTenant() {
+        return tenant;
+    }
+
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
+
+    public String getEgroup() {
+        return egroup;
+    }
+
+    public void setEgroup(String egroup) {
+        this.egroup = egroup;
+    }
+
+
     /**
      * Extract first JSON item from data JSON array in api response
      *
@@ -91,7 +112,7 @@ public class ApiResponseParser {
      *
      */
     public String getJsonData(String content, boolean asArray) {
-       
+
         JsonParser jsonParser = new JsonParser();
         // Grab the first - and only line of json from ops data
         JsonElement jElement = jsonParser.parse(content);
@@ -117,6 +138,10 @@ public class ApiResponseParser {
 
         JsonObject jInfo = jRoot.get("info").getAsJsonObject();
         this.reportName = jInfo.get("name").getAsString();
+        this.tenant = jRoot.get("tenant").getAsString();
+
+        JsonObject topoGroup = jRoot.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
+        this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
 
         // for each profile iterate and store it's id in profile manager for later
         // reference

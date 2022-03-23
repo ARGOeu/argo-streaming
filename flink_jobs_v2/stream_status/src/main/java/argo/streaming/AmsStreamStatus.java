@@ -48,9 +48,12 @@ import argo.avro.MetricData;
 import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
 import java.util.List;
+import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
+import profilesmanager.ReportManager;
 import status.StatusManager;
 
 /**
@@ -75,6 +78,8 @@ import status.StatusManager;
  * for debugging --ams.proxy	: http proxy url --timeout : time in ms - Optional
  * timeout parameter (used in notifications) --daily : true/false - Optional
  * daily event generation parameter (not needed in notifications)
+ * --url.history.endpoint(optional) the endpoint url to be used as a basis to create a history url , eg  ui.devel.argo.grnet.gr 
+ * it can be optional , meaning if it is not defined url history wont be constructed
  */
 public class AmsStreamStatus {
     // setup logger
@@ -265,7 +270,7 @@ public class AmsStreamStatus {
             String projectpub = parameterTool.get("ams.project.publish");
 
             ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval);
-            events = events.flatMap(new TrimEvent());
+            events = events.flatMap(new TrimEvent(parameterTool, amr.getTenant(), amr.getReportName(),amr.getEgroup()));
             events.addSink(ams);
         }
 

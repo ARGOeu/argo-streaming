@@ -399,8 +399,6 @@ public class ArgoMessagingClient {
                         result.append(rLine);
                     }
                     isRdr.close();
-                    System.out.println("PRINTING");
-
                     // Gather message from json
                     // JsonParser jsonParser = new JsonParser();
                     // parse the json root object
