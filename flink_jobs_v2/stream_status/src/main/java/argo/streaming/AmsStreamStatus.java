@@ -80,7 +80,9 @@ import status.StatusManager;
  * daily event generation parameter (not needed in notifications)
  * --url.history.endpoint(optional) the endpoint url to be used as a basis to create a history url , eg  ui.devel.argo.grnet.gr 
  * it can be optional , meaning if it is not defined url history wont be constructed
- */
+ * --url.help (optional) the url to be used as a basis to create a help url  , eg.  poem.egi.eu/ui/public_metrics
+ * it can be optional , meaning if it is not defined url help wont be constructed
+ * */
 public class AmsStreamStatus {
     // setup logger
 

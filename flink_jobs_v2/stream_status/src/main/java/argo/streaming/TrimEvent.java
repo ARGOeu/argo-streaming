@@ -2,6 +2,12 @@ package argo.streaming;
 
 import com.google.common.base.Ascii;
 import java.awt.BorderLayout;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -23,24 +29,26 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 /**
- * Accepts a list of events and add, removes fields to create a message as defined
+ * Accepts a list of events and add, removes fields to create a message as
+ * defined
  */
 public class TrimEvent implements FlatMapFunction<String, String> {
 
     private static final long serialVersionUID = 1L;
     final ParameterTool params;
+    private String helpUrl;
     private String historyUrl;
     private String reportName;
     private String egroup;
     private String tenant;
-    
 
-    public TrimEvent(ParameterTool params,String tenant, String reportName, String egroup) {
+    public TrimEvent(ParameterTool params, String tenant, String reportName, String egroup) {
         this.params = params;
+        this.helpUrl = this.params.get("url.help");
         this.historyUrl = this.params.get("url.history.endpoint");
         this.reportName = reportName;
         this.egroup = egroup;
-        this.tenant=tenant;
+        this.tenant = tenant;
 
     }
 
@@ -55,19 +63,24 @@ public class TrimEvent implements FlatMapFunction<String, String> {
         ArrayList<String> removedFields = new ArrayList();
         removedFields.add("monitoring_host");
         String initialHistPath = "";
-        String dateParams="";
+        String dateParams = "";
         if (this.historyUrl != null) {
-            initialHistPath ="https://"+ this.historyUrl +"/"+this.tenant+"/" + "report-status/" + this.reportName + "/" + egroup + "/"; //constructs the initial path to the url 
-           dateParams=buildDateParams(json.getString("ts_processed"));
-            
+            initialHistPath = "https://" + this.historyUrl + "/" + this.tenant + "/" + "report-status/" + this.reportName + "/" + egroup + "/"; //constructs the initial path to the url 
+            dateParams = buildDateParams(json.getString("ts_processed"));
+
         }
         switch (type) {
             case "metric":
                 removedFields.add("status_metric");
                 json = trimEvent(json, removedFields);
+                if (this.helpUrl != null) {
+                    String helpUrlPath = "https://" + this.helpUrl + "/" + json.getString("metric"); //the help url is in the form of helpUrl/metric e.g https://poem.egi.eu/ui/public_metrics/metricA
+                    json.put("url.help", uriString(helpUrlPath));
+
+                }
                 if (this.historyUrl != null) {
-                    String finalHistUrlPath = initialHistPath + json.getString("endpoint_group") + "/" + json.getString("service") + "/" + json.getString("hostname")  + dateParams;
-                    json.put("url.history", finalHistUrlPath);
+                    String finalHistUrlPath = initialHistPath + json.getString("endpoint_group") + "/" + json.getString("service") + "/" + json.getString("hostname") + dateParams;
+                    json.put("url.history", uriString(finalHistUrlPath));
                 }
                 break;
             case "endpoint":
@@ -77,8 +90,8 @@ public class TrimEvent implements FlatMapFunction<String, String> {
                 removedFields.add("metric_names");
                 json = trimEvent(json, removedFields);
                 if (this.historyUrl != null) {
-                    String finalHistUrlPath = initialHistPath + json.getString("endpoint_group") + "/" + json.getString("service") + "/" + json.getString("hostname")+ dateParams;
-                    json.put("url.history", finalHistUrlPath);
+                    String finalHistUrlPath = initialHistPath + json.getString("endpoint_group") + "/" + json.getString("service") + "/" + json.getString("hostname") + dateParams;
+                   json.put("url.history", uriString(finalHistUrlPath));
                 }
 
                 break;
@@ -89,7 +102,7 @@ public class TrimEvent implements FlatMapFunction<String, String> {
                 json = trimEvent(json, removedFields);
                 if (this.historyUrl != null) {
                     String finalHistUrlPath = initialHistPath + json.getString("endpoint_group") + "/" + json.getString("service") + dateParams;
-                    json.put("url.history", finalHistUrlPath);
+                   json.put("url.history", uriString(finalHistUrlPath));
                 }
 
                 break;
@@ -103,14 +116,14 @@ public class TrimEvent implements FlatMapFunction<String, String> {
                 removedFields.add("group_services");
                 json = trimEvent(json, removedFields);
                 if (this.historyUrl != null) {
-                    String finalHistUrlPath = initialHistPath + json.getString("endpoint_group") +dateParams;
-                    json.put("url.history", finalHistUrlPath);
+                    String finalHistUrlPath = initialHistPath + json.getString("endpoint_group") + dateParams;
+                   json.put("url.history", uriString(finalHistUrlPath));
                 }
 
                 break;
 
             default:
-                
+
         }
         out.collect(json.toString());
 
@@ -123,24 +136,30 @@ public class TrimEvent implements FlatMapFunction<String, String> {
         }
         return event;
     }
-    private  String buildDateParams(String dateStr) throws ParseException {
+
+    private String buildDateParams(String dateStr) throws ParseException {
 
         DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
         DateTime dt = formatter.parseDateTime(dateStr);
-        
-              //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+
         DateTimeFormatter dtf = DateTimeFormat.forPattern("yyyy-MM-dd");
         String endDate = dt.toString(dtf);
-  
-        
-        DateTime prevTime=dt.minusDays(2);
+
+        DateTime prevTime = dt.minusDays(2);
         String startDate = prevTime.toString(dtf);
-  
-        String param="?start_date="+startDate+"&end_date="+endDate;
-        
+
+        String param = "?start_date=" + startDate + "&end_date=" + endDate;
+
         return param;
     }
 
+    private URI uriString(String urlpath) throws UnsupportedEncodingException, MalformedURLException, URISyntaxException {
+
+        String decodedURL = URLDecoder.decode(urlpath, "UTF-8");
+        URL url = new URL(decodedURL);
+        URI uri = new URI(url.toString());
+        return uri;
+    }
 
 }
