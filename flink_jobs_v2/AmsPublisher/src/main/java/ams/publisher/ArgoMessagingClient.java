@@ -148,7 +148,6 @@ public class ArgoMessagingClient {
      * Properly compose url for each AMS request
      */
     public String composeURL(String method) {
-
         return proto + "://" + endpoint + "/v1/projects/" + project + "/topics/" + topic + ":" + method;
     }
 
@@ -166,7 +165,6 @@ public class ArgoMessagingClient {
         postPublish.addHeader("Content-type", "application/json");
 
         StringEntity postBody = new StringEntity(body);
-
         postPublish.setEntity(postBody);
 
         if (this.httpClient == null) {
@@ -189,14 +187,10 @@ public class ArgoMessagingClient {
 
                 try ( InputStreamReader isRdr = new InputStreamReader(entity.getContent())) {
                     BufferedReader bRdr = new BufferedReader(isRdr);
-
                     String rLine;
                     while ((rLine = bRdr.readLine()) != null) {
                         result.append(rLine);
                     }
-
-                    isRdr.close();
-
                     Log.info("response: {}", result.toString());
                 }
             } else {
@@ -205,7 +199,6 @@ public class ArgoMessagingClient {
 
             }
             response.close();
-
         }
 
     }

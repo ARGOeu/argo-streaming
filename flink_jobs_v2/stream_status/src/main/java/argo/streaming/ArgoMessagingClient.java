@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import java.util.Base64;
 
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -37,298 +38,388 @@ import org.apache.http.client.methods.CloseableHttpResponse;
  */
 public class ArgoMessagingClient {
 
-	static Logger LOG = LoggerFactory.getLogger(ArgoMessagingClient.class);
-	// Http Client for contanting AMS service
-	private CloseableHttpClient httpClient = null;
-	// AMS endpoint (hostname:port or hostname)
-	private String endpoint = null;
-	// AMS project (/v1/projects/{project})
-	private String project = null;
-	// AMS token (?key={token})
-	private String token = null;
-	// AMS subscription (/v1/projects/{project}/subscriptions/{sub})
-	private String sub = null;
-	// protocol (https,http)
-	private String proto = null;
-	// numer of message to be pulled;
-	private String maxMessages = "";
-	// ssl verify or not
-	private boolean verify = true;
-	// proxy
-	private URI proxy = null;
+    static Logger LOG = LoggerFactory.getLogger(ArgoMessagingClient.class);
+    // Http Client for contanting AMS service
+    private CloseableHttpClient httpClient = null;
+    // AMS endpoint (hostname:port or hostname)
+    private String endpoint = null;
+    // AMS project (/v1/projects/{project})
+    private String project = null;
+    // AMS token (?key={token})
+    private String token = null;
+    // AMS subscription (/v1/projects/{project}/subscriptions/{sub})
+    private String sub = null;
+    // protocol (https,http)
+    private String proto = null;
+    // numer of message to be pulled;
+    private String maxMessages = "";
+    // ssl verify or not
+    private boolean verify = true;
+    // proxy
+    private URI proxy = null;
+    private String topic;
 
-	// Utility inner class for holding list of messages and acknowledgements
-	private class MsgAck {
-		String[] msgs;
-		String[] ackIds;
+    // Utility inner class for holding list of messages and acknowledgements
+    private class MsgAck {
 
-		private MsgAck(String[] msgs, String[] ackIds) {
-			this.msgs = msgs;
-			this.ackIds = ackIds;
-		}
+        String[] msgs;
+        String[] ackIds;
 
-	}
+        private MsgAck(String[] msgs, String[] ackIds) {
+            this.msgs = msgs;
+            this.ackIds = ackIds;
+        }
 
-	public ArgoMessagingClient() {
-		this.httpClient = HttpClients.createDefault();
-		this.proto = "https";
-		this.token = "token";
-		this.endpoint = "localhost";
-		this.project = "test_project";
-		this.sub = "test_sub";
-		this.maxMessages = "100";
-		this.proxy = null;
-	}
+    }
 
-	public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub, int batch,
-			boolean verify) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    public ArgoMessagingClient() {
+        this.httpClient = HttpClients.createDefault();
+        this.proto = "https";
+        this.token = "token";
+        this.endpoint = "localhost";
+        this.project = "test_project";
+        this.sub = "test_sub";
+        this.maxMessages = "100";
+        this.proxy = null;
+    }
 
-		this.proto = method;
-		this.token = token;
-		this.endpoint = endpoint;
-		this.project = project;
-		this.sub = sub;
-		this.maxMessages = String.valueOf(batch);
-		this.verify = verify;
+    public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub, int batch,
+            boolean verify) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 
-		this.httpClient = buildHttpClient();
+        this.proto = method;
+        this.token = token;
+        this.endpoint = endpoint;
+        this.project = project;
+        this.sub = sub;
+        this.maxMessages = String.valueOf(batch);
+        this.verify = verify;
 
-	}
+        this.httpClient = buildHttpClient();
 
-	/**
-	 * Initializes Http Client (if not initialized during constructor)
-	 * 
-	 * @return
-	 */
-	private CloseableHttpClient buildHttpClient()
-			throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-		if (this.verify) {
-			return this.httpClient = HttpClients.createDefault();
-		} else {
-			return this.httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
-		}
-	}
+    }
 
-	/**
-	 * Create an SSL Connection Socket Factory with a strategy to trust self signed
-	 * certificates
-	 */
-	private SSLConnectionSocketFactory selfSignedSSLF()
-			throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-		SSLContextBuilder sslBuild = new SSLContextBuilder();
-		sslBuild.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-		return new SSLConnectionSocketFactory(sslBuild.build(), NoopHostnameVerifier.INSTANCE);
-	}
+    public ArgoMessagingClient(String method, String token, String endpoint, String project, String topic,
+            boolean verify) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 
-	/**
-	 * Set AMS http client to use http proxy
-	 */
-	public void setProxy(String proxyURL) throws URISyntaxException {
-		// parse proxy url
-		this.proxy = URI.create(proxyURL);
-	}
+        this.proto = method;
+        this.token = token;
+        this.endpoint = endpoint;
+        this.project = project;
+        this.topic = topic;
+        this.verify = verify;
 
-	/**
-	 * Set AMS http client to NOT use an http proxy
-	 */
-	public void unsetProxy() {
-		this.proxy = null;
-	}
+        this.httpClient = buildHttpClient();
 
-	/**
-	 * Create a configuration for using http proxy on each request
-	 */
-	private RequestConfig createProxyCfg() {
-		HttpHost proxy = new HttpHost(this.proxy.getHost(), this.proxy.getPort(), this.proxy.getScheme());
-		RequestConfig config = RequestConfig.custom().setProxy(proxy).build();
-		return config;
-	}
+    }
 
-	public void logIssue(CloseableHttpResponse resp) throws UnsupportedOperationException, IOException {
-		InputStreamReader isRdr = new InputStreamReader(resp.getEntity().getContent());
-		BufferedReader bRdr = new BufferedReader(isRdr);
-		int statusCode = resp.getStatusLine().getStatusCode();
+    /**
+     * Initializes Http Client (if not initialized during constructor)
+     *
+     * @return
+     */
+    private CloseableHttpClient buildHttpClient()
+            throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        if (this.verify) {
+            return this.httpClient = HttpClients.createDefault();
+        } else {
+            return this.httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
+        }
+    }
 
-		// Parse error content from api response
-		StringBuilder result = new StringBuilder();
-		String rLine;
-		while ((rLine = bRdr.readLine()) != null)
-			result.append(rLine);
-		isRdr.close();
-		Log.warn("ApiStatusCode={}, ApiErrorMessage={}", statusCode, result);
+    /**
+     * Create an SSL Connection Socket Factory with a strategy to trust self
+     * signed certificates
+     */
+    private SSLConnectionSocketFactory selfSignedSSLF()
+            throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        SSLContextBuilder sslBuild = new SSLContextBuilder();
+        sslBuild.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+        return new SSLConnectionSocketFactory(sslBuild.build(), NoopHostnameVerifier.INSTANCE);
+    }
 
-	}
+    /**
+     * Set AMS http client to use http proxy
+     */
+    public void setProxy(String proxyURL) throws URISyntaxException {
+        // parse proxy url
+        this.proxy = URI.create(proxyURL);
+    }
 
-	/**
-	 * Properly compose url for each AMS request
-	 */
-	public String composeURL(String method) {
-		return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method + "?key="
-				+ token;
-	}
+    /**
+     * Set AMS http client to NOT use an http proxy
+     */
+    public void unsetProxy() {
+        this.proxy = null;
+    }
 
-	/**
-	 * Executes a pull request against AMS api
-	 */
-	public MsgAck doPull() throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+    /**
+     * Create a configuration for using http proxy on each request
+     */
+    private RequestConfig createProxyCfg() {
+        HttpHost proxy = new HttpHost(this.proxy.getHost(), this.proxy.getPort(), this.proxy.getScheme());
+        RequestConfig config = RequestConfig.custom().setProxy(proxy).build();
+        return config;
+    }
 
-		ArrayList<String> msgList = new ArrayList<String>();
-		ArrayList<String> ackIdList = new ArrayList<String>();
+    public void logIssue(CloseableHttpResponse resp) throws UnsupportedOperationException, IOException {
+        InputStreamReader isRdr = new InputStreamReader(resp.getEntity().getContent());
+        BufferedReader bRdr = new BufferedReader(isRdr);
+        int statusCode = resp.getStatusLine().getStatusCode();
 
-		// Create the http post to pull
-		HttpPost postPull = new HttpPost(this.composeURL("pull"));
-		StringEntity postBody = new StringEntity(
-				"{\"maxMessages\":\"" + this.maxMessages + "\",\"returnImmediately\":\"true\"}");
-		postBody.setContentType("application/json");
-		postPull.setEntity(postBody);
+        // Parse error content from api response
+        StringBuilder result = new StringBuilder();
+        String rLine;
+        while ((rLine = bRdr.readLine()) != null) {
+            result.append(rLine);
+        }
+        isRdr.close();
+        Log.warn("ApiStatusCode={}, ApiErrorMessage={}", statusCode, result);
 
-		if (this.httpClient == null) {
-			this.httpClient = buildHttpClient();
-		}
+    }
 
-		// check for proxy
-		if (this.proxy != null) {
-			postPull.setConfig(createProxyCfg());
-		}
+    /**
+     * Properly compose url for each AMS request
+     */
+    public String composeURL(String method) {
+        if (method.equals("publish")) {
+            return proto + "://" + endpoint + "/v1/projects/" + project + "/topics/" + topic + ":" + method;
+        } else {
 
-		CloseableHttpResponse response = this.httpClient.execute(postPull);
-		String msg = "";
-		String ackId = "";
-		StringBuilder result = new StringBuilder();
+            return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method + "?key="
+                    + token;
+        }
 
-		HttpEntity entity = response.getEntity();
+    }
 
-		int statusCode = response.getStatusLine().getStatusCode();
+    /**
+     * Executes a pull request against AMS api
+     */
+    public MsgAck doPull() throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
 
-		if (entity != null && statusCode == 200) {
+        ArrayList<String> msgList = new ArrayList<String>();
+        ArrayList<String> ackIdList = new ArrayList<String>();
 
-			InputStreamReader isRdr = new InputStreamReader(entity.getContent());
-			BufferedReader bRdr = new BufferedReader(isRdr);
+        // Create the http post to pull
+        HttpPost postPull = new HttpPost(this.composeURL("pull"));
+        StringEntity postBody = new StringEntity(
+                "{\"maxMessages\":\"" + this.maxMessages + "\",\"returnImmediately\":\"true\"}");
+        postBody.setContentType("application/json");
+        postPull.setEntity(postBody);
 
-			String rLine;
+        if (this.httpClient == null) {
+            this.httpClient = buildHttpClient();
+        }
 
-			while ((rLine = bRdr.readLine()) != null)
-				result.append(rLine);
+        // check for proxy
+        if (this.proxy != null) {
+            postPull.setConfig(createProxyCfg());
+        }
 
-			// Gather message from json
-			JsonParser jsonParser = new JsonParser();
-			// parse the json root object
-			Log.info("response: {}", result.toString());
-			JsonElement jRoot = jsonParser.parse(result.toString());
+        CloseableHttpResponse response = this.httpClient.execute(postPull);
+        String msg = "";
+        String ackId = "";
+        StringBuilder result = new StringBuilder();
 
-			JsonArray jRec = jRoot.getAsJsonObject().get("receivedMessages").getAsJsonArray();
+        HttpEntity entity = response.getEntity();
 
-			// if has elements
-			for (JsonElement jMsgItem : jRec) {
-				JsonElement jMsg = jMsgItem.getAsJsonObject().get("message");
-				JsonElement jAckId = jMsgItem.getAsJsonObject().get("ackId");
-				msg = jMsg.toString();
-				ackId = jAckId.toString();
-				msgList.add(msg);
-				ackIdList.add(ackId);
-			}
+        int statusCode = response.getStatusLine().getStatusCode();
 
-			isRdr.close();
+        if (entity != null && statusCode == 200) {
 
-		} else {
+            InputStreamReader isRdr = new InputStreamReader(entity.getContent());
+            BufferedReader bRdr = new BufferedReader(isRdr);
 
-			logIssue(response);
+            String rLine;
 
-		}
+            while ((rLine = bRdr.readLine()) != null) {
+                result.append(rLine);
+            }
 
-		response.close();
+            // Gather message from json
+            JsonParser jsonParser = new JsonParser();
+            // parse the json root object
+            Log.info("response: {}", result.toString());
+            JsonElement jRoot = jsonParser.parse(result.toString());
 
-		String[] msgArr = msgList.toArray(new String[0]);
-		String[] ackIdArr = ackIdList.toArray(new String[0]);
+            JsonArray jRec = jRoot.getAsJsonObject().get("receivedMessages").getAsJsonArray();
 
-		// Return a Message array
-		return new MsgAck(msgArr, ackIdArr);
+            // if has elements
+            for (JsonElement jMsgItem : jRec) {
+                JsonElement jMsg = jMsgItem.getAsJsonObject().get("message");
+                JsonElement jAckId = jMsgItem.getAsJsonObject().get("ackId");
+                msg = jMsg.toString();
+                ackId = jAckId.toString();
+                msgList.add(msg);
+                ackIdList.add(ackId);
+            }
 
-	}
+            isRdr.close();
 
-	/**
-	 * Executes a combination of Pull & Ack requests against AMS api
-	 */
-	public String[] consume() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
-		String[] msgs = new String[0];
-		// Try first to pull a message
-		try {
+        } else {
 
-			MsgAck msgAck = doPull();
-			// get last ackid
-			String ackId = "";
-			if (msgAck.ackIds.length > 0) {
-				ackId = msgAck.ackIds[msgAck.ackIds.length - 1];
-			}
+            logIssue(response);
 
-			if (ackId != "") {
-				// Do an ack for the received message
-				String ackRes = doAck(ackId);
-				if (ackRes == "") {
-					Log.info("Message Acknowledged ackid:" + ackId);
-					msgs = msgAck.msgs;
+        }
 
-				} else {
-					Log.warn("No acknowledment for ackid:" + ackId + "-" + ackRes);
-				}
-			}
-		} catch (IOException e) {
-			LOG.error(e.getMessage());
-		}
-		return msgs;
+        response.close();
 
-	}
+        String[] msgArr = msgList.toArray(new String[0]);
+        String[] ackIdArr = ackIdList.toArray(new String[0]);
 
-	/**
-	 * Executes an Acknowledge request against AMS api
-	 */
-	public String doAck(String ackId) throws IOException {
+        // Return a Message array
+        return new MsgAck(msgArr, ackIdArr);
 
-		// Create the http post to ack
-		HttpPost postAck = new HttpPost(this.composeURL("acknowledge"));
-		StringEntity postBody = new StringEntity("{\"ackIds\":[" + ackId + "]}");
-		postBody.setContentType("application/json");
-		postAck.setEntity(postBody);
+    }
 
-		// check for proxy
-		if (this.proxy != null) {
-			postAck.setConfig(createProxyCfg());
-		}
+    /**
+     * Executes a combination of Pull & Ack requests against AMS api
+     */
+    public String[] consume() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+        String[] msgs = new String[0];
+        // Try first to pull a message
+        try {
 
-		CloseableHttpResponse response = httpClient.execute(postAck);
-		String resMsg = "";
-		StringBuilder result = new StringBuilder();
+            MsgAck msgAck = doPull();
+            // get last ackid
+            String ackId = "";
+            if (msgAck.ackIds.length > 0) {
+                ackId = msgAck.ackIds[msgAck.ackIds.length - 1];
+            }
 
-		HttpEntity entity = response.getEntity();
-		int status = response.getStatusLine().getStatusCode();
+            if (ackId != "") {
+                // Do an ack for the received message
+                String ackRes = doAck(ackId);
+                if (ackRes == "") {
+                    Log.info("Message Acknowledged ackid:" + ackId);
+                    msgs = msgAck.msgs;
 
-		if (status != 200) {
+                } else {
+                    Log.warn("No acknowledment for ackid:" + ackId + "-" + ackRes);
+                }
+            }
+        } catch (IOException e) {
+            LOG.error(e.getMessage());
+        }
+        return msgs;
 
-			InputStreamReader isRdr = new InputStreamReader(entity.getContent());
-			BufferedReader bRdr = new BufferedReader(isRdr);
+    }
 
-			String rLine;
+    /**
+     * Executes an Acknowledge request against AMS api
+     */
+    public String doAck(String ackId) throws IOException {
 
-			while ((rLine = bRdr.readLine()) != null)
-				result.append(rLine);
+        // Create the http post to ack
+        HttpPost postAck = new HttpPost(this.composeURL("acknowledge"));
+        StringEntity postBody = new StringEntity("{\"ackIds\":[" + ackId + "]}");
+        postBody.setContentType("application/json");
+        postAck.setEntity(postBody);
 
-			resMsg = result.toString();
-			isRdr.close();
+        // check for proxy
+        if (this.proxy != null) {
+            postAck.setConfig(createProxyCfg());
+        }
 
-		} else {
-			// Log any api errors
-			logIssue(response);
-		}
-		response.close();
-		// Return a resposeMessage
-		return resMsg;
+        CloseableHttpResponse response = httpClient.execute(postAck);
+        String resMsg = "";
+        StringBuilder result = new StringBuilder();
 
-	}
+        HttpEntity entity = response.getEntity();
+        int status = response.getStatusLine().getStatusCode();
 
-	/**
-	 * Close AMS http client
-	 */
-	public void close() throws IOException {
-		this.httpClient.close();
-	}
+        if (status != 200) {
+
+            InputStreamReader isRdr = new InputStreamReader(entity.getContent());
+            BufferedReader bRdr = new BufferedReader(isRdr);
+
+            String rLine;
+
+            while ((rLine = bRdr.readLine()) != null) {
+                result.append(rLine);
+            }
+
+            resMsg = result.toString();
+            isRdr.close();
+
+        } else {
+            // Log any api errors
+            logIssue(response);
+        }
+        response.close();
+        // Return a resposeMessage
+        return resMsg;
+
+    }
+
+    /**
+     * Executes a combination of Pull & Ack requests against AMS api
+     */
+    public void publish(String in) throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        // Create the http post to pull
+        String encodedString = Base64.getEncoder().encodeToString(in.getBytes());
+
+        HttpPost postPublish = new HttpPost(this.composeURL("publish"));
+        String body = "{\"messages\": [ {\"data\":\"" + encodedString + "\"}]}";
+
+        postPublish.addHeader("Accept", "application/json");
+        postPublish.addHeader("x-api-key", this.token);
+        postPublish.addHeader("Content-type", "application/json");
+
+//         Request r = Request.Get(fullURL).addHeader("Accept", "application/json").addHeader("Content-type",
+//                "application/json").addHeader("x-api-key", this.token);
+//       
+        StringEntity postBody = new StringEntity(body);
+
+        postBody.setContentType("application/json");
+        postPublish.setEntity(postBody);
+
+        if (this.httpClient == null) {
+            this.httpClient = buildHttpClient();
+        }
+
+        // check for proxy
+        if (this.proxy != null) {
+            postPublish.setConfig(createProxyCfg());
+        }
+
+        try ( CloseableHttpResponse response = this.httpClient.execute(postPublish)) {
+            StringBuilder result = new StringBuilder();
+
+            HttpEntity entity = response.getEntity();
+
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            if (entity != null && statusCode == 200) {
+
+                try ( InputStreamReader isRdr = new InputStreamReader(entity.getContent())) {
+                    BufferedReader bRdr = new BufferedReader(isRdr);
+
+                    String rLine;
+                    while ((rLine = bRdr.readLine()) != null) {
+                        result.append(rLine);
+                    }
+                    isRdr.close();
+                    System.out.println("PRINTING");
+
+                    // Gather message from json
+                    // JsonParser jsonParser = new JsonParser();
+                    // parse the json root object
+                    Log.info("publish response: {}", result.toString());
+                }
+            } else {
+
+                logIssue(response);
+
+            }
+            response.close();
+        }
+
+    }
+
+    /**
+     * Close AMS http client
+     */
+    public void close() throws IOException {
+        this.httpClient.close();
+    }
 }

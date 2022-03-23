@@ -76,7 +76,7 @@ public class StatusConfig implements Serializable {
         // Optional set daily parameter
         this.apiEndpoint = pt.getRequired("api.endpoint");
         this.apiToken = pt.getRequired("api.token");
-        this.reportID = pt.getRequired("report.uuid");
+        this.reportID = pt.getRequired("report.id");
 
         if (pt.has("api.proxy")) {
             this.apiProxy = pt.get("api.proxy", "");
