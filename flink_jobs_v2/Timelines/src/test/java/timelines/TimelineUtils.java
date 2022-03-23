@@ -24,9 +24,9 @@ import org.json.simple.parser.ParseException;
  */
 public class TimelineUtils {
 
-    public TimelineJson readTimelines() throws IOException, FileNotFoundException, ParseException, java.text.ParseException {
+    public TimelineJson readTimelines(String path) throws IOException, FileNotFoundException, ParseException, java.text.ParseException {
 
-        JSONObject timelineJSONObj = readJsonFromFile(TimelineUtils.class.getResource("/timelines/timeline.json").getFile());
+        JSONObject timelineJSONObj = readJsonFromFile(path);
         TimelineJson timelinejson = buildTimelines(timelineJSONObj);
         return timelinejson;
     }

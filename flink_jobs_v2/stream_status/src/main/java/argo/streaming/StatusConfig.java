@@ -50,13 +50,14 @@ public class StatusConfig implements Serializable {
 
     public StatusConfig(ParameterTool pt) {
         this.pt = pt;
+
         this.amsHost = pt.getRequired("ams.endpoint");
-        this.amsPort = pt.getRequired("ams.port");
+        this.amsPort = pt.get("ams.port");
         this.amsToken = pt.getRequired("ams.token");
         this.amsProject = pt.getRequired("ams.project");
         this.apiEndpoint = pt.getRequired("api.endpoint");
+
         this.runDate = pt.getRequired("run.date");
-//	   this.downtime = pt.getRequired("sync.downtime");
         this.report = pt.getRequired("report");
         // Optional timeout parameter
         if (pt.has("timeout")) {
@@ -76,7 +77,7 @@ public class StatusConfig implements Serializable {
         // Optional set daily parameter
         this.apiEndpoint = pt.getRequired("api.endpoint");
         this.apiToken = pt.getRequired("api.token");
-        this.reportID = pt.getRequired("report.id");
+        this.reportID = pt.getRequired("report.uuid");
 
         if (pt.has("api.proxy")) {
             this.apiProxy = pt.get("api.proxy", "");

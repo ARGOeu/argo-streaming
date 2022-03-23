@@ -78,11 +78,14 @@ import status.StatusManager;
  * for debugging --ams.proxy	: http proxy url --timeout : time in ms - Optional
  * timeout parameter (used in notifications) --daily : true/false - Optional
  * daily event generation parameter (not needed in notifications)
- * --url.history.endpoint(optional) the endpoint url to be used as a basis to create a history url , eg  ui.devel.argo.grnet.gr 
- * it can be optional , meaning if it is not defined url history wont be constructed
- * --url.help (optional) the url to be used as a basis to create a help url  , eg.  poem.egi.eu/ui/public_metrics
- * it can be optional , meaning if it is not defined url help wont be constructed
- * */
+ * --url.history.endpoint(optional) the endpoint url to be used as a basis to
+ * create a history url , eg ui.devel.argo.grnet.gr it can be optional , meaning
+ * if it is not defined url history wont be constructed --url.help (optional)
+ * the url to be used as a basis to create a help url , eg.
+ * poem.egi.eu/ui/public_metrics it can be optional , meaning if it is not
+ * defined url help wont be constructed
+ *
+ */
 public class AmsStreamStatus {
     // setup logger
 
@@ -162,25 +165,26 @@ public class AmsStreamStatus {
 
         // Initialize Input Source : ARGO Messaging Source
         String endpoint = parameterTool.getRequired("ams.endpoint");
-        String port = null;
-        if (!parameterTool.getRequired("ams.port").equals("__NO_VALUE_KEY")) {
-            port = parameterTool.getRequired("ams.port");
-        }
+        String port = parameterTool.get("ams.port");
         String token = parameterTool.getRequired("ams.token");
         String project = parameterTool.getRequired("ams.project");
         String subMetric = parameterTool.getRequired("ams.sub.metric");
 
         String apiEndpoint = parameterTool.getRequired("api.endpoint");
         String apiToken = parameterTool.getRequired("api.token");
-        String reportID = parameterTool.getRequired("report.id");
+        String reportID = parameterTool.getRequired("report.uuid");
         int apiInterval = parameterTool.getInt("api.interval");
+
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
-        amr.setDate(parameterTool.get("run.date"));
-        amr.setTimeoutSec(30);
+
         // fetch
         // set params
         if (parameterTool.has("api.proxy")) {
             amr.setProxy(parameterTool.get("api.proxy"));
+        }
+
+        if (parameterTool.has("api.timeout")) {
+            amr.setTimeoutSec(parameterTool.getInt("api.timeout"));
         }
 
         amr.setReportID(reportID);
@@ -209,7 +213,6 @@ public class AmsStreamStatus {
         if (parameterTool.has("ams.proxy")) {
             String proxyURL = parameterTool.get("ams.proxy");
             amsMetric.setProxy(proxyURL);
-
         }
 
         DataStream<String> metricAMS = see.addSource(amsMetric).setParallelism(1);
@@ -272,7 +275,7 @@ public class AmsStreamStatus {
             String projectpub = parameterTool.get("ams.project.publish");
 
             ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval);
-            events = events.flatMap(new TrimEvent(parameterTool, amr.getTenant(), amr.getReportName(),amr.getEgroup()));
+            events = events.flatMap(new TrimEvent(parameterTool, amr.getTenant(), amr.getReportName(), amr.getEgroup()));
             events.addSink(ams);
         }
 

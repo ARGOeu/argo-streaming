@@ -2,6 +2,7 @@ package timelines;
 
 import java.text.ParseException;
 import java.util.TreeMap;
+import static junit.framework.Assert.assertNotNull;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -23,6 +24,8 @@ public class TimelineIntegratorTest {
 
     @BeforeClass
     public static void setUpClass() {
+           assertNotNull("Test file missing", TimelineIntegratorTest.class.getResource("/timelines/timeline.json"));
+    
     }
 
     @AfterClass
