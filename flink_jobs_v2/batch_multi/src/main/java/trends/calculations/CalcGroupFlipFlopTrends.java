@@ -44,7 +44,7 @@ public class CalcGroupFlipFlopTrends implements FlatMapFunction<StatusTimeline, 
         timeline.insertDateTimeStamps(timestampMap, true);
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
-        Integer flipflop = timeline.calcStatusChanges();
+        int flipflop = timeline.calcStatusChanges();
 
         if (group != null ) {
 

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
@@ -411,16 +412,6 @@ public class Timeline {
 
     /**
      *
-     * @return the number of the times a status changes between the timestamps
-     * of the timeline , after the map is optimized
-     */
-    public int calcStatusChanges() {
-        this.optimize();
-        return this.samples.keySet().size() - 1;
-    }
-
-    /**
-     *
      * @param date, a timestamp
      * @param availStates , the list of the available states
      *
@@ -432,20 +423,29 @@ public class Timeline {
         DateTime firsTime = date;
         firsTime = firsTime.withTime(0, 0, 0, 0);
         DateTime firstEntry = this.samples.floorKey(firsTime);
+        DateTime prevDate = this.samples.lowerKey(firsTime);
         if (this.date.isBefore(firsTime.toLocalDate())) {
 
             this.date = firsTime.toLocalDate();
         }
 
-        if (firstEntry != null && !firstEntry.equals(firsTime)) {
+        if (prevDate != null) {
             int previousStatus = this.samples.get(firstEntry);
             this.samples.put(firsTime, previousStatus);
-            this.samples.remove(firstEntry);
+            this.samples.remove(prevDate);
+        } else {
 
-        } else if (firstEntry == null) {
-          if(!this.samples.containsKey(firsTime)){
-              this.samples.put(firsTime, availStates.get("MISSING"));
-          }
+            if (firstEntry != null && !firstEntry.equals(firsTime)) {
+                int previousStatus = this.samples.get(firstEntry);
+                this.samples.put(firsTime, previousStatus);
+                this.samples.remove(firstEntry);
+
+            } else if (firstEntry == null) {
+                if (!this.samples.containsKey(firsTime)) {
+                    this.samples.put(firsTime, availStates.get("MISSING"));
+                }
+
+            }
         }
         if (optimize) {
             this.optimize();
@@ -563,7 +563,7 @@ public class Timeline {
 
     public void setDateStr(String date) {
         this.date = getLocalDate(date);
-         
+
     }
 
     private LocalDate getLocalDate(String date) {
@@ -574,5 +574,18 @@ public class Timeline {
         LocalDate localdate = tmp_date.toLocalDate();
         return localdate;
 
+    }
+
+    /**
+     *
+     * @return the number of the times a status changes between the timestamps
+     * of the timeline , after the map is optimized
+     */
+    public int calcStatusChanges() {
+        Timeline opTimeline = new Timeline();
+        opTimeline.samples = this.samples;
+        opTimeline.optimize();
+
+        return opTimeline.samples.keySet().size() - 1;
     }
 }

@@ -100,8 +100,8 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         }
 
         Timeline timeline = new Timeline();
-        timeline.insertDateTimeStamps(timeStatusMap, true);
-        timeline.replacePreviousDateStatus(Utils.convertStringtoDate("yyyy-MM-dd", this.runDate), this.opsMgr.getStates(), true);//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
+        timeline.insertDateTimeStamps(timeStatusMap, false);
+        timeline.replacePreviousDateStatus(Utils.convertStringtoDate("yyyy-MM-dd", this.runDate), this.opsMgr.getStates(), false);//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
         ArrayList<TimeStatus> timestatusList = new ArrayList<TimeStatus>();
         for (Entry<DateTime, Integer> entry : timeline.getSamples()) {
             TimeStatus timestatus = new TimeStatus(entry.getKey().getMillis(), entry.getValue());
@@ -111,7 +111,6 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList);
         statusTimeline.setHasThr(hasThr);
         out.collect(statusTimeline);
-
     }
 
 }
