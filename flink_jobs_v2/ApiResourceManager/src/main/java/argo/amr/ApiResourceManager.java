@@ -28,6 +28,8 @@ public class ApiResourceManager {
     private String opsID;
     private String threshID;
     private String reportName;
+    private String tenant;
+    private String egroup;
     private String weightsID;
     private RequestManager requestManager;
     private ApiResponseParser apiResponseParser;
@@ -45,8 +47,10 @@ public class ApiResourceManager {
         this.reportID = "";
         this.date = "";
         this.weightsID = "";
+        this.tenant="";
+        this.egroup="";
         this.requestManager = new RequestManager("", this.token);
-        this.apiResponseParser = new ApiResponseParser(this.reportName, this.metricID, this.aggregationID, this.opsID, this.threshID);
+        this.apiResponseParser = new ApiResponseParser(this.reportName, this.metricID, this.aggregationID, this.opsID, this.threshID, this.tenant, this.egroup);
     }
 
     public void setProxy(String proxy) {
@@ -162,6 +166,24 @@ public class ApiResourceManager {
     public void setWeightsID(String weightsID) {
         this.weightsID = weightsID;
     }
+
+    public String getTenant() {
+        return tenant;
+    }
+
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
+
+    public String getEgroup() {
+        return egroup;
+    }
+
+    public void setEgroup(String egroup) {
+        this.egroup = egroup;
+    }
+    
+    
 
     /**
      * Retrieves the remote report configuration based on reportID main class
@@ -331,6 +353,8 @@ public class ApiResourceManager {
         this.opsID = this.apiResponseParser.getOpsID();
         this.threshID = this.apiResponseParser.getThreshID();
         this.reportName = this.apiResponseParser.getReportName();
+        this.tenant=this.apiResponseParser.getTenant();
+        this.egroup=this.apiResponseParser.getEgroup();
     }
 
     /**
