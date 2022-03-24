@@ -361,6 +361,7 @@ public class ArgoMessagingClient {
         HttpPost postPublish = new HttpPost(this.composeURL("publish"));
         String body = "{\"messages\": [ {\"data\":\"" + encodedString + "\"}]}";
 
+        
         postPublish.addHeader("Accept", "application/json");
         postPublish.addHeader("x-api-key", this.token);
         postPublish.addHeader("Content-type", "application/json");
