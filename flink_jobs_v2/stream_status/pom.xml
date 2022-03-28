@@ -69,7 +69,7 @@ language governing permissions and limitations under the License. -->
             <version>1.0-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
-   <dependency>
+        <dependency>
             <groupId>profiles.manager</groupId>
             <artifactId>ProfilesManager</artifactId>
             <version>1.0-SNAPSHOT</version>
@@ -163,6 +163,12 @@ language governing permissions and limitations under the License. -->
             <version>1.58</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>1.6</version>
+        </dependency>
+        
     </dependencies>
 
     <profiles>
@@ -225,6 +231,12 @@ language governing permissions and limitations under the License. -->
                     <artifactId>fluent-hc</artifactId>
                     <version>4.5.13</version>
                 </dependency>
+                <dependency>
+                    <groupId>joda-time</groupId>
+                    <artifactId>joda-time</artifactId>
+                    <version>1.6</version>
+                </dependency>
+              
             </dependencies>
 
             <build>
@@ -323,7 +335,7 @@ language governing permissions and limitations under the License. -->
                                     <exclude>commons-lang:commons-lang</exclude>
                                     <exclude>junit:junit</exclude>
                                     <exclude>de.javakaffee:kryo-serializers</exclude>
-                                    <exclude>joda-time:joda-time</exclude>
+<!--                                    <exclude>joda-time:joda-time</exclude>-->
                                     <exclude>org.apache.commons:commons-lang3</exclude>
                                     <exclude>org.slf4j:slf4j-api</exclude>
                                     <exclude>org.slf4j:slf4j-log4j12</exclude>
