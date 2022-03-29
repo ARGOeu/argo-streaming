@@ -213,7 +213,6 @@ public class AmsStreamStatus {
         if (parameterTool.has("ams.proxy")) {
             String proxyURL = parameterTool.get("ams.proxy");
             amsMetric.setProxy(proxyURL);
-
         }
 
         DataStream<String> metricAMS = see.addSource(amsMetric).setParallelism(1);

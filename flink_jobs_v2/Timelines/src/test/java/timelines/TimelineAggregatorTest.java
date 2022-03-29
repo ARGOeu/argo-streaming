@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import static junit.framework.Assert.assertNotNull;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.junit.After;
@@ -35,6 +36,8 @@ public class TimelineAggregatorTest {
 
     @BeforeClass
     public static void setUpClass() {
+                assertNotNull("Test file missing", TimelineAggregatorTest.class.getResource("/timelines/timeline.json"));
+   
     }
 
     @AfterClass
@@ -203,7 +206,7 @@ public class TimelineAggregatorTest {
     public void testAggregate() throws IOException, FileNotFoundException, org.json.simple.parser.ParseException, ParseException {
         System.out.println("aggregate");
         TimelineUtils timelineUtils = new TimelineUtils();
-        TimelineUtils.TimelineJson timelinejson = timelineUtils.readTimelines();
+        TimelineUtils.TimelineJson timelinejson = timelineUtils.readTimelines(TimelineAggregatorTest.class.getResource("/timelines/timeline.json").getFile());
 
         ArrayList<TreeMap> inputTimelines = timelinejson.getInputTimelines();
         int op = timelinejson.getOperation();

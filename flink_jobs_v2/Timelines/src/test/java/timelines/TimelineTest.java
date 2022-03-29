@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import static junit.framework.Assert.assertNotNull;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
@@ -35,6 +36,8 @@ public class TimelineTest {
 
     @BeforeClass
     public static void setUpClass() {
+           assertNotNull("Test file missing", TimelineTest.class.getResource("/timelines/timeline.json"));
+    
     }
 
     @AfterClass
