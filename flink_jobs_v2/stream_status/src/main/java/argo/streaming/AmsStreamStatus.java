@@ -179,8 +179,8 @@ public class AmsStreamStatus {
 
         // fetch
         // set params
-        if (parameterTool.has("api.proxy")) {
-            amr.setProxy(parameterTool.get("api.proxy"));
+        if (parameterTool.has("proxy")) {
+            amr.setProxy(parameterTool.get("proxy"));
         }
 
         if (parameterTool.has("api.timeout")) {
@@ -210,8 +210,8 @@ public class AmsStreamStatus {
 
         }
 
-        if (parameterTool.has("ams.proxy")) {
-            String proxyURL = parameterTool.get("ams.proxy");
+        if (parameterTool.has("proxy")) {
+            String proxyURL = parameterTool.get("proxy");
             amsMetric.setProxy(proxyURL);
         }
 
@@ -275,6 +275,10 @@ public class AmsStreamStatus {
             String projectpub = parameterTool.get("ams.project.publish");
 
             ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval);
+            if (parameterTool.has("proxy")) {
+                String proxyURL = parameterTool.get("proxy");
+                ams.setProxy(proxyURL);
+            }
             events = events.flatMap(new TrimEvent(parameterTool, amr.getTenant(), amr.getReportName(), amr.getEgroup()));
             events.addSink(ams);
         }
