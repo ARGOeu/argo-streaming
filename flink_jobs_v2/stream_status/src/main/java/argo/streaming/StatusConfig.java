@@ -79,8 +79,8 @@ public class StatusConfig implements Serializable {
         this.apiToken = pt.getRequired("api.token");
         this.reportID = pt.getRequired("report.uuid");
 
-        if (pt.has("api.proxy")) {
-            this.apiProxy = pt.get("api.proxy", "");
+        if (pt.has("proxy")) {
+            this.apiProxy = pt.get("proxy", "");
         }
         if (pt.has("api.verify")) {
             this.apiVerify = pt.getBoolean("api.verify", false);
