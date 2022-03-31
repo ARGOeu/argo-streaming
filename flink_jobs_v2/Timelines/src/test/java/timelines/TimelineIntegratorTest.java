@@ -1,5 +1,6 @@
 package timelines;
 
+import java.net.URL;
 import java.text.ParseException;
 import java.util.TreeMap;
 import static junit.framework.Assert.assertNotNull;
@@ -24,7 +25,7 @@ public class TimelineIntegratorTest {
 
     @BeforeClass
     public static void setUpClass() {
-           assertNotNull("Test file missing", TimelineIntegratorTest.class.getResource("/timelines/timeline.json"));
+           assertNotNull("Test file missing", TimelineIntegratorTest.class.getResource("/timeline.json"));
     
     }
 

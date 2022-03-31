@@ -8,6 +8,7 @@ package timelines;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ public class TimelineAggregatorTest {
 
     @BeforeClass
     public static void setUpClass() {
-                assertNotNull("Test file missing", TimelineAggregatorTest.class.getResource("/timelines/timeline.json"));
+                assertNotNull("Test file missing", TimelineAggregatorTest.class.getResource("/timeline.json"));
    
     }
 
@@ -206,7 +207,8 @@ public class TimelineAggregatorTest {
     public void testAggregate() throws IOException, FileNotFoundException, org.json.simple.parser.ParseException, ParseException {
         System.out.println("aggregate");
         TimelineUtils timelineUtils = new TimelineUtils();
-        TimelineUtils.TimelineJson timelinejson = timelineUtils.readTimelines(TimelineAggregatorTest.class.getResource("/timelines/timeline.json").getFile());
+        URL url =TimelineAggregatorTest.class.getResource("/timeline.json");
+        TimelineUtils.TimelineJson timelinejson = timelineUtils.readTimelines(url.getFile());
 
         ArrayList<TreeMap> inputTimelines = timelinejson.getInputTimelines();
         int op = timelinejson.getOperation();

@@ -36,7 +36,7 @@ public class TimelineTest {
 
     @BeforeClass
     public static void setUpClass() {
-           assertNotNull("Test file missing", TimelineTest.class.getResource("/timelines/timeline.json"));
+           assertNotNull("Test file missing", TimelineTest.class.getResource("/timeline.json"));
     
     }
 
