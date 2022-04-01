@@ -34,12 +34,6 @@ public class TimelineTest {
     public TimelineTest() {
     }
 
-    @BeforeClass
-    public static void setUpClass() {
-           assertNotNull("Test file missing", TimelineTest.class.getResource("/timeline.json"));
-    
-    }
-
     @AfterClass
     public static void tearDownClass() {
     }

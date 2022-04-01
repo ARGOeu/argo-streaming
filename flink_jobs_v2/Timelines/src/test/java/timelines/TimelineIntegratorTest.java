@@ -23,12 +23,7 @@ public class TimelineIntegratorTest {
     public TimelineIntegratorTest() {
     }
 
-    @BeforeClass
-    public static void setUpClass() {
-           assertNotNull("Test file missing", TimelineIntegratorTest.class.getResource("/timeline.json"));
-    
-    }
-
+   
     @AfterClass
     public static void tearDownClass() {
     }

@@ -6,9 +6,11 @@
 package timelines;
 
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +27,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import timelines.TimelineUtils.TimelineJson;
 
 /**
  *
@@ -37,7 +40,7 @@ public class TimelineAggregatorTest {
 
     @BeforeClass
     public static void setUpClass() {
-                assertNotNull("Test file missing", TimelineAggregatorTest.class.getResource("/timeline.json"));
+                assertNotNull("Test file missing", TimelineAggregatorTest.class.getResource("/timelineresources/timeline.json"));
    
     }
 
@@ -204,11 +207,12 @@ public class TimelineAggregatorTest {
      * Test of aggregate method, of class TimelineAggregator.
      */
     @Test
-    public void testAggregate() throws IOException, FileNotFoundException, org.json.simple.parser.ParseException, ParseException {
+    public void testAggregate() throws IOException, FileNotFoundException, org.json.simple.parser.ParseException, ParseException, URISyntaxException{
         System.out.println("aggregate");
-        TimelineUtils timelineUtils = new TimelineUtils();
-        URL url =TimelineAggregatorTest.class.getResource("/timeline.json");
-        TimelineUtils.TimelineJson timelinejson = timelineUtils.readTimelines(url.getFile());
+        //URI url =TimelineAggregatorTest.class.getResource("/timelineresources/timeline.json").toURI();
+        TimelineUtils timelineUtils=new TimelineUtils();
+      //  File file=new File(url);
+        TimelineJson timelinejson = timelineUtils.readTimelines("/timelineresources/timeline.json");
 
         ArrayList<TreeMap> inputTimelines = timelinejson.getInputTimelines();
         int op = timelinejson.getOperation();
