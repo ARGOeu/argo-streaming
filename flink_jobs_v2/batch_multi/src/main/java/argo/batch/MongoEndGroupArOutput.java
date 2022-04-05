@@ -10,16 +10,20 @@ import org.bson.conversions.Bson;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
+import java.util.ArrayList;
+import org.bson.types.ObjectId;
 
 
 /**
  * MongoOutputFormat for storing Endpoint Group AR data to MongoDB.
  */
 public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
+          private ArrayList<ObjectId> documentIds = new ArrayList<>();
 
 	
 	public enum MongoMethod { INSERT, UPSERT };
@@ -76,20 +80,28 @@ public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
     	}
 	
 
-	private void initMongo() {
-		this.mClient = new MongoClient(mongoHost, mongoPort);
-		this.mDB = mClient.getDatabase(dbName);
-		this.mCol = mDB.getCollection(colName);
-                if (this.clearMongo) {
-                  deleteDoc();
-                }
-    
-	}
-private void deleteDoc() {
-
-        Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date", this.date));
-        mCol.deleteMany(filter);
+    private void initMongo() {
+        this.mClient = new MongoClient(mongoHost, mongoPort);
+        this.mDB = mClient.getDatabase(dbName);
+        this.mCol = mDB.getCollection(colName);
+        if (this.clearMongo) {
+            retrieveExistingDocs();
+        }
     }
+
+    private void retrieveExistingDocs() {
+        Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date", this.date));
+        FindIterable<Document> documents = this.mCol.find(filter);
+        for (Document doc : documents) {
+            this.documentIds.add((ObjectId) doc.get("_id"));
+        }
+
+    }
+
+    private void deleteDoc() {
+        this.mCol.deleteMany(Filters.in("_id", this.documentIds));
+    }
+
 	
 	/**
 	 * Initialize MongoDB remote connection
@@ -139,6 +151,9 @@ private void deleteDoc() {
 	 */
 	@Override
 	public void close() throws IOException {
+            if (this.clearMongo) {
+                deleteDoc();
+            }
 		if (mClient != null) {
 			mClient.close();
 			mClient = null;
