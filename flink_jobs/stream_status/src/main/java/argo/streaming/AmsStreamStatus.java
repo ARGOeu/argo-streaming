@@ -48,7 +48,6 @@ import argo.amr.ApiResourceManager;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
-import argo.avro.MetricDataOld;
 import argo.avro.MetricProfile;
 import status.StatusManager;
 import sync.EndpointGroupManagerV2;
@@ -378,15 +377,9 @@ public class AmsStreamStatus {
 			
 			
 			
-			try {
-				item = avroReader.read(null, decoder);
-			} catch (java.io.EOFException ex)
-			{
-					//convert from old to new
-					avroReader = new SpecificDatumReader<MetricData>(MetricDataOld.getClassSchema(),MetricData.getClassSchema());
-					decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
-					item = avroReader.read(null, decoder);
-			}
+			
+			item = avroReader.read(null, decoder);
+			
 			
 
 			//System.out.println("metric data item received" + item.toString());
