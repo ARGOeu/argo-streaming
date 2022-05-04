@@ -7,6 +7,7 @@ package argo.batch;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  *
@@ -107,5 +108,4 @@ public class StatusTimeline implements Serializable {
         }
         return "StatusTimeline{" + "group=" + group + ", service=" + service + ", hostname=" + hostname + ", metric=" + metric + ", statusMetrics=" + resultsStatusMetrics + ", timestamps=" + resultsTimeStatus + '}';
     }
-
 }
