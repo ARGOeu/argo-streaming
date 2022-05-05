@@ -72,8 +72,6 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
         int[] unknownstatusInfo = timelineIntegrator.countStatusAppearances(timeline.getSamples(), unknownstatus);
 
         ArrayList<String> tags = (ArrayList)this.mtagsMgr.getTags(t.getMetric()).clone();
-        tags.add("MS");
-        tags.add("ACS");
         String tagInfo = "";
         for (String tag : tags) {
             if (tags.indexOf(tag) == 0) {
