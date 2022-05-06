@@ -1,10 +1,15 @@
 package argo.batch;
 
+import argo.ar.EndpointAR;
+import argo.ar.EndpointGroupAR;
+import argo.ar.ServiceAR;
+import argo.avro.GroupGroup;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,11 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
+import static org.apache.commons.math3.util.Precision.round;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profilesmanager.AggregationProfileManager;
+import profilesmanager.GroupGroupManager;
 import profilesmanager.OperationsManager;
 import timelines.Timeline;
 import trends.calculations.Trends;
@@ -642,4 +649,218 @@ public class TestUtils {
 
         return trendsList;
     }
+    
+    public static class ArItem {
+
+        private String group;
+
+        private String service;
+
+        private String hostname;
+
+        private double availability;
+        private double reliability;
+        private double up;
+        private double unknown;
+        private double down;
+
+        public ArItem(String group, String service, String hostname, double availability, double reliability, double up, double unknown, double down) {
+            this.group = group;
+            this.service = service;
+            this.hostname = hostname;
+            this.availability = availability;
+            this.reliability = reliability;
+            this.up = up;
+            this.unknown = unknown;
+            this.down = down;
+        }
+
+        public String getGroup() {
+            return group;
+        }
+
+        public void setGroup(String group) {
+            this.group = group;
+        }
+
+        public String getService() {
+            return service;
+        }
+
+        public void setService(String service) {
+            this.service = service;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public double getAvailability() {
+            return availability;
+        }
+
+        public void setAvailability(double availability) {
+            this.availability = availability;
+        }
+
+        public double getReliability() {
+            return reliability;
+        }
+
+        public void setReliability(double reliability) {
+            this.reliability = reliability;
+        }
+
+        public double getUp() {
+            return up;
+        }
+
+        public void setUp(double up) {
+            this.up = up;
+        }
+
+        public double getUnknown() {
+            return unknown;
+        }
+
+        public void setUnknown(double unknown) {
+            this.unknown = unknown;
+        }
+
+        public double getDown() {
+            return down;
+        }
+
+        public void setDown(double down) {
+            this.down = down;
+        }
+
+    }
+
+    public static List<ArItem> prepareAR(List<StatisticsItem> statisticList, LEVEL level) {
+
+        ArrayList<ArItem> arList = new ArrayList<>();
+        for (StatisticsItem item : statisticList) {
+            String group = item.getGroup();
+            String service = item.getService();
+            String hostname = item.getHostname();
+            String metric = item.getMetric();
+            if(group.equals("Group_1") && service.equals("Service_1B") && hostname.equals("Hostname_1")){
+                System.out.println("here we are");
+            
+            }
+            //   if(group.equals("Group_1") && service.equals("Service_1B") && hostname.equals("Hostname_1")){
+            if (level.equals(LEVEL.HOSTNAME)) {
+                metric = null;
+            } else if (level.equals(LEVEL.SERVICE)) {
+                metric = null;
+                hostname = null;
+            } else if (level.equals(LEVEL.GROUP)) {
+                metric = null;
+                hostname = null;
+                service = null;
+            }
+
+            HashMap<String, int[]> statistics = item.getStatistics();
+            int criticalDur = 0;
+            int warningDur = 0;
+            int okDur = 0;
+            int unknownDur = 0;
+            int downtimeDur = 0;
+            int missingDur = 0;
+
+            if (statistics.containsKey("CRITICAL")) {
+                criticalDur = statistics.get("CRITICAL")[1] * 60;
+            }
+
+            if (statistics.containsKey("WARNING")) {
+                warningDur = statistics.get("WARNING")[1] * 60;
+            }
+            if (statistics.containsKey("UNKNOWN")) {
+                unknownDur = statistics.get("UNKNOWN")[1] * 60;
+            }
+            if (statistics.containsKey("OK")) {
+                okDur = statistics.get("OK")[1] * 60;
+            }
+            if (statistics.containsKey("DOWNTIME")) {
+                downtimeDur = statistics.get("DOWNTIME")[1] * 60;
+            }
+            if (statistics.containsKey("MISSING")) {
+                missingDur = statistics.get("MISSING")[1] * 60;
+            }
+            int daySeconds = 86400;
+
+            //int[] upstatusInfo = new int[2];
+            double upstatus = 0;
+            upstatus = okDur + warningDur;
+//        upstatusInfo[0] = okstatusInfo[0] + warningstatusInfo[0];
+//        upstatusInfo[1] = okstatusInfo[1] + warningstatusInfo[1];
+
+            double knownPeriod = (double) daySeconds - (double) unknownDur - (double) missingDur;
+            double knownScheduled = knownPeriod - (double) downtimeDur;
+            double minutesAvail = ((double) upstatus / (double) knownPeriod) * 100;
+            if (Double.valueOf(minutesAvail).isNaN()) {
+                minutesAvail = -1;
+            }
+            double minutesRel = ((double) upstatus / knownScheduled) * 100;
+
+            if (Double.valueOf(minutesRel).isNaN()) {
+                minutesRel = -1;
+            }
+
+            double upT = ((double) upstatus) / (double) daySeconds;
+            double availability = round(minutesAvail, 5, BigDecimal.ROUND_HALF_UP);
+            double reliability = round(minutesRel, 5, BigDecimal.ROUND_HALF_UP);
+            double up_f = round(((double) upstatus / (double) daySeconds), 5, BigDecimal.ROUND_HALF_UP);
+            double unknown_f = round((((double) unknownDur + (double) missingDur) / (double) daySeconds), 5, BigDecimal.ROUND_HALF_UP);
+            double down_f = round(((double) downtimeDur / (double) daySeconds), 5, BigDecimal.ROUND_HALF_UP);
+
+            ArItem aritem = new ArItem(group, service, hostname, availability, reliability, up_f, unknown_f, down_f);
+            arList.add(aritem);
+        }
+        //   }
+        return arList;
+
+    }
+
+    public static ArrayList<EndpointAR> prepareEndpointAR(List<ArItem> arList, String date) {
+        int dateInt = Integer.parseInt(date.replace("-", ""));
+        ArrayList<EndpointAR> endpointList = new ArrayList<>();
+        for (ArItem arItem : arList) {
+
+            EndpointAR endpar = new EndpointAR(dateInt, "04edb428-01e6-4286-87f1-050546736f7c", arItem.getHostname(), arItem.getService(), arItem.getGroup(), arItem.getAvailability(), arItem.getReliability(), arItem.getUp(), arItem.getUnknown(), arItem.getDown(), "");
+            endpointList.add(endpar);
+        }
+        return endpointList;
+    }
+
+    public static ArrayList<ServiceAR> prepareServiceAR(List<ArItem> arList, String date) {
+        int dateInt = Integer.parseInt(date.replace("-", ""));
+        ArrayList<ServiceAR> serviceList = new ArrayList<>();
+        for (ArItem arItem : arList) {
+
+            ServiceAR endpar = new ServiceAR(dateInt, "04edb428-01e6-4286-87f1-050546736f7c", arItem.getService(), arItem.getGroup(), arItem.getAvailability(), arItem.getReliability(), arItem.getUp(), arItem.getUnknown(), arItem.getDown());
+            serviceList.add(endpar);
+        }
+        return serviceList;
+    }
+
+    public static ArrayList<EndpointGroupAR> prepareGroupR(List<ArItem> arList, String date, String ggGroup, List<GroupGroup> listGroups) {
+        int dateInt = Integer.parseInt(date.replace("-", ""));
+        GroupGroupManager ggpMgr = new GroupGroupManager();
+        ggpMgr.loadFromList(listGroups);
+        ArrayList<EndpointGroupAR> groupList = new ArrayList<>();
+        for (ArItem arItem : arList) {
+            String supergroup = ggpMgr.getGroup(ggGroup, arItem.getGroup());
+
+            EndpointGroupAR endpar = new EndpointGroupAR(dateInt, "04edb428-01e6-4286-87f1-050546736f7c", arItem.getGroup(), supergroup, 0, arItem.getAvailability(), arItem.getReliability(), arItem.getUp(), arItem.getUnknown(), arItem.getDown());
+            groupList.add(endpar);
+        }
+        return groupList;
+    }
+
 }
