@@ -73,6 +73,7 @@ language governing permissions and limitations under the License. -->
     handling. This approach is preferred and leads to much cleaner jar files. -->
 
     <dependencies>
+       
         <!-- Apache Flink dependencies -->
         <dependency>
             <groupId>org.apache.flink</groupId>

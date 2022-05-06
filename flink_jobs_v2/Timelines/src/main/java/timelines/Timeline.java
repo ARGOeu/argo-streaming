@@ -419,7 +419,6 @@ public class Timeline {
      * status "MISSING"
      */
     public void replacePreviousDateStatus(DateTime date, HashMap<String, Integer> availStates, boolean optimize) {
-
         DateTime firsTime = date;
         firsTime = firsTime.withTime(0, 0, 0, 0);
         DateTime firstEntry = this.samples.floorKey(firsTime);

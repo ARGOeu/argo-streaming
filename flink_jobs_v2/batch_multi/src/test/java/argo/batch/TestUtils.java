@@ -1,21 +1,28 @@
 package argo.batch;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
+import org.apache.flink.api.java.tuple.Tuple8;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.OperationsManager;
 import timelines.Timeline;
+import trends.calculations.Trends;
 import utils.Utils;
 
 /**
@@ -27,7 +34,7 @@ public class TestUtils {
     static Logger LOG = LoggerFactory.getLogger(TestUtils.class);
 
     public static enum LEVEL { // an enum class to define the level of the calculations
-        GROUP, SERVICE, FUNCTION, HOSTNAME
+        GROUP, SERVICE, FUNCTION, HOSTNAME, METRIC
 
     }
 
@@ -402,14 +409,237 @@ public class TestUtils {
             }
             if (found) { ///if the 2 objects are equal remove the object from the first list
                 iterA.remove();
+            }else{
+                System.out.println("not found");
+            
             }
 
         }
         boolean isEq = false;
+        
+        
         if (tempA.isEmpty() && tempB.isEmpty()) { //if the two lists are empty , this means that all objects were found on both lists and the lists are equal
             isEq = true;
         }
         return isEq;
     }
+    
+    /**
+     * Parses the Metric profile content retrieved from argo-web-api and
+     * provides a list of MetricProfile avro objects to be used in the next
+     * steps of the pipeline
+     */
+    public static StatisticsItem[] getListStatisticData(String content) {
+        List<StatisticsItem> results = new ArrayList<StatisticsItem>();
 
+        JsonParser jsonParser = new JsonParser();
+        JsonElement jElement = jsonParser.parse(content);
+        JsonArray jRoot = jElement.getAsJsonArray();
+        for (int i = 0; i < jRoot.size(); i++) {
+            JsonObject jItem = jRoot.get(i).getAsJsonObject();
+
+            String group = jItem.get("group").getAsString();
+            String metric = "";
+            String hostname = "";
+            String service = "";
+            String tags = "";
+            int flipflops = 0;
+
+            if (jItem.has("metric") && !jItem.get("metric").isJsonNull()) {
+                metric = jItem.get("metric").getAsString();
+            }
+
+            if (jItem.has("hostname") && !jItem.get("hostname").isJsonNull()) {
+                hostname = jItem.get("hostname").getAsString();
+            }
+            if (jItem.has("service") && !jItem.get("service").isJsonNull()) {
+                service = jItem.get("service").getAsString();
+            }
+            if (jItem.has("flipflops") && !jItem.get("flipflops").isJsonNull()) {
+                flipflops = jItem.get("flipflops").getAsInt();
+            }
+            if (jItem.has("tags") && !jItem.get("tags").isJsonNull()) {
+                tags = jItem.get("tags").getAsString();
+            }
+            JsonArray statistics = jItem.getAsJsonArray("statistics");
+            HashMap<String, int[]> statisticMap = new HashMap<>();
+            for (JsonElement item : statistics) {
+                // service name
+                JsonObject itemObj = item.getAsJsonObject();
+                String status = itemObj.get("status").getAsString();
+                int duration = itemObj.get("duration").getAsInt();
+                int frequency = itemObj.get("freq").getAsInt();
+
+                statisticMap.put(status, new int[]{frequency, duration});
+
+            }
+
+            StatisticsItem statItem = new StatisticsItem(group, service, hostname, metric, flipflops, tags, statisticMap);
+            results.add(statItem);
+        }
+        StatisticsItem[] rArr = new StatisticsItem[results.size()];
+        rArr = results.toArray(rArr);
+        return rArr;
+    }
+
+
+    public static class StatisticsItem {
+
+        private String group;
+        private String service;
+        private String hostname;
+        private String metric;
+        private int flipflops;
+        private String tags;
+
+        HashMap<String, int[]> statistics;
+
+        public StatisticsItem(String group, String service, String hostname, String metric, int flipflops, String tags, HashMap<String, int[]> statistics) {
+            this.group = group;
+            this.service = service;
+            this.hostname = hostname;
+            this.metric = metric;
+            this.flipflops = flipflops;
+            this.tags = tags;
+            this.statistics = statistics;
+        }
+
+        public String getTags() {
+            return tags;
+        }
+
+        public void setTags(String tags) {
+            this.tags = tags;
+        }
+
+        public String getGroup() {
+            return group;
+        }
+
+        public void setGroup(String group) {
+            this.group = group;
+        }
+
+        public String getService() {
+            return service;
+        }
+
+        public void setService(String service) {
+            this.service = service;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public int getFlipflops() {
+            return flipflops;
+        }
+
+        public void setFlipflops(int flipflops) {
+            this.flipflops = flipflops;
+        }
+
+        public HashMap<String, int[]> getStatistics() {
+            return statistics;
+        }
+
+        public void setStatistics(HashMap<String, int[]> statistics) {
+            this.statistics = statistics;
+        }
+
+        public String getMetric() {
+            return metric;
+        }
+
+        public void setMetric(String metric) {
+            this.metric = metric;
+        }
+
+    }
+
+ public static List<Trends> prepareFlipFlops(List<StatisticsItem> statisticList, LEVEL level) {
+
+        ArrayList<Trends> trendsList = new ArrayList<>();
+        for (StatisticsItem item : statisticList) {
+            if (item.getFlipflops() != 0) {
+
+                Trends trends = null;
+                if (level.equals(LEVEL.HOSTNAME)) {
+                    trends = new Trends(item.getGroup(), item.getService(), item.getHostname(), item.getFlipflops());
+
+                } else if (level.equals(LEVEL.SERVICE)) {
+                    trends = new Trends(item.getGroup(), item.getService(), item.getFlipflops());
+
+                } else if (level.equals(LEVEL.GROUP)) {
+                    trends = new Trends(item.getGroup(), item.getFlipflops());
+
+                } else {
+                    trends = new Trends(item.getGroup(), item.getService(), item.getHostname(), item.getMetric(), item.getFlipflops(), item.getTags());
+                }
+                trendsList.add(trends);
+            }
+        }
+        return trendsList;
+    }
+
+    public static List<Tuple8< String, String, String, String, String, Integer, Integer, String>> prepareTrends(List<StatisticsItem> statisticList, LEVEL level) {
+
+        ArrayList<Tuple8< String, String, String, String, String, Integer, Integer, String>> trendsList = new ArrayList<>();
+        for (StatisticsItem item : statisticList) {
+            String group = item.getGroup();
+            String service = item.getService();
+            String hostname = item.getHostname();
+            String metric = item.getMetric();
+
+            if (level.equals(LEVEL.HOSTNAME)) {
+                metric = null;
+            } else if (level.equals(LEVEL.SERVICE)) {
+                metric = null;
+                hostname = null;
+            } else if (level.equals(LEVEL.GROUP)) {
+                metric = null;
+                hostname = null;
+                service = null;
+            }
+
+            HashMap<String, int[]> statistics = item.getStatistics();
+            int duration = 0;
+            int freq = 0;
+            if (statistics.containsKey("CRITICAL")) {
+                freq = statistics.get("CRITICAL")[0];
+                duration = statistics.get("CRITICAL")[1];
+            }
+            Tuple8<String, String, String, String, String, Integer, Integer, String> tupleCritical = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+                    group, service, hostname, metric, "CRITICAL", freq, duration, item.getTags());
+
+            duration = 0;
+            freq = 0;
+            if (statistics.containsKey("WARNING")) {
+                freq = statistics.get("WARNING")[0];
+                duration = statistics.get("WARNING")[1];
+            }
+            Tuple8<String, String, String, String, String, Integer, Integer, String> tupleWarning = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+                    group, service, hostname, metric, "WARNING", freq, duration, item.getTags());
+
+            duration = 0;
+            freq = 0;
+            if (statistics.containsKey("UNKNOWN")) {
+                freq = statistics.get("UNKNOWN")[0];
+                duration = statistics.get("UNKNOWN")[1];
+            }
+            Tuple8<String, String, String, String, String, Integer, Integer, String> tupleUnknown = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+                    group, service, hostname, metric, "UNKNOWN", freq, duration, item.getTags());
+
+            trendsList.add(tupleCritical);
+            trendsList.add(tupleWarning);
+            trendsList.add(tupleUnknown);
+        }
+
+        return trendsList;
+    }
 }

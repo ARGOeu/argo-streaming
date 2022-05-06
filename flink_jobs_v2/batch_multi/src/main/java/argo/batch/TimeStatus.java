@@ -43,5 +43,4 @@ public class TimeStatus implements Serializable {
     public String toString() {
         return "TimeStatus{" + "timestamp=" + timestamp + ", status=" + status + '}';
     }
-
 }

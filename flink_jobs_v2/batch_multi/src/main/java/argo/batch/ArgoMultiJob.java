@@ -14,8 +14,6 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
-import java.io.File;
-import java.net.URL;
 import trends.calculations.ServiceTrends;
 import trends.flipflops.ZeroServiceFlipFlopFilter;
 import trends.status.EndpointTrendsCounter;
@@ -94,7 +92,6 @@ public class ArgoMultiJob {
 
         // set up the execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-
         // make parameters available in the web interface
         env.getConfig().setGlobalJobParameters(params);
         env.setParallelism(1);
