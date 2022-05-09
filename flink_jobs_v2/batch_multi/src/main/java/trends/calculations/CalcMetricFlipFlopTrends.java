@@ -64,7 +64,7 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
             timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
         }
 
-        Timeline timeline = new Timeline();
+       Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timestampMap, false);
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);

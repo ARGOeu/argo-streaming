@@ -212,6 +212,8 @@ public class TestUtils {
                         op = opsMgr.getIntOperation(aggrMgr.retrieveProfileOperation());
 
                     }
+                       initialTimeline.setExcludedInt(opsMgr.getDefaultExcludedInt());
+                 
                     initialTimeline.aggregate(timeline, opsMgr.getTruthTable(), op);
                 }
                 count++;
@@ -403,7 +405,6 @@ public class TestUtils {
         while (iterA.hasNext()) { //iterates over the objects of the first list and if the object is found at the second list the object is removed from both lists
             Object oA = iterA.next();
             Iterator iterB = tempB.iterator();
-
             boolean found = false;
             while (iterB.hasNext()) {
                 Object oB = iterB.next();
@@ -416,11 +417,7 @@ public class TestUtils {
             }
             if (found) { ///if the 2 objects are equal remove the object from the first list
                 iterA.remove();
-            }else{
-                System.out.println("not found");
-            
             }
-
         }
         boolean isEq = false;
         

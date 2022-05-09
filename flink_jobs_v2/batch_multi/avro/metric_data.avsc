@@ -14,5 +14,7 @@
                                              "type" : "map",
                                              "values" : ["null", "string"]
                                            }]
-        }]
+        },
+        {"name": "actual_data", "type": ["null", "string"],"default": null}
+        ]
 }

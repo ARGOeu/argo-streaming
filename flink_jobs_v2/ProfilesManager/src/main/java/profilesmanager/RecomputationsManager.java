@@ -91,13 +91,14 @@ public class RecomputationsManager {
 
     public ExcludedMetric findMetricExcluded(String group, String service, String hostname, String metric) {
         boolean isExcluded = false;
-
         for (ExcludedMetric excludedMetric : this.excludedMetrics) {
-            if (excludedMetric.metric.equals(metric)) {
+            if (excludedMetric.metric == null || excludedMetric.metric.equals(metric)) {
                 isExcluded = isEqualGroup(excludedMetric, group, service, hostname);
                 if (isExcluded) {
                     return excludedMetric;
                 }
+            } else if (excludedMetric.metric.equals(metric)) {
+                return excludedMetric;
             }
         }
         return null;
