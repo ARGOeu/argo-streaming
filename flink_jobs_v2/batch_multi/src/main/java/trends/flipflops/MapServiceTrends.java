@@ -11,6 +11,7 @@ public class MapServiceTrends implements MapFunction<ServiceTrends, Trends> {
 
     @Override
     public Trends map(ServiceTrends in) throws Exception {
+
         return new Trends(in.getGroup(), in.getService(),  in.getFlipflops());
     }
 }

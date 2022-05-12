@@ -77,7 +77,7 @@ public class CalcStatusService extends RichFlatMapFunction<StatusTimeline, Statu
         boolean hasThr = false;
         if (in.hasThr()) {
             hasThr = true;
-        }
+        }           
         for (TimeStatus item : timestamps) {
             StatusMetric cur = new StatusMetric();
             cur.setDateInt(dateInt);

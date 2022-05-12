@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import timelines.Timeline;
 
-
 /**
  * CalcServiceEndpointFlipFlop, count status changes for each service endpoint
  * group
@@ -35,6 +34,7 @@ public class CalcServiceFlipFlopTrends implements FlatMapFunction<StatusTimeline
 
         String group = in.getGroup();
         String service = in.getService();
+   
         //construct a timeline containing all the timestamps of each metric timeline
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
 

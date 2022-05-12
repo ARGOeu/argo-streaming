@@ -4,6 +4,8 @@
  * and open the template in the editor.
  */
 package timelines;
+
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -34,7 +36,9 @@ public class TimelineUtils {
     private JSONObject readJsonFromFile(String path) throws FileNotFoundException, IOException, org.json.simple.parser.ParseException {
         JSONParser parser = new JSONParser();
         URL url = TimelineUtils.class.getResource(path);
-        Object obj = parser.parse(new FileReader(path));
+        File file = new File(url.getFile());
+        FileReader filereader = new FileReader(file);
+        Object obj = parser.parse(filereader);
 
         JSONObject jsonObject = (JSONObject) obj;
 
@@ -121,7 +125,7 @@ public class TimelineUtils {
 
             }
         }
-        TimelineJson timelineJsonObject = new TimelineJson(inputTimelines, outputTimeline, operations.indexOf(operation),table,states);
+        TimelineJson timelineJsonObject = new TimelineJson(inputTimelines, outputTimeline, operations.indexOf(operation), table, states);
         return timelineJsonObject;
     }
 
@@ -181,6 +185,5 @@ public class TimelineUtils {
             this.states = states;
         }
     }
-        
 
 }

@@ -178,12 +178,13 @@ public class TestUtils {
             String group = "", function = "", service = "", hostname = "";
             TreeMap<Long, ArrayList<Integer>> map = new TreeMap();
             ArrayList<Timeline> uniquesTimelines = new ArrayList<>();
+            boolean hasThr=false;
             for (StatusTimeline sm : list) {
                 group = sm.getGroup();
                 service = sm.getService();
                 function = sm.getFunction();
                 hostname = sm.getHostname();
-
+                hasThr=sm.hasThr();
                 Timeline timeline = new Timeline();
                 for (TimeStatus ts : sm.getTimestamps()) {
                     timeline.insert(new DateTime(ts.getTimestamp()), ts.getStatus());
@@ -226,6 +227,7 @@ public class TestUtils {
             }
 
             StatusTimeline statusTimeline = new StatusTimeline(group, function, service, hostname, "", finalTimestamps);
+             statusTimeline.setHasThr(hasThr);
             timelines.add(statusTimeline);
 
         }
@@ -323,13 +325,14 @@ public class TestUtils {
         for (ArrayList<StatusMetric> list : timelist) {
             ArrayList<TimeStatus> timestatusList = new ArrayList();
             String group = "", function = "", service = "", hostname = "", metric = "";
-
+             boolean hasThr=false;
             for (StatusMetric sm : list) {
                 group = sm.getGroup();
                 service = sm.getService();
                 hostname = sm.getHostname();
                 function = sm.getFunction();
                 metric = sm.getMetric();
+                 hasThr = sm.getHasThr();
                 String timestamp = sm.getTimestamp();
                 String prevState = sm.getPrevState();
                 String prevTs = sm.getPrevTs();
@@ -355,6 +358,7 @@ public class TestUtils {
             }
 
             StatusTimeline statusTimeline = new StatusTimeline(group, function, service, hostname, metric, timestatusList);
+            statusTimeline.setHasThr(hasThr);
             timelines.add(statusTimeline);
         }
 
@@ -746,12 +750,7 @@ public class TestUtils {
             String service = item.getService();
             String hostname = item.getHostname();
             String metric = item.getMetric();
-            if(group.equals("Group_1") && service.equals("Service_1B") && hostname.equals("Hostname_1")){
-                System.out.println("here we are");
-            
-            }
-            //   if(group.equals("Group_1") && service.equals("Service_1B") && hostname.equals("Hostname_1")){
-            if (level.equals(LEVEL.HOSTNAME)) {
+             if (level.equals(LEVEL.HOSTNAME)) {
                 metric = null;
             } else if (level.equals(LEVEL.SERVICE)) {
                 metric = null;

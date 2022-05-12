@@ -1,4 +1,6 @@
 package argo.batch;
+import java.util.Objects;
+
 
 public class EndpointAR {
 	
@@ -106,5 +108,4 @@ public class EndpointAR {
 	public String toString() {
 		return "(" + this.dateInt+ "," + this.report + "," + this.name + "," + this.service + "," + this.group + "," + this.a + "," + this.r + ","  + this.up + ","  + this.unknown + ","  + this.down  + ")";
 	}
-
 }

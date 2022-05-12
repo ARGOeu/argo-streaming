@@ -1,0 +1,1 @@
+{"status":{"message":"Success","code":"200"},"data":[{"id":"ee108729-c30d-40d5-8525-a446ddbeb922","date":"2021-11-04","name":"test-thresholds","rules":[{"host":"Hostname_XXXXX","metric":"Metric_XXXXX","thresholds":"time=1s;0:0.5;0.5:1;0;10"}]}]}
