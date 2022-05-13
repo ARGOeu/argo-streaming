@@ -73,10 +73,12 @@ public class TimelineAggregator {
     public TimelineAggregator(Map<String, Timeline> inputs, int excludedInt, String rundate) {
         this.inputs = inputs;
         this.output = new Timeline();
+
         this.date=getLocalDate(rundate);
         this.output.setDate(this.date);
         this.excludedInt = excludedInt;
         this.output.setExcludedInt(excludedInt);
+        this.output.setDate(this.date);
     }
 
     /**

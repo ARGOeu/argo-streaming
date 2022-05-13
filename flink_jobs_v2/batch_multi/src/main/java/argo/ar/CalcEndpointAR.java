@@ -98,6 +98,7 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
         this.ggpMgr = new GroupGroupManager();
         this.ggpMgr.loadFromList(ggp);
 
+        // Initialize downtime manager
         this.repMgr = new ReportManager();
         this.repMgr.loadJsonString(conf);
 
@@ -130,6 +131,7 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
         service = in.getService();
         hostname = in.getHostname();
         endpointGroup = in.getGroup();
+
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
         for (TimeStatus ts : timestatusList) {

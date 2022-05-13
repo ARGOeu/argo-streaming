@@ -1,16 +1,13 @@
 package timelines;
 
-import java.net.URL;
 import java.text.ParseException;
 import java.util.TreeMap;
-import static junit.framework.Assert.assertNotNull;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 

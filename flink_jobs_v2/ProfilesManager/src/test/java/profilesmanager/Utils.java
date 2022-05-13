@@ -84,10 +84,8 @@ public class Utils {
             JsonObject jObjItem = item.getAsJsonObject();
             String opname = jObjItem.getAsJsonPrimitive("name").getAsString();
             JsonArray tops = jObjItem.getAsJsonArray("truth_table");
-            // System.out.println(tops);
-
+           
             for (int j = 0; j < tops.size(); j++) {
-                // System.out.println(opname);
                 JsonObject row = tops.get(j).getAsJsonObject();
 
                 int a_val = revStates.indexOf(row.getAsJsonPrimitive("a").getAsString());

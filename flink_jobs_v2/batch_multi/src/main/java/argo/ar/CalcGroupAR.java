@@ -65,7 +65,6 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
     private OperationsManager opsMgr;
     private ReportManager repMgr;
     private String runDate;
-    //   private WeightManager weightMgr;
     private ReportManager confMgr;
     private List<Weight> weight;
     private String ggroupType;
