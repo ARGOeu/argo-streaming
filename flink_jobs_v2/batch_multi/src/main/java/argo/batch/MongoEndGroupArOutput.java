@@ -14,6 +14,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
+import org.bson.types.ObjectId;
+import org.joda.time.DateTime;
 
 
 /**
@@ -40,7 +42,8 @@ public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
         private boolean clearMongo;
         private String report;
         private int date;
-   
+       private ObjectId nowId;
+
 
 	// constructor
 	public MongoEndGroupArOutput(String uri, String col, String method, String report, String date, boolean clearMongo) {
@@ -67,7 +70,10 @@ public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
 	}
 	
 	public MongoEndGroupArOutput(String host, int port, String db, String col, MongoMethod method, String report, String date, boolean clearMongo) {
-		this.mongoHost = host;
+                this.date = Integer.parseInt(date.replace("-", ""));
+                this.report = report;
+		
+                this.mongoHost = host;
 		this.mongoPort = port;
 		this.dbName = db;
 		this.colName = col;
@@ -76,18 +82,19 @@ public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
     	}
 	
 
-	private void initMongo() {
-		this.mClient = new MongoClient(mongoHost, mongoPort);
-		this.mDB = mClient.getDatabase(dbName);
-		this.mCol = mDB.getCollection(colName);
-                if (this.clearMongo) {
-                  deleteDoc();
-                }
-    
-	}
-private void deleteDoc() {
+    private void initMongo() {
+        this.mClient = new MongoClient(mongoHost, mongoPort);
+        this.mDB = mClient.getDatabase(dbName);
+        this.mCol = mDB.getCollection(colName);
+        if (this.clearMongo) {
+            String oidString = Long.toHexString(new DateTime().getMillis() / 1000L) + "0000000000000000";
+            this.nowId = new ObjectId(oidString);
+        }
 
-        Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date", this.date));
+    }
+    private void deleteDoc() {
+
+        Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date", this.date), Filters.lte("_id", this.nowId));
         mCol.deleteMany(filter);
     }
 	
@@ -139,7 +146,11 @@ private void deleteDoc() {
 	 */
 	@Override
 	public void close() throws IOException {
-		if (mClient != null) {
+            if (clearMongo) {
+                deleteDoc();
+            }
+	
+            if (mClient != null) {
 			mClient.close();
 			mClient = null;
 			mDB = null;

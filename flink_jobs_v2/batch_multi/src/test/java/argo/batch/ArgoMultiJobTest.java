@@ -36,6 +36,7 @@ import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
+import org.bson.types.ObjectId;
 import org.junit.Assert;
 import org.junit.Test;
 import profilesmanager.ReportManager;

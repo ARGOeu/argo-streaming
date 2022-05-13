@@ -12,6 +12,8 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import java.util.Arrays;
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
+import org.joda.time.DateTime;
 
 /**
  * MongoTrendsOutput for storing trends data to mongodb
@@ -36,6 +38,8 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
     private MongoDatabase mDB;
     private MongoCollection<Document> mCol;
     private boolean clearMongo;
+    private ObjectId nowId;
+
 
     // constructor
     public MongoTrendsOutput(String uri, String col, TrendsType trendsType, String report, String date, boolean clearMongo) {
@@ -57,7 +61,10 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
     }
 
     // constructor
-    public MongoTrendsOutput(String host, int port, String db, String col, TrendsType trendsType, String report, boolean clearMongo) {
+    public MongoTrendsOutput(String host, int port, String db, String col, TrendsType trendsType, String report,String date, boolean clearMongo) {
+         this.date = Integer.parseInt(date.replace("-", ""));
+         this.report = report;
+	
         this.mongoHost = host;
         this.mongoPort = port;
         this.dbName = db;
@@ -72,8 +79,10 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
         this.mDB = mClient.getDatabase(dbName);
         this.mCol = mDB.getCollection(colName);
         if (this.clearMongo) {
-            deleteDoc();
+            String oidString = Long.toHexString(new DateTime().getMillis() / 1000L) + "0000000000000000";
+            this.nowId = new ObjectId(oidString);
         }
+
     }
 
     /**
@@ -162,7 +171,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
 
     private void deleteDoc() {
 
-        Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date", this.date));
+        Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date", this.date), Filters.lte("_id", this.nowId));
         mCol.deleteMany(filter);
     }
 
@@ -184,6 +193,10 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
      */
     @Override
     public void close() throws IOException {
+         if (clearMongo) {
+            deleteDoc();
+        }
+
         if (mClient != null) {
             mClient.close();
             mClient = null;
