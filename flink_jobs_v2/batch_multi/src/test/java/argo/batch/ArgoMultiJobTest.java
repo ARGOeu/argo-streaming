@@ -308,7 +308,7 @@ public class ArgoMultiJobTest {
 
             DataSet<StatusMetric> stEndpointDS = statusEndpointTimeline.flatMap(new CalcStatusEndpoint(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                     .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                    .withBroadcastSet(apsDS, "aps");
+                    .withBroadcastSet(apsDS, "aps").withBroadcastSet(cfgDS, "conf");
 // Create status service data set
 
             URL statusendpURL = ArgoMultiJob.class.getResource("/test/statusendpoint.json");
