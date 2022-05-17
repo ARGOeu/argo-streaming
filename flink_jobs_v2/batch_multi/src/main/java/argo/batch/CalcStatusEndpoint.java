@@ -1,5 +1,6 @@
 package argo.batch;
 
+import argo.avro.GroupEndpoint;
 import java.io.IOException;
 import java.util.List;
 
@@ -14,8 +15,10 @@ import argo.avro.MetricProfile;
 import java.util.ArrayList;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import profilesmanager.AggregationProfileManager;
+import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
+import profilesmanager.ReportManager;
 import timelines.Utils;
 
 /* Accepts a list o status metrics grouped by the fields: endpoint group,
@@ -41,6 +44,11 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
     private MetricProfileManager mpsMgr;
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
+    private EndpointGroupManager egpMgr;
+    private List<GroupEndpoint> egp;
+    private ReportManager repMgr;
+    private List<String> conf;
+
     private String runDate;
 
     @Override
@@ -61,13 +69,19 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
+        this.egp = getRuntimeContext().getBroadcastVariable("egp");
+        // Initialize endpoint group manager
+        this.egpMgr = new EndpointGroupManager();
+        this.egpMgr.loadFromList(egp);
+        this.conf = getRuntimeContext().getBroadcastVariable("conf");
 
+        this.repMgr = new ReportManager();
+        this.repMgr.loadJsonString(conf);
         this.runDate = params.getRequired("run.date");
     }
 
     @Override
     public void flatMap(StatusTimeline in, Collector<StatusMetric> out) throws Exception {
-        String info = "";
         int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
         String function = in.getFunction();
         String service = in.getService();
@@ -78,6 +92,10 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
         if (in.hasThr()) {
             hasThr = true;
         }
+        String groupType = this.repMgr.egroup;
+
+        String info = this.egpMgr.getInfo(endpointGroup, groupType, hostname, service);
+
         for (TimeStatus item : timestamps) {
             StatusMetric cur = new StatusMetric();
             cur.setDateInt(dateInt);

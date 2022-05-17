@@ -280,7 +280,7 @@ public class ArgoMultiJob {
 
             DataSet<StatusMetric> stEndpointDS = statusEndpointTimeline.flatMap(new CalcStatusEndpoint(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                     .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                    .withBroadcastSet(apsDS, "aps");
+                    .withBroadcastSet(apsDS, "aps").withBroadcastSet(confDS, "conf");
 // Create status service data set
 
             DataSet<StatusMetric> stServiceDS = statusServiceTimeline.flatMap(new CalcStatusService(params)).withBroadcastSet(mpsDS, "mps")
