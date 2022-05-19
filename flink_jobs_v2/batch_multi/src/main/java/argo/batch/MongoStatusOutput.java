@@ -168,6 +168,21 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
                     // append original status and threshold rule applied
                     .append("original_status", record.getOgStatus())
                     .append("threshold_rule_applied", record.getRuleApplied());
+        
+          String info = record.getInfo();
+            if (!info.equalsIgnoreCase("")) {
+                Document infoDoc = new Document();
+                String[] kvs = info.split(",");
+                for (String kv : kvs) {
+                    String[] kvtok = kv.split(":", 2);
+                    if (kvtok.length == 2) {
+                        infoDoc.append(kvtok[0], kvtok[1]);
+                    }
+                }
+
+                doc.append("info", infoDoc);
+            }
+
         }
 
         doc.append("status", record.getStatus())
