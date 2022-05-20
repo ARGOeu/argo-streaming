@@ -294,7 +294,8 @@ public class ArgoMultiJobTest {
 
         if (calcStatus) {
             //Calculate endpoint timeline timestamps 
-            stDetailDS = stDetailDS.flatMap(new MapStatusMetricTags()).withBroadcastSet(mtagsDS, "mtags");
+            stDetailDS = stDetailDS.flatMap(new MapStatusMetricTags()).withBroadcastSet(mtagsDS, "mtags").withBroadcastSet(egpDS, "egp")
+                    .withBroadcastSet(cfgDS, "conf");
 
             URL expMTagsURL = ArgoMultiJobTest.class.getResource("/test/expmtagsdata.json");
             DataSet<String> expectedMTagsString = env.readTextFile(expMTagsURL.toString());
