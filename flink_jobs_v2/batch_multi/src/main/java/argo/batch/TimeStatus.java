@@ -6,7 +6,6 @@
 package argo.batch;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  */

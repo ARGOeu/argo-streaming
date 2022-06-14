@@ -1,9 +1,4 @@
 package argo.ar;
-
-import java.util.Objects;
-
-
-
 public class EndpointAR {
 	
 	private int dateInt;

@@ -260,29 +260,27 @@ public class EndpointGroupManager implements Serializable {
         HashMap<String, String> tags = this.getGroupTags(group, type, hostname, service);
 
         if (tags == null) {
-            return info;
+            return "{" + info+"}";
         }
-
         for (String tName : tags.keySet()) {
 
             if (tName.startsWith("info_")) {
                 String infoName = tName.replaceFirst("info_", "");
-
                 String value = tags.get(tName);
 
                 if (!value.equalsIgnoreCase("")) {
-
                     if (!first) {
                         info = info + ",";
                     } else {
                         first = false;
                     }
-                    info = info + infoName + ":" + value;
+                     info = info + "\""+infoName+"\"" + ":" + "\""+value+"\"" ;
 
                 }
             }
         }
-        return info;
+
+        return "{"+info + "}";
     }
 
     /**
@@ -476,8 +474,7 @@ public class EndpointGroupManager implements Serializable {
             String hostname = item.getHostname();
             HashMap<String, String> tagMap = new HashMap<String, String>();
             HashMap<String, String> tags = (HashMap<String, String>) item.getTags();
-
-            if (tags != null) {
+             if (tags != null) {
                 for (String key : tags.keySet()) {
                     tagMap.put(key, tags.get(key));
                 }

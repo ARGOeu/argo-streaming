@@ -1,5 +1,6 @@
 package argo.batch;
 
+import com.google.gson.Gson;
 import java.io.IOException;
 
 import org.apache.flink.api.common.io.OutputFormat;
@@ -14,8 +15,11 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import java.util.Arrays;
+import java.util.Iterator;
+import jdk.nashorn.internal.parser.JSONParser;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
+import org.json.simple.JSONObject;
 
 /**
  * MongoOutputFormat for storing status data to mongodb
@@ -139,18 +143,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
                     .append("host", record.getHostname());
 
             String info = record.getInfo();
-            if (!info.equalsIgnoreCase("")) {
-                Document infoDoc = new Document();
-                String[] kvs = info.split(",");
-                for (String kv : kvs) {
-                    String[] kvtok = kv.split(":", 2);
-                    if (kvtok.length == 2) {
-                        infoDoc.append(kvtok[0], kvtok[1]);
-                    }
-                }
-
-                doc.append("info", infoDoc);
-            }
+            doc.append("info", parseInfo(info));
 
         } else if (this.sType == StatusType.STATUS_METRIC) {
             String[] tagsArr = record.getTags().split(",");
@@ -168,20 +161,10 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
                     // append original status and threshold rule applied
                     .append("original_status", record.getOgStatus())
                     .append("threshold_rule_applied", record.getRuleApplied());
-        
-          String info = record.getInfo();
-            if (!info.equalsIgnoreCase("")) {
-                Document infoDoc = new Document();
-                String[] kvs = info.split(",");
-                for (String kv : kvs) {
-                    String[] kvtok = kv.split(":", 2);
-                    if (kvtok.length == 2) {
-                        infoDoc.append(kvtok[0], kvtok[1]);
-                    }
-                }
 
-                doc.append("info", infoDoc);
-            }
+            String info = record.getInfo();
+
+            doc.append("info", parseInfo(info));
 
         }
 
@@ -253,7 +236,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
      */
     @Override
     public void close() throws IOException {
-         if (clearMongo) {
+        if (clearMongo) {
             deleteDoc();
         }
 
@@ -271,4 +254,20 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
     }
 
+    private Document parseInfo(String info) {
+        Gson g = new Gson();
+        JSONObject jsonObject = g.fromJson(info, JSONObject.class);
+
+        Iterator<String> keys = jsonObject.keySet().iterator();
+        Document infoDoc = new Document();
+
+        while (keys.hasNext()) {
+
+            String key = keys.next();
+            String value = (String) jsonObject.get(key);
+            infoDoc.append(key, value);
+        }
+        return infoDoc;
+
+    }
 }

@@ -186,14 +186,11 @@ public class PickDataPointsTest {
 		
 		Assert.assertEquals(5,resulted.size());
 		
-		String[] expected = new String[] {"URL:host1.example.foo/path/to/service1,DN:foo DN", 
-				"URL:host1.example.foo/path/to/service2", 
-				"URL:host2.example.foo/path/to/service1",
-				"URL:host2.example.foo/path/to/service2,ext_Value:extension1",
-                                ""};
-		
-
-		System.out.println(resulted);
+		String[] expected = new String[] {"{\"URL\":\"host1.example.foo/path/to/service1\",\"DN\":\"foo DN\"}", 
+				"{\"URL\":\"host1.example.foo/path/to/service2\"}", 
+				"{\"URL\":\"host2.example.foo/path/to/service1\"}",
+				"{\"URL\":\"host2.example.foo/path/to/service2\",\"ext_Value\":\"extension1\"}",
+                                "{}"};
 		
 		for (int i = 0;i<resulted.size();i++) { 
 			Assert.assertEquals(expected[i], resulted.get(i).getInfo());
