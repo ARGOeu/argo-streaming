@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import argo.avro.GroupEndpoint;
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -30,6 +31,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -256,31 +258,27 @@ public class EndpointGroupManager implements Serializable {
      */
     public String getInfo(String group, String type, String hostname, String service) {
         String info = "";
-        boolean first = true;
         HashMap<String, String> tags = this.getGroupTags(group, type, hostname, service);
 
         if (tags == null) {
-            return "{" + info+"}";
+            return info;
         }
+        JsonObject job = new JsonObject();
         for (String tName : tags.keySet()) {
 
             if (tName.startsWith("info_")) {
                 String infoName = tName.replaceFirst("info_", "");
+
                 String value = tags.get(tName);
 
                 if (!value.equalsIgnoreCase("")) {
-                    if (!first) {
-                        info = info + ",";
-                    } else {
-                        first = false;
-                    }
-                     info = info + "\""+infoName+"\"" + ":" + "\""+value+"\"" ;
 
+                    job.addProperty(infoName, value);
                 }
             }
         }
-
-        return "{"+info + "}";
+        Gson gson = new Gson();
+        return gson.toJson(job);
     }
 
     /**
@@ -474,7 +472,7 @@ public class EndpointGroupManager implements Serializable {
             String hostname = item.getHostname();
             HashMap<String, String> tagMap = new HashMap<String, String>();
             HashMap<String, String> tags = (HashMap<String, String>) item.getTags();
-             if (tags != null) {
+            if (tags != null) {
                 for (String key : tags.keySet()) {
                     tagMap.put(key, tags.get(key));
                 }
