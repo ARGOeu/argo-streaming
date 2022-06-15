@@ -162,7 +162,7 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
 
     }
 
-  
+
     private Document parseInfo(String info) {
         Gson g = new Gson();
         JSONObject jsonObject = g.fromJson(info, JSONObject.class);
@@ -179,4 +179,5 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
         return infoDoc;
 
     }
+
 }

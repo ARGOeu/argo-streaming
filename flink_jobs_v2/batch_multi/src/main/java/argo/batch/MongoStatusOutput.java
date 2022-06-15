@@ -19,6 +19,7 @@ import java.util.Iterator;
 import jdk.nashorn.internal.parser.JSONParser;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 /**
@@ -163,7 +164,6 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
                     .append("threshold_rule_applied", record.getRuleApplied());
 
             String info = record.getInfo();
-
             doc.append("info", parseInfo(info));
 
         }

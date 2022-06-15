@@ -117,6 +117,7 @@ public class EndpointGroupManagerTest {
     /**
      * Test of getInfo method, of class EndpointGroupManager.
      */
+
     @Test
     public void testGetInfo() throws IOException {
         System.out.println("getInfo");
@@ -131,11 +132,11 @@ public class EndpointGroupManagerTest {
 
         String expResult = "{\"URL\":\"host2.example.foo/path/to/service2\"}";
         String result = instance.getInfo(group, type, hostname, service);
+        
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         // fail("The test case is a prototype.");
     }
-
     /**
      * Test of getGroupTags method, of class EndpointGroupManager.
      */
