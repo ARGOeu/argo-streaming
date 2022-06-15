@@ -129,7 +129,7 @@ public class EndpointGroupManagerTest {
         JsonElement jsonElement = loadJson(new File(EndpointGroupManagerTest.class.getResource("/profiles/topgroupendpoint.json").getFile()));
         instance.loadGroupEndpointProfile(jsonElement.getAsJsonArray());
 
-        String expResult = "URL:host2.example.foo/path/to/service2";
+        String expResult = "{\"URL\":\"host2.example.foo/path/to/service2\"}";
         String result = instance.getInfo(group, type, hostname, service);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.

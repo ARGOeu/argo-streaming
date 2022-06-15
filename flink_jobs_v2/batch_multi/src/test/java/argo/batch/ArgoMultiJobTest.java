@@ -264,7 +264,7 @@ public class ArgoMultiJobTest {
         ArrayList<String> aggrJson = new ArrayList();
         aggrJson.add(amr.getResourceJSON(ApiResource.AGGREGATION));
 
-        ArrayList<StatusTimeline> expEndpTimelines = TestUtils.prepareLevelTimeline(expMetricTimelines, opsJson, aggrJson, downDS.collect(),params.get("run.date"), LEVEL.HOSTNAME);
+        ArrayList<StatusTimeline> expEndpTimelines = TestUtils.prepareLevelTimeline(expMetricTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.HOSTNAME);
         Assert.assertEquals(TestUtils.compareLists(expEndpTimelines, statusEndpointTimeline.collect()), true);
 
         //*************** Test Service Timeline
@@ -272,7 +272,7 @@ public class ArgoMultiJobTest {
                 .reduceGroup(new CalcServiceTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
-        ArrayList<StatusTimeline> expServTimelines = TestUtils.prepareLevelTimeline(expEndpTimelines, opsJson, aggrJson,downDS.collect(),params.get("run.date"), LEVEL.SERVICE);
+        ArrayList<StatusTimeline> expServTimelines = TestUtils.prepareLevelTimeline(expEndpTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.SERVICE);
         Assert.assertEquals(TestUtils.compareLists(expServTimelines, statusServiceTimeline.collect()), true);
 
         //*************** Test Function Timeline
@@ -281,7 +281,7 @@ public class ArgoMultiJobTest {
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
 
-        ArrayList<StatusTimeline> expFunctionTimelines = TestUtils.prepareLevelTimeline(expServTimelines, opsJson, aggrJson,downDS.collect(),params.get("run.date"), LEVEL.FUNCTION);
+        ArrayList<StatusTimeline> expFunctionTimelines = TestUtils.prepareLevelTimeline(expServTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.FUNCTION);
         Assert.assertEquals(TestUtils.compareLists(expFunctionTimelines, statusEndGroupFunctionTimeline.collect()), true);
 
         //*************** Test Group Timeline
@@ -289,7 +289,7 @@ public class ArgoMultiJobTest {
                 .reduceGroup(new CalcGroupTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
-        ArrayList<StatusTimeline> expGroupTimelines = TestUtils.prepareLevelTimeline(expFunctionTimelines, opsJson, aggrJson, downDS.collect(),params.get("run.date"),LEVEL.GROUP);
+        ArrayList<StatusTimeline> expGroupTimelines = TestUtils.prepareLevelTimeline(expFunctionTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.GROUP);
         Assert.assertEquals(TestUtils.compareLists(expGroupTimelines, statusGroupTimeline.collect()), true);
 
         if (calcStatus) {
@@ -318,7 +318,7 @@ public class ArgoMultiJobTest {
             List<StatusMetric> expStatusEndpRes = new ArrayList();
             if (!statusendpList.isEmpty()) {
                 DataSet<StatusMetric> expStatusEndpDS = env.fromElements(getListCalcPrevData(statusendpList.get(0)));
-                expStatusEndpRes = prepareStatusData(expStatusEndpDS.collect());
+                expStatusEndpRes = prepareStatusEndpointData(expStatusEndpDS.collect());
 
             }
             Assert.assertEquals(TestUtils.compareLists(expStatusEndpRes, stEndpointDS.collect()), true);
@@ -335,6 +335,7 @@ public class ArgoMultiJobTest {
                 expStatusServRes = prepareStatusData(expStatusServDS.collect());
 
             }
+            List listB = stServiceDS.collect();
             Assert.assertEquals(TestUtils.compareLists(expStatusServRes, stServiceDS.collect()), true);
             DataSet<StatusMetric> stEndGroupDS = statusGroupTimeline.flatMap(new CalcStatusEndGroup(params))
                     .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
@@ -364,7 +365,7 @@ public class ArgoMultiJobTest {
             DataSet<EndpointTrends> endpointTrends = statusEndpointTimeline.flatMap(new CalcEndpointFlipFlopTrends());
 
             DataSet<ServiceTrends> serviceTrends = statusServiceTimeline.flatMap(new CalcServiceFlipFlopTrends());
-            
+
             DataSet<GroupTrends> groupTrends = statusGroupTimeline.flatMap(new CalcGroupFlipFlopTrends());
             if (calcFlipFlops) {
 
@@ -390,17 +391,17 @@ public class ArgoMultiJobTest {
 
                 trends = nonZeroEndpointFlipFlops.map(new MapEndpointTrends());
                 List<Trends> expEndpStatisticRes = loadExpectedFlipFlopData(endpointExpectedData, LEVEL.HOSTNAME, env);
-              
+
                 Assert.assertEquals(TestUtils.compareLists(expEndpStatisticRes, trends.collect()), true);
-             
-                DataSet<ServiceTrends> noZeroServiceFlipFlops = serviceTrends.filter(new ZeroServiceFlipFlopFilter());               
-             
+
+                DataSet<ServiceTrends> noZeroServiceFlipFlops = serviceTrends.filter(new ZeroServiceFlipFlopFilter());
+
                 if (rankNum != null) { //sort and rank data
                     noZeroServiceFlipFlops = noZeroServiceFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1).first(rankNum);
                 } else {
                     noZeroServiceFlipFlops = noZeroServiceFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
                 }
-              
+
                 trends = noZeroServiceFlipFlops.map(new MapServiceTrends());
                 List<Trends> expServStatisticRes = loadExpectedFlipFlopData(serviceExpectedData, LEVEL.SERVICE, env);
                 Assert.assertEquals(TestUtils.compareLists(expServStatisticRes, trends.collect()), true);
@@ -553,15 +554,9 @@ public class ArgoMultiJobTest {
                 sm.setActualData(null);
             }
 
-            //  sm.setHasThr(false);
-            sm.setInfo("");
+            sm.setInfo("{}");
             sm.setMessage(null);
-//            if (sm.getOgStatus().equals("")) {
-//                sm.setOgStatus(null);
-//            }
-//            if (sm.getRuleApplied().equals("")) {
-//                sm.setRuleApplied(null);
-//            }
+
             sm.setSummary(null);
             String timestamp2 = sm.getTimestamp().split("Z")[0];
             String[] tsToken = timestamp2.split("T");
@@ -581,7 +576,7 @@ public class ArgoMultiJobTest {
                 sm.setActualData(null);
             }
 
-            sm.setInfo("");
+            sm.setInfo("{}");
             sm.setMessage(null);
             if (sm.getOgStatus() == null) {
                 sm.setOgStatus("");
@@ -598,6 +593,27 @@ public class ArgoMultiJobTest {
             sm.setDateInt(dateInt);
             sm.setTimeInt(timeInt);
         }
+        return input;
+    }
+
+    public List<StatusMetric> prepareStatusEndpointData(List<StatusMetric> input) {
+
+        for (StatusMetric sm : input) {
+            sm.setInfo("{}");
+            sm.setMessage("");
+            sm.setSummary("");
+            sm.setTags("");
+            sm.setActualData("");
+            sm.setRuleApplied("");
+            sm.setOgStatus("");
+            String timestamp2 = sm.getTimestamp().split("Z")[0];
+            String[] tsToken = timestamp2.split("T");
+            int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
+            sm.setDateInt(dateInt);
+            //   sm.setTimeInt(timeInt);
+
+        }
+        
         return input;
     }
 

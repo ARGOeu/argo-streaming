@@ -1,7 +1,5 @@
 package argo.batch;
 
-import java.util.Objects;
-
 public class StatusMetric {
 
     private String group;
