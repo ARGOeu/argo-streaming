@@ -38,8 +38,9 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
 
     final ParameterTool params;
 
-    public CalcEndpointTimeline(ParameterTool params) {
+    public CalcEndpointTimeline(ParameterTool params, DateTime dtUtc) {
         this.params = params;
+        this.dtUtc=dtUtc;
     }
 
     static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
@@ -54,6 +55,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
     private String operation;
     private DowntimeManager downtimeMgr;
     private List<Downtime> downtime;
+    private DateTime dtUtc;
 
     @Override
     public void open(Configuration parameters) throws IOException {
@@ -116,8 +118,10 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
 
         ArrayList<String> downPeriod = this.downtimeMgr.getPeriod(hostname, service);
+     
+	
         if (downPeriod != null && !downPeriod.isEmpty()) {
-            mergedTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt());
+            mergedTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt(), dtUtc);
         }
         ArrayList<TimeStatus> timestatuCol = new ArrayList();
         for (Map.Entry<DateTime, Integer> entry : mergedTimeline.getSamples()) {

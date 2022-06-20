@@ -51,6 +51,8 @@ import trends.status.MetricTrendsCounter;
 import trends.status.ServiceTrendsCounter;
 
 import java.util.List;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /**
  * Implements an ARGO Status Batch Job in flink
@@ -96,6 +98,8 @@ public class ArgoMultiJob {
         env.getConfig().setGlobalJobParameters(params);
         env.setParallelism(1);
 
+        DateTime dtUtc = new DateTime(DateTimeZone.UTC);
+      
         boolean calcStatus = true;
         if (params.has("calcStatus")) {
             if (params.get("calcStatus").equals("OFF")) {
@@ -247,7 +251,7 @@ public class ArgoMultiJob {
         DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
-
+     
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
@@ -255,7 +259,7 @@ public class ArgoMultiJob {
 
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
-                .reduceGroup(new CalcEndpointTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .reduceGroup(new CalcEndpointTimeline(params, dtUtc)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps").withBroadcastSet(downDS, "down");
 
@@ -318,7 +322,7 @@ public class ArgoMultiJob {
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(confDS, "conf");
 
             // DataSet<StatusTimeline> statusGroupTimelineAR = statusGroupTimeline.flatMap(new ExcludeGroupMetrics(params)).withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
-            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
+            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params, dtUtc)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
 
