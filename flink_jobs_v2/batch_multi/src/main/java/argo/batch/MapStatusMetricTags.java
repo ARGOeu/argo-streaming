@@ -17,8 +17,9 @@ import profilesmanager.ReportManager;
  */
 public class MapStatusMetricTags extends RichFlatMapFunction<StatusMetric, StatusMetric> {
 
-    public MapStatusMetricTags() {
+    public MapStatusMetricTags(boolean isTrendsTags) {
 
+        this.isTrendsTags = isTrendsTags;
     }
 
     List<String> mtags;
@@ -28,7 +29,7 @@ public class MapStatusMetricTags extends RichFlatMapFunction<StatusMetric, Statu
     private List<GroupEndpoint> egp;
     private ReportManager repMgr;
     private List<String> conf;
-
+    private boolean isTrendsTags;
 
     @Override
     public void open(Configuration parameters) throws IOException {
@@ -37,7 +38,7 @@ public class MapStatusMetricTags extends RichFlatMapFunction<StatusMetric, Statu
         this.mtagsMgr = new MetricTagsManager();
         this.mtagsMgr.loadJsonString(mtags);
         this.egp = getRuntimeContext().getBroadcastVariable("egp");
-                
+
         // Initialize endpoint group manager
         this.egpMgr = new EndpointGroupManager();
         this.egpMgr.loadFromList(egp);
@@ -59,13 +60,17 @@ public class MapStatusMetricTags extends RichFlatMapFunction<StatusMetric, Statu
      */
     @Override
     public void flatMap(StatusMetric t, Collector<StatusMetric> out) throws Exception {
-        ArrayList<String> tags = this.mtagsMgr.getTags(t.getMetric());
         String tagInfo = "";
-        for (String tag : tags) {
-            if (tags.indexOf(tag) == 0) {
-                tagInfo = tagInfo + tag;
-            } else {
-                tagInfo = tagInfo + "," + tag;
+
+        if (isTrendsTags) {
+            ArrayList<String> tags = this.mtagsMgr.getTags(t.getMetric());
+
+            for (String tag : tags) {
+                if (tags.indexOf(tag) == 0) {
+                    tagInfo = tagInfo + tag;
+                } else {
+                    tagInfo = tagInfo + "," + tag;
+                }
             }
         }
         StatusMetric newT = t;
@@ -73,13 +78,12 @@ public class MapStatusMetricTags extends RichFlatMapFunction<StatusMetric, Statu
         if (!t.getOgStatus().equals("")) {
             newT.setHasThr(true);
         }
-        
+
         String groupType = this.repMgr.egroup;
 
         String info = this.egpMgr.getInfo(t.getGroup(), groupType, t.getHostname(), t.getService());
-         newT.setInfo(info);
-         out.collect(newT);
-       
+        newT.setInfo(info);
+        out.collect(newT);
 
     }
 

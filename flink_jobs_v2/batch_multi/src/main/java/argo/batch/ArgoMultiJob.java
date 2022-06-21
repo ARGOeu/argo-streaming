@@ -69,14 +69,18 @@ import org.joda.time.DateTimeZone;
  * optional address for proxy to be used (http://proxy.example.com)
  * --api.timeout: set timeout (in seconds) when connecting to argo-web-api
  * --calcStatus(Optional): set to be OFF or ON . ON to calculate and write
- * status timelines --calcAR(Optional): set to be OFF or ON . ON to calculate
- * and write a/r results --calcFlipFlops(Optional): set to be OFF or ON . ON to
- * calculate and write flipflop trends --calcStatusTrends(Optional): set to be
- * OFF or ON . ON to calculate and write status trends timelines in mongo db ,
- * OFF to not calculate. If not set status timelines will be calculated and
- * written --calcAR(Optional): set to be OFF or ON . ON to calculate and write
- * ar results in mongo db , OFF to not calculateIf not set ar results will be
- * calculated and written
+ * status timelines , OFF to not calculate. If not set status timeline
+ * calculations will be defined from the report --calcAR(Optional): set to be
+ * OFF or ON . ON to calculate and write a/r results, OFF to not calculate . If
+ * not set a/r calculations will be defined from the report
+ * --calcFlipFlops(Optional): set to be OFF or ON . ON to calculate and write
+ * flipflop trends , OFF to not calculate. If not set flip flop trends
+ * calculations will be defined from the report --calcStatusTrends(Optional):
+ * set to be OFF or ON . ON to calculate and write status trends timelines in
+ * mongo db , OFF to not calculate. If not set status trends calculations will
+ * be defined from the report --calcTagTrends(Optional): set to be OFF or ON .
+ * ON to calculate and write tags results in mongo db , OFF to not calculate .
+ * If not set tags calculations will be defined from the report
  */
 public class ArgoMultiJob {
 
@@ -87,6 +91,12 @@ public class ArgoMultiJob {
     private static boolean clearMongo = false;
 
     private static String runDate;
+
+    private static boolean calcStatus = false;
+    private static boolean calcAR = false;
+    private static boolean calcStatusTrends = false;
+    private static boolean calcFlipFlops = false;
+    private static boolean calcTagTrends = false;
 
     public static void main(String[] args) throws Exception {
 
@@ -99,37 +109,6 @@ public class ArgoMultiJob {
         env.setParallelism(1);
 
         DateTime dtUtc = new DateTime(DateTimeZone.UTC);
-      
-        boolean calcStatus = true;
-        if (params.has("calcStatus")) {
-            if (params.get("calcStatus").equals("OFF")) {
-                calcStatus = false;
-
-            }
-        }
-
-        boolean calcAR = true;
-        if (params.has("calcAR")) {
-            if (params.get("calcAR").equals("OFF")) {
-                calcAR = false;
-            }
-        }
-
-        boolean calcStatusTrends = true;
-        if (params.has("calcStatusTrends")) {
-            if (params.get("calcStatusTrends").equals("OFF")) {
-                calcStatusTrends = false;
-            }
-        }
-        boolean calcFlipFlops = true;
-        if (params.has("calcFlipFlops")) {
-            if (params.get("calcFlipFlops").equals("OFF")) {
-                calcFlipFlops = false;
-            }
-        }
-        if (!calcStatus && !calcAR && !calcStatusTrends && !calcFlipFlops && !calcStatusTrends) {
-            System.exit(0);
-        }
 
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
@@ -158,7 +137,14 @@ public class ArgoMultiJob {
         amr.setReportID(reportID);
         amr.setDate(runDate);
         amr.getRemoteAll();
-        DataSource<String> cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
+
+        DataSource<String> confDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
+        // Get conf data 
+        List<String> confData = confDS.collect();
+        ReportManager cfgMgr = new ReportManager();
+        cfgMgr.loadJsonString(confData);
+        enableComputations(cfgMgr.activeComputations, params);
+
         DataSource<String> opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
         DataSource<String> apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
         DataSource<String> recDS = env.fromElements("");
@@ -171,9 +157,6 @@ public class ArgoMultiJob {
 
             mtagsDS = env.fromElements(amr.getResourceJSON(ApiResource.MTAGS));
         }
-
-        DataSource<String> confDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
-
         DataSet<Weight> weightDS = env.fromElements(new Weight());
         Weight[] listWeights = amr.getListWeights();
 
@@ -189,13 +172,6 @@ public class ArgoMultiJob {
             // grab information about thresholds rules from argo-web-api
             thrDS = env.fromElements(amr.getResourceJSON(ApiResource.THRESHOLDS));
         }
-        ReportManager confMgr = new ReportManager();
-        confMgr.loadJsonString(cfgDS.collect());
-
-        // Get conf data 
-        List<String> confData = cfgDS.collect();
-        ReportManager cfgMgr = new ReportManager();
-        cfgMgr.loadJsonString(confData);
 
         DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
         DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
@@ -231,12 +207,12 @@ public class ArgoMultiJob {
         // Use yesterday's latest statuses and todays data to find the missing ones and add them to the mix
         DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf");
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(confDS, "conf");
 
         // Discard unused data and attach endpoint group as information
         DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
+                .withBroadcastSet(recDS, "rec").withBroadcastSet(confDS, "conf").withBroadcastSet(thrDS, "thr")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
 
         // Combine prev and todays metric data with the generated missing metric
@@ -279,10 +255,10 @@ public class ArgoMultiJob {
                 .withBroadcastSet(apsDS, "aps");
 
         if (calcStatus) {
-            //Calculate endpoint timeline timestamps 
-            stDetailDS = stDetailDS.flatMap(new MapStatusMetricTags()).withBroadcastSet(mtagsDS, "mtags").withBroadcastSet(egpDS, "egp")
-                    .withBroadcastSet(confDS, "conf");
+            //Calculate endpoint timeline timestamps             
 
+            stDetailDS = stDetailDS.flatMap(new MapStatusMetricTags(calcTagTrends)).withBroadcastSet(mtagsDS, "mtags").withBroadcastSet(egpDS, "egp")
+                    .withBroadcastSet(confDS, "conf");
             DataSet<StatusMetric> stEndpointDS = statusEndpointTimeline.flatMap(new CalcStatusEndpoint(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                     .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(confDS, "conf");
@@ -349,8 +325,7 @@ public class ArgoMultiJob {
                 }
 
                 MongoTrendsOutput metricFlipFlopMongoOut = new MongoTrendsOutput(dbURI, "flipflop_trends_metrics", MongoTrendsOutput.TrendsType.TRENDS_METRIC, reportID, runDate, clearMongo);
-
-                DataSet<Trends> trends = noZeroMetricFlipFlops.map(new MapMetricTrends()).withBroadcastSet(mtagsDS, "mtags");
+                DataSet<Trends> trends = noZeroMetricFlipFlops.map(new MapMetricTrends(calcTagTrends)).withBroadcastSet(mtagsDS, "mtags");
                 trends.output(metricFlipFlopMongoOut);
 
                 DataSet<EndpointTrends> nonZeroEndpointFlipFlops = endpointTrends.filter(new ZeroEndpointFlipFlopFilter());
@@ -433,11 +408,11 @@ public class ArgoMultiJob {
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Status Batch job for tenant:");
-        jobTitleSB.append(confMgr.getTenant());
+        jobTitleSB.append(cfgMgr.getTenant());
         jobTitleSB.append(" on day:");
         jobTitleSB.append(runDate);
         jobTitleSB.append(" using report:");
-        jobTitleSB.append(confMgr.getReport());
+        jobTitleSB.append(cfgMgr.getReport());
 
         env.execute(jobTitleSB.toString());
 
@@ -485,4 +460,41 @@ public class ArgoMultiJob {
         //   writeToMongo(collectionUri, filteredData);
     }
 
+    private static void enableComputations(ReportManager.ActiveComputations activeComputations, ParameterTool params) {
+
+        calcStatus = isOFF(params, "calcStatus", activeComputations);
+        calcAR = isOFF(params, "calcAR", activeComputations);
+        calcStatusTrends = isOFF(params, "calcStatusTrends", activeComputations);
+        calcFlipFlops = isOFF(params, "calcFlipFlops", activeComputations);
+        calcTagTrends = isOFF(params, "calcTagTrends", activeComputations);
+        System.out.println("calcTagTrends--- "+calcTagTrends);
+
+        if (!calcStatus && !calcAR && !calcStatusTrends && !calcFlipFlops && !calcStatusTrends) {
+            System.exit(0);
+        }
+
+    }
+
+    public static boolean isOFF(ParameterTool params, String paramName, ReportManager.ActiveComputations activeComputations) {
+        if (params.has(paramName)) {
+            return !params.get(paramName).equals("OFF");
+        } else {
+            switch (paramName) {
+                case "calcStatus":
+                    return activeComputations.isStatus();
+                case "calcAR":
+                    return activeComputations.isAr();
+
+                case "calcStatusTrends":
+                    return activeComputations.isStatusTrends();
+                case "calcFlipFlops":
+                    return activeComputations.isFlipflops();
+
+                case "calcTagTrends":
+                    return activeComputations.isTagTrends();
+                default:
+                    return false;
+            }
+        }
+    }
 }

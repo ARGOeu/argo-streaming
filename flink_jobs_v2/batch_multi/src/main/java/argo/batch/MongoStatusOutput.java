@@ -14,9 +14,12 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import jdk.nashorn.internal.parser.JSONParser;
+import org.apache.avro.generic.GenericData;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
 import org.json.simple.JSONArray;
@@ -147,11 +150,11 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
             doc.append("info", parseInfo(info));
 
         } else if (this.sType == StatusType.STATUS_METRIC) {
-            String[] tagsArr = record.getTags().split(",");
+
             doc.append("service", record.getService())
                     .append("host", record.getHostname())
                     .append("metric", record.getMetric())
-                    .append("tags", Arrays.asList(tagsArr))
+                    .append("tags", parseTags(record.getTags()))
                     .append("message", record.getMessage())
                     .append("summary", record.getSummary())
                     .append("time_integer", record.getTimeInt())
@@ -269,5 +272,15 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
         }
         return infoDoc;
 
+    }
+
+    private List<String> parseTags(String tags) {
+
+        List<String> tagsList = new ArrayList<>();
+        if (!tags.equals("")) {
+            String[] tagsArr = tags.split(",");
+            tagsList = Arrays.asList(tagsArr);
+        }
+        return tagsList;
     }
 }
