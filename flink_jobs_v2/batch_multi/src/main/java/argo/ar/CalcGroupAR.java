@@ -47,7 +47,8 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
 
     final ParameterTool params;
 
-    public CalcGroupAR(ParameterTool params) {
+    public CalcGroupAR(ParameterTool params, DateTime dtUtc) {
+        this.dtUtc = dtUtc;
         this.params = params;
     }
 
@@ -70,6 +71,7 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
     private String ggroupType;
     private RecomputationsManager recMgr;
     private List<String> rec;
+    private DateTime dtUtc;
 
     /**
      * Initialization method of the RichGroupReduceFunction operator
@@ -167,13 +169,13 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
 
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timestampMap, true);
-        
+
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
         if (this.recMgr.isExcluded(in.getGroup())) {
             ArrayList<Map<String, String>> periods = this.recMgr.getPeriods(in.getGroup(), this.runDate);
             for (Map<String, String> interval : periods) {
-                timeline.fillWithStatus(interval.get("start"), interval.get("end"),this.opsMgr.getDefaultUnknownInt());
+                timeline.fillWithStatus(interval.get("start"), interval.get("end"), this.opsMgr.getDefaultUnknownInt(), dtUtc);
                 timeline.optimize();
             }
         }

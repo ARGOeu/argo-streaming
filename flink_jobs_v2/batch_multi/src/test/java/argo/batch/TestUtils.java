@@ -24,6 +24,7 @@ import java.util.logging.Level;
 import static org.apache.commons.math3.util.Precision.round;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profilesmanager.AggregationProfileManager;
@@ -60,7 +61,7 @@ public class TestUtils {
      * @throws ParseException
      * @throws IOException
      */
-    public static ArrayList<StatusTimeline> prepareLevelTimeline(List<StatusTimeline> list, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level) throws ParseException, IOException {
+    public static ArrayList<StatusTimeline> prepareLevelTimeline(List<StatusTimeline> list, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level, DateTime dtUtc) throws ParseException, IOException {
 
         String group = "", function = "", service = "", hostname = "", metric = "";
 
@@ -161,12 +162,12 @@ public class TestUtils {
         if (!added) {
             alltimelines.add(tl);
         }
-        ArrayList<StatusTimeline> timelines = parseEndpTimelines(alltimelines, opsDS, aggrDS, downDS, runDate, level);
+        ArrayList<StatusTimeline> timelines = parseEndpTimelines(alltimelines, opsDS, aggrDS, downDS, runDate, level, dtUtc);
 
         return timelines;
     }
 
-    private static ArrayList<StatusTimeline> parseEndpTimelines(ArrayList<ArrayList<StatusTimeline>> timelist, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level) throws ParseException, IOException {
+    private static ArrayList<StatusTimeline> parseEndpTimelines(ArrayList<ArrayList<StatusTimeline>> timelist, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level, DateTime dtUtc) throws ParseException, IOException {
         OperationsManager opsMgr = new OperationsManager();
         opsMgr.loadJsonString(opsDS);
 
@@ -181,13 +182,13 @@ public class TestUtils {
             String group = "", function = "", service = "", hostname = "";
             TreeMap<Long, ArrayList<Integer>> map = new TreeMap();
             ArrayList<Timeline> uniquesTimelines = new ArrayList<>();
-            boolean hasThr=false;
+            boolean hasThr = false;
             for (StatusTimeline sm : list) {
                 group = sm.getGroup();
                 service = sm.getService();
                 function = sm.getFunction();
                 hostname = sm.getHostname();
-                hasThr=sm.hasThr();
+                hasThr = sm.hasThr();
                 Timeline timeline = new Timeline();
                 for (TimeStatus ts : sm.getTimestamps()) {
                     timeline.insert(new DateTime(ts.getTimestamp()), ts.getStatus());
@@ -223,7 +224,7 @@ public class TestUtils {
                     if (level.equals(LEVEL.HOSTNAME)) {
                         ArrayList<String> downPeriod = downMgr.getPeriod(hostname, service);
                         if (downPeriod != null && !downPeriod.isEmpty()) {
-                            initialTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), opsMgr.getDefaultDownInt());
+                            initialTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), opsMgr.getDefaultDownInt(), dtUtc);
                         }
 
                     }
@@ -239,7 +240,7 @@ public class TestUtils {
             }
 
             StatusTimeline statusTimeline = new StatusTimeline(group, function, service, hostname, "", finalTimestamps);
-             statusTimeline.setHasThr(hasThr);
+            statusTimeline.setHasThr(hasThr);
             timelines.add(statusTimeline);
 
         }
@@ -337,14 +338,14 @@ public class TestUtils {
         for (ArrayList<StatusMetric> list : timelist) {
             ArrayList<TimeStatus> timestatusList = new ArrayList();
             String group = "", function = "", service = "", hostname = "", metric = "";
-             boolean hasThr=false;
+            boolean hasThr = false;
             for (StatusMetric sm : list) {
                 group = sm.getGroup();
                 service = sm.getService();
                 hostname = sm.getHostname();
                 function = sm.getFunction();
                 metric = sm.getMetric();
-                 hasThr = sm.getHasThr();
+                hasThr = sm.getHasThr();
                 String timestamp = sm.getTimestamp();
                 String prevState = sm.getPrevState();
                 String prevTs = sm.getPrevTs();
@@ -760,7 +761,7 @@ public class TestUtils {
             String service = item.getService();
             String hostname = item.getHostname();
             String metric = item.getMetric();
-             if (level.equals(LEVEL.HOSTNAME)) {
+            if (level.equals(LEVEL.HOSTNAME)) {
                 metric = null;
             } else if (level.equals(LEVEL.SERVICE)) {
                 metric = null;

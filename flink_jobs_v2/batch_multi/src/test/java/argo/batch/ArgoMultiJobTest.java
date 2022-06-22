@@ -37,6 +37,8 @@ import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
 import org.bson.types.ObjectId;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Assert;
 import org.junit.Test;
 import profilesmanager.ReportManager;
@@ -92,6 +94,7 @@ public class ArgoMultiJobTest {
         if (!calcStatus && !calcAR && !calcStatusTrends && !calcFlipFlops && !calcStatusTrends) {
             System.exit(0);
         }
+        DateTime dtUtc=new DateTime(DateTimeZone.UTC);
         ApiResourceManager amr = mockAmr();
 
         DataSource<String> apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
@@ -258,13 +261,13 @@ public class ArgoMultiJobTest {
         //*************** Test Endpoint  Timeline
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
-                .reduceGroup(new CalcEndpointTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .reduceGroup(new CalcEndpointTimeline(params, dtUtc)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps").withBroadcastSet(downDS, "down");
         ArrayList<String> aggrJson = new ArrayList();
         aggrJson.add(amr.getResourceJSON(ApiResource.AGGREGATION));
 
-        ArrayList<StatusTimeline> expEndpTimelines = TestUtils.prepareLevelTimeline(expMetricTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.HOSTNAME);
+        ArrayList<StatusTimeline> expEndpTimelines = TestUtils.prepareLevelTimeline(expMetricTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.HOSTNAME, dtUtc);
         Assert.assertEquals(TestUtils.compareLists(expEndpTimelines, statusEndpointTimeline.collect()), true);
 
         //*************** Test Service Timeline
@@ -272,7 +275,7 @@ public class ArgoMultiJobTest {
                 .reduceGroup(new CalcServiceTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
-        ArrayList<StatusTimeline> expServTimelines = TestUtils.prepareLevelTimeline(expEndpTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.SERVICE);
+        ArrayList<StatusTimeline> expServTimelines = TestUtils.prepareLevelTimeline(expEndpTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.SERVICE, dtUtc);
         Assert.assertEquals(TestUtils.compareLists(expServTimelines, statusServiceTimeline.collect()), true);
 
         //*************** Test Function Timeline
@@ -281,7 +284,7 @@ public class ArgoMultiJobTest {
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
 
-        ArrayList<StatusTimeline> expFunctionTimelines = TestUtils.prepareLevelTimeline(expServTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.FUNCTION);
+        ArrayList<StatusTimeline> expFunctionTimelines = TestUtils.prepareLevelTimeline(expServTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.FUNCTION, dtUtc);
         Assert.assertEquals(TestUtils.compareLists(expFunctionTimelines, statusEndGroupFunctionTimeline.collect()), true);
 
         //*************** Test Group Timeline
@@ -289,7 +292,7 @@ public class ArgoMultiJobTest {
                 .reduceGroup(new CalcGroupTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
-        ArrayList<StatusTimeline> expGroupTimelines = TestUtils.prepareLevelTimeline(expFunctionTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.GROUP);
+        ArrayList<StatusTimeline> expGroupTimelines = TestUtils.prepareLevelTimeline(expFunctionTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.GROUP, dtUtc);
         Assert.assertEquals(TestUtils.compareLists(expGroupTimelines, statusGroupTimeline.collect()), true);
 
         if (calcStatus) {
@@ -462,7 +465,7 @@ public class ArgoMultiJobTest {
             List<ServiceAR> expectedServAr = TestUtils.prepareServiceAR(servArData, params.get("run.date"));
 
             Assert.assertEquals(TestUtils.compareLists(expectedServAr, serviceArDS.collect()), true);
-            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params)).withBroadcastSet(mpsDS, "mps")
+            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params,dtUtc)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(cfgDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
             List<TestUtils.ArItem> groupArData = loadExpectedArData(groupExpectedData, LEVEL.GROUP, env);
