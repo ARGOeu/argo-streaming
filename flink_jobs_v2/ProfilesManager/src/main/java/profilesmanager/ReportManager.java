@@ -41,6 +41,7 @@ public class ReportManager {
     public TreeMap<String, String> mdataTags;
     private Threshold threshold;
     ArrayList<Profiles> profiles;
+    public ActiveComputations activeComputations;
 
     /**
      * Constructor to a ReportManager object to store the tenant's report
@@ -57,6 +58,7 @@ public class ReportManager {
         this.ggroupTags = new TreeMap<String, String>();
         this.mdataTags = new TreeMap<String, String>();
         this.profiles = new ArrayList<>();
+        this.activeComputations = new ActiveComputations(false, false, false, false, false);
 
     }
 
@@ -75,6 +77,7 @@ public class ReportManager {
         this.ggroupTags.clear();
         this.mdataTags.clear();
         this.profiles.clear();
+        this.activeComputations = null;
 
     }
 
@@ -92,6 +95,14 @@ public class ReportManager {
 
     public String getEgroup() {
         return egroup;
+    }
+
+    public ActiveComputations getActiveComputations() {
+        return activeComputations;
+    }
+
+    public void setActiveComputations(ActiveComputations activeComputations) {
+        this.activeComputations = activeComputations;
     }
 
     /**
@@ -175,7 +186,33 @@ public class ReportManager {
         }
         // Get compound fields
         JsonArray jTags = jObj.getAsJsonArray("filter_tags");
+        JsonObject jComputations = jObj.getAsJsonObject("computations");
+        this.activeComputations=new ActiveComputations(false, false, false, false, false);
+        if (jComputations != null) {
 
+            boolean flappingFlag = false;
+            boolean tagsFlag = false;
+            boolean statusFlag = false;
+            boolean ar = jComputations.get("ar").getAsBoolean();
+            boolean status = jComputations.get("status").getAsBoolean();
+            JsonArray trends = jComputations.get("trends").getAsJsonArray();
+
+            if (trends != null) {
+                for (JsonElement trend : trends) {
+                    if (trend.getAsString().equals("flapping")) {
+                        flappingFlag = true;
+
+                    } else if (trend.getAsString().equals("tags")) {
+                        tagsFlag = true;
+                    } else if (trend.getAsString().equals("status")) {
+                        statusFlag = true;
+                    }
+                }
+
+            }
+            this.activeComputations = new ActiveComputations(status, ar, flappingFlag, statusFlag, tagsFlag);
+
+        }
         // Iterate tags
         if (jTags != null) {
             for (JsonElement tag : jTags) {
@@ -207,6 +244,67 @@ public class ReportManager {
             Profiles profile = new Profiles(profileObject.get("id").getAsString(), profileObject.get("name").getAsString(), profileObject.get("type").getAsString());
             profiles.add(profile);
         }
+
+    }
+
+    public class ActiveComputations {
+
+        private boolean status;
+        private boolean ar;
+        private boolean flipflops;
+        private boolean statusTrends;
+        private boolean tagTrends;
+
+        public ActiveComputations(boolean status, boolean ar, boolean flipflops, boolean statusTrends, boolean tagTrends) {
+            this.status = status;
+            this.ar = ar;
+            this.flipflops = flipflops;
+            this.statusTrends = statusTrends;
+            this.tagTrends = tagTrends;
+        }
+
+        public boolean isStatus() {
+            return status;
+        }
+
+        public void setStatus(boolean status) {
+            this.status = status;
+        }
+
+        public boolean isAr() {
+            return ar;
+        }
+
+        public void setAr(boolean ar) {
+            this.ar = ar;
+        }
+
+        public boolean isFlipflops() {
+            return flipflops;
+        }
+
+        public void setFlipflops(boolean flipflops) {
+            this.flipflops = flipflops;
+        }
+
+        public boolean isStatusTrends() {
+            return statusTrends;
+        }
+
+        public void setStatusTrends(boolean statusTrends) {
+            this.statusTrends = statusTrends;
+        }
+
+        public boolean isTagTrends() {
+            return tagTrends;
+        }
+
+        public void setTagTrends(boolean tagTrends) {
+            this.tagTrends = tagTrends;
+        }
+
+   
+        
 
     }
 

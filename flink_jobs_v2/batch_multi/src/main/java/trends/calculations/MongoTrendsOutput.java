@@ -10,7 +10,9 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
@@ -40,7 +42,6 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
     private boolean clearMongo;
     private ObjectId nowId;
 
-
     // constructor
     public MongoTrendsOutput(String uri, String col, TrendsType trendsType, String report, String date, boolean clearMongo) {
 
@@ -61,10 +62,10 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
     }
 
     // constructor
-    public MongoTrendsOutput(String host, int port, String db, String col, TrendsType trendsType, String report,String date, boolean clearMongo) {
-         this.date = Integer.parseInt(date.replace("-", ""));
-         this.report = report;
-	
+    public MongoTrendsOutput(String host, int port, String db, String col, TrendsType trendsType, String report, String date, boolean clearMongo) {
+        this.date = Integer.parseInt(date.replace("-", ""));
+        this.report = report;
+
         this.mongoHost = host;
         this.mongoPort = port;
         this.dbName = db;
@@ -120,18 +121,16 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
                 doc.append("flipflop", record.getFlipflop());
                 break;
             case TRENDS_METRIC:
-                String[] tagsArr = record.getTags().split(",");
 
                 doc.append("group", record.getGroup());
                 doc.append("service", record.getService());
                 doc.append("endpoint", record.getEndpoint());
                 doc.append("metric", record.getMetric());
                 doc.append("flipflop", record.getFlipflop());
-                doc.append("tags", Arrays.asList(tagsArr));
+                doc.append("tags", parseTags(record.getTags()));
 
                 break;
             case TRENDS_STATUS_METRIC:
-                tagsArr = record.getTags().split(",");
 
                 doc.append("group", record.getGroup());
                 doc.append("service", record.getService());
@@ -140,7 +139,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
                 doc.append("status", record.getStatus());
                 doc.append("duration", record.getDuration());
                 doc.append("trends", record.getTrends());
-                doc.append("tags", Arrays.asList(tagsArr));
+                doc.append("tags", parseTags(record.getTags()));
                 break;
             case TRENDS_STATUS_ENDPOINT:
                 doc.append("group", record.getGroup());
@@ -193,7 +192,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
      */
     @Override
     public void close() throws IOException {
-         if (clearMongo) {
+        if (clearMongo) {
             deleteDoc();
         }
 
@@ -209,6 +208,16 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
     public void configure(Configuration arg0) {
         // configure
 
+    }
+
+    private List<String> parseTags(String tags) {
+
+        List<String> tagsList = new ArrayList<>();
+        if (!tags.equals("")) {
+            String[] tagsArr = tags.split(",");
+            tagsList = Arrays.asList(tagsArr);
+        }
+        return tagsList;
     }
 
 }

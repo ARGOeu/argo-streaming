@@ -72,6 +72,12 @@ import trends.status.ServiceTrendsCounter;
  */
 public class ArgoMultiJobTest {
 
+    private static boolean calcStatus = false;
+    private static boolean calcAR = false;
+    private static boolean calcStatusTrends = false;
+    private static boolean calcFlipFlops = false;
+    private static boolean calcTagTrends = false;
+
     public ArgoMultiJobTest() {
     }
 
@@ -85,21 +91,23 @@ public class ArgoMultiJobTest {
 
         env.setParallelism(2);
         System.setProperty("run.date", "2022-01-14");
+            
         final ParameterTool params = ParameterTool.fromSystemProperties();
-
-        boolean calcStatus = isOFF(params, "calcStatus");
-        boolean calcAR = isOFF(params, "calcAR");
-        boolean calcStatusTrends = isOFF(params, "calcStatusTrends");
-        boolean calcFlipFlops = isOFF(params, "calcFlipFlops");
-        if (!calcStatus && !calcAR && !calcStatusTrends && !calcFlipFlops && !calcStatusTrends) {
-            System.exit(0);
-        }
         DateTime dtUtc=new DateTime(DateTimeZone.UTC);
+
         ApiResourceManager amr = mockAmr();
 
+        DataSource<String> cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
+
+        DataSource<String> confDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
+        // Get conf data 
+        List<String> confData = confDS.collect();
+        ReportManager cfgMgr = new ReportManager();
+        cfgMgr.loadJsonString(confData);
+      
+        enableComputations(cfgMgr.activeComputations, params);
         DataSource<String> apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
         DataSource<String> opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
-        DataSource<String> cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
 
         DataSource<String> recDS = env.fromElements("");
         if (amr.getResourceJSON(ApiResource.RECOMPUTATIONS) != null) {
@@ -127,9 +135,6 @@ public class ArgoMultiJobTest {
         confMgr.loadJsonString(cfgDS.collect());
 
         // Get conf data 
-        List<String> confData = cfgDS.collect();
-        ReportManager cfgMgr = new ReportManager();
-        cfgMgr.loadJsonString(confData);
         DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
         DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
         DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
@@ -198,7 +203,6 @@ public class ArgoMultiJobTest {
             expFillMissRes = prepareInputData(expFillMissDS.collect());
         }
         Assert.assertEquals(TestUtils.compareLists(expFillMissRes, fillMissDS.collect()), true);
-
         //**************** Test PickEndpoints
         DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
@@ -297,7 +301,7 @@ public class ArgoMultiJobTest {
 
         if (calcStatus) {
             //Calculate endpoint timeline timestamps 
-            stDetailDS = stDetailDS.flatMap(new MapStatusMetricTags()).withBroadcastSet(mtagsDS, "mtags").withBroadcastSet(egpDS, "egp")
+            stDetailDS = stDetailDS.flatMap(new MapStatusMetricTags(calcAR)).withBroadcastSet(mtagsDS, "mtags").withBroadcastSet(egpDS, "egp")
                     .withBroadcastSet(cfgDS, "conf");
 
             URL expMTagsURL = ArgoMultiJobTest.class.getResource("/test/expmtagsdata.json");
@@ -363,7 +367,7 @@ public class ArgoMultiJobTest {
         List<String> groupExpectedData = loadExpectedDataFromFile("/test/groupstatistics.json", env);
 
         //*************** Test flip flops
-        if (calcFlipFlops || calcStatusTrends) {
+        if (calcFlipFlops|| calcStatusTrends) {
             DataSet<MetricTrends> metricTrends = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
             DataSet<EndpointTrends> endpointTrends = statusEndpointTimeline.flatMap(new CalcEndpointFlipFlopTrends());
 
@@ -380,7 +384,7 @@ public class ArgoMultiJobTest {
                     noZeroMetricFlipFlops = noZeroMetricFlipFlops.sortPartition("flipflops", Order.DESCENDING).setParallelism(1);
                 }
 
-                DataSet<Trends> trends = noZeroMetricFlipFlops.map(new MapMetricTrends()).withBroadcastSet(mtagsDS, "mtags");
+                DataSet<Trends> trends = noZeroMetricFlipFlops.map(new MapMetricTrends(calcTagTrends)).withBroadcastSet(mtagsDS, "mtags");
                 List<Trends> expMetricStatisticRes = loadExpectedFlipFlopData(metricExpectedData, LEVEL.METRIC, env);
                 Assert.assertEquals(TestUtils.compareLists(expMetricStatisticRes, trends.collect()), true);
 
@@ -616,7 +620,7 @@ public class ArgoMultiJobTest {
             //   sm.setTimeInt(timeInt);
 
         }
-        
+
         return input;
     }
 
@@ -838,4 +842,41 @@ public class ArgoMultiJobTest {
         return rArr;
     }
 
+    
+    private static void enableComputations(ReportManager.ActiveComputations activeComputations, ParameterTool params) {
+
+        calcStatus = isOFF(params, "calcStatus", activeComputations);
+        calcAR = isOFF(params, "calcAR", activeComputations);
+        calcStatusTrends = isOFF(params, "calcStatusTrends", activeComputations);
+        calcFlipFlops = isOFF(params, "calcFlipFlops", activeComputations);
+        calcTagTrends = isOFF(params, "calcTagTrends", activeComputations);
+
+        if (!calcStatus && !calcAR && !calcStatusTrends && !calcFlipFlops && !calcStatusTrends) {
+            System.exit(0);
+        }
+
+    }
+
+    public static boolean isOFF(ParameterTool params, String paramName, ReportManager.ActiveComputations activeComputations) {
+        if (params.has(paramName)) {
+            return !params.get(paramName).equals("OFF");
+        } else {
+            switch (paramName) {
+                case "calcStatus":
+                    return activeComputations.isStatus();
+                case "calcAR":
+                    return activeComputations.isAr();
+
+                case "calcStatusTrends":
+                    return activeComputations.isStatusTrends();
+                case "calcFlipFlops":
+                    return activeComputations.isFlipflops();
+
+                case "calcTagTrends":
+                    return activeComputations.isTagTrends();
+                default:
+                    return false;
+            }
+        }
+    }
 }

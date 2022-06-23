@@ -13,8 +13,10 @@ public class MapMetricTrends extends RichMapFunction<MetricTrends, Trends> {
 
     List<String> mtags;
     private MetricTagsManager mtagsMgr;
+    private boolean isTrendsTags = false;
 
-    public MapMetricTrends() {
+    public MapMetricTrends(boolean isTrendsTags) {
+        this.isTrendsTags = isTrendsTags;
 
     }
 
@@ -30,13 +32,16 @@ public class MapMetricTrends extends RichMapFunction<MetricTrends, Trends> {
 
     @Override
     public Trends map(MetricTrends in) throws Exception {
-        ArrayList<String> tags = this.mtagsMgr.getTags(in.getMetric());
         String tagInfo = "";
-        for (String tag : tags) {
-            if (tags.indexOf(tag) == 0) {
-                tagInfo = tagInfo + tag;
-            } else {
-                tagInfo = tagInfo + "," + tag;
+        if (isTrendsTags) {
+            ArrayList<String> tags = this.mtagsMgr.getTags(in.getMetric());
+
+            for (String tag : tags) {
+                if (tags.indexOf(tag) == 0) {
+                    tagInfo = tagInfo + tag;
+                } else {
+                    tagInfo = tagInfo + "," + tag;
+                }
             }
         }
         return new Trends(in.getGroup(), in.getService(), in.getEndpoint(), in.getMetric(), in.getFlipflops(), tagInfo);
