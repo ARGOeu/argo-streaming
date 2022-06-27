@@ -1,5 +1,6 @@
 package argo.streaming;
 
+import Utils.IntervalType;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -46,13 +47,10 @@ import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
-import java.util.List;
-import org.apache.flink.api.java.operators.DataSource;
+import org.apache.commons.lang.StringUtils;
 import org.apache.flink.core.fs.FileSystem;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
-import profilesmanager.ReportManager;
 import status.StatusManager;
 
 /**
@@ -83,6 +81,15 @@ import status.StatusManager;
  * the url to be used as a basis to create a help url , eg.
  * poem.egi.eu/ui/public_metrics it can be optional , meaning if it is not
  * defined url help wont be constructed
+ * --interval.loose(Optional)interval to repeat events for WARNING, CRITICAL, UNKNOWN . 
+ * it can be in the format of DAYS, HOURS, MINUTES eg. 1h, 2d, 30m  to define the period . Any of these formats is 
+ * transformed to minutes in the computations
+ * if not defined the default value is 1440m
+ * 
+ * --interval.strict(Optional)interval to repeat events for CRITICAL . 
+ * it can be in the format of DAYS, HOURS, MINUTES eg. 1h, 2d, 30m  to define the period . Any of these formats is 
+ * transformed to minutes in the computations
+ * if not defined the default value is 1440m
  *
  */
 public class AmsStreamStatus {
@@ -174,6 +181,18 @@ public class AmsStreamStatus {
         String reportID = parameterTool.getRequired("report.uuid");
         int apiInterval = parameterTool.getInt("api.interval");
 
+        int looseInterval = 1440;
+        int strictInterval = 1440;
+
+        if (parameterTool.has("interval.loose")) {
+            String looseParam = parameterTool.get("interval.loose");
+            looseInterval = getInterval(looseParam);
+        }
+
+        if (parameterTool.has("interval.strict")) {
+            String strictParam = parameterTool.get("interval.strict");
+            strictInterval = getInterval(strictParam);
+        }
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
 
         // fetch
@@ -229,7 +248,7 @@ public class AmsStreamStatus {
         DataStream<Tuple2<String, MetricData>> groupMdata = metricAMS.connect(syncA)
                 .flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
 
-        DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf));
+        DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf, looseInterval, strictInterval));
         DataStream<String> eventsClone = events;
         if (hasKafkaArgs(parameterTool)) {
             // Initialize kafka parameters
@@ -382,9 +401,7 @@ public class AmsStreamStatus {
             Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
             MetricData item;
 
-           
             item = avroReader.read(null, decoder);
-           
 
             //System.out.println("metric data item received" + item.toString());
             // generate events and get them
@@ -449,10 +466,15 @@ public class AmsStreamStatus {
         public StatusConfig config;
 
         public int initStatus;
+        public int looseInterval;
+        public int strictInterval;
 
-        public StatusMap(StatusConfig config) {
+        public StatusMap(StatusConfig config, int looseInterval, int strictInterval) {
             LOG.info("Created new Status map");
             this.config = config;
+            this.looseInterval = looseInterval;
+            this.strictInterval = strictInterval;
+
         }
 
         /**
@@ -488,14 +510,16 @@ public class AmsStreamStatus {
 
             // create a new status manager
             sm = new StatusManager();
-            sm.setTimeout(config.timeout);
+            sm.setLooseInterval(looseInterval);
+            sm.setStrictInterval(strictInterval);
+            // sm.setTimeout(config.timeout);
             sm.setReport(config.report);
             // load all the connector data
             sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsList);
 
             // Set the default status as integer
             initStatus = sm.getOps().getIntStatus(config.initStatus);
-            LOG.info("Initialized status manager:" + pID + " (with timeout:" + sm.getTimeout() + ")");
+            LOG.info("Initialized status manager:" + pID + " (with critical timeout:" + sm.getStrictInterval() + " and warning/unknown/missing timeout " + sm.getLooseInterval() + ")");
 
         }
 
@@ -743,6 +767,47 @@ public class AmsStreamStatus {
             ht.close();
             connection.close();
         }
+    }
+
+    private static int getInterval(String intervalParam) {
+
+        String regex = "[0-9]*[h,d,m]$";
+        boolean matches = intervalParam.matches(regex);
+        if (matches) {
+
+            String intervals[] = new String[]{};
+            IntervalType intervalType=null;
+            if (intervalParam.contains("h")) {
+               intervalType=IntervalType.HOURS;
+                intervals = intervalParam.split("h");
+            }
+             
+             else if (intervalParam.contains("d")) {
+                intervalType=IntervalType.DAY;
+                intervals = intervalParam.split("d");
+
+            } else if (intervalParam.contains("m")) {
+                intervalType=IntervalType.MINUTES;
+                intervals = intervalParam.split("m");
+            }
+            if (intervalType!=null && StringUtils.isNumeric(intervals[0])) {
+                int interval = Integer.parseInt(intervals[0]);
+                switch (intervalType) {
+                    case DAY:
+                        return interval * 24 * 60;
+                    case HOURS:
+                        return interval * 60;
+                    case MINUTES:
+                        return interval ;
+                    default:
+                        return 1440;
+                }
+
+            }
+            return 1440;
+
+        }
+        return 1440;
     }
 
 }

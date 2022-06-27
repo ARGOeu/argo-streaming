@@ -1,28 +1,20 @@
 package argo.streaming;
 
-import com.google.common.base.Ascii;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.awt.BorderLayout;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLDecoder;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import org.apache.flink.util.Collector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.TimeZone;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.utils.ParameterTool;
 
@@ -129,6 +121,7 @@ public class TrimEvent implements FlatMapFunction<String, String> {
             default:
 
         }
+
         out.collect(json.toString());
 
     }
