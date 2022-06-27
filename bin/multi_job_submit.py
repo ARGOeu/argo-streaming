@@ -202,7 +202,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-m", "--method", metavar="KEYWORD(insert|upsert)", help="Insert or Upsert data in mongoDB", required=False, dest="method", default="insert")
     parser.add_argument(
-        "-x", "--calculate", metavar="STRING", help="Comma separated list of what to calculate (ar,status,trends)", required=True, dest="calculate", default="ar,status,trends")
+        "-x", "--calculate", metavar="STRING", help="Comma separated list of what to calculate (ar,status,trends)", required=False, dest="calculate", default=None)
     parser.add_argument(
         "-c", "--config", metavar="PATH", help="Path for the config file", dest="config")
     parser.add_argument(
