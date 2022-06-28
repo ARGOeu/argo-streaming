@@ -71,6 +71,8 @@ public class StatusManagerDecomissionTest {
 		File avroDownFile = new File(resDownAvroFile.toURI());
 
 		StatusManager sm = new StatusManager();
+                sm.setLooseInterval(1440);
+                sm.setStrictInterval(1440);
 		sm.setReport("Critical");
 		sm.loadAllFiles("2019-06-01", avroDownFile, avroEGPFile, avroMPSFile, jsonAPSFile, jsonOPSFile);
 		

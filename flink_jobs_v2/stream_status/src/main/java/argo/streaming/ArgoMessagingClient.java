@@ -366,9 +366,6 @@ public class ArgoMessagingClient {
         postPublish.addHeader("x-api-key", this.token);
         postPublish.addHeader("Content-type", "application/json");
 
-//         Request r = Request.Get(fullURL).addHeader("Accept", "application/json").addHeader("Content-type",
-//                "application/json").addHeader("x-api-key", this.token);
-//       
         StringEntity postBody = new StringEntity(body);
 
         postBody.setContentType("application/json");
@@ -406,7 +403,6 @@ public class ArgoMessagingClient {
                     Log.info("publish response: {}", result.toString());
                 }
             } else {
-
                 logIssue(response);
 
             }
