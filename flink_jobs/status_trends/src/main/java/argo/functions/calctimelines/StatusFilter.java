@@ -11,10 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author cthermolia
- *
- * StatusFilter, filters data by status
+ * StatusFilter, filters data by status and status appearances
  */
 public class StatusFilter implements FilterFunction<Tuple6<String, String, String, String, String, Integer>> {
 
@@ -24,12 +21,12 @@ public class StatusFilter implements FilterFunction<Tuple6<String, String, Strin
     public StatusFilter(String status) {
         this.status = status;
     }
-    //if the status field value in Tuple equals the given status returns true, else returns false
+    //if the status field value in Tuple equals the given status  and status appearances>0 returns true, else returns false
 
     @Override
     public boolean filter(Tuple6<String, String, String, String, String, Integer> t) throws Exception {
 
-        if (t.f4.toString().equalsIgnoreCase(status)) {
+        if (t.f4.toString().equalsIgnoreCase(status) && t.f5>0) {
             return true;
         }
         return false;

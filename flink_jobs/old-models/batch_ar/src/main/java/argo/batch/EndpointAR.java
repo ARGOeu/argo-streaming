@@ -1,4 +1,6 @@
 package argo.batch;
+import java.util.Objects;
+
 
 public class EndpointAR {
 	
@@ -12,8 +14,9 @@ public class EndpointAR {
 	private double up;
 	private double unknown;
 	private double down;
+    private String info;
 	
-	public EndpointAR(int _dateInt, String _report, String _name, String _service, String _group, double _a, double _r, double _up, double _unknown, double _down){
+	public EndpointAR(int _dateInt, String _report, String _name, String _service, String _group, double _a, double _r, double _up, double _unknown, double _down, String _info){
 		this.dateInt = _dateInt;
 		this.report=_report;
 		this.name = _name;
@@ -24,6 +27,8 @@ public class EndpointAR {
 		this.up = _up;
 		this.unknown = _unknown;
 		this.down = _down;
+		this.info = _info;
+		
 	}
 	
 	
@@ -92,8 +97,15 @@ public class EndpointAR {
 		this.down = down;
 	}
 	
+	public void setInfo(String info) {
+		this.info = info;
+	}
+	
+	public String getInfo() {
+		return this.info;
+	}
+	
 	public String toString() {
 		return "(" + this.dateInt+ "," + this.report + "," + this.name + "," + this.service + "," + this.group + "," + this.a + "," + this.r + ","  + this.up + ","  + this.unknown + ","  + this.down  + ")";
 	}
-
 }

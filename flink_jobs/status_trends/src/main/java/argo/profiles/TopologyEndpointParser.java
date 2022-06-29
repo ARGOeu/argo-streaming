@@ -17,10 +17,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 /**
- *
- * @author cthermolia
- *
- * * TopologyEndpointParser, collects data as described in the json received
+ * TopologyEndpointParser, collects data as described in the json received
  * from web api topology endpoint request
  */
 public class TopologyEndpointParser implements Serializable{
@@ -29,17 +26,13 @@ public class TopologyEndpointParser implements Serializable{
 
     private HashMap<String, HashMap<String, String>> topologyEndpoint=new HashMap<>();
     private final String url = "/topology/endpoints/by_report";
-// private final String url = "/topology/endpoints";
     private JSONObject jsonObject;
     public TopologyEndpointParser() {
     }
 
     
     public TopologyEndpointParser(String apiUri, String key, String proxy, String date, String reportname) throws IOException, ParseException {
-        // by_report/{report-name}?date=YYYY-MM-DD
         String uri = apiUri + url + "/" + reportname;
-        // String uri = apiUri + url;
-
         if (date != null) {
             uri = uri + "?date=" + date;
         }

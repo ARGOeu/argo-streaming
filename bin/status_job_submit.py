@@ -2,7 +2,7 @@
 import sys
 import os
 import argparse
-import datetime
+from datetime import datetime, date, timedelta
 from snakebite.client import Client
 
 import logging
@@ -12,7 +12,6 @@ from utils.common import cmd_to_string, date_rollback, flink_job_submit, hdfs_ch
 from utils.update_profiles import ArgoProfileManager
 from utils.argo_config import ArgoConfig
 
-from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +52,7 @@ def compose_hdfs_commands(year, month, day, args, config):
 
     # file location of previous day's metric data (local or hdfs)
     hdfs_commands["--pdata"] = hdfs_check_path(
-        hdfs_metric + "/" + str(datetime.date(year, month, day) - datetime.timedelta(1)), client)
+        hdfs_metric + "/" + str(date(year, month, day) - timedelta(1)), client)
 
     # file location of target day's metric data (local or hdfs)
     hdfs_commands["--mdata"] = hdfs_check_path(
@@ -69,8 +68,8 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
     Args:
         config (obj.): argo configuration object
         args (dict): command line arguments of this script
-        hdfs_commands (list): a list of hdfs related arguments to be passed in flink job    
-        dry_run (bool, optional): signifies a dry-run execution context, if yes no mongodb clean-up is perfomed. 
+        hdfs_commands (list): a list of hdfs related arguments to be passed in flink job
+        dry_run (bool, optional): signifies a dry-run execution context, if yes no mongodb clean-up is perfomed.
                                   Defaults to False.
 
     Returns:
@@ -129,12 +128,12 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
         cmd_command.append("--api.endpoint")
         cmd_command.append(api_endpoint.hostname)
 
-    # get the api token 
+    # get the api token
     cmd_command.append("--api.token")
-    cmd_command.append(config.get("API","access_token"))
+    cmd_command.append(config.get("API",args.tenant + "_key"))
 
-    # get report id 
-    
+    # get report id
+
     cmd_command.append("--report.id")
     cmd_command.append(config.get("TENANTS:"+args.tenant,"report_"+args.report))
 
@@ -185,9 +184,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-r", "--report", metavar="STRING", help="Report status", required=True, dest="report")
     parser.add_argument(
-        "-d", "--date", metavar="DATE(YYYY-MM-DD)", help="Date to run the job for", required=True, dest="date", default=today)
+        "-d", "--date", metavar="DATE(YYYY-MM-DD)", help="Date to run the job for", required=False, dest="date", default=today)
     parser.add_argument(
-        "-m", "--method", metavar="KEYWORD(insert|upsert)", help="Insert or Upsert data in mongoDB", required=True, dest="method", default="insert")
+        "-m", "--method", metavar="KEYWORD(insert|upsert)", help="Insert or Upsert data in mongoDB", required=False, dest="method", default="insert")
     parser.add_argument(
         "-c", "--config", metavar="PATH", help="Path for the config file", dest="config")
     parser.add_argument(

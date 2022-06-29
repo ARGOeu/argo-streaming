@@ -88,7 +88,7 @@ public class EndpointArTest {
 			
 			int runDateInt = Integer.parseInt(runDate.replace("-", ""));
 			
-			EndpointAR result = new EndpointAR(runDateInt,report,item.getHostname(),item.getService(),item.getGroup(),dAR.availability,dAR.reliability,dAR.up_f,dAR.unknown_f,dAR.down_f);
+			EndpointAR result = new EndpointAR(runDateInt,report,item.getHostname(),item.getService(),item.getGroup(),dAR.availability,dAR.reliability,dAR.up_f,dAR.unknown_f,dAR.down_f,"URL:https://example.foo");
 			resultDS.add(result);
 		}
 		

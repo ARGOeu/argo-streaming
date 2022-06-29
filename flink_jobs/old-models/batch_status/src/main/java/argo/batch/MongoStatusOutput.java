@@ -14,6 +14,8 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 
+import argo.batch.MongoStatusOutput.StatusType;
+
 
 /**
  * MongoOutputFormat for storing status data to mongodb
@@ -99,34 +101,61 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 	 * Service or Endpoint Group ones.       
 	 */
 	private Document prepDoc(StatusMetric record) {
+		// whatever the type of result might be add always the report and group fields
 		Document doc = new Document("report",this.report)
 				.append("endpoint_group", record.getGroup());
 				
-		
+		// if result is of type status service, append also service information to the results
 		if (this.sType == StatusType.STATUS_SERVICE) {
 			
 			doc.append("service",record.getService());
 		
-		} else if (this.sType == StatusType.STATUS_ENDPOINT) {
+		// if the result is not status service (previous check) and not group (current check)
+		// this means it is either status endpoint or status metric so we need
+		// to attach first the extra info data (URL etc...)
+		} else if (this.sType != StatusType.STATUS_ENDPOINT_GROUP) {
 			
-			doc.append("service", record.getService())
-			.append("host", record.getHostname());
+			String info = record.getInfo();
+			if (!info.equalsIgnoreCase("")) {
+				Document infoDoc = new Document();
+				String[] kvs = info.split(",");
+				for (String kv : kvs) {
+					String[] kvtok = kv.split(":",2);
+					if (kvtok.length == 2){
+						infoDoc.append(kvtok[0], kvtok[1]);
+					}
+				}
 				
-		} else if (this.sType == StatusType.STATUS_METRIC) {
-		
-			doc.append("service", record.getService())
-			.append("host", record.getHostname())
-			.append("metric", record.getMetric())
-			.append("message", record.getMessage())
-			.append("summary", record.getSummary())
-			.append("time_integer",record.getTimeInt()) 
-			.append("previous_state",record.getPrevState())
-			.append("previous_timestamp", record.getPrevTs())
-			// append the actual data to status metric record in datastore
-			.append("actual_data", record.getActualData())
-			// append original status and threshold rule applied
-			.append("original_status", record.getOgStatus())
-			.append("threshold_rule_applied", record.getRuleApplied());
+				doc.append("info", infoDoc);
+			}
+				
+			// continuing we use this nested conditional to check if the 
+			// result of type status endpoint or status metric to attach 
+			// in each case the correct fields
+			if (this.sType == StatusType.STATUS_ENDPOINT) {
+				
+
+				doc.append("service", record.getService())
+				.append("host", record.getHostname());
+				
+				
+					
+			} else if (this.sType == StatusType.STATUS_METRIC) {
+			
+				doc.append("service", record.getService())
+				.append("host", record.getHostname())
+				.append("metric", record.getMetric())
+				.append("message", record.getMessage())
+				.append("summary", record.getSummary())
+				.append("time_integer",record.getTimeInt()) 
+				.append("previous_state",record.getPrevState())
+				.append("previous_timestamp", record.getPrevTs())
+				// append the actual data to status metric record in datastore
+				.append("actual_data", record.getActualData())
+				// append original status and threshold rule applied
+				.append("original_status", record.getOgStatus())
+				.append("threshold_rule_applied", record.getRuleApplied());
+			}
 		}
 		
 		
@@ -152,6 +181,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 					Filters.eq("timestamp", record.getTimestamp()));
 		
 		} else if (this.sType == StatusType.STATUS_ENDPOINT) {
+			
 			
 			return Filters.and(Filters.eq("report", this.report), Filters.eq("date_integer", record.getDateInt()),
 					Filters.eq("endpoint_group", record.getGroup()), Filters.eq("service", record.getService()),
@@ -181,7 +211,8 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
 		// Mongo Document to be prepared according to StatusType of input
 		Document doc = prepDoc(record);
-
+		
+	
 		if (this.method == MongoMethod.UPSERT) {
 
 			// Filter for upsert to be prepared according to StatusType of input

@@ -4,13 +4,12 @@
  * and open the template in the editor.
  */
 package argo.pojos;
+
 import timelines.Timeline;
+
 /**
- *
- * @author cthermolia
- *
- * GroupFunctionTrends, describes the computed trend information extracted from the
- * timelines at the level of group function groups
+ * GroupFunctionTrends, describes the computed trend information extracted from
+ * the timelines at the level of group function groups
  */
 public class GroupFunctionTrends {
 
@@ -61,5 +60,4 @@ public class GroupFunctionTrends {
         this.flipflops = flipflops;
     }
 
-  
 }

@@ -14,12 +14,12 @@ CONF_SCHEMA = os.path.join(os.path.dirname(
 expected_result = """sudo flink_path run -c test_class test.jar --run.date 2018-02-11 --mongo.uri mongodb://localhost:21017/argo_TENANTA \
 --mongo.method upsert --pdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2018-02-10 \
 --mdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2018-02-11 \
---api.endpoint api.foo --api.token key0 --report.id report_uuid"""
+--api.endpoint api.foo --api.token key1 --report.id report_uuid"""
 
 expected_result2 = """sudo flink_path run -c test_class test.jar --run.date 2021-01-01 --mongo.uri mongodb://localhost:21017/argo_TENANTA \
 --mongo.method insert --pdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2020-12-31 \
 --mdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2021-01-01 \
---api.endpoint api.foo --api.token key0 --report.id report_uuid"""
+--api.endpoint api.foo --api.token key1 --report.id report_uuid"""
 
 
 class TestClass(unittest.TestCase):

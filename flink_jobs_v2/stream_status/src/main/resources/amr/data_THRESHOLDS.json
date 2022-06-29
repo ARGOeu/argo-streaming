@@ -1,0 +1,1 @@
+{"id":"3345c3c1-322a-47f1-982c-1d9df1fc065e","date":"2015-01-01","name":"endpoint_example","rules":[{"host":"host1.foo.bar","metric":"service.freshness","thresholds":"freshness=1s;;0:;"}]}

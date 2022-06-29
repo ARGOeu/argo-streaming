@@ -1,0 +1,68 @@
+       {
+            "id": "00272336-7199-4ea4-bbe9-043aca02838c",
+            "date": "2021-02-03",
+            "name": "sla_test",
+            "namespace": "",
+            "endpoint_group": "servicegroups",
+            "metric_operation": "AND",
+            "profile_operation": "AND",
+            "metric_profile": {
+                "name": "ARGO_MON_CRITICAL",
+                "id": "5850d7fe-75f5-4aa4-bacc-9a5c10280b59"
+            },
+            "groups": [
+                {
+                    "name": "compute",
+                    "operation": "OR",
+                    "services": [
+                        {
+                            "name": "ARC-CE",
+                            "operation": "OR"
+                        },
+                        {
+                            "name": "GRAM5",
+                            "operation": "OR"
+                        },
+                        {
+                            "name": "QCG.Computing",
+                            "operation": "OR"
+                        },
+                        {
+                            "name": "org.opensciencegrid.htcondorce",
+                            "operation": "OR"
+                        }
+                    ]
+                },
+                {
+                    "name": "storage",
+                    "operation": "OR",
+                    "services": [
+                        {
+                            "name": "SRM",
+                            "operation": "OR"
+                        }
+                    ]
+                },
+                {
+                    "name": "information",
+                    "operation": "OR",
+                    "services": [
+                        {
+                            "name": "Site-BDII",
+                            "operation": "OR"
+                        }
+                    ]
+                },
+                {
+                    "name": "cloud",
+                    "operation": "OR",
+                    "services": [
+                        {
+                            "name": "org.openstack.nova",
+                            "operation": "OR"
+                        }
+                    ]
+                }
+            ]
+        }
+  

@@ -26,22 +26,23 @@ import org.apache.flink.core.fs.Path;
 
 
 /**
- * Implements an ARGO Status Batch Job in flink
+ * Represents an ARGO A/R Batch Job in flink
  * 
- * Submit job in flink cluster using the following parameters 
- * --mps: path tometric profile sync file (For hdfs use: hdfs://namenode:port/path/to/file)
- * --egp: path to endpoints group topology file (For hdfs use: hdfs://namenode:port/path/to/file) 
- * --ggp: path to group of groups topology file (For hdfs use: hdfs://namenode:port/path/to/file) 
+ * Submit job in flink cluster using the following parameters: 
  * --pdata: path to previous day's metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
  * --mdata: path to metric data file (For hdfs use: hdfs://namenode:port/path/to/file)
- * --ops: path to operations profile file (For hdfs use: hdfs://namenode:port/path/to/file)
- * --aps: path to aggregations profile file (For hdfs use: hdfs://namenode:port/path/to/file)
- * --cfg: path to report's configuration file (For hdfs use: hdfs://namenode:port/path/to/file)
- * --rec: path to recomputations file
  * --run.date: target date of computation in DD-MM-YYYY format
  * --mongo.uri: path to MongoDB destination (eg mongodb://localhost:27017/database.table
  * --mongo.method: Method for storing results to Mongo (insert,upsert)
+ * --report.id: UUUID of the report
+ * --api.endpoint: endpoint hostname of the argo-web-api instance (api.argo.example.com)
+ * --api.token: access token to argo-web-api 
+ * --api.proxy: optional address for proxy to be used (http://proxy.example.com)
+ * --api.timeout: set timeout (in seconds) when connecting to argo-web-api
  */
+
+
+
 public class ArgoStatusBatch {
 	// setup logger
 	static Logger LOG = LoggerFactory.getLogger(ArgoStatusBatch.class);
@@ -69,8 +70,13 @@ public class ArgoStatusBatch {
 		if (params.has("api.proxy")) {
 			amr.setProxy(params.get("api.proxy"));
 		}
+		
+		if (params.has("api.timeout")) {
+			amr.setTimeoutSec(params.getInt("api.timeout"));
+		}
 
 		amr.setReportID(reportID);
+		amr.setDate(params.getRequired("run.date"));
 		amr.getRemoteAll();
 		
 
@@ -81,10 +87,11 @@ public class ArgoStatusBatch {
 		
 		// begin with empty threshold datasource
 		DataSource<String> thrDS = env.fromElements("");
-		// if threshold filepath has been defined in cli parameters
-		if (params.has("thr")){
-			// read file and update threshold datasource
-			thrDS = env.readTextFile(params.getRequired("thr"));
+		
+		// check if report information from argo-web-api contains a threshold profile ID
+		if (!amr.getThresholdsID().equalsIgnoreCase("")){
+			// grab information about thresholds rules from argo-web-api
+			thrDS = env.fromElements(amr.getResourceJSON(ApiResource.THRESHOLDS));
 		}
 		
 		ConfigManager confMgr = new ConfigManager();

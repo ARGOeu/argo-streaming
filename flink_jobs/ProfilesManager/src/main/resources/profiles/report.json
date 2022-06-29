@@ -1,0 +1,51 @@
+        {
+            "id": "04edb428-01e6-4286-87f1-050546736f7c",
+            "tenant": "EGI",
+            "disabled": false,
+            "info": {
+                "name": "SLA",
+                "description": "A/R report based on mapping SLAs to EGI service groups",
+                "created": "2018-09-28 15:08:48",
+                "updated": "2021-07-15 13:35:50"
+            },
+            "thresholds": {
+                "availability": 80,
+                "reliability": 85,
+                "uptime": 0.8,
+                "unknown": 0.1,
+                "downtime": 0.1
+            },
+            "topology_schema": {
+                "group": {
+                    "type": "PROJECT",
+                    "group": {
+                        "type": "SERVICEGROUPS"
+                    }
+                }
+            },
+            "profiles": [
+                {
+                    "id": "5850d7fe-75f5-4aa4-bacc-9a5c10280b59",
+                    "name": "ARGO_MON_CRITICAL",
+                    "type": "metric"
+                },
+                {
+                    "id": "00272336-7199-4ea4-bbe9-043aca02838c",
+                    "name": "sla_test",
+                    "type": "aggregation"
+                },
+                {
+                    "id": "8ce59c4d-3761-4f25-a364-f019e394bf8b",
+                    "name": "egi_ops",
+                    "type": "operations"
+                }
+            ],
+            "filter_tags": [
+                {
+                    "name": "scope",
+                    "value": "SLA",
+                    "context": "argo.group.filter.tags.array"
+                }
+            ]
+        }
+  

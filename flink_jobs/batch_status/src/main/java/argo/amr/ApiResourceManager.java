@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 
 
 import org.apache.http.client.ClientProtocolException;
@@ -59,6 +57,7 @@ public class ApiResourceManager {
 	private String reportName;
 	private String weightsID;
 	private boolean verify;
+	private int timeoutSec;
 
 
 	public ApiResourceManager(String endpoint, String token) {
@@ -74,8 +73,18 @@ public class ApiResourceManager {
 		this.proxy = "";
 		this.weightsID = "";
 		this.verify = true;
+		this.timeoutSec = 30; // Timeout limit when contacting argo-web-api
 
 	}
+	
+	public int getTimeoutSec() {
+		return timeoutSec;
+	}
+	
+	public void setTimeoutSec(int timeoutSec) {
+		this.timeoutSec = timeoutSec;
+	}
+	
 	
 	public boolean getVerify() {
 		return verify;
@@ -186,7 +195,7 @@ public class ApiResourceManager {
 			r = r.viaProxy(proxy);
 		}
 		
-		r = r.connectTimeout(1000).socketTimeout(1000);
+		r = r.connectTimeout(this.timeoutSec * 1000).socketTimeout(this.timeoutSec * 1000);
 		
 		String content = "{}";
 		
@@ -195,6 +204,7 @@ public class ApiResourceManager {
 				CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
 				Executor executor = Executor.newInstance(httpClient);
 				content = executor.execute(r).returnContent().asString();
+				httpClient.close();
 			} else {
 				
 				content = r.execute().returnContent().asString();

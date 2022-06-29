@@ -152,27 +152,35 @@
       "desc": "class name for entry point in stream status flink job jar",
       "type": "string",
       "default": "argo.batch.ArgoStatusBatch"
+    },
+    "batch-multi": {
+      "desc": "class name for entry point in batch multi flink job jar",
+      "type": "path"
     }
   },
   "JARS": {
     "ams-ingest-metric": {
-      "desc": "class name for entry point in ingest metric flink job jar",
+      "desc": "jar path for ingest metric flink job jar",
       "type": "path"
     },
     "ams-ingest-sync": {
-      "desc": "class name for entry point in ingest sync flink job jar",
+      "desc": "jar path for ingest sync flink job jar",
       "type": "path"
     },
     "batch-ar": {
-      "desc": "class name for entry point in batch ar flink job jar",
+      "desc": "jar path for batch ar flink job jar",
       "type": "path"
     },
     "batch-status": {
-      "desc": "class name for entry point in batch status flink job jar",
+      "desc": "jar path for batch status flink job jar",
       "type": "path"
     },
     "stream-status": {
-      "desc": "class name for entry point in stream status flink job jar",
+      "desc": "jar path for stream status flink job jar",
+      "type": "path"
+    },
+    "batch-multi": {
+      "desc": "jar path for batch multi flink job jar",
       "type": "path"
     }
   },

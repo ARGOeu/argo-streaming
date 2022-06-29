@@ -389,7 +389,4 @@ public class OperationsManager implements Serializable {
         return LOG;
     }
 
-//    public String getUrl() {
-//        return url;
-//    }
 }

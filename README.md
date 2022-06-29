@@ -446,4 +446,19 @@ Job requires parameters:
 `--proxy`                      : (optional) proxy url 
 `--clearMongo`                 : (optional) defines if the collections in mongo will be 					  cleared from previous documents or not. if false or is 					  missing collection will remain as it is 
 
+## Flink Jobs V2
+
+
+Flink Jobs V2 exists as a parent project , that contains module projects that are able to share common code and also run independently. 
+In order to submit each job to flink the projects need to be prepared as jar files. 
+Firstly need to install all project dependencies by: 
+- `cd flink_jobs_v2`
+- `mvn clean install`
+Secondly for each job to generate the jar: 
+- `mvn clean && mvn package`
+Finally run the jar in flink with the required job parameters as described previously in README.md 
+
+
+
+
 

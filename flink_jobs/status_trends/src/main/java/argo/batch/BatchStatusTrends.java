@@ -1,10 +1,12 @@
 package argo.batch;
 
 import argo.avro.MetricData;
+import argo.filter.zero.flipflops.ZeroStatusTrends;
 import argo.functions.calctrends.CalcStatusTrends;
 import argo.functions.calctimelines.TopologyMetricFilter;
 import argo.functions.calctimelines.CalcLastTimeStatus;
 import argo.functions.calctimelines.StatusFilter;
+import argo.pojos.MetricTrends;
 import argo.utils.Utils;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
@@ -18,25 +20,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import argo.profiles.ProfilesLoader;
 import org.joda.time.DateTime;
-/**
- * Implements an ARGO Status Trends Job in flink , to count the number of status appearances per status type
- * that occur to the level of group, service, endpoint. metric  of the topology hierarchy
- * 
- * Submit job in flink cluster using the following parameters 
 
-* --date:the date for which the job runs and need to return results , yyyy-MM-dd
-* --yesterdayData: path to the metric profile data, of the previous day , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
-* --todayData: path to the metric profile data, of the current day , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
-* --mongoUri: path to MongoDB destination (eg mongodb://localhost:27017/database
-* --apiUri: path to the mongo db the  , for which the jobs runs profile (For hdfs use: hdfs://namenode:port/path/to/file)
-* --key: ARGO web api token    
-* --reportId: the id of the report the job will need to process
-*  --apiUri: ARGO wep api to connect to msg.example.com
-*Optional: 
-* -- clearMongo: option to clear the mongo db before saving the new result or not, e.g  true 
-* -- N : the number of the result the job will provide, if the parameter exists , e.g 10
-* 
-*/
+/**
+ * Implements an ARGO Status Trends Job in flink , to count the number of status
+ * appearances per status type that occur to the level of group, service,
+ * endpoint. metric of the topology hierarchy
+ *
+ * Submit job in flink cluster using the following parameters  *
+ * --date:the date for which the job runs and need to return results ,
+ * yyyy-MM-dd --yesterdayData: path to the metric profile data, of the previous
+ * day , for which the jobs runs profile (For hdfs use:
+ * hdfs://namenode:port/path/to/file) --todayData: path to the metric profile
+ * data, of the current day , for which the jobs runs profile (For hdfs use:
+ * hdfs://namenode:port/path/to/file) --mongoUri: path to MongoDB destination
+ * (eg mongodb://localhost:27017/database --apiUri: path to the mongo db the ,
+ * for which the jobs runs profile (For hdfs use:
+ * hdfs://namenode:port/path/to/file) --key: ARGO web api token --reportId: the
+ * id of the report the job will need to process --apiUri: ARGO wep api to
+ * connect to msg.example.com Optional: -- clearMongo: option to clear the mongo
+ * db before saving the new result or not, e.g true -- N : the number of the
+ * result the job will provide, if the parameter exists , e.g 10
+ *
+ */
 public class BatchStatusTrends {
 
     static Logger LOG = LoggerFactory.getLogger(BatchStatusTrends.class);
@@ -46,7 +51,6 @@ public class BatchStatusTrends {
     private static Integer rankNum;
 
     private static final String statusTrendsCol = "status_trends_metrics";
-   
 
     private static String mongoUri;
     private static ProfilesLoader profilesLoader;
@@ -68,7 +72,6 @@ public class BatchStatusTrends {
             System.exit(0);
         }
 
-     
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }
@@ -90,11 +93,11 @@ public class BatchStatusTrends {
         filterByStatusAndWrite(statusTrendsCol, rankedData, "unknown");
 
 // execute program
-             StringBuilder jobTitleSB = new StringBuilder();
+        StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Status Trends for: ");
-        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getTenant());
+        jobTitleSB.append(profilesLoader.getReportParser().getTenant());
         jobTitleSB.append("/");
-        jobTitleSB.append(profilesLoader.getReportParser().getTenantReport().getInfo()[0]);
+        jobTitleSB.append(profilesLoader.getReportParser().getReport());
         jobTitleSB.append("/");
         jobTitleSB.append(profilesDate);
         env.execute(jobTitleSB.toString());
@@ -114,18 +117,18 @@ public class BatchStatusTrends {
 
     // filter the data based on status (CRITICAL,WARNING,UNKNOWN), rank and write top N in seperate files for each status
     private static void filterByStatusAndWrite(String uri, DataSet<Tuple6<String, String, String, String, String, Integer>> data, String status) {
-        String collectionUri = mongoUri + "." + uri;
         DataSet<Tuple6<String, String, String, String, String, Integer>> filteredData = data.filter(new StatusFilter(status));
-
+    DataSet<Tuple6<String, String, String, String, String, Integer>> noZeroStatusTrends = filteredData.filter(new ZeroStatusTrends());
+     
         if (rankNum != null) {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING).setParallelism(1).first(rankNum);
+            noZeroStatusTrends = noZeroStatusTrends.sortPartition(5, Order.DESCENDING).setParallelism(1).first(rankNum);
         } else {
-            filteredData = filteredData.sortPartition(5, Order.DESCENDING).setParallelism(1);
+            noZeroStatusTrends = noZeroStatusTrends.sortPartition(5, Order.DESCENDING).setParallelism(1);
         }
 
-        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, MongoTrendsOutput.TrendsType.TRENDS_STATUS, reportId, profilesDateStr, clearMongo);
+        MongoTrendsOutput metricMongoOut = new MongoTrendsOutput(mongoUri, uri, MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, reportId, profilesDateStr, clearMongo);
 
-        DataSet<Trends> trends = filteredData.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Trends>() {
+        DataSet<Trends> trends = noZeroStatusTrends.map(new MapFunction<Tuple6<String, String, String, String, String, Integer>, Trends>() {
 
             @Override
             public Trends map(Tuple6<String, String, String, String, String, Integer> in) throws Exception {

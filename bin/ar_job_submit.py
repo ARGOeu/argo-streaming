@@ -3,7 +3,7 @@
 import sys
 import os
 import argparse
-import datetime
+from datetime import datetime, date, timedelta
 from snakebite.client import Client
 import logging
 from urllib.parse import urlparse
@@ -40,7 +40,7 @@ def compose_hdfs_commands(year, month, day, args, config):
 
     hdfs_user = config.get("HDFS", "user")
     tenant = args.tenant
-    
+
 
     hdfs_metric = config.get("HDFS", "path_metric")
 
@@ -52,7 +52,7 @@ def compose_hdfs_commands(year, month, day, args, config):
 
     # file location of previous day's metric data (local or hdfs)
     hdfs_commands["--pdata"] = hdfs_check_path(
-        hdfs_metric + "/" + str(datetime.date(year, month, day) - datetime.timedelta(1)), client)
+        hdfs_metric + "/" + str(date(year, month, day) - timedelta(1)), client)
 
     # file location of target day's metric data (local or hdfs)
     hdfs_commands["--mdata"] = hdfs_check_path(
@@ -68,8 +68,8 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
     Args:
         config (obj.): argo configuration object
         args (dict): command line arguments of this script
-        hdfs_commands (list): a list of hdfs related arguments to be passed in flink job    
-        dry_run (bool, optional): signifies a dry-run execution context, if yes no mongodb clean-up is perfomed. 
+        hdfs_commands (list): a list of hdfs related arguments to be passed in flink job
+        dry_run (bool, optional): signifies a dry-run execution context, if yes no mongodb clean-up is perfomed.
                                   Defaults to False.
 
     Returns:
@@ -128,18 +128,20 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
         cmd_command.append("--api.endpoint")
         cmd_command.append(api_endpoint.hostname)
 
-    # get the api token 
+    # get the api token
     cmd_command.append("--api.token")
-    cmd_command.append(config.get("API","access_token"))
+    cmd_command.append(config.get("API",args.tenant+"_key"))
 
-    # get report id 
-    
+    # get report id
     cmd_command.append("--report.id")
     cmd_command.append(config.get("TENANTS:"+args.tenant,"report_"+args.report))
 
+    
 
-    # get optional api proxy
+
+    # get optional parameter for api proxy
     proxy = config.get("API", "proxy")
+ 
     if proxy is not None:
         cmd_command.append("--api.proxy")
         cmd_command.append(proxy.geturl())
@@ -170,7 +172,6 @@ def main(args=None):
     hdfs_commands = compose_hdfs_commands(year, month, day, args, config)
 
     cmd_command = compose_command(config, args, hdfs_commands, args.dry_run)
-
     # submit the script's command
     flink_job_submit(config, cmd_command, None, args.dry_run)
 

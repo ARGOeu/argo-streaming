@@ -1,5 +1,7 @@
 package argo.batch;
 
+import java.util.Objects;
+
 public class EndpointAR {
 	
 	private int dateInt;

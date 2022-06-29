@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import ops.CAggregator;
 import ops.OpsManager;
 import sync.AggregationProfileManager;
-import timelines.TimelineAggregator;
 
 
 /**
@@ -47,7 +46,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 	
 
 	private String runDate;
-	private TimelineAggregator serviceAggr;
+	private CAggregator serviceAggr;
 
 	private boolean getService;
 	
@@ -68,7 +67,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 	
 		// Initialize endpoint group type
 		this.runDate = params.getRequired("run.date");
-		this.serviceAggr = new TimelineAggregator(); // Create aggregator
+		this.serviceAggr = new CAggregator(); // Create aggregator
 
 		this.getService = true;
 	}
@@ -114,7 +113,7 @@ public class CalcStatusService extends RichGroupReduceFunction<StatusMetric, Sta
 		avGroup = this.apsMgr.getGroupByService(aProfile, service);
 		String avOp = this.apsMgr.getProfileGroupServiceOp(aProfile, avGroup, service);
 		
-		this.serviceAggr.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(avOp));
+		this.serviceAggr.aggregate(this.opsMgr, avOp);
 
 		// Append the timeline	
 		for (Entry<DateTime, Integer> item : this.serviceAggr.getSamples()) {

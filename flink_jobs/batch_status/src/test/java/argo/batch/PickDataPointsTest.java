@@ -194,7 +194,7 @@ public class PickDataPointsTest {
 		String[] expected = new String[] {"URL:host1.example.foo/path/to/service1,DN:foo DN", 
 				"URL:host1.example.foo/path/to/service2", 
 				"URL:host2.example.foo/path/to/service1",
-				"ext.Value:extension1,URL:host2.example.foo/path/to/service2",
+				"URL:host2.example.foo/path/to/service2,ext_Value:extension1",
 				""};
 		
 

@@ -4,12 +4,12 @@
  * and open the template in the editor.
  */
 package argo.pojos;
+
 import timelines.Timeline;
+
 /**
- *
- * @author cthermolia MetricTrends, describes the computed trend information
- * extracted from the set of the timelines at the level of group service
- * endpoints metrics groups  *
+ * MetricTrends, describes the computed trend information extracted from the set
+ * of the timelines at the level of group service endpoints metrics groups *
  */
 public class GroupTrends {
 

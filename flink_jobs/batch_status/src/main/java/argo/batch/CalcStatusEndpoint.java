@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.apache.flink.api.common.functions.RichGroupReduceFunction;
-
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
@@ -18,16 +16,9 @@ import org.slf4j.LoggerFactory;
 import argo.avro.MetricProfile;
 import ops.CAggregator;
 import ops.OpsManager;
+import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 import sync.AggregationProfileManager;
 import sync.MetricProfileManager;
-import timelines.TimelineAggregator;
-
-
-/**
- * Accepts a list o status metrics grouped by the fields: endpoint group, service, endpoint
- * Uses Continuous Timelines and Aggregators to calculate the status results of a service endpoint
- * Prepares the data in a form aligned with the datastore schema for status endpoint collection
- */
 public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, StatusMetric> {
 
 	private static final long serialVersionUID = 1L;
@@ -47,7 +38,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 	private AggregationProfileManager apsMgr;
 	private OpsManager opsMgr;
 	private String runDate;
-	private TimelineAggregator endpointAggr;
+	private CAggregator endpointAggr;
 
 	private boolean fillMissing;
 
@@ -71,7 +62,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 		this.opsMgr.loadJsonString(ops);
 		
 		this.runDate = params.getRequired("run.date");
-		this.endpointAggr = new TimelineAggregator(); // Create aggregator
+		this.endpointAggr = new CAggregator(); // Create aggregator
 
 		this.fillMissing = true;
 	}
@@ -142,7 +133,7 @@ public class CalcStatusEndpoint extends RichGroupReduceFunction<StatusMetric, St
 
 		}
 
-		this.endpointAggr.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(this.apsMgr.getMetricOp(aprofile)));
+		this.endpointAggr.aggregate(this.opsMgr, this.apsMgr.getMetricOp(aprofile));
 
 		// Append the timeline
 		

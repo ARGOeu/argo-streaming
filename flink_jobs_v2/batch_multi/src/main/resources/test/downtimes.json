@@ -1,0 +1,1 @@
+{"status":{"message":"Success","code":"200"},"data":[{"date":"2022-01-14","endpoints":[{"hostname":"Hostname_1","service":"Service_3A","start_time":"2022-01-14T18:00:00Z","end_time":"2022-01-17T23:59:00Z"},{"hostname":"Hostname_2","service":"Service_3A","start_time":"2022-01-14T09:00:00Z","end_time":"2022-01-17T23:59:00Z"}]}]}

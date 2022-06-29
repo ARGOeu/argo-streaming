@@ -1,8 +1,8 @@
 /target/
+
+# Eclipse related
+.classpath
 .project
 .settings/
-.classpath/
-.classpath
-/nbproject
 nbactions.xml
 
