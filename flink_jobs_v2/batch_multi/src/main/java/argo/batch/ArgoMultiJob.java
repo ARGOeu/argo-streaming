@@ -407,7 +407,7 @@ public class ArgoMultiJob {
         }
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
-        jobTitleSB.append("Status Batch job for tenant:");
+        jobTitleSB.append("Multi Batch job for tenant:");
         jobTitleSB.append(cfgMgr.getTenant());
         jobTitleSB.append(" on day:");
         jobTitleSB.append(runDate);

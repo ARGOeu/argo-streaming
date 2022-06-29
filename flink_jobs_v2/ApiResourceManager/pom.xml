@@ -4,8 +4,9 @@
     <parent>
         <groupId>flink.jobs.v2</groupId>
         <artifactId>flink_jobs_v2</artifactId>
-        <version>1.0-SNAPSHOT</version>
-    </parent> 
+        <version>2.0.0</version>
+    </parent>
+    <version>2.0.0</version> 
     <groupId>api.resource.manager</groupId>
     <artifactId>ApiResourceManager</artifactId>
     <packaging>jar</packaging>
