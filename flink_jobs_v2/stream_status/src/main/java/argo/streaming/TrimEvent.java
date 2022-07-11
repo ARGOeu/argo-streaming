@@ -3,10 +3,8 @@ package argo.streaming;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import org.apache.flink.util.Collector;
@@ -71,12 +69,12 @@ public class TrimEvent implements FlatMapFunction<String, String> {
                 json = trimEvent(json, removedFields);
                 if (this.helpUrl != null) {
                     String helpUrlPath = "https://" + this.helpUrl + "/" + json.get("metric").getAsString(); //the help url is in the form of helpUrl/metric e.g https://poem.egi.eu/ui/public_metrics/metricA
-                    json.addProperty("url.help", uriString(helpUrlPath));
+                    json.addProperty("url.help", urlString(helpUrlPath));
 
                 }
                 if (this.historyUrl != null) {
                     String finalHistUrlPath = initialHistPath + json.get("endpoint_group").getAsString() + "/" + json.get("service").getAsString() + "/" + json.get("hostname").getAsString() + dateParams;
-                    json.addProperty("url.history", uriString(finalHistUrlPath));
+                    json.addProperty("url.history", urlString(finalHistUrlPath));
                 }
                 break;
             case "endpoint":
@@ -87,7 +85,7 @@ public class TrimEvent implements FlatMapFunction<String, String> {
                 json = trimEvent(json, removedFields);
                 if (this.historyUrl != null) {
                     String finalHistUrlPath = initialHistPath + json.get("endpoint_group").getAsString() + "/" + json.get("service").getAsString() + "/" + json.get("hostname").getAsString() + dateParams;
-                    json.addProperty("url.history", uriString(finalHistUrlPath));
+                    json.addProperty("url.history", urlString(finalHistUrlPath));
                 }
 
                 break;
@@ -98,7 +96,7 @@ public class TrimEvent implements FlatMapFunction<String, String> {
                 json = trimEvent(json, removedFields);
                 if (this.historyUrl != null) {
                     String finalHistUrlPath = initialHistPath + json.get("endpoint_group").getAsString() + "/" + json.get("service").getAsString() + dateParams;
-                    json.addProperty("url.history", uriString(finalHistUrlPath));
+                    json.addProperty("url.history", urlString(finalHistUrlPath));
                 }
 
                 break;
@@ -113,7 +111,7 @@ public class TrimEvent implements FlatMapFunction<String, String> {
                 json = trimEvent(json, removedFields);
                 if (this.historyUrl != null) {
                     String finalHistUrlPath = initialHistPath + json.get("endpoint_group").getAsString() + dateParams;
-                    json.addProperty("url.history", uriString(finalHistUrlPath));
+                    json.addProperty("url.history", urlString(finalHistUrlPath));
                 }
 
                 break;
@@ -151,9 +149,9 @@ public class TrimEvent implements FlatMapFunction<String, String> {
         return param;
     }
 
-    private String uriString(String urlpath) throws UnsupportedEncodingException, MalformedURLException, URISyntaxException {
-        URI uri = new URI(urlpath);
-        return uri.toString();
+    private String urlString(String urlpath) throws MalformedURLException   {
+        URL url = new URL(urlpath);
+        return url.toString();
 
     }
 
