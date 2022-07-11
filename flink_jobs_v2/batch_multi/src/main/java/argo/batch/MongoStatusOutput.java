@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import jdk.nashorn.internal.parser.JSONParser;
 import org.apache.avro.generic.GenericData;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
