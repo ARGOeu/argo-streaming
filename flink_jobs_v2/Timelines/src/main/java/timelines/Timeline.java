@@ -10,13 +10,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -474,14 +470,13 @@ public class Timeline {
      * periods
      *
      */
-    public void fillWithStatus(String start, String end, Integer intStatus, DateTime dtUtc) throws ParseException {
+    public void fillWithStatus(String start, String end, Integer intStatus, DateTime now) throws ParseException {
         DateTime startDay = this.date.toDateTimeAtStartOfDay();
         DateTime endDay = startDay.withTime(23, 59, 59, 0);
-
-        //for (String[] period : periods) {
+       
         DateTime startDt = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", start);
         DateTime endDt = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", end);
-
+       
         DateTime floor = samples.floorKey(startDt);
         DateTime ceiling = samples.ceilingKey(endDt);
 
@@ -505,17 +500,18 @@ public class Timeline {
             endFloorStatus = this.samples.get(endFloor);
 
         }
-        if ((floor == null || !floor.equals(startDt)) && !startDt.isAfter(dtUtc)) { // if start period does not match with the initial timeline's timestamp then need to add the start to the timeline with the specified status
+        if ((floor == null || !floor.equals(startDt)) && !startDt.isAfter(now)) { // if start period does not match with the initial timeline's timestamp then need to add the start to the timeline with the specified status
             this.samples.put(startDt, intStatus);                       //else the timestamp already contained and in next step its status will be replaced
         }
         //if a timestamp exists after a period  then this timestamp should be added with the initial status of that period taken from the initial timeline
         //this timestamp should not extend todays current time (in the case that the computations occur during today and before the end of the day)
-        if (addCeiling && !endDt.isAfter(dtUtc) && endDt.plusMinutes(1).isBefore(endDay)) {
+ 
+        if (addCeiling && !endDt.isAfter(now) && endDt.plusMinutes(1).isBefore(endDay)) {
             this.samples.put(endDt.plusMinutes(1), endFloorStatus);
         }
 
         for (DateTime dt : samples.keySet()) {
-            if (!dt.isAfter(dtUtc) && !dt.isBefore(startDt) && !dt.isAfter(endDt)) { //if timestamps exist between the period then replace the timestamps with the specified status
+            if (!dt.isAfter(now) && !dt.isBefore(startDt) && !dt.isAfter(endDt)) { //if timestamps exist between the period then replace the timestamps with the specified status
                 this.samples.replace(dt, intStatus);
             }
         }

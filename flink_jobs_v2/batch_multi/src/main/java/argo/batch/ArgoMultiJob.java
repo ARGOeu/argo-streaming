@@ -108,8 +108,8 @@ public class ArgoMultiJob {
         env.getConfig().setGlobalJobParameters(params);
         env.setParallelism(1);
 
-        DateTime dtUtc = new DateTime(DateTimeZone.UTC);
-
+        DateTime now = new DateTime();
+        
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }
@@ -235,7 +235,7 @@ public class ArgoMultiJob {
 
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
-                .reduceGroup(new CalcEndpointTimeline(params, dtUtc)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .reduceGroup(new CalcEndpointTimeline(params, now)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps").withBroadcastSet(downDS, "down");
 
@@ -298,7 +298,7 @@ public class ArgoMultiJob {
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(confDS, "conf");
 
             // DataSet<StatusTimeline> statusGroupTimelineAR = statusGroupTimeline.flatMap(new ExcludeGroupMetrics(params)).withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
-            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params, dtUtc)).withBroadcastSet(mpsDS, "mps")
+            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params, now)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
 
