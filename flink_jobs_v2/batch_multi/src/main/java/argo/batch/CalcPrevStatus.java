@@ -129,7 +129,7 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
                     out.collect(item);
                 }
             }
-
+            
             prevStatus = item.getStatus();
             prevTimestamp = item.getTimestamp();
         }
