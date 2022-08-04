@@ -514,6 +514,7 @@ public class AmsStreamStatus {
             sm.setStrictInterval(strictInterval);
             // sm.setTimeout(config.timeout);
             sm.setReport(config.report);
+            sm.setGroupType(amr.getEgroup());
             // load all the connector data
             sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsList);
 

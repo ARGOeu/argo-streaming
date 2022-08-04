@@ -36,6 +36,7 @@ public class StatusEvent{
 	// Record all statuses of endpoint's metrics
 	private @SerializedName("metric_statuses") String metricStatuses[];
 	private @SerializedName("metric_names") String metricNames[];
+	private @SerializedName("hostname_url") String hostnameURL;
 	
 	
 	public StatusEvent() {
@@ -64,6 +65,7 @@ public class StatusEvent{
 		this.groupStatuses = new String[0];
 		this.metricStatuses = new String[0];
 		this.metricNames = new String[0];
+		this.hostnameURL = "";
 		
 	}
 	
@@ -94,6 +96,7 @@ public class StatusEvent{
 		this.groupStatuses = null;
 		this.metricStatuses = null;
 		this.metricNames = null;
+		this.hostnameURL = "";
 
 		
 	}
@@ -186,6 +189,7 @@ public class StatusEvent{
 	public String getRepeat() {return repeat;}
 	public String getSummary() {return this.summary;}
 	public String getMessage() {return this.message;}
+	public String getHostnameURL() { return this.hostnameURL;}
 
 	public void setReport(String report) {this.report = report;}	
 	public void setType(String type) {this.type = type;}
@@ -207,6 +211,7 @@ public class StatusEvent{
 	public void setStatus(String status) {this.status = status;}
 	public void setSummary(String summary) {this.summary = summary;}
 	public void setMessage (String message) {this.message = message;}
+	public void setHostnameURL (String hostnameURL) {this.hostnameURL = hostnameURL;}
 	
 	public int getDateInt() {
 		return Integer.parseInt(this.dt);

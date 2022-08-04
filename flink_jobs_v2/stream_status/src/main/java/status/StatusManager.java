@@ -44,6 +44,8 @@ public class StatusManager {
 
     // Name of the report used
     private String report;
+    
+    private String groupType;
 
     // Sync file structures necessary for status computation
     public EndpointGroupManager egp = new EndpointGroupManager();
@@ -77,6 +79,14 @@ public class StatusManager {
 
     public String getReport() {
         return this.report;
+    }
+    
+    public String getGroupType() {
+    	return this.groupType;
+    }
+    
+    public void setGroupType(String groupType) {
+    	this.groupType = groupType;
     }
 
     // Get Operation Manager
@@ -708,7 +718,7 @@ public class StatusManager {
      * arraylists keyed: "endpoints", "services", "statuses"
      *
      */
-    public Map<String, ArrayList<String>> getGroupEndpointStatuses(StatusNode egroup, OperationsManager ops) {
+    public Map<String, ArrayList<String>> getGroupEndpointStatuses(StatusNode egroup, String groupName, OperationsManager ops, EndpointGroupManager egp) {
         Map<String, ArrayList<String>> results = new HashMap<String, ArrayList<String>>();
         ArrayList<String> endpoints = new ArrayList<String>();
         ArrayList<String> services = new ArrayList<String>();
@@ -726,6 +736,13 @@ public class StatusManager {
             StatusNode service = serviceEntry.getValue();
             for (Entry<String, StatusNode> endpointEntry : service.children.entrySet()) {
                 String endpointName = endpointEntry.getKey();
+                // check if endpoint need to be in url friendly format
+                String endpointURL = egp.getTag(groupName, this.groupType, endpointName, serviceName,"info_URL");
+                if (endpointURL != null) {
+                	endpointName = endpointURL;
+                }
+                
+                
                 StatusNode endpoint = endpointEntry.getValue();
                 // Add endpoint information to results
                 results.get("endpoints").add(endpointName);
@@ -888,6 +905,14 @@ public class StatusManager {
                         evtEndpoint = genEvent("endpoint", group, service, hostname, metric,
                                 ops.getStrStatus(endpNewStatus), monHost, ts,
                                 ops.getStrStatus(oldEndpointStatus), oldEndpointTS, repeat, summary, message);
+                        
+                        // check if endpoind should get a friendly url hostname
+                        String hostnameURL = this.egp.getTag(group, this.groupType, hostname, service, "info_URL");
+                        if (hostnameURL != null) {
+                        	evtEndpoint.setHostnameURL(hostnameURL);
+                        } else {
+                            evtEndpoint.setHostnameURL(hostname);
+                        }
 
                         // Create metric,endpoint status level object
                         statusEndpoint = new String[]{evtEndpoint.getStatus(), evtEndpoint.getPrevStatus(), evtEndpoint.getTsMonitored(), evtEndpoint.getPrevTs()};
@@ -966,7 +991,7 @@ public class StatusManager {
                 statusEgroup = new String[]{evtEgroup.getStatus(), evtEgroup.getPrevStatus(), evtEgroup.getTsMonitored(), evtEgroup.getPrevTs()};
 
                 // generate group endpoint information 
-                Map<String, ArrayList<String>> groupStatuses = getGroupEndpointStatuses(groupNode, ops);
+                Map<String, ArrayList<String>> groupStatuses = getGroupEndpointStatuses(groupNode,group, ops, egp);
                 evtEgroup.setGroupEndpoints(groupStatuses.get("endpoints").toArray(new String[0]));
                 evtEgroup.setGroupServices(groupStatuses.get("services").toArray(new String[0]));
                 evtEgroup.setGroupStatuses(groupStatuses.get("statuses").toArray(new String[0]));

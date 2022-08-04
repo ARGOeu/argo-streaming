@@ -302,6 +302,26 @@ public class EndpointGroupManager implements Serializable {
 
         return null;
     }
+    
+    /**
+     * Finds in the filtered EndpointItem fList a EndpointItem with specific
+     * group, type. service, hostname and tag and returns it's value
+     *
+     * @param group a group
+     * @param type a type
+     * @param hostname a hostname
+     * @param service a service
+     * @param tag this is the tag name
+     * @return return tag value
+     **/
+    public String getTag(String group, String type, String hostname, String service, String tag) {
+    	HashMap<String, String> results = this.getGroupTags(group, type, hostname, service);
+    	if (results != null){
+    		return results.get(tag);
+    	}
+    	
+    	return null;
+    }
 
     /**
      * counts the items in the filtered list
