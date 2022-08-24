@@ -191,7 +191,7 @@ public class TestUtils {
                 hasThr = sm.hasThr();
                 Timeline timeline = new Timeline();
                 for (TimeStatus ts : sm.getTimestamps()) {
-                    timeline.insert(new DateTime(ts.getTimestamp()), ts.getStatus());
+                    timeline.insert(new DateTime(ts.getTimestamp(),DateTimeZone.UTC), ts.getStatus());
 
                 }
                 timeline.optimize();

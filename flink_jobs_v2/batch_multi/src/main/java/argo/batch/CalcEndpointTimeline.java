@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import org.joda.time.DateTimeZone;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.DowntimeManager;
 import profilesmanager.MetricProfileManager;
@@ -102,7 +103,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
             for (TimeStatus timestatus : timestatusList) {
 
-                samples.put(new DateTime(timestatus.getTimestamp()), timestatus.getStatus());
+                samples.put(new DateTime(timestatus.getTimestamp(),DateTimeZone.UTC), timestatus.getStatus());
             }
             Timeline timeline = new Timeline();
             timeline.insertDateTimeStamps(samples, true);
