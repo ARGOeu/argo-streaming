@@ -130,7 +130,7 @@ language governing permissions and limitations under the License. -->
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.2.2</version>
+            <version>3.12.11</version>
         </dependency>
 
 
@@ -253,7 +253,7 @@ language governing permissions and limitations under the License. -->
                 <dependency>
                     <groupId>org.mongodb</groupId>
                     <artifactId>mongo-java-driver</artifactId>
-                    <version>3.2.2</version>
+                    <version>3.12.11</version>
                 </dependency>
 
                 <dependency>
