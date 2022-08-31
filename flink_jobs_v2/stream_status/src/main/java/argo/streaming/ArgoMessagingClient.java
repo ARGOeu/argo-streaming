@@ -181,12 +181,11 @@ public class ArgoMessagingClient {
      * Properly compose url for each AMS request
      */
     public String composeURL(String method) {
+
         if (method.equals("publish")) {
             return proto + "://" + endpoint + "/v1/projects/" + project + "/topics/" + topic + ":" + method;
-        } else {
-
-            return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method + "?key="
-                    + token;
+        }else{
+            return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method;
         }
 
     }
@@ -201,11 +200,17 @@ public class ArgoMessagingClient {
 
         // Create the http post to pull
         HttpPost postPull = new HttpPost(this.composeURL("pull"));
-        StringEntity postBody = new StringEntity(
-                "{\"maxMessages\":\"" + this.maxMessages + "\",\"returnImmediately\":\"true\"}");
-        postBody.setContentType("application/json");
-        postPull.setEntity(postBody);
+        String body =  "{\"maxMessages\":\"" + this.maxMessages + "\",\"returnImmediately\":\"true\"}";
+        
+        postPull.addHeader("Accept", "application/json");
+        postPull.addHeader("x-api-key", this.token);
+        postPull.addHeader("Content-type", "application/json");
 
+        StringEntity postBody = new StringEntity(body);
+        postBody.setContentType("application/json");
+      
+        postPull.setEntity(postBody);
+        
         if (this.httpClient == null) {
             this.httpClient = buildHttpClient();
         }
@@ -311,7 +316,13 @@ public class ArgoMessagingClient {
 
         // Create the http post to ack
         HttpPost postAck = new HttpPost(this.composeURL("acknowledge"));
-        StringEntity postBody = new StringEntity("{\"ackIds\":[" + ackId + "]}");
+        String body = "{\"ackIds\":[" + ackId + "]}";
+        postAck.addHeader("Accept", "application/json");
+        postAck.addHeader("x-api-key", this.token);
+        postAck.addHeader("Content-type", "application/json");
+
+        StringEntity postBody = new StringEntity(body);
+
         postBody.setContentType("application/json");
         postAck.setEntity(postBody);
 
@@ -361,7 +372,6 @@ public class ArgoMessagingClient {
         HttpPost postPublish = new HttpPost(this.composeURL("publish"));
         String body = "{\"messages\": [ {\"data\":\"" + encodedString + "\"}]}";
 
-        
         postPublish.addHeader("Accept", "application/json");
         postPublish.addHeader("x-api-key", this.token);
         postPublish.addHeader("Content-type", "application/json");
