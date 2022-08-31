@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.util.Base64;
 
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -57,7 +57,6 @@ public class ArgoMessagingClient {
     private boolean verify = true;
     // proxy
     private URI proxy = null;
-    private String topic;
 
     // Utility inner class for holding list of messages and acknowledgements
     private class MsgAck {
@@ -92,20 +91,6 @@ public class ArgoMessagingClient {
         this.project = project;
         this.sub = sub;
         this.maxMessages = String.valueOf(batch);
-        this.verify = verify;
-
-        this.httpClient = buildHttpClient();
-
-    }
-
-    public ArgoMessagingClient(String method, String token, String endpoint, String project, String topic,
-            boolean verify) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-
-        this.proto = method;
-        this.token = token;
-        this.endpoint = endpoint;
-        this.project = project;
-        this.topic = topic;
         this.verify = verify;
 
         this.httpClient = buildHttpClient();
@@ -181,14 +166,8 @@ public class ArgoMessagingClient {
      * Properly compose url for each AMS request
      */
     public String composeURL(String method) {
-        if (method.equals("publish")) {
-            return proto + "://" + endpoint + "/v1/projects/" + project + "/topics/" + topic + ":" + method;
-        } else {
 
-            return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method + "?key="
-                    + token;
-        }
-
+        return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method;
     }
 
     /**
@@ -201,9 +180,15 @@ public class ArgoMessagingClient {
 
         // Create the http post to pull
         HttpPost postPull = new HttpPost(this.composeURL("pull"));
-        StringEntity postBody = new StringEntity(
-                "{\"maxMessages\":\"" + this.maxMessages + "\",\"returnImmediately\":\"true\"}");
+        String body = "{\"maxMessages\":\"" + this.maxMessages + "\",\"returnImmediately\":\"true\"}";
+
+        postPull.addHeader("Accept", "application/json");
+        postPull.addHeader("x-api-key", this.token);
+        postPull.addHeader("Content-type", "application/json");
+
+        StringEntity postBody = new StringEntity(body);
         postBody.setContentType("application/json");
+
         postPull.setEntity(postBody);
 
         if (this.httpClient == null) {
@@ -311,7 +296,13 @@ public class ArgoMessagingClient {
 
         // Create the http post to ack
         HttpPost postAck = new HttpPost(this.composeURL("acknowledge"));
-        StringEntity postBody = new StringEntity("{\"ackIds\":[" + ackId + "]}");
+        String body = "{\"ackIds\":[" + ackId + "]}";
+        postAck.addHeader("Accept", "application/json");
+        postAck.addHeader("x-api-key", this.token);
+        postAck.addHeader("Content-type", "application/json");
+
+        StringEntity postBody = new StringEntity(body);
+
         postBody.setContentType("application/json");
         postAck.setEntity(postBody);
 
@@ -348,66 +339,6 @@ public class ArgoMessagingClient {
         response.close();
         // Return a resposeMessage
         return resMsg;
-
-    }
-
-    /**
-     * Executes a combination of Pull & Ack requests against AMS api
-     */
-    public void publish(String in) throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-        // Create the http post to pull
-        String encodedString = Base64.getEncoder().encodeToString(in.getBytes());
-
-        HttpPost postPublish = new HttpPost(this.composeURL("publish"));
-        String body = "{\"messages\": [ {\"data\":\"" + encodedString + "\"}]}";
-
-        
-        postPublish.addHeader("Accept", "application/json");
-        postPublish.addHeader("x-api-key", this.token);
-        postPublish.addHeader("Content-type", "application/json");
-
-        StringEntity postBody = new StringEntity(body);
-
-        postBody.setContentType("application/json");
-        postPublish.setEntity(postBody);
-
-        if (this.httpClient == null) {
-            this.httpClient = buildHttpClient();
-        }
-
-        // check for proxy
-        if (this.proxy != null) {
-            postPublish.setConfig(createProxyCfg());
-        }
-
-        try ( CloseableHttpResponse response = this.httpClient.execute(postPublish)) {
-            StringBuilder result = new StringBuilder();
-
-            HttpEntity entity = response.getEntity();
-
-            int statusCode = response.getStatusLine().getStatusCode();
-
-            if (entity != null && statusCode == 200) {
-
-                try ( InputStreamReader isRdr = new InputStreamReader(entity.getContent())) {
-                    BufferedReader bRdr = new BufferedReader(isRdr);
-
-                    String rLine;
-                    while ((rLine = bRdr.readLine()) != null) {
-                        result.append(rLine);
-                    }
-                    isRdr.close();
-                    // Gather message from json
-                    // JsonParser jsonParser = new JsonParser();
-                    // parse the json root object
-                    Log.info("publish response: {}", result.toString());
-                }
-            } else {
-                logIssue(response);
-
-            }
-            response.close();
-        }
 
     }
 
