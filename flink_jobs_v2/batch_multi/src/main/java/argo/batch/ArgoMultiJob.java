@@ -108,8 +108,7 @@ public class ArgoMultiJob {
         env.getConfig().setGlobalJobParameters(params);
         env.setParallelism(1);
 
-        DateTime now = new DateTime();
-        
+        DateTime now = new DateTime(DateTimeZone.UTC);
         if (params.get("N") != null) {
             rankNum = params.getInt("N");
         }

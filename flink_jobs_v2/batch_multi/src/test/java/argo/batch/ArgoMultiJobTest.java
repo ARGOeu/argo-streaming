@@ -93,8 +93,8 @@ public class ArgoMultiJobTest {
         System.setProperty("run.date", "2022-01-14");
             
         final ParameterTool params = ParameterTool.fromSystemProperties();
-        DateTime now=new DateTime();
-
+        DateTime now=new DateTime(DateTimeZone.UTC);
+        
         ApiResourceManager amr = mockAmr();
 
         DataSource<String> cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));

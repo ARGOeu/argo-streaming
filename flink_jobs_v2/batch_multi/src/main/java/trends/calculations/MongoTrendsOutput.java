@@ -16,6 +16,7 @@ import java.util.List;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /**
  * MongoTrendsOutput for storing trends data to mongodb
@@ -80,7 +81,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
         this.mDB = mClient.getDatabase(dbName);
         this.mCol = mDB.getCollection(colName);
         if (this.clearMongo) {
-            String oidString = Long.toHexString(new DateTime().getMillis() / 1000L) + "0000000000000000";
+            String oidString = Long.toHexString(new DateTime( DateTimeZone.UTC).getMillis() / 1000L) + "0000000000000000";
             this.nowId = new ObjectId(oidString);
         }
 

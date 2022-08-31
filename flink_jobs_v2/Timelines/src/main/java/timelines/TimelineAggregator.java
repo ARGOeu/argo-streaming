@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -35,7 +36,7 @@ public class TimelineAggregator {
     }
 
     private LocalDate getLocalDate(String date) {
-        DateTime tmp_date = new DateTime();
+        DateTime tmp_date = new DateTime(DateTimeZone.UTC);
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
         tmp_date = fmt.parseDateTime(date);
         tmp_date.withTime(0, 0, 0, 0);
@@ -97,7 +98,7 @@ public class TimelineAggregator {
      *
      */
     public String tsFromDate(String date) {
-        DateTime tmp_date = new DateTime();
+        DateTime tmp_date = new DateTime(DateTimeZone.UTC);
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
         tmp_date = fmt.parseDateTime(date);
         tmp_date = tmp_date.withTime(0, 0, 0, 0);
@@ -113,7 +114,7 @@ public class TimelineAggregator {
      * Creates a timeline with the given status set at midnight of the date
      * defined from timestamp and add this timeline to the input timelines
      */
-    public void createTimeline(String name, String timestamp, int prevState) {
+    public void createTimeline(String name, String timestamp, int prevState) throws ParseException {
         Timeline temp = new Timeline(timestamp, prevState);
         this.inputs.put(name, temp);
 
@@ -127,7 +128,7 @@ public class TimelineAggregator {
      * have an existing timeline add a new timeline to the inputs
      *
      */
-    public void insert(String name, String timestamp, int status) {
+    public void insert(String name, String timestamp, int status) throws ParseException {
         // Check if timeline exists, if not create it
         if (this.inputs.containsKey(name) == false) {
             Timeline temp = new Timeline(timestamp, status);
@@ -147,7 +148,7 @@ public class TimelineAggregator {
      * timeline contains the given status for the midnight (00:00:00) of the
      * timestamp
      */
-    public void setFirst(String name, String timestamp, int status) {
+    public void setFirst(String name, String timestamp, int status) throws ParseException {
         // Check if timeline exists, if not create it
         if (this.inputs.containsKey(name) == false) {
             Timeline temp = new Timeline(timestamp, status);
@@ -170,7 +171,7 @@ public class TimelineAggregator {
         return this.output.getSamples();
     }
 
-    public void clearAndSetDate(String timestamp) {
+    public void clearAndSetDate(String timestamp) throws ParseException {
         this.output = new Timeline(timestamp);
         this.inputs.clear();
 

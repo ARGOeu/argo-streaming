@@ -16,6 +16,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 
 /**
@@ -87,7 +88,7 @@ public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
         this.mDB = mClient.getDatabase(dbName);
         this.mCol = mDB.getCollection(colName);
         if (this.clearMongo) {
-            String oidString = Long.toHexString(new DateTime().getMillis() / 1000L) + "0000000000000000";
+            String oidString = Long.toHexString(new DateTime(DateTimeZone.UTC).getMillis() / 1000L) + "0000000000000000";
             this.nowId = new ObjectId(oidString);
         }
 

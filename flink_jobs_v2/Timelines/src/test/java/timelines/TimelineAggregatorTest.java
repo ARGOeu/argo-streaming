@@ -81,7 +81,7 @@ public class TimelineAggregatorTest {
         instance.createTimeline(name, timestamp, prevState);
         HashMap<String, Timeline> expRes = new HashMap<>();
         Timeline exptimeline = new Timeline(timestamp);
-        exptimeline.insert(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 31, 0, 0, 0), 0);
+        exptimeline.insert(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 31, 12, 50, 0), 0);
         expRes.put(name, exptimeline);
 
         assertEquals(expRes.toString(), instance.getInputs().toString());
@@ -103,7 +103,7 @@ public class TimelineAggregatorTest {
         instance.insert(name, timestamp, status);
         HashMap<String, Timeline> expRes = new HashMap<>();
         Timeline exptimeline = new Timeline(timestamp);
-        exptimeline.insert(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 31, 0, 0, 0), 0);
+        exptimeline.insert(Utils.createDate("yyyy-MM-dd'T'HH:mm:ss'Z'", 2021, 0, 31, 12, 50, 0), 0);
         expRes.put(name, exptimeline);
         assertEquals(expRes.toString(), instance.getInputs().toString());
 

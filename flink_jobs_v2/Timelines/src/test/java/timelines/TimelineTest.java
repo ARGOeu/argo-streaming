@@ -362,7 +362,7 @@ public class TimelineTest {
     public void testFillStatus() throws ParseException {
         DateTimeFormatter dtf = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
           DateTime now = new DateTime();
-      
+         now= now.withZone(DateTimeZone.UTC);
         Timeline instance = new Timeline();
         instance.insertDateTimeStamps(createTimestampList2(), true);
 

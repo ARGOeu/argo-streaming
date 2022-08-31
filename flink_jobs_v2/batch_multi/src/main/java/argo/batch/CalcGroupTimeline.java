@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import org.joda.time.DateTimeZone;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.OperationsManager;
 
@@ -77,7 +78,7 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
             for (TimeStatus timestatus : timestatusList) {
-                DateTime dt = new DateTime(timestatus.getTimestamp());
+                DateTime dt = new DateTime(timestatus.getTimestamp(), DateTimeZone.UTC);
                 samples.put(dt, timestatus.getStatus());
             }
             Timeline timeline = new Timeline();
