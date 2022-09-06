@@ -44,7 +44,7 @@ public class StatusManager {
 
     // Name of the report used
     private String report;
-    
+
     private String groupType;
 
     // Sync file structures necessary for status computation
@@ -80,13 +80,13 @@ public class StatusManager {
     public String getReport() {
         return this.report;
     }
-    
+
     public String getGroupType() {
-    	return this.groupType;
+        return this.groupType;
     }
-    
+
     public void setGroupType(String groupType) {
-    	this.groupType = groupType;
+        this.groupType = groupType;
     }
 
     // Get Operation Manager
@@ -590,7 +590,7 @@ public class StatusManager {
                         Date metricTs = metricNode.item.timestamp;
                         // Generate metric status event
                         evtMetric = genEvent("metric", groupName, serviceName, endpointName, metricName, metricStatus,
-                                "", metricTs, metricStatus, metricTs, true, "", "");
+                                "", metricTs, metricStatus, metricTs, true, "", "", false);
 
                         statusMetric = new String[]{evtMetric.getStatus(), evtMetric.getPrevStatus(), evtMetric.getTsProcessed(), evtMetric.getPrevTs()};
                         evtMetric.setStatusMetric(statusMetric);
@@ -599,7 +599,7 @@ public class StatusManager {
                     }
                     // Generate endpoint status event
                     evtEndpoint = genEvent("endpoint", groupName, serviceName, endpointName, "", endpointStatus, "", ts,
-                            endpointStatus, endpointTs, true, "", "");
+                            endpointStatus, endpointTs, true, "", "", false);
 
                     statusEndpoint = new String[]{evtEndpoint.getStatus(), evtEndpoint.getPrevStatus(), evtEndpoint.getTsMonitored(), evtEndpoint.getPrevTs()};
                     evtEndpoint.setStatusMetric(statusMetric);
@@ -609,7 +609,7 @@ public class StatusManager {
                 }
                 // Generate service status event
                 evtService = genEvent("service", groupName, serviceName, "", "", serviceStatus, "", ts, serviceStatus,
-                        serviceTs, true, "", "");
+                        serviceTs, true, "", "", false);
 
                 statusService = new String[]{evtService.getStatus(), evtService.getPrevStatus(), evtService.getTsMonitored(), evtService.getPrevTs()};
                 evtService.setStatusMetric(statusMetric);
@@ -619,7 +619,7 @@ public class StatusManager {
                 results.add(eventToString(evtService));
             }
             // Generate endpoint group status event
-            evtEgroup = genEvent("grpoup", groupName, "", "", "", groupStatus, "", ts, groupStatus, groupTs, true, "", "");
+            evtEgroup = genEvent("grpoup", groupName, "", "", "", groupStatus, "", ts, groupStatus, groupTs, true, "", "", false);
             statusEgroup = new String[]{evtEgroup.getStatus(), evtEgroup.getPrevStatus(), evtEgroup.getTsMonitored(), evtEgroup.getPrevTs()};
             evtEgroup.setStatusMetric(statusMetric);
             evtEgroup.setStatusEndpoint(statusEndpoint);
@@ -737,12 +737,11 @@ public class StatusManager {
             for (Entry<String, StatusNode> endpointEntry : service.children.entrySet()) {
                 String endpointName = endpointEntry.getKey();
                 // check if endpoint need to be in url friendly format
-                String endpointURL = egp.getTag(groupName, this.groupType, endpointName, serviceName,"info_URL");
+                String endpointURL = egp.getTag(groupName, this.groupType, endpointName, serviceName, "info_URL");
                 if (endpointURL != null) {
-                	endpointName = endpointURL;
+                    endpointName = endpointURL;
                 }
-                
-                
+
                 StatusNode endpoint = endpointEntry.getValue();
                 // Add endpoint information to results
                 results.get("endpoints").add(endpointName);
@@ -858,17 +857,21 @@ public class StatusManager {
 
                             }
                             boolean repeat = false;
-                           
-                            if ( isStatusToRepeat(metricNode.item.status)) {
+
+                            if (isStatusToRepeat(metricNode.item.status)) {
                                 repeat = hasTimeDiff(ts, metricNode.item.genTs, statusInterval, metricNode.item.status);
                             }
 
                             oldMetricTS = metricNode.item.timestamp;
                             oldMetricStatus = metricNode.item.status;
+                            boolean isReminder = false;
                             if (metricNode.item.status != status || repeat) {
+                                if (repeat && metricNode.item.status == status) {
+                                    isReminder = true;
+                              }
                                 // generate event
                                 evtMetric = genEvent("metric", group, service, hostname, metric, ops.getStrStatus(status),
-                                        monHost, ts, ops.getStrStatus(oldMetricStatus), oldMetricTS, repeat, summary, message);
+                                        monHost, ts, ops.getStrStatus(oldMetricStatus), oldMetricTS, repeat, summary, message, isReminder);
 
                                 // Create metric status level object
                                 statusMetric = new String[]{evtMetric.getStatus(), evtMetric.getPrevStatus(), evtMetric.getTsMonitored(), evtMetric.getPrevTs()};
@@ -897,19 +900,24 @@ public class StatusManager {
 
                         }
                         boolean repeat = false;
-                           if ( isStatusToRepeat(endpointNode.item.status)) {
+                        if (isStatusToRepeat(endpointNode.item.status)) {
                             repeat = hasTimeDiff(ts, endpointNode.item.genTs, statusInterval, endpointNode.item.status);
                         }
 
                         // generate event
+                        boolean isReminder = false;
+                        if (repeat && endpointNode.item.status == endpNewStatus) {
+                            isReminder = true;
+                        }
+
                         evtEndpoint = genEvent("endpoint", group, service, hostname, metric,
                                 ops.getStrStatus(endpNewStatus), monHost, ts,
-                                ops.getStrStatus(oldEndpointStatus), oldEndpointTS, repeat, summary, message);
-                        
+                                ops.getStrStatus(oldEndpointStatus), oldEndpointTS, repeat, summary, message, isReminder);
+
                         // check if endpoind should get a friendly url hostname
                         String hostnameURL = this.egp.getTag(group, this.groupType, hostname, service, "info_URL");
                         if (hostnameURL != null) {
-                        	evtEndpoint.setHostnameURL(hostnameURL);
+                            evtEndpoint.setHostnameURL(hostnameURL);
                         } else {
                             evtEndpoint.setHostnameURL(hostname);
                         }
@@ -945,13 +953,17 @@ public class StatusManager {
                     }
                     boolean repeat = false;
 
-                     if ( isStatusToRepeat(serviceNode.item.status)) {
-                              repeat = hasTimeDiff(ts, serviceNode.item.genTs, statusInterval, serviceNode.item.status);
+                    if (isStatusToRepeat(serviceNode.item.status)) {
+                        repeat = hasTimeDiff(ts, serviceNode.item.genTs, statusInterval, serviceNode.item.status);
                     }
 
                     // generate event
+                    boolean isReminder = false;
+                    if (repeat && serviceNode.item.status == servNewStatus) {
+                        isReminder = true;
+                    }
                     evtService = genEvent("service", group, service, hostname, metric, ops.getStrStatus(servNewStatus),
-                            monHost, ts, ops.getStrStatus(oldServiceStatus), oldServiceTS, repeat, summary, message);
+                            monHost, ts, ops.getStrStatus(oldServiceStatus), oldServiceTS, repeat, summary, message, isReminder);
 
                     // Create metric, endpoint, service status metric objects
                     statusService = new String[]{evtService.getStatus(), evtService.getPrevStatus(), evtService.getTsMonitored(), evtService.getPrevTs()};
@@ -979,19 +991,23 @@ public class StatusManager {
                 }
                 boolean repeat = false;
 
-                 if ( isStatusToRepeat(groupNode.item.status)) {
-                        repeat = hasTimeDiff(ts, groupNode.item.genTs, statusInterval, groupNode.item.status);
+                if (isStatusToRepeat(groupNode.item.status)) {
+                    repeat = hasTimeDiff(ts, groupNode.item.genTs, statusInterval, groupNode.item.status);
                 }
 
+                boolean isReminder = false;
+                if (repeat && groupNode.item.status == groupNewStatus) {
+                    isReminder = true;
+                }
                 // generate event
                 evtEgroup = genEvent("endpoint_group", group, service, hostname, metric, ops.getStrStatus(groupNewStatus),
-                        monHost, ts, ops.getStrStatus(oldGroupStatus), oldGroupTS, repeat, summary, message);
+                        monHost, ts, ops.getStrStatus(oldGroupStatus), oldGroupTS, repeat, summary, message, isReminder);
 
                 // Create metric, endpoint, service, egroup status metric objects
                 statusEgroup = new String[]{evtEgroup.getStatus(), evtEgroup.getPrevStatus(), evtEgroup.getTsMonitored(), evtEgroup.getPrevTs()};
 
                 // generate group endpoint information 
-                Map<String, ArrayList<String>> groupStatuses = getGroupEndpointStatuses(groupNode,group, ops, egp);
+                Map<String, ArrayList<String>> groupStatuses = getGroupEndpointStatuses(groupNode, group, ops, egp);
                 evtEgroup.setGroupEndpoints(groupStatuses.get("endpoints").toArray(new String[0]));
                 evtEgroup.setGroupServices(groupStatuses.get("services").toArray(new String[0]));
                 evtEgroup.setGroupStatuses(groupStatuses.get("statuses").toArray(new String[0]));
@@ -1032,7 +1048,7 @@ public class StatusManager {
      * @return A string containing the event in json format
      */
     private StatusEvent genEvent(String type, String group, String service, String hostname, String metric, String status,
-            String monHost, Date ts, String prevStatus, Date prevTs, boolean repeat, String summary, String message) throws ParseException {
+            String monHost, Date ts, String prevStatus, Date prevTs, boolean repeat, String summary, String message, boolean reminder) throws ParseException {
         String tsStr = toZulu(ts);
         String dt = tsStr.split("T")[0].replaceAll("-", "");
         String tsProc = toZulu(new Date());
@@ -1045,7 +1061,7 @@ public class StatusManager {
         }
 
         StatusEvent evnt = new StatusEvent(this.report, type, dt, group, service, hostname, metric, status, monHost,
-                toZulu(ts), tsProc, prevStatus, toZulu(prevTs), new Boolean(repeat).toString(), summary, message);
+                toZulu(ts), tsProc, prevStatus, toZulu(prevTs), new Boolean(repeat).toString(), summary, message, new Boolean(reminder).toString());
 
         return evnt;
     }

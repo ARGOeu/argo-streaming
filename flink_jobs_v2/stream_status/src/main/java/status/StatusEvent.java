@@ -19,6 +19,8 @@ public class StatusEvent{
 	private String message;
 	
 	private String status;
+        
+	private String reminder;
 	private @SerializedName("prev_status") String prevStatus;
 	private @SerializedName("prev_ts") String prevTs;
 	
@@ -56,6 +58,7 @@ public class StatusEvent{
 		this.repeat = "";
 		this.summary = "";
 		this.message = "";
+                this.reminder = "";
 		this.statusEgroup = new String[0];
 		this.statusService = new String[0];
 		this.statusEndpoint = new String[0];
@@ -70,7 +73,7 @@ public class StatusEvent{
 	}
 	
 	
-	public StatusEvent (String report, String type, String dt, String group,String service,String hostname,String metric,String status,String monHost, String tsMonitored, String tsProcessed, String prevStatus, String prevTs, String repeat, String summary, String message){
+	public StatusEvent (String report, String type, String dt, String group,String service,String hostname,String metric,String status,String monHost, String tsMonitored, String tsProcessed, String prevStatus, String prevTs, String repeat, String summary, String message,String reminder){
 		this.report  = report;
 		this.type =type;
 		this.group = group;
@@ -87,6 +90,8 @@ public class StatusEvent{
 		this.repeat = repeat;
 		this.summary = summary;
 		this.message = message;
+                
+		this.reminder = reminder;
 		this.statusEgroup = null;
 		this.statusService = null;
 		this.statusEndpoint = null;
