@@ -1,8 +1,14 @@
 package argo.streaming;
 
 import java.io.Serializable;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 public class StatusConfig implements Serializable {
 
@@ -57,7 +63,7 @@ public class StatusConfig implements Serializable {
         this.amsProject = pt.getRequired("ams.project");
         this.apiEndpoint = pt.getRequired("api.endpoint");
 
-        this.runDate = pt.getRequired("run.date");
+        this.runDate = pt.get("run.date");
         this.report = pt.getRequired("report");
         // Optional timeout parameter
         if (pt.has("timeout")) {
