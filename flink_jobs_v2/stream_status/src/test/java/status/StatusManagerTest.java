@@ -90,7 +90,7 @@ public class StatusManagerTest {
 
 		String jproc = jRoot.getAsJsonObject().get("ts_processed").getAsString();
 		StatusEvent evnt = new StatusEvent("Critical","metric","20170303","GR-01-AUTH", "CREAM-CE", "cream01.grid.auth.gr",
-				"eu.egi.CREAM-IGTF", "OK", "mon01.argo.eu", "2017-03-03T15:00:00Z", jproc,"WARNING","2017-03-03T05:00:00Z", "false","sum4","msg4");
+				"eu.egi.CREAM-IGTF", "OK", "mon01.argo.eu", "2017-03-03T15:00:00Z", jproc,"WARNING","2017-03-03T05:00:00Z", "false","sum4","msg4","false");
 		
 		evnt.setStatusMetric(new String[] {"OK","WARNING","2017-03-03T15:00:00Z","2017-03-03T05:00:00Z"});
 	
