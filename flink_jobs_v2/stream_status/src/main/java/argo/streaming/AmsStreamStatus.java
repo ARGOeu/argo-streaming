@@ -47,14 +47,8 @@ import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
-import java.util.Calendar;
-import java.util.TimeZone;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.core.fs.FileSystem;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
 import status.StatusManager;
@@ -86,23 +80,22 @@ import status.StatusManager;
  * if it is not defined url history wont be constructed --url.help (optional)
  * the url to be used as a basis to create a help url , eg.
  * poem.egi.eu/ui/public_metrics it can be optional , meaning if it is not
- * defined url help wont be constructed --interval.loose(Optional)interval to
- * repeat events for WARNING, CRITICAL, UNKNOWN . it can be in the format of
- * DAYS, HOURS, MINUTES eg. 1h, 2d, 30m to define the period . Any of these
- * formats is transformed to minutes in the computations if not defined the
- * default value is 1440m
- *
- * --interval.strict(Optional)interval to repeat events for CRITICAL . it can be
- * in the format of DAYS, HOURS, MINUTES eg. 1h, 2d, 30m to define the period .
- * Any of these formats is transformed to minutes in the computations if not
- * defined the default value is 1440m
+ * defined url help wont be constructed
+ * --interval.loose(Optional)interval to repeat events for WARNING, CRITICAL, UNKNOWN . 
+ * it can be in the format of DAYS, HOURS, MINUTES eg. 1h, 2d, 30m  to define the period . Any of these formats is 
+ * transformed to minutes in the computations
+ * if not defined the default value is 1440m
+ * 
+ * --interval.strict(Optional)interval to repeat events for CRITICAL . 
+ * it can be in the format of DAYS, HOURS, MINUTES eg. 1h, 2d, 30m  to define the period . Any of these formats is 
+ * transformed to minutes in the computations
+ * if not defined the default value is 1440m
  *
  */
 public class AmsStreamStatus {
     // setup logger
 
     static Logger LOG = LoggerFactory.getLogger(AmsStreamStatus.class);
-    private static String runDate;
 
     /**
      * Sets configuration parameters to streaming enviroment
@@ -192,10 +185,7 @@ public class AmsStreamStatus {
         String apiToken = parameterTool.getRequired("api.token");
         String reportID = parameterTool.getRequired("report.uuid");
         int apiInterval = parameterTool.getInt("api.interval");
-        runDate = parameterTool.get("run.date");
-        if (runDate != null) {
-            runDate = runDate + "T00:00:00.000Z";
-        } 
+
         int looseInterval = 1440;
         int strictInterval = 1440;
 
@@ -234,7 +224,7 @@ public class AmsStreamStatus {
 
         // Establish the metric data AMS stream
         // Ingest sync avro encoded data from AMS endpoint
-        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, runDate);
+        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval);
         ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
 
         if (parameterTool.has("ams.verify")) {
@@ -317,7 +307,7 @@ public class AmsStreamStatus {
             String tokenpub = parameterTool.get("ams.token.publish");
             String projectpub = parameterTool.get("ams.project.publish");
 
-            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval, runDate);
+            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval);
             if (parameterTool.has("proxy")) {
                 String proxyURL = parameterTool.get("proxy");
                 ams.setProxy(proxyURL);
@@ -802,19 +792,21 @@ public class AmsStreamStatus {
         if (matches) {
 
             String intervals[] = new String[]{};
-            IntervalType intervalType = null;
+            IntervalType intervalType=null;
             if (intervalParam.contains("h")) {
-                intervalType = IntervalType.HOURS;
+               intervalType=IntervalType.HOURS;
                 intervals = intervalParam.split("h");
-            } else if (intervalParam.contains("d")) {
-                intervalType = IntervalType.DAY;
+            }
+             
+             else if (intervalParam.contains("d")) {
+                intervalType=IntervalType.DAY;
                 intervals = intervalParam.split("d");
 
             } else if (intervalParam.contains("m")) {
-                intervalType = IntervalType.MINUTES;
+                intervalType=IntervalType.MINUTES;
                 intervals = intervalParam.split("m");
             }
-            if (intervalType != null && StringUtils.isNumeric(intervals[0])) {
+            if (intervalType!=null && StringUtils.isNumeric(intervals[0])) {
                 int interval = Integer.parseInt(intervals[0]);
                 switch (intervalType) {
                     case DAY:
@@ -822,7 +814,7 @@ public class AmsStreamStatus {
                     case HOURS:
                         return interval * 60;
                     case MINUTES:
-                        return interval;
+                        return interval ;
                     default:
                         return 1440;
                 }
@@ -833,5 +825,5 @@ public class AmsStreamStatus {
         }
         return 1440;
     }
-   
+
 }
