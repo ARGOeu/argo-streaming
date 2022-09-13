@@ -34,9 +34,10 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 	private volatile boolean isRunning = true;
 
 	private ArgoMessagingClient client = null;
+        private String runDate;
 
 
-	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub, int batch, Long interval) {
+	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub, int batch, Long interval, String runDate) {
 		this.endpoint = endpoint;
 		this.port = port;
 		this.token = token;
@@ -45,6 +46,7 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 		this.interval = interval;
 		this.batch = batch;
 		this.verify = true;
+                this.runDate=runDate;
 
 	}
 
@@ -109,7 +111,7 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 			fendpoint = this.endpoint + ":" + port;
 		}
 		try {
-			client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.sub, this.batch, this.verify);
+			client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.sub, this.batch, this.verify, this.runDate);
 			if (this.useProxy) {
 				client.setProxy(this.proxyURL);
 			}
