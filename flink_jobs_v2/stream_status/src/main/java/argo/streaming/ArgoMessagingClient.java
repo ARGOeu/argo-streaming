@@ -88,7 +88,7 @@ public class ArgoMessagingClient {
     }
 
     public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub, int batch,
-            boolean verify, String runDate) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+                               boolean verify, String runDate) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 
         this.proto = method;
         this.token = token;
@@ -104,7 +104,7 @@ public class ArgoMessagingClient {
     }
 
     public ArgoMessagingClient(String method, String token, String endpoint, String project, String topic,
-            boolean verify, String runDate) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+                               boolean verify, String runDate) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 
         this.proto = method;
         this.token = token;
@@ -324,7 +324,7 @@ public class ArgoMessagingClient {
      */
     public int offsetByTimestamp() throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
 
-    
+
         String method = "timeToOffset";
         if (this.runDate == null) {
             method = "offsets";
@@ -419,7 +419,7 @@ public class ArgoMessagingClient {
 
     /**
      * Executes a modify offset request against AMS api
-     * @offset , the offset number to modify 
+     * @offset , the offset number to modify
      */
     public int modifyOffset(int offset) throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
 

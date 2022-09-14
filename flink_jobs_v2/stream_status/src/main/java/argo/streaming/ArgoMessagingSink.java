@@ -56,10 +56,10 @@ public class ArgoMessagingSink extends RichSinkFunction<String> {
 
     @Override
     public void invoke(String in) throws Exception {
-      //  boolean isValid = true;
+        //  boolean isValid = true;
         // boolean isValid=this.client.validate();
         //if (isValid) {
-            this.client.publish(in);
+        this.client.publish(in);
         //}
     }
 
