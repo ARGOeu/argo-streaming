@@ -1,6 +1,9 @@
 package argo.streaming;
 
 import Utils.IntervalType;
+import ams.publisher.ArgoMessagingSink;
+
+import ams.publisher.ArgoMessagingSource;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -90,6 +93,10 @@ import status.StatusManager;
  * it can be in the format of DAYS, HOURS, MINUTES eg. 1h, 2d, 30m  to define the period . Any of these formats is 
  * transformed to minutes in the computations
  * if not defined the default value is 1440m
+ * --ams.notification.topic (Optional), parameter to define topic to publish notifications
+ * --ams.alert.topic(Optional), parameter to define topic to publish alerts
+ * --ams.project.publish (Optional), parameter to define project of ams to publish
+ * --ams.token.publish (Optional), parameter to define token to ams 
  *
  */
 public class AmsStreamStatus {

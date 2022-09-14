@@ -21,7 +21,7 @@
     
 	<groupId>argo.streaming</groupId>
 	<version>2.0.0</version>
-	<name>AmsPublisher</name>
+	<name>ams-connector</name>
 	<description>Stream data to AMS</description>
 
 	<properties>

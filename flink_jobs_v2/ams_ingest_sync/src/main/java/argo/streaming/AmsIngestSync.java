@@ -1,5 +1,6 @@
 package argo.streaming;
 
+import ams.publisher.ArgoMessagingSource;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;

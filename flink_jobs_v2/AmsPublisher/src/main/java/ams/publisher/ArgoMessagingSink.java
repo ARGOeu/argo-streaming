@@ -1,5 +1,6 @@
 package ams.publisher;
 
+
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.slf4j.Logger;
@@ -53,7 +54,11 @@ public class ArgoMessagingSink extends RichSinkFunction<String> {
 
     @Override
     public void invoke(String in) throws Exception {
-        this.client.publish(in);
+      //  boolean isValid = true;
+        // boolean isValid=this.client.validate();
+        //if (isValid) {
+            this.client.publish(in);
+        //}
     }
 
     @Override
