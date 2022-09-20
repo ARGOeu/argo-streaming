@@ -96,6 +96,7 @@ public class AmsStreamStatus {
     // setup logger
 
     static Logger LOG = LoggerFactory.getLogger(AmsStreamStatus.class);
+    private static String runDate;
 
     /**
      * Sets configuration parameters to streaming enviroment
@@ -185,6 +186,11 @@ public class AmsStreamStatus {
         String apiToken = parameterTool.getRequired("api.token");
         String reportID = parameterTool.getRequired("report.uuid");
         int apiInterval = parameterTool.getInt("api.interval");
+        runDate = parameterTool.get("run.date");
+        if (runDate != null) {
+            runDate = runDate + "T00:00:00.000Z";
+        }
+
 
         int looseInterval = 1440;
         int strictInterval = 1440;
@@ -224,7 +230,7 @@ public class AmsStreamStatus {
 
         // Establish the metric data AMS stream
         // Ingest sync avro encoded data from AMS endpoint
-        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval);
+        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, runDate);
         ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
 
         if (parameterTool.has("ams.verify")) {
@@ -269,7 +275,7 @@ public class AmsStreamStatus {
             String tokenpub = parameterTool.get("ams.token.publish");
             String projectpub = parameterTool.get("ams.project.publish");
 
-            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval);
+            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval, runDate);
             if (parameterTool.has("proxy")) {
                 String proxyURL = parameterTool.get("proxy");
                 ams.setProxy(proxyURL);
@@ -307,7 +313,7 @@ public class AmsStreamStatus {
             String tokenpub = parameterTool.get("ams.token.publish");
             String projectpub = parameterTool.get("ams.project.publish");
 
-            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval);
+            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval, runDate);
             if (parameterTool.has("proxy")) {
                 String proxyURL = parameterTool.get("proxy");
                 ams.setProxy(proxyURL);
