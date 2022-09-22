@@ -4,6 +4,4 @@
 .classpath/
 .classpath
 /nbproject
-nbactions.xml
-.idea/
-*.iml
+/nbactions.xml

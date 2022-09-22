@@ -1,4 +1,4 @@
-package argo.streaming;
+package ams.connector;
 
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -34,9 +34,10 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 	private volatile boolean isRunning = true;
 
 	private ArgoMessagingClient client = null;
+	private String runDate;
 
 
-	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub, int batch, Long interval) {
+	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub, int batch, Long interval, String runDate) {
 		this.endpoint = endpoint;
 		this.port = port;
 		this.token = token;
@@ -45,6 +46,7 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 		this.interval = interval;
 		this.batch = batch;
 		this.verify = true;
+		this.runDate=runDate;
 
 	}
 
@@ -61,7 +63,7 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 		this.useProxy = true;
 		this.proxyURL = proxyURL;
 	}
-	
+
 	/**
 	 * Unset proxy details for AMS client
 	 */
@@ -69,8 +71,8 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 		this.useProxy = false;
 		this.proxyURL = "";
 	}
-	
-	
+
+
 	@Override
 	public void cancel() {
 		isRunning = false;
@@ -109,10 +111,12 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 			fendpoint = this.endpoint + ":" + port;
 		}
 		try {
-			client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.sub, this.batch, this.verify);
+			client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.sub, this.batch, this.verify, this.runDate);
 			if (this.useProxy) {
 				client.setProxy(this.proxyURL);
 			}
+                        int offset=client.offset(); //get the offset of the subscription, that corresponds to the date
+                        client.modifyOffset(offset); //mofify the offset of the subscription to point to the offset index of the date. if date is null then the index points to the latest offset (max)
 		} catch (KeyManagementException e) {
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {

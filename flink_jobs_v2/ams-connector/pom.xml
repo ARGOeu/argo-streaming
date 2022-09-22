@@ -19,10 +19,10 @@
         <version>2.0.0</version>
     	</parent> 
     
-	<groupId>argo.streaming</groupId>
+	<groupId>ams.connector</groupId>
 	<version>2.0.0</version>
-	<name>AmsPublisher</name>
-	<description>Stream data to AMS</description>
+	<name>ams.connector</name>
+	<description>Connect to AMS</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -338,5 +338,5 @@
 			<action> <ignore/> </action> </pluginExecution> </pluginExecutions> </lifecycleMappingMetadata> 
 			</configuration> </plugin> </plugins> </pluginManagement> -->
 	</build>
-	<artifactId>AmsPublisher</artifactId>
+	<artifactId>ams-connector</artifactId>
 </project>
