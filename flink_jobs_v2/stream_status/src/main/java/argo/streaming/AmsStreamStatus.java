@@ -1,6 +1,8 @@
 package argo.streaming;
 
 import Utils.IntervalType;
+import ams.connector.ArgoMessagingSink;
+import ams.connector.ArgoMessagingSource;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;

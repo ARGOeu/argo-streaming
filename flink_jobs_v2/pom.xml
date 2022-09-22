@@ -16,11 +16,10 @@
         <module>Timelines</module>
         <module>ProfilesManager</module>
         <module>batch_multi</module>
-        <module>stream_status</module>
-         <module>AmsPublisher</module>         
+        <module>stream_status</module>         
          <module>ams_ingest_metric</module>         
          <module>ams_ingest_sync</module>
-         
+        <module>ams-connector</module>
     </modules>
     <dependencyManagement>
         <dependencies>

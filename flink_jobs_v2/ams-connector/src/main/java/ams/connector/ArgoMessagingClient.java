@@ -1,4 +1,6 @@
-package argo.streaming;
+package ams.connector;
+
+
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,9 +30,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.Base64;
 
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 
 /**
  * Simple http client for pulling and acknowledging messages from AMS service
@@ -57,6 +61,8 @@ public class ArgoMessagingClient {
     private boolean verify = true;
     // proxy
     private URI proxy = null;
+    private String topic;
+    private String runDate;
 
     // Utility inner class for holding list of messages and acknowledgements
     private class MsgAck {
@@ -80,10 +86,11 @@ public class ArgoMessagingClient {
         this.sub = "test_sub";
         this.maxMessages = "100";
         this.proxy = null;
+        this.runDate = null;
     }
 
     public ArgoMessagingClient(String method, String token, String endpoint, String project, String sub, int batch,
-            boolean verify) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+                               boolean verify, String runDate) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 
         this.proto = method;
         this.token = token;
@@ -93,6 +100,21 @@ public class ArgoMessagingClient {
         this.maxMessages = String.valueOf(batch);
         this.verify = verify;
 
+        this.httpClient = buildHttpClient();
+        this.runDate = runDate;
+
+    }
+
+    public ArgoMessagingClient(String method, String token, String endpoint, String project, String topic,
+                               boolean verify, String runDate) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+
+        this.proto = method;
+        this.token = token;
+        this.endpoint = endpoint;
+        this.project = project;
+        this.topic = topic;
+        this.verify = verify;
+        this.runDate = runDate;
         this.httpClient = buildHttpClient();
 
     }
@@ -167,7 +189,17 @@ public class ArgoMessagingClient {
      */
     public String composeURL(String method) {
 
-        return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method;
+        switch (method) {
+            case "publish":
+                return proto + "://" + endpoint + "/v1/projects/" + project + "/topics/" + topic + ":" + method;
+            case "offsets":
+                return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + this.sub + ":" + method;
+            case "timeToOffset":
+                return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + this.sub + ":" + method+"?time=" + this.runDate;
+            default:
+                return proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + sub + ":" + method;
+        }
+
     }
 
     /**
@@ -290,6 +322,170 @@ public class ArgoMessagingClient {
     }
 
     /**
+     * Executes an offsetByTimestamp request against AMS api
+     */
+    public int offsetByTimestamp() throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+
+
+        String method = "timeToOffset";
+        if (this.runDate == null) {
+            method = "offsets";
+        }
+        HttpGet getOffset = new HttpGet((this.composeURL(method)));
+        getOffset.addHeader("Accept", "application/json");
+        getOffset.addHeader("x-api-key", this.token);
+        getOffset.addHeader("Content-type", "application/json");
+
+        if (this.httpClient == null) {
+            this.httpClient = buildHttpClient();
+        }
+
+        // check for proxy
+        if (this.proxy != null) {
+            getOffset.setConfig(createProxyCfg());
+        }
+
+        CloseableHttpResponse response = this.httpClient.execute(getOffset);
+        int offset = 0;
+        StringBuilder result = new StringBuilder();
+
+        HttpEntity entity = response.getEntity();
+
+        int statusCode = response.getStatusLine().getStatusCode();
+
+        if (entity != null && statusCode == 200) {
+
+            InputStreamReader isRdr = new InputStreamReader(entity.getContent());
+            BufferedReader bRdr = new BufferedReader(isRdr);
+
+            String rLine;
+
+            while ((rLine = bRdr.readLine()) != null) {
+                result.append(rLine);
+            }
+
+            // Gather message from json
+            JsonParser jsonParser = new JsonParser();
+            // parse the json root object
+            Log.info("response: {}", result.toString());
+            JsonElement jRoot = jsonParser.parse(result.toString());
+
+            if (this.runDate != null) {
+                offset = jRoot.getAsJsonObject().get("offset").getAsInt();
+            } else {
+                offset = jRoot.getAsJsonObject().get("max").getAsInt();
+
+            }
+            // if has elements
+
+            isRdr.close();
+
+        } else {
+
+            logIssue(response);
+
+        }
+
+        response.close();
+
+        // Return a Message array
+        return offset;
+
+    }
+
+    /**
+     * Executes a get offset requests against AMS api
+     */
+    public int offset() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+        // Try first to pull a message
+        int offset = 0;
+        try {
+
+            offset = offsetByTimestamp();
+            // get last ackid
+
+            if (offset != 0) {
+                // Do an ack for the received message
+                Log.info("Current offset is :" + offset);
+
+            } else {
+                Log.warn("Not updated offset:");
+            }
+
+        } catch (IOException e) {
+            LOG.error(e.getMessage());
+        }
+        return offset;
+
+    }
+
+    /**
+     * Executes a modify offset request against AMS api
+     * @offset , the offset number to modify
+     */
+    public int modifyOffset(int offset) throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+
+        // Create the http post to pull
+        String url = proto + "://" + endpoint + "/v1/projects/" + project + "/subscriptions/" + this.sub + ":" + "modifyOffset";
+
+        HttpPost postModifyOffset = new HttpPost(url);
+
+        postModifyOffset.addHeader("Accept", "application/json");
+        postModifyOffset.addHeader("x-api-key", this.token);
+        postModifyOffset.addHeader("Content-type", "application/json");
+        System.out.println("modify offset is :" + offset);
+        String body = "{\"offset\":" + offset + "}";
+
+        StringEntity postBody = new StringEntity(body);
+        postBody.setContentType("application/json");
+
+        postModifyOffset.setEntity(postBody);
+
+        if (this.httpClient == null) {
+            this.httpClient = buildHttpClient();
+        }
+
+        // check for proxy
+        if (this.proxy != null) {
+            postModifyOffset.setConfig(createProxyCfg());
+        }
+
+        CloseableHttpResponse response = this.httpClient.execute(postModifyOffset);
+        StringBuilder result = new StringBuilder();
+
+        HttpEntity entity = response.getEntity();
+
+        int statusCode = response.getStatusLine().getStatusCode();
+
+        if (entity != null && statusCode == 200) {
+
+            try ( InputStreamReader isRdr = new InputStreamReader(entity.getContent())) {
+                BufferedReader bRdr = new BufferedReader(isRdr);
+
+                String rLine;
+                while ((rLine = bRdr.readLine()) != null) {
+                    result.append(rLine);
+                }
+                isRdr.close();
+                // Gather message from json
+                // JsonParser jsonParser = new JsonParser();
+                // parse the json root object
+                Log.info("modify offset response: {}", result.toString());
+            }
+        } else {
+
+            logIssue(response);
+
+        }
+
+        response.close();
+
+        // Return a Message array
+        return offset;
+
+    }
+
+    /**
      * Executes an Acknowledge request against AMS api
      */
     public String doAck(String ackId) throws IOException {
@@ -339,6 +535,65 @@ public class ArgoMessagingClient {
         response.close();
         // Return a resposeMessage
         return resMsg;
+
+    }
+
+    /**
+     * Executes a combination of Pull & Ack requests against AMS api
+     */
+    public void publish(String in) throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        // Create the http post to pull
+        String encodedString = Base64.getEncoder().encodeToString(in.getBytes());
+
+        HttpPost postPublish = new HttpPost(this.composeURL("publish"));
+        String body = "{\"messages\": [ {\"data\":\"" + encodedString + "\"}]}";
+
+        postPublish.addHeader("Accept", "application/json");
+        postPublish.addHeader("x-api-key", this.token);
+        postPublish.addHeader("Content-type", "application/json");
+
+        StringEntity postBody = new StringEntity(body);
+
+        postBody.setContentType("application/json");
+        postPublish.setEntity(postBody);
+
+        if (this.httpClient == null) {
+            this.httpClient = buildHttpClient();
+        }
+
+        // check for proxy
+        if (this.proxy != null) {
+            postPublish.setConfig(createProxyCfg());
+        }
+
+        try ( CloseableHttpResponse response = this.httpClient.execute(postPublish)) {
+            StringBuilder result = new StringBuilder();
+
+            HttpEntity entity = response.getEntity();
+
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            if (entity != null && statusCode == 200) {
+
+                try ( InputStreamReader isRdr = new InputStreamReader(entity.getContent())) {
+                    BufferedReader bRdr = new BufferedReader(isRdr);
+
+                    String rLine;
+                    while ((rLine = bRdr.readLine()) != null) {
+                        result.append(rLine);
+                    }
+                    isRdr.close();
+                    // Gather message from json
+                    // JsonParser jsonParser = new JsonParser();
+                    // parse the json root object
+                    Log.info("publish response: {}", result.toString());
+                }
+            } else {
+                logIssue(response);
+
+            }
+            response.close();
+        }
 
     }
 

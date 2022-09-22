@@ -1,5 +1,6 @@
 package argo.streaming;
 
+import ams.connector.ArgoMessagingSource;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -11,106 +12,111 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Flink Streaming JOB for Ingesting Sync Data to HDFS
- * job required cli parameters:
- * --ams.endpoint     : ARGO messaging api endoint to connect to msg.example.com
- * --ams.port          : ARGO messaging api port 
- * --ams.token         : ARGO messaging api token
- * --ams.project       : ARGO messaging api project to connect to
- * --ams.sub.metric    : ARGO messaging subscription to pull metric data from
- * --ams.sub.sync      : ARGO messaging subscription to pull sync data from
- * --hdfs.path         : Hdfs destination path to store the data
- * --ams.batch         : num of messages to be retrieved per request to AMS service
- * --ams.interval      : interval (in ms) between AMS service requests
- * --ams.proxy         : optional http proxy url
- * --ams.verify        : optional turn on/off ssl verify
+ * Flink Streaming JOB for Ingesting Sync Data to HDFS job required cli
+ * parameters: --ams.endpoint : ARGO messaging api endoint to connect to
+ * msg.example.com --ams.port : ARGO messaging api port --ams.token : ARGO
+ * messaging api token --ams.project : ARGO messaging api project to connect to
+ * --ams.sub.metric : ARGO messaging subscription to pull metric data from
+ * --ams.sub.sync : ARGO messaging subscription to pull sync data from
+ * --hdfs.path : Hdfs destination path to store the data --ams.batch : num of
+ * messages to be retrieved per request to AMS service --ams.interval : interval
+ * (in ms) between AMS service requests --ams.proxy : optional http proxy url
+ * --ams.verify : optional turn on/off ssl verify
+ *
+ * --run.date : optional date to run ingestion
  */
 public class AmsIngestSync {
 
-	// setup logger
-	static Logger LOG = LoggerFactory.getLogger(AmsIngestSync.class);
+    // setup logger
+    static Logger LOG = LoggerFactory.getLogger(AmsIngestSync.class);
+    private static String runDate;
 
-	/**
-	 * Check if a list of expected cli arguments have been provided to this flink job
-	 */
-	public static boolean hasArgs(String[] reqArgs, ParameterTool paramTool) {
+    /**
+     * Check if a list of expected cli arguments have been provided to this
+     * flink job
+     */
+    public static boolean hasArgs(String[] reqArgs, ParameterTool paramTool) {
 
-		for (String reqArg : reqArgs) {
-			if (!paramTool.has(reqArg))
-				return false;
-		}
+        for (String reqArg : reqArgs) {
+            if (!paramTool.has(reqArg)) {
+                return false;
+            }
+        }
 
-		return true;
-	}
-	
-	/**
-	 * Check if flink job has been called with ams rate params
-	 */
-	public static boolean hasAmsRateArgs(ParameterTool paramTool) {
-		String args[] = { "ams.batch", "ams.interval" };
-		return hasArgs(args, paramTool);
-	}
+        return true;
+    }
 
-	// main job function
-	public static void main(String[] args) throws Exception {
+    /**
+     * Check if flink job has been called with ams rate params
+     */
+    public static boolean hasAmsRateArgs(ParameterTool paramTool) {
+        String args[] = {"ams.batch", "ams.interval"};
+        return hasArgs(args, paramTool);
+    }
 
-		// Create flink execution enviroment
-		StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
-		see.setParallelism(1);
-		// Fixed restart strategy: on failure attempt max 10 times to restart with a retry interval of 2 minutes
-		see.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, Time.of(2, TimeUnit.MINUTES)));
-		// Initialize cli parameter tool
-		final ParameterTool parameterTool = ParameterTool.fromArgs(args);
+    // main job function
+    public static void main(String[] args) throws Exception {
 
-		// Initialize Input Source : ARGO Messaging Source
-		String endpoint = parameterTool.getRequired("ams.endpoint");
-		String port = parameterTool.getRequired("ams.port");
-		String token = parameterTool.getRequired("ams.token");
-		String project = parameterTool.getRequired("ams.project");
-		String sub = parameterTool.getRequired("ams.sub");
-		String basePath = parameterTool.getRequired("hdfs.path");
+        // Create flink execution enviroment
+        StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
+        see.setParallelism(1);
+        // Fixed restart strategy: on failure attempt max 10 times to restart with a retry interval of 2 minutes
+        see.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, Time.of(2, TimeUnit.MINUTES)));
+        // Initialize cli parameter tool
+        final ParameterTool parameterTool = ParameterTool.fromArgs(args);
 
-		// set ams client batch and interval to default values
-		int batch = 1;
-		long interval = 100L;
+        // Initialize Input Source : ARGO Messaging Source
+        String endpoint = parameterTool.getRequired("ams.endpoint");
+        String port = parameterTool.getRequired("ams.port");
+        String token = parameterTool.getRequired("ams.token");
+        String project = parameterTool.getRequired("ams.project");
+        String sub = parameterTool.getRequired("ams.sub");
+        String basePath = parameterTool.getRequired("hdfs.path");
+        runDate = parameterTool.get("run.date");
+        if (runDate != null) {
+            runDate = runDate + "T00:00:00.000Z";
+        }
 
-		if (hasAmsRateArgs(parameterTool)) {
-			batch = parameterTool.getInt("ams.batch");
-			interval = parameterTool.getLong("ams.interval");
-		}
+        // set ams client batch and interval to default values
+        int batch = 1;
+        long interval = 100L;
 
-		
-		//Ingest sync avro encoded data from AMS endpoint
-		ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval);
+        if (hasAmsRateArgs(parameterTool)) {
+            batch = parameterTool.getInt("ams.batch");
+            interval = parameterTool.getLong("ams.interval");
+        }
 
-		if (parameterTool.has("ams.verify")){
-			ams.setVerify(parameterTool.getBoolean("ams.verify"));
-		}
+        //Ingest sync avro encoded data from AMS endpoint
+        ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval, runDate);
 
-		if (parameterTool.has("ams.proxy")) {
-			ams.setProxy(parameterTool.get("ams.proxy"));
-		}
-		DataStream<String> syncDataStream = see
-				.addSource(ams);
+        if (parameterTool.has("ams.verify")) {
+            ams.setVerify(parameterTool.getBoolean("ams.verify"));
+        }
 
-		SyncHDFSOutputFormat hdfsOut = new SyncHDFSOutputFormat();
-		hdfsOut.setBasePath(basePath);
+        if (parameterTool.has("ams.proxy")) {
+            ams.setProxy(parameterTool.get("ams.proxy"));
+        }
+        DataStream<String> syncDataStream = see
+                .addSource(ams);
 
-		syncDataStream.writeUsingOutputFormat(hdfsOut);
-		
-		// Create a job title message to discern job in flink dashboard/cli
-		StringBuilder jobTitleSB = new StringBuilder();
-		jobTitleSB.append("Ingesting sync data from ");
-		jobTitleSB.append(endpoint);
-		jobTitleSB.append(":");
-		jobTitleSB.append(port);
-		jobTitleSB.append("/v1/projects/");
-		jobTitleSB.append(project);
-		jobTitleSB.append("/subscriptions/");
-		jobTitleSB.append(sub);
+        SyncHDFSOutputFormat hdfsOut = new SyncHDFSOutputFormat();
+        hdfsOut.setBasePath(basePath);
 
-		see.execute(jobTitleSB.toString());
+        syncDataStream.writeUsingOutputFormat(hdfsOut);
 
-	}
+        // Create a job title message to discern job in flink dashboard/cli
+        StringBuilder jobTitleSB = new StringBuilder();
+        jobTitleSB.append("Ingesting sync data from ");
+        jobTitleSB.append(endpoint);
+        jobTitleSB.append(":");
+        jobTitleSB.append(port);
+        jobTitleSB.append("/v1/projects/");
+        jobTitleSB.append(project);
+        jobTitleSB.append("/subscriptions/");
+        jobTitleSB.append(sub);
+
+        see.execute(jobTitleSB.toString());
+
+    }
 
 }

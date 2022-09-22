@@ -57,7 +57,7 @@ public class StatusConfig implements Serializable {
         this.amsProject = pt.getRequired("ams.project");
         this.apiEndpoint = pt.getRequired("api.endpoint");
 
-        this.runDate = pt.getRequired("run.date");
+        this.runDate = pt.get("run.date");
         this.report = pt.getRequired("report");
         // Optional timeout parameter
         if (pt.has("timeout")) {
