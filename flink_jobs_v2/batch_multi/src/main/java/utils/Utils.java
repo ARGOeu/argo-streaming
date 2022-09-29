@@ -74,7 +74,7 @@ public class Utils {
         }
     }
 
-    public static boolean checkParameters(ParameterTool params, String... vars) {
+    public static boolean checkParameters(ParameterTool params,String... vars) {
 
         for (String var : vars) {
 

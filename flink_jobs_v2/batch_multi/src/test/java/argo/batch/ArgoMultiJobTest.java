@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -77,7 +78,7 @@ public class ArgoMultiJobTest {
     private static boolean calcStatusTrends = false;
     private static boolean calcFlipFlops = false;
     private static boolean calcTagTrends = false;
-
+    
     public ArgoMultiJobTest() {
     }
 
@@ -104,7 +105,7 @@ public class ArgoMultiJobTest {
         List<String> confData = confDS.collect();
         ReportManager cfgMgr = new ReportManager();
         cfgMgr.loadJsonString(confData);
-      
+       
         enableComputations(cfgMgr.activeComputations, params);
         DataSource<String> apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
         DataSource<String> opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));

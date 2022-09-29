@@ -51,8 +51,10 @@ import trends.status.MetricTrendsCounter;
 import trends.status.ServiceTrendsCounter;
 
 import java.util.List;
+import org.apache.flink.api.common.JobID;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.slf4j.MDC;
 
 /**
  * Implements an ARGO Status Batch Job in flink
@@ -84,7 +86,8 @@ import org.joda.time.DateTimeZone;
  */
 public class ArgoMultiJob {
 
-    static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
+    static Logger LOG = LoggerFactory.getLogger( ArgoMultiJob.class);
+
     private static String dbURI;
     private static String reportID;
     private static Integer rankNum;
@@ -97,9 +100,10 @@ public class ArgoMultiJob {
     private static boolean calcStatusTrends = false;
     private static boolean calcFlipFlops = false;
     private static boolean calcTagTrends = false;
-
+  
     public static void main(String[] args) throws Exception {
 
+        configJID();
         final ParameterTool params = ParameterTool.fromArgs(args);
 
         // set up the execution environment
@@ -142,6 +146,7 @@ public class ArgoMultiJob {
         List<String> confData = confDS.collect();
         ReportManager cfgMgr = new ReportManager();
         cfgMgr.loadJsonString(confData);
+
         enableComputations(cfgMgr.activeComputations, params);
 
         DataSource<String> opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
@@ -226,7 +231,7 @@ public class ArgoMultiJob {
         DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
-     
+
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
@@ -466,7 +471,6 @@ public class ArgoMultiJob {
         calcStatusTrends = isOFF(params, "calcStatusTrends", activeComputations);
         calcFlipFlops = isOFF(params, "calcFlipFlops", activeComputations);
         calcTagTrends = isOFF(params, "calcTagTrends", activeComputations);
-        System.out.println("calcTagTrends--- "+calcTagTrends);
 
         if (!calcStatus && !calcAR && !calcStatusTrends && !calcFlipFlops && !calcStatusTrends) {
             System.exit(0);
@@ -495,5 +499,15 @@ public class ArgoMultiJob {
                     return false;
             }
         }
+    }
+
+    private static String getJID() {
+         return JobID.generate().toString();
+    }
+
+    private static void configJID() {//config the JID in the log4j.properties
+        String jobId=getJID();
+        MDC.put("JID", jobId);
+         
     }
 }

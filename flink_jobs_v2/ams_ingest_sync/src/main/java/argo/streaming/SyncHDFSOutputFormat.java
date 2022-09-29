@@ -44,12 +44,13 @@ class SyncHDFSOutputFormat implements OutputFormat<String> {
 
 	// setup logger
 	static Logger LOG = LoggerFactory.getLogger(SyncHDFSOutputFormat.class);
-
+     
 	private static final long serialVersionUID = 1L;
 
 	private URI basePath;
 	private org.apache.hadoop.conf.Configuration hadoopConf;
 	private FileSystem hdfs;
+        
 
 	public void setBasePath(String url) throws URISyntaxException {
 		this.basePath = new URI(url);

@@ -37,6 +37,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
 
     final ParameterTool params;
 
+    
     public PickEndpoints(ParameterTool params) {
         this.params = params;
     }
@@ -108,6 +109,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
         if (!this.thr.get(0).isEmpty()) {
             this.thrMgr.parseJSON(this.thr.get(0));
         }
+  
     }
 
     @Override
