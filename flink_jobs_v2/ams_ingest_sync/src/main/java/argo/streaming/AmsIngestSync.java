@@ -2,6 +2,7 @@ package argo.streaming;
 
 import ams.connector.ArgoMessagingSource;
 import java.util.concurrent.TimeUnit;
+import org.apache.flink.api.common.JobID;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
@@ -10,6 +11,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Flink Streaming JOB for Ingesting Sync Data to HDFS job required cli
@@ -30,7 +32,6 @@ public class AmsIngestSync {
     // setup logger
     static Logger LOG = LoggerFactory.getLogger(AmsIngestSync.class);
     private static String runDate;
-
     /**
      * Check if a list of expected cli arguments have been provided to this
      * flink job
@@ -56,6 +57,7 @@ public class AmsIngestSync {
 
     // main job function
     public static void main(String[] args) throws Exception {
+        configJID();
 
         // Create flink execution enviroment
         StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -76,6 +78,8 @@ public class AmsIngestSync {
         if (runDate != null) {
             runDate = runDate + "T00:00:00.000Z";
         }
+           
+ 
 
         // set ams client batch and interval to default values
         int batch = 1;
@@ -118,5 +122,12 @@ public class AmsIngestSync {
         see.execute(jobTitleSB.toString());
 
     }
+    private static String getJID() {
+        return JobID.generate().toString();
+    }
 
+    private static void configJID() {
+        String jobId = getJID();
+        MDC.put("JID", jobId);
+    }
 }

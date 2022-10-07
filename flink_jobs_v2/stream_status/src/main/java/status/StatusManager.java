@@ -41,7 +41,7 @@ public class StatusManager {
 
     // Initialize logger
     static Logger LOG = LoggerFactory.getLogger(StatusManager.class);
-
+    
     // Name of the report used
     private String report;
 
@@ -72,6 +72,8 @@ public class StatusManager {
     String tsLatest;
     int looseInterval = 1440;
     int strictInterval = 1440;
+
+    
 
     public void setReport(String report) {
         this.report = report;

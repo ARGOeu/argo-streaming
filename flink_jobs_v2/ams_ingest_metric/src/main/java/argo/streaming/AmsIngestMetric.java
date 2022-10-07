@@ -35,6 +35,8 @@ import com.google.gson.JsonParser;
 
 import argo.avro.MetricData;
 import argo.avro.MetricDataOld;
+import org.apache.flink.api.common.JobID;
+import org.slf4j.MDC;
 
 /**
  * Flink Job : Stream metric data from ARGO messaging to Hbase job required cli
@@ -59,6 +61,7 @@ public class AmsIngestMetric {
 
     static Logger LOG = LoggerFactory.getLogger(AmsIngestMetric.class);
     private static String runDate;
+ 
     /**
      * Check if flink job has been called with ams rate params
      */
@@ -109,6 +112,7 @@ public class AmsIngestMetric {
 
     public static void main(String[] args) throws Exception {
 
+        configJID();
         // Create flink execution environment
         StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
         see.setParallelism(1);
@@ -138,6 +142,7 @@ public class AmsIngestMetric {
         if (runDate != null) {
             runDate = runDate + "T00:00:00.000Z";
         }
+              
 
         // Check if checkpointing is desired
         if (hasCheckArgs(parameterTool)) {
@@ -253,5 +258,12 @@ public class AmsIngestMetric {
 
         see.execute(jobTitleSB.toString());
     }
+    private static String getJID() {
+        return JobID.generate().toString();
+    }
 
+    private static void configJID() { //config the JID in the log4j.properties
+        String jobId = getJID();
+        MDC.put("JID", jobId);
+    }
 }
