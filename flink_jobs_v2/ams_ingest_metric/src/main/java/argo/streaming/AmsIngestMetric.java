@@ -1,18 +1,14 @@
 package argo.streaming;
 
 import ams.connector.ArgoMessagingSource;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -21,9 +17,6 @@ import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.datastream.DataStream;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-
-import org.apache.flink.streaming.connectors.fs.bucketing.Bucketer;
-import org.apache.flink.streaming.connectors.fs.bucketing.BucketingSink;
 import org.apache.flink.util.Collector;
 
 import org.slf4j.Logger;
@@ -35,7 +28,30 @@ import com.google.gson.JsonParser;
 
 import argo.avro.MetricData;
 import argo.avro.MetricDataOld;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.connector.file.sink.FileSink;
+import org.apache.flink.connector.file.sink.compactor.ConcatFileCompactor;
+import org.apache.flink.connector.file.sink.compactor.DecoderBasedReader;
+import org.apache.flink.connector.file.sink.compactor.FileCompactStrategy;
+import org.apache.flink.connector.file.sink.compactor.OutputStreamBasedFileCompactor;
+import org.apache.flink.connector.file.sink.compactor.RecordWiseFileCompactor;
+import org.apache.flink.connector.file.sink.compactor.SimpleStringDecoder;
+import org.apache.flink.core.fs.Path;
+import org.apache.flink.formats.avro.AvroWriters;
+import org.apache.flink.runtime.state.hashmap.HashMapStateBackend;
+import org.apache.flink.streaming.api.functions.sink.filesystem.OutputFileConfig;
+import org.apache.flink.streaming.api.functions.sink.filesystem.PartFileInfo;
+import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
+import org.apache.flink.streaming.api.functions.sink.filesystem.bucketassigners.DateTimeBucketAssigner;
+import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.CheckpointRollingPolicy;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.slf4j.MDC;
 
 /**
@@ -61,7 +77,8 @@ public class AmsIngestMetric {
 
     static Logger LOG = LoggerFactory.getLogger(AmsIngestMetric.class);
     private static String runDate;
- 
+    private static String basePath;
+
     /**
      * Check if flink job has been called with ams rate params
      */
@@ -118,6 +135,7 @@ public class AmsIngestMetric {
         see.setParallelism(1);
         // On failure attempt max 10 times to restart with a retry interval of 2 minutes
         see.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, Time.of(2, TimeUnit.MINUTES)));
+      //  see.enableCheckpointing(Duration.ofMinutes(5).toMillis());
 
         // Initialize cli parameter tool
         final ParameterTool parameterTool = ParameterTool.fromArgs(args);
@@ -134,7 +152,7 @@ public class AmsIngestMetric {
 
         // Initialize Input Source : ARGO Messaging Source
         String endpoint = parameterTool.getRequired("ams.endpoint");
-        String port = parameterTool.getRequired("ams.port");
+        String port = parameterTool.get("ams.port");
         String token = parameterTool.getRequired("ams.token");
         String project = parameterTool.getRequired("ams.project");
         String sub = parameterTool.getRequired("ams.sub");
@@ -142,17 +160,20 @@ public class AmsIngestMetric {
         if (runDate != null) {
             runDate = runDate + "T00:00:00.000Z";
         }
-              
 
         // Check if checkpointing is desired
         if (hasCheckArgs(parameterTool)) {
             String checkPath = parameterTool.get("check.path");
             String checkInterval = parameterTool.get("check.interval");
             // Establish check-pointing mechanism using the cli-parameter check.path
-            see.setStateBackend(new FsStateBackend(checkPath));
+            see.setStateBackend(new HashMapStateBackend());
+            see.getCheckpointConfig().setCheckpointStorage(checkPath);
+
             // Establish the check-pointing interval
             long checkInt = Long.parseLong(checkInterval);
             see.enableCheckpointing(checkInt);
+            
+            System.out.println("checkpoint");
         }
 
         // Ingest sync avro encoded data from AMS endpoint
@@ -210,27 +231,47 @@ public class AmsIngestMetric {
 
         // Check if saving to HDFS is desired
         if (hasHdfsArgs(parameterTool)) {
-            String basePath = parameterTool.getRequired("hdfs.path");
+            basePath = parameterTool.getRequired("hdfs.path");
             // Establish a bucketing sink to be able to store events with different daily
             // timestamp parts (YYYY-MM-DD)
             // in different daily files
-            BucketingSink<MetricData> bs = new BucketingSink<MetricData>(basePath);
-            bs.setInactiveBucketThreshold(inactivityThresh);
-            Bucketer<MetricData> tsBuck = new TSBucketer();
-            bs.setBucketer(tsBuck);
-            bs.setPartPrefix("mdata");
-            // Change default in progress prefix: _ to allow loading the file in
-            // AvroInputFormat
-            bs.setInProgressPrefix("");
-            // Add .prog extension when a file is in progress mode
-            bs.setInProgressSuffix(".prog");
-            // Add .pend extension when a file is in pending mode
-            bs.setPendingSuffix(".pend");
+//            BucketingSink<MetricData> bs = new BucketingSink<MetricData>(basePath);
+//            bs.setInactiveBucketThreshold(inactivityThresh);
+//            Bucketer<MetricData> tsBuck = new TSBucketer();
+//            bs.setBucketer(tsBuck);
+//            bs.setPartPrefix("mdata");
+//            // Change default in progress prefix: _ to allow loading the file in
+//            // AvroInputFormat
+//            bs.setInProgressPrefix("");
+//            // Add .prog extension when a file is in progress mode
+//            bs.setInProgressSuffix(".prog");
+//            // Add .pend extension when a file is in pending mode
+//            bs.setPendingSuffix(".pend");
+//
+//            bs.setWriter(new SpecificAvroWriter<MetricData>());
+//            metricDataPOJO.addSink(bs);
+//        }
 
-            bs.setWriter(new SpecificAvroWriter<MetricData>());
-            metricDataPOJO.addSink(bs);
+            OutputFileConfig config = OutputFileConfig
+                    .builder()
+                    .withPartPrefix("mdata")
+                    .build();
+            FileCompactStrategy strategy = FileCompactStrategy.Builder.newBuilder()
+                    .enableCompactionOnCheckpoint(1)
+                    .build();
+            // RecordWiseFileCompactor compactor = new RecordWiseFileCompactor<>(new DecoderBasedReader.Factory<>(SimpleStringDecoder::new));
+            OutputStreamBasedFileCompactor compactor2 = new ConcatFileCompactor();
+         
+          FileSink<MetricData> sink = FileSink.forBulkFormat(new Path(basePath), AvroWriters.forReflectRecord(MetricData.class))
+                    .withRollingPolicy(new CustomOnCheckpointRollingPolicy(Duration.ofMinutes(5).toMillis(), inactivityThresh))
+                    .withBucketAssigner(new CustomBucketAssigner())
+                    .enableCompact(strategy, compactor2)
+                    .withOutputFileConfig(config)
+                    .build();
+
+            metricDataPOJO.sinkTo(sink).uid(getJID());
+
         }
-
         // Check if saving to Hbase is desired
         if (hasHbaseArgs(parameterTool)) {
             // Initialize Output : Hbase Output Format
@@ -258,6 +299,7 @@ public class AmsIngestMetric {
 
         see.execute(jobTitleSB.toString());
     }
+
     private static String getJID() {
         return JobID.generate().toString();
     }
@@ -265,5 +307,46 @@ public class AmsIngestMetric {
     private static void configJID() { //config the JID in the log4j.properties
         String jobId = getJID();
         MDC.put("JID", jobId);
+    }
+
+    private static class CustomBucketAssigner extends DateTimeBucketAssigner<MetricData> {
+
+        @Override
+        public String getBucketId(MetricData element, Context context) {
+            String dailyPart = element.getTimestamp().split("T")[0];
+            //       Path path = new Path(basePath + "/" + dailyPart);
+            //    return path.toString() ;
+            return "/" + dailyPart;
+        }
+
+    }
+
+    private static class CustomOnCheckpointRollingPolicy<IN, BucketID> extends CheckpointRollingPolicy<IN, BucketID> {
+
+        private static final long serialVersionUID = 1L;
+
+        private static long rolloverInterval;
+
+        private static long inactivityInterval;
+
+        private CustomOnCheckpointRollingPolicy(long rolloverIntervalVal, long inactivityIntervalVal) {
+            rolloverInterval = rolloverIntervalVal;
+            inactivityInterval = inactivityIntervalVal;
+        }
+
+        @Override
+        public boolean shouldRollOnEvent(PartFileInfo<BucketID> partFileState, IN element) {
+            return false;
+        }
+
+        @Override
+        public boolean shouldRollOnProcessingTime(PartFileInfo<BucketID> partFileState, long currentTime) {
+            return currentTime - partFileState.getCreationTime() >= rolloverInterval
+                    || currentTime - partFileState.getLastUpdateTime() >= inactivityInterval;
+        }
+
+        public static <IN, BucketID> CustomOnCheckpointRollingPolicy<IN, BucketID> build() {
+            return new CustomOnCheckpointRollingPolicy<>(rolloverInterval, inactivityInterval);
+        }
     }
 }

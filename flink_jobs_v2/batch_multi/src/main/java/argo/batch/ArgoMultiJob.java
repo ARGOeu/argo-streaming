@@ -14,6 +14,8 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import java.util.ArrayList;
+import java.util.Arrays;
 import trends.calculations.ServiceTrends;
 import trends.flipflops.ZeroServiceFlipFlopFilter;
 import trends.status.EndpointTrendsCounter;
@@ -108,6 +110,7 @@ public class ArgoMultiJob {
 
         // set up the execution environment
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+      
         // make parameters available in the web interface
         env.getConfig().setGlobalJobParameters(params);
         env.setParallelism(1);
@@ -161,14 +164,16 @@ public class ArgoMultiJob {
 
             mtagsDS = env.fromElements(amr.getResourceJSON(ApiResource.MTAGS));
         }
-        DataSet<Weight> weightDS = env.fromElements(new Weight());
+        DataSet<Weight> weightDS = env.fromElements(new Weight("", "", ""));
         Weight[] listWeights = amr.getListWeights();
 
         if (listWeights.length > 0) {
             weightDS = env.fromElements(amr.getListWeights());
         }
-
-        DataSet<Downtime> downDS = env.fromElements(new Downtime());
+        DataSource<Downtime> downDS=env.fromElements(new Downtime("","","",""));
+        
+          
+        
         // begin with empty threshold datasource
         DataSource<String> thrDS = env.fromElements("");
         // check if report information from argo-web-api contains a threshold profile ID
@@ -189,11 +194,12 @@ public class ArgoMultiJob {
         if (listDowntimes.length > 0) {
             downDS = env.fromElements(amr.getListDowntimes());
         }
-        // todays metric data
+        
+        // todays metric data       
         Path in = new Path(params.getRequired("mdata"));
         AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat(in, MetricData.class);
         DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
-
+       List<MetricData> list=mdataDS.collect();
         // previous metric data
         Path pin = new Path(params.getRequired("pdata"));
         AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat(pin, MetricData.class);

@@ -1,6 +1,7 @@
 package argo.streaming;
 
 import ams.connector.ArgoMessagingSource;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import org.apache.flink.api.common.JobID;
 
@@ -107,6 +108,7 @@ public class AmsIngestSync {
         hdfsOut.setBasePath(basePath);
 
         syncDataStream.writeUsingOutputFormat(hdfsOut);
+      
 
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();

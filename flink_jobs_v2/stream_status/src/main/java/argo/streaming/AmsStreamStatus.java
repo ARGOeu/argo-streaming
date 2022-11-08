@@ -26,7 +26,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer09;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -51,7 +50,19 @@ import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.connector.base.DeliveryGuarantee;
+import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
+import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducerBase;
+import org.apache.flink.streaming.util.serialization.SerializationSchema;
+//import org.apache.flink.api.common.serialization.SerializationSchema;
+//import org.apache.flink.connector.base.DeliveryGuarantee;
+//import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
+//import org.apache.flink.connector.kafka.sink.KafkaSink;
+//import org.apache.flink.core.fs.FileSystem;
+//import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
@@ -101,7 +112,7 @@ public class AmsStreamStatus {
 
     static Logger LOG = LoggerFactory.getLogger(AmsStreamStatus.class);
     private static String runDate;
- 
+
     /**
      * Sets configuration parameters to streaming enviroment
      *
@@ -187,7 +198,6 @@ public class AmsStreamStatus {
         String project = parameterTool.getRequired("ams.project");
         String subMetric = parameterTool.getRequired("ams.sub.metric");
 
-      
         String apiEndpoint = parameterTool.getRequired("api.endpoint");
         String apiToken = parameterTool.getRequired("api.token");
         String reportID = parameterTool.getRequired("report.uuid");
@@ -250,8 +260,8 @@ public class AmsStreamStatus {
         }
 
         DataStream<String> metricAMS = see.addSource(amsMetric).setParallelism(1);
-
-        // Establish the sync stream from argowebapi
+//
+//        // Establish the sync stream from argowebapi
         DataStream<Tuple2<String, String>> syncAMS = see.addSource(apiSync).setParallelism(1);
 
         // Forward syncAMS data to two paths
@@ -271,10 +281,17 @@ public class AmsStreamStatus {
             String kafkaTopic = parameterTool.get("kafka.topic");
             Properties kafkaProps = new Properties();
             kafkaProps.setProperty("bootstrap.servers", kafkaServers);
-            FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic, new SimpleStringSchema(),
-                    kafkaProps);
 
-            events.addSink(kSink);
+            KafkaRecordSerializationSchema serializer= KafkaRecordSerializationSchema.builder()
+                    .setValueSerializationSchema(new SimpleStringSchema())
+                    .setTopic(kafkaTopic)
+                    .build();
+            KafkaSink<String> kSink = KafkaSink.<String>builder()
+                    .setBootstrapServers(kafkaServers)
+                    .setRecordSerializer( serializer)
+                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                    .build();
+            events.sinkTo( kSink);
         } else if (hasAmsArgs(parameterTool)) {
             String topic = parameterTool.get("ams.alert.topic");
             String tokenpub = parameterTool.get("ams.token.publish");
@@ -627,7 +644,7 @@ public class AmsStreamStatus {
 
                 // Use existing topology manager inside status manager to make a comparison
                 // with the new topology stored in the temp endpoint group manager
-                // update topology also sets the next topology manager as status manager current 
+                // update topology also sets the next topology manager as status manager current
                 // topology manager only after removal of decomissioned items
                 sm.updateTopology(egpNext);
 
@@ -842,6 +859,6 @@ public class AmsStreamStatus {
     private static void configJID() { //config the JID in the log4j.properties
         String jobId = getJID();
         MDC.put("JID", jobId);
-      }
+    }
 
 }

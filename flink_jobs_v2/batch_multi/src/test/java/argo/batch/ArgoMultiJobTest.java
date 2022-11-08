@@ -92,10 +92,12 @@ public class ArgoMultiJobTest {
 
         env.setParallelism(2);
         System.setProperty("run.date", "2022-01-14");
-            
-        final ParameterTool params = ParameterTool.fromSystemProperties();
-        DateTime now=new DateTime(DateTimeZone.UTC);
         
+        long start=System.currentTimeMillis();
+
+        final ParameterTool params = ParameterTool.fromSystemProperties();
+        DateTime now = new DateTime(DateTimeZone.UTC);
+
         ApiResourceManager amr = mockAmr();
 
         DataSource<String> cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
@@ -105,7 +107,6 @@ public class ArgoMultiJobTest {
         List<String> confData = confDS.collect();
         ReportManager cfgMgr = new ReportManager();
         cfgMgr.loadJsonString(confData);
-       
         enableComputations(cfgMgr.activeComputations, params);
         DataSource<String> apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
         DataSource<String> opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
@@ -120,11 +121,10 @@ public class ArgoMultiJobTest {
 
             mtagsDS = env.fromElements(amr.getResourceJSON(ApiResource.MTAGS));
         }
+     //   DataSet<String> weightDS = env.fromElements("");
 
-        DataSet<Weight> weightDS = env.fromElements(new Weight());
-        Weight[] listWeights = new Weight[0];
-
-        DataSet<Downtime> downDS = env.fromElements(new Downtime());
+        DataSource<Weight> weightDS = env.fromElements(new Weight("","",""));
+        DataSource<Downtime> downDS = env.fromElements(new Downtime("","","",""));
         // begin with empty threshold datasource
 
         DataSource<String> thrDS = env.fromElements("");
@@ -160,7 +160,7 @@ public class ArgoMultiJobTest {
         AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
         DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 
-        DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
+        DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).name("ExcludeMetric").withBroadcastSet(recDS, "rec");
         URL exppdataURL = ArgoMultiJobTest.class.getResource("/test/exppdata.avro");
 
         Path exppin = new Path(exppdataURL.getPath());
@@ -191,7 +191,7 @@ public class ArgoMultiJobTest {
         Assert.assertEquals(TestUtils.compareLists(unionpdataDS.collect(), mdataPrevTotalDS.collect()), true);
 
         //***************************Test FillMIssing
-        DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
+        DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params)).name("FillMissing")
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf");
 
@@ -205,7 +205,7 @@ public class ArgoMultiJobTest {
         }
         Assert.assertEquals(TestUtils.compareLists(expFillMissRes, fillMissDS.collect()), true);
         //**************** Test PickEndpoints
-        DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
+        DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params)).name("PickEndpoints")
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
@@ -225,7 +225,7 @@ public class ArgoMultiJobTest {
         Assert.assertEquals(TestUtils.compareLists(expPickDataRes, mdataTotalDS.collect()), true);
 
         //********************* Test Map Services
-        mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
+        mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).name("MapServices").withBroadcastSet(apsDS, "aps");
 
         URL mapServicesURL = ArgoMultiJobTest.class.getResource("/test/mapservices.json");
         DataSet<String> mapServicesString = env.readTextFile(mapServicesURL.toString());
@@ -254,7 +254,7 @@ public class ArgoMultiJobTest {
         //*************** Test Metric Timeline
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
-                .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .reduceGroup(new CalcMetricTimeline(params)).name("CalcMetricTimeline").withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");
 
         ArrayList<String> opsJson = new ArrayList();
@@ -266,7 +266,7 @@ public class ArgoMultiJobTest {
         //*************** Test Endpoint  Timeline
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
-                .reduceGroup(new CalcEndpointTimeline(params, now)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .reduceGroup(new CalcEndpointTimeline(params, now)).name("CalcEndpointTimeline").withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps").withBroadcastSet(downDS, "down");
         ArrayList<String> aggrJson = new ArrayList();
@@ -277,7 +277,7 @@ public class ArgoMultiJobTest {
 
         //*************** Test Service Timeline
         DataSet<StatusTimeline> statusServiceTimeline = statusEndpointTimeline.groupBy("group", "service")
-                .reduceGroup(new CalcServiceTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .reduceGroup(new CalcServiceTimeline(params)).name("CalcServiceTimeline").withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
         ArrayList<StatusTimeline> expServTimelines = TestUtils.prepareLevelTimeline(expEndpTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.SERVICE, now);
@@ -285,7 +285,7 @@ public class ArgoMultiJobTest {
 
         //*************** Test Function Timeline
         DataSet<StatusTimeline> statusEndGroupFunctionTimeline = statusServiceTimeline.groupBy("group", "function")
-                .reduceGroup(new CalcGroupFunctionTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .reduceGroup(new CalcGroupFunctionTimeline(params)).name("CalcGroupFunction").withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
 
@@ -294,7 +294,7 @@ public class ArgoMultiJobTest {
 
         //*************** Test Group Timeline
         DataSet<StatusTimeline> statusGroupTimeline = statusEndGroupFunctionTimeline.groupBy("group")
-                .reduceGroup(new CalcGroupTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .reduceGroup(new CalcGroupTimeline(params)).name("CalcGroupTimeline").withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
         ArrayList<StatusTimeline> expGroupTimelines = TestUtils.prepareLevelTimeline(expFunctionTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.GROUP, now);
@@ -302,7 +302,7 @@ public class ArgoMultiJobTest {
 
         if (calcStatus) {
             //Calculate endpoint timeline timestamps 
-            stDetailDS = stDetailDS.flatMap(new MapStatusMetricTags(calcAR)).withBroadcastSet(mtagsDS, "mtags").withBroadcastSet(egpDS, "egp")
+            stDetailDS = stDetailDS.flatMap(new MapStatusMetricTags(calcAR)).name("MapStatusMetricTags").withBroadcastSet(mtagsDS, "mtags").withBroadcastSet(egpDS, "egp")
                     .withBroadcastSet(cfgDS, "conf");
 
             URL expMTagsURL = ArgoMultiJobTest.class.getResource("/test/expmtagsdata.json");
@@ -368,7 +368,7 @@ public class ArgoMultiJobTest {
         List<String> groupExpectedData = loadExpectedDataFromFile("/test/groupstatistics.json", env);
 
         //*************** Test flip flops
-        if (calcFlipFlops|| calcStatusTrends) {
+        if (calcFlipFlops || calcStatusTrends) {
             DataSet<MetricTrends> metricTrends = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
             DataSet<EndpointTrends> endpointTrends = statusEndpointTimeline.flatMap(new CalcEndpointFlipFlopTrends());
 
@@ -470,7 +470,7 @@ public class ArgoMultiJobTest {
             List<ServiceAR> expectedServAr = TestUtils.prepareServiceAR(servArData, params.get("run.date"));
 
             Assert.assertEquals(TestUtils.compareLists(expectedServAr, serviceArDS.collect()), true);
-            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params,now)).withBroadcastSet(mpsDS, "mps")
+            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params, now)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(cfgDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
             List<TestUtils.ArItem> groupArData = loadExpectedArData(groupExpectedData, LEVEL.GROUP, env);
@@ -482,6 +482,8 @@ public class ArgoMultiJobTest {
         stDetailDS.output(new DiscardingOutputFormat<StatusMetric>());
         env.execute();
 
+        long end=System.currentTimeMillis();
+        System.out.println("Difference ==== "+(end-start));
     }
 
     private List<String> loadExpectedDataFromFile(String filename, ExecutionEnvironment env) throws Exception {
@@ -843,7 +845,6 @@ public class ArgoMultiJobTest {
         return rArr;
     }
 
-    
     private static void enableComputations(ReportManager.ActiveComputations activeComputations, ParameterTool params) {
 
         calcStatus = isOFF(params, "calcStatus", activeComputations);
