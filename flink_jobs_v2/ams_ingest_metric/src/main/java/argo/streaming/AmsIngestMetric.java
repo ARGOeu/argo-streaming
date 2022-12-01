@@ -1,18 +1,14 @@
 package argo.streaming;
 
 import ams.connector.ArgoMessagingSource;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificData;
-import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.utils.ParameterTool;
