@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.GroupGroupManager;
@@ -47,8 +48,8 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
 
     final ParameterTool params;
 
-    public CalcGroupAR(ParameterTool params, DateTime dtUtc) {
-        this.dtUtc = dtUtc;
+    public CalcGroupAR(ParameterTool params, DateTime now) {
+        this.now = now;
         this.params = params;
     }
 
@@ -71,7 +72,7 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
     private String ggroupType;
     private RecomputationsManager recMgr;
     private List<String> rec;
-    private DateTime dtUtc;
+    private DateTime now;
 
     /**
      * Initialization method of the RichGroupReduceFunction operator
@@ -164,7 +165,7 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
 
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
         for (TimeStatus ts : timestatusList) {
-            timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
+            timestampMap.put(new DateTime(ts.getTimestamp(), DateTimeZone.UTC), ts.getStatus());
         }
 
         Timeline timeline = new Timeline();
@@ -175,7 +176,7 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
         if (this.recMgr.isExcluded(in.getGroup())) {
             ArrayList<Map<String, String>> periods = this.recMgr.getPeriods(in.getGroup(), this.runDate);
             for (Map<String, String> interval : periods) {
-                timeline.fillWithStatus(interval.get("start"), interval.get("end"), this.opsMgr.getDefaultUnknownInt(), dtUtc);
+                timeline.fillWithStatus(interval.get("start"), interval.get("end"), this.opsMgr.getDefaultUnknownInt(), now);
                 timeline.optimize();
             }
         }

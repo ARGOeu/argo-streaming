@@ -19,6 +19,8 @@ public class StatusEvent{
 	private String message;
 	
 	private String status;
+        
+	private String reminder;
 	private @SerializedName("prev_status") String prevStatus;
 	private @SerializedName("prev_ts") String prevTs;
 	
@@ -36,6 +38,7 @@ public class StatusEvent{
 	// Record all statuses of endpoint's metrics
 	private @SerializedName("metric_statuses") String metricStatuses[];
 	private @SerializedName("metric_names") String metricNames[];
+	private @SerializedName("hostname_url") String hostnameURL;
 	
 	
 	public StatusEvent() {
@@ -55,6 +58,7 @@ public class StatusEvent{
 		this.repeat = "";
 		this.summary = "";
 		this.message = "";
+                this.reminder = "";
 		this.statusEgroup = new String[0];
 		this.statusService = new String[0];
 		this.statusEndpoint = new String[0];
@@ -64,11 +68,12 @@ public class StatusEvent{
 		this.groupStatuses = new String[0];
 		this.metricStatuses = new String[0];
 		this.metricNames = new String[0];
+		this.hostnameURL = "";
 		
 	}
 	
 	
-	public StatusEvent (String report, String type, String dt, String group,String service,String hostname,String metric,String status,String monHost, String tsMonitored, String tsProcessed, String prevStatus, String prevTs, String repeat, String summary, String message){
+	public StatusEvent (String report, String type, String dt, String group,String service,String hostname,String metric,String status,String monHost, String tsMonitored, String tsProcessed, String prevStatus, String prevTs, String repeat, String summary, String message,String reminder){
 		this.report  = report;
 		this.type =type;
 		this.group = group;
@@ -85,6 +90,8 @@ public class StatusEvent{
 		this.repeat = repeat;
 		this.summary = summary;
 		this.message = message;
+                
+		this.reminder = reminder;
 		this.statusEgroup = null;
 		this.statusService = null;
 		this.statusEndpoint = null;
@@ -94,6 +101,7 @@ public class StatusEvent{
 		this.groupStatuses = null;
 		this.metricStatuses = null;
 		this.metricNames = null;
+		this.hostnameURL = "";
 
 		
 	}
@@ -186,6 +194,7 @@ public class StatusEvent{
 	public String getRepeat() {return repeat;}
 	public String getSummary() {return this.summary;}
 	public String getMessage() {return this.message;}
+	public String getHostnameURL() { return this.hostnameURL;}
 
 	public void setReport(String report) {this.report = report;}	
 	public void setType(String type) {this.type = type;}
@@ -207,6 +216,7 @@ public class StatusEvent{
 	public void setStatus(String status) {this.status = status;}
 	public void setSummary(String summary) {this.summary = summary;}
 	public void setMessage (String message) {this.message = message;}
+	public void setHostnameURL (String hostnameURL) {this.hostnameURL = hostnameURL;}
 	
 	public int getDateInt() {
 		return Integer.parseInt(this.dt);

@@ -18,10 +18,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import jdk.nashorn.internal.parser.JSONParser;
 import org.apache.avro.generic.GenericData;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -106,7 +106,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
         this.mDB = mClient.getDatabase(dbName);
         this.mCol = mDB.getCollection(colName);
         if (this.clearMongo) {
-            String oidString = Long.toHexString(new DateTime().getMillis() / 1000L) + "0000000000000000";
+            String oidString = Long.toHexString(new DateTime(DateTimeZone.UTC).getMillis() / 1000L) + "0000000000000000";
             this.nowId = new ObjectId(oidString);
         }
 

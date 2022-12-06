@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import org.joda.time.DateTimeZone;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.DowntimeManager;
 import profilesmanager.MetricProfileManager;
@@ -38,9 +39,9 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
 
     final ParameterTool params;
 
-    public CalcEndpointTimeline(ParameterTool params, DateTime dtUtc) {
+    public CalcEndpointTimeline(ParameterTool params, DateTime now) {
         this.params = params;
-        this.dtUtc=dtUtc;
+        this.now=now;
     }
 
     static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
@@ -55,7 +56,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
     private String operation;
     private DowntimeManager downtimeMgr;
     private List<Downtime> downtime;
-    private DateTime dtUtc;
+    private DateTime now;
 
     @Override
     public void open(Configuration parameters) throws IOException {
@@ -102,7 +103,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
             for (TimeStatus timestatus : timestatusList) {
 
-                samples.put(new DateTime(timestatus.getTimestamp()), timestatus.getStatus());
+                samples.put(new DateTime(timestatus.getTimestamp(),DateTimeZone.UTC), timestatus.getStatus());
             }
             Timeline timeline = new Timeline();
             timeline.insertDateTimeStamps(samples, true);
@@ -121,7 +122,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
      
 	
         if (downPeriod != null && !downPeriod.isEmpty()) {
-            mergedTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt(), dtUtc);
+            mergedTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt(), now);
         }
         ArrayList<TimeStatus> timestatuCol = new ArrayList();
         for (Map.Entry<DateTime, Integer> entry : mergedTimeline.getSamples()) {

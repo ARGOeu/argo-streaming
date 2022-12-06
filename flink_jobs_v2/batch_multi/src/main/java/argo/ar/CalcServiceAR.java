@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.GroupGroupManager;
@@ -143,7 +144,7 @@ public class CalcServiceAR extends RichFlatMapFunction<StatusTimeline, ServiceAR
 
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
         for (TimeStatus ts : timestatusList) {
-            timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
+            timestampMap.put(new DateTime(ts.getTimestamp(), DateTimeZone.UTC), ts.getStatus());
         }
 
         Timeline timeline = new Timeline();

@@ -6,18 +6,19 @@ package timelines;
  * and open the template in the editor.
  */
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeMap;
-
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
+import org.joda.time.LocalTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -65,13 +66,13 @@ public class Timeline {
      * would define the date of the timeline *
      *
      */
-    public Timeline(String timestamp) {
-        DateTime tmp_date = new DateTime();
-        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        tmp_date = fmt.parseDateTime(timestamp);
+    public Timeline(String timestamp) throws ParseException {
+        DateTime tmp_date = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", timestamp);
         tmp_date.withTime(0, 0, 0, 0);
+
         this.date = tmp_date.toLocalDate();
         this.samples = new TreeMap<DateTime, Integer>();
+
     }
 
     /**
@@ -82,20 +83,18 @@ public class Timeline {
      * at a timestamp , describing midnight (00:00:00)
      *
      */
-    Timeline(String timestamp, int state) {
-        DateTime tmp_date = new DateTime();
-        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        tmp_date = fmt.parseDateTime(timestamp);
-        tmp_date = tmp_date.withTime(0, 0, 0, 0);
+    Timeline(String timestamp, int state) throws ParseException {
+         DateTime tmp_date = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", timestamp);
+        tmp_date.withTime(0, 0, 0, 0);
+
         this.date = tmp_date.toLocalDate();
         this.samples = new TreeMap<DateTime, Integer>();
         this.samples.put(tmp_date, state);
     }
 
-    public int get(String timestamp) {
-        DateTime tmp_date = new DateTime();
-        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        tmp_date = fmt.parseDateTime(timestamp);
+    public int get(String timestamp) throws ParseException { 
+        DateTime tmp_date = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", timestamp);
+        
         if (this.samples.floorEntry(tmp_date) == null) {
             return -1;
         }
@@ -117,11 +116,10 @@ public class Timeline {
      *
      * inserts a pair of timestamp, status in the map.
      */
-    public void insert(String timestamp, int status) {
+    public void insert(String timestamp, int status) throws ParseException {
 
-        DateTime tmp_date = new DateTime();
-        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        tmp_date = fmt.parseDateTime(timestamp);
+        DateTime tmp_date = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", timestamp);
+
         this.samples.put(tmp_date, status);
     }
 
@@ -137,7 +135,7 @@ public class Timeline {
         samples.put(timestamp, status);
     }
 
-    public void insertStringTimeStamps(TreeMap<String, Integer> timestamps, boolean optimize) {
+    public void insertStringTimeStamps(TreeMap<String, Integer> timestamps, boolean optimize) throws ParseException {
         DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         for (String dt : timestamps.keySet()) {
             int status = timestamps.get(dt);
@@ -148,9 +146,9 @@ public class Timeline {
             this.optimize();
         }
         if (this.date == null) {
-            DateTime tmp_date = new DateTime();
-            tmp_date = this.samples.firstKey();
-            tmp_date = tmp_date.withTime(0, 0, 0, 0);
+            DateTime tmp_date=this.samples.firstKey();   
+            tmp_date.withTime(0, 0, 0, 0);
+            
             this.date = tmp_date.toLocalDate();
         }
 
@@ -160,7 +158,7 @@ public class Timeline {
      * @param timestamps a map of timestamp, status to be stored in the
      * timeline. the timestamps are in the form of datetime
      */
-    public void insertDateTimeStamps(TreeMap<DateTime, Integer> timestamps, boolean optimize) {
+    public void insertDateTimeStamps(TreeMap<DateTime, Integer> timestamps, boolean optimize) throws ParseException {
         for (DateTime dt : timestamps.keySet()) {
             int status = timestamps.get(dt);
             this.insert(dt, status);
@@ -169,8 +167,8 @@ public class Timeline {
             this.optimize();
         }
         if (this.date == null) {
-            DateTime tmp_date = new DateTime();
-            tmp_date = this.samples.firstKey();
+            DateTime tmp_date=this.samples.firstKey();
+       
             tmp_date = tmp_date.withTime(0, 0, 0, 0);
             this.date = tmp_date.toLocalDate();
         }
@@ -185,12 +183,13 @@ public class Timeline {
      * timestamp is the midnight (00:00:00) of the date of the given timestamp
      * and the status is the given state
      */
-    public void setFirst(String timestamp, int state) {
-        DateTime tmp_date = new DateTime();
-        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        tmp_date = fmt.parseDateTime(timestamp);
-        this.samples = new TreeMap<DateTime, Integer>();
+    public void setFirst(String timestamp, int state) throws ParseException {
+        DateTime tmp_date = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", timestamp);
+        
         tmp_date = tmp_date.withTime(0, 0, 0, 0);
+          
+
+        this.samples = new TreeMap<DateTime, Integer>();
         this.samples.put(tmp_date, state);
         this.optimize();
     }
@@ -375,15 +374,12 @@ public class Timeline {
      * in the map
      *
      */
-    public TreeMap<DateTime, Integer> buildDateTimeStampMap(ArrayList<String[]> timestampList, ArrayList<String> states) {
+    public TreeMap<DateTime, Integer> buildDateTimeStampMap(ArrayList<String[]> timestampList, ArrayList<String> states) throws ParseException {
 
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
 
         for (String[] timestamp : timestampList) {
-
-            DateTime tmp_date = new DateTime();
-            DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-            tmp_date = fmt.parseDateTime(timestamp[0]);
+            DateTime tmp_date=Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", timestamp[0]);
             int status = states.indexOf(timestamp[1]);
             timestampMap.put(tmp_date, status);
         }
@@ -474,12 +470,14 @@ public class Timeline {
      * periods
      *
      */
-    public void fillWithStatus(String start, String end, Integer intStatus, DateTime dtUtc) throws ParseException {
-        DateTime startDay = this.date.toDateTimeAtStartOfDay();
+    public void fillWithStatus(String start, String end, Integer intStatus, DateTime now) throws ParseException {
+        
+        DateTime startDay = this.date.toDateTimeAtStartOfDay(DateTimeZone.UTC);
+        
         DateTime endDay = startDay.withTime(23, 59, 59, 0);
 
-        //for (String[] period : periods) {
         DateTime startDt = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", start);
+
         DateTime endDt = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", end);
 
         DateTime floor = samples.floorKey(startDt);
@@ -505,17 +503,18 @@ public class Timeline {
             endFloorStatus = this.samples.get(endFloor);
 
         }
-        if ((floor == null || !floor.equals(startDt)) && !startDt.isAfter(dtUtc)) { // if start period does not match with the initial timeline's timestamp then need to add the start to the timeline with the specified status
+        if ((floor == null || !floor.equals(startDt)) && !startDt.isAfter(now)) { // if start period does not match with the initial timeline's timestamp then need to add the start to the timeline with the specified status
             this.samples.put(startDt, intStatus);                       //else the timestamp already contained and in next step its status will be replaced
         }
         //if a timestamp exists after a period  then this timestamp should be added with the initial status of that period taken from the initial timeline
         //this timestamp should not extend todays current time (in the case that the computations occur during today and before the end of the day)
-        if (addCeiling && !endDt.isAfter(dtUtc) && endDt.plusMinutes(1).isBefore(endDay)) {
+
+        if (addCeiling && !endDt.isAfter(now) && endDt.plusMinutes(1).isBefore(endDay)) {
             this.samples.put(endDt.plusMinutes(1), endFloorStatus);
         }
 
         for (DateTime dt : samples.keySet()) {
-            if (!dt.isAfter(dtUtc) && !dt.isBefore(startDt) && !dt.isAfter(endDt)) { //if timestamps exist between the period then replace the timestamps with the specified status
+            if (!dt.isAfter(now) && !dt.isBefore(startDt) && !dt.isAfter(endDt)) { //if timestamps exist between the period then replace the timestamps with the specified status
                 this.samples.replace(dt, intStatus);
             }
         }

@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import argo.avro.MetricProfile;
 import java.util.ArrayList;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.joda.time.DateTimeZone;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
@@ -105,7 +106,7 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
             cur.setFunction(function);
             cur.setInfo(info);
             cur.setHasThr(hasThr);
-            cur.setTimestamp(Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp())));
+            cur.setTimestamp(Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp(),DateTimeZone.UTC)));
             cur.setStatus(opsMgr.getStrStatus(item.getStatus()));
             out.collect(cur);
         }

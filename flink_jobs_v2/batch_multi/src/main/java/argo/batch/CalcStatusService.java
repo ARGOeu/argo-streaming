@@ -8,6 +8,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profilesmanager.AggregationProfileManager;
@@ -84,7 +85,7 @@ public class CalcStatusService extends RichFlatMapFunction<StatusTimeline, Statu
             cur.setGroup(endpointGroup);
             cur.setFunction(function);
             cur.setService(service);
-            cur.setTimestamp(Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp())));
+            cur.setTimestamp(Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp(), DateTimeZone.UTC)));
             cur.setStatus(opsMgr.getStrStatus(item.getStatus()));
             cur.setHasThr(hasThr);
             out.collect(cur);

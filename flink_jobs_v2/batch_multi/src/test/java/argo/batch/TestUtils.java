@@ -61,7 +61,7 @@ public class TestUtils {
      * @throws ParseException
      * @throws IOException
      */
-    public static ArrayList<StatusTimeline> prepareLevelTimeline(List<StatusTimeline> list, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level, DateTime dtUtc) throws ParseException, IOException {
+    public static ArrayList<StatusTimeline> prepareLevelTimeline(List<StatusTimeline> list, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level, DateTime now) throws ParseException, IOException {
 
         String group = "", function = "", service = "", hostname = "", metric = "";
 
@@ -162,12 +162,12 @@ public class TestUtils {
         if (!added) {
             alltimelines.add(tl);
         }
-        ArrayList<StatusTimeline> timelines = parseEndpTimelines(alltimelines, opsDS, aggrDS, downDS, runDate, level, dtUtc);
+        ArrayList<StatusTimeline> timelines = parseEndpTimelines(alltimelines, opsDS, aggrDS, downDS, runDate, level, now);
 
         return timelines;
     }
 
-    private static ArrayList<StatusTimeline> parseEndpTimelines(ArrayList<ArrayList<StatusTimeline>> timelist, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level, DateTime dtUtc) throws ParseException, IOException {
+    private static ArrayList<StatusTimeline> parseEndpTimelines(ArrayList<ArrayList<StatusTimeline>> timelist, List<String> opsDS, List<String> aggrDS, List<Downtime> downDS, String runDate, LEVEL level, DateTime now) throws ParseException, IOException {
         OperationsManager opsMgr = new OperationsManager();
         opsMgr.loadJsonString(opsDS);
 
@@ -191,7 +191,7 @@ public class TestUtils {
                 hasThr = sm.hasThr();
                 Timeline timeline = new Timeline();
                 for (TimeStatus ts : sm.getTimestamps()) {
-                    timeline.insert(new DateTime(ts.getTimestamp()), ts.getStatus());
+                    timeline.insert(new DateTime(ts.getTimestamp(),DateTimeZone.UTC), ts.getStatus());
 
                 }
                 timeline.optimize();
@@ -224,7 +224,7 @@ public class TestUtils {
                     if (level.equals(LEVEL.HOSTNAME)) {
                         ArrayList<String> downPeriod = downMgr.getPeriod(hostname, service);
                         if (downPeriod != null && !downPeriod.isEmpty()) {
-                            initialTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), opsMgr.getDefaultDownInt(), dtUtc);
+                            initialTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), opsMgr.getDefaultDownInt(), now);
                         }
 
                     }

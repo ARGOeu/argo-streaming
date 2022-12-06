@@ -361,8 +361,8 @@ public class TimelineTest {
     @Test
     public void testFillStatus() throws ParseException {
         DateTimeFormatter dtf = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-          DateTime dtUtc = new DateTime(DateTimeZone.UTC);
-      
+          DateTime now = new DateTime();
+         now= now.withZone(DateTimeZone.UTC);
         Timeline instance = new Timeline();
         instance.insertDateTimeStamps(createTimestampList2(), true);
 
@@ -399,7 +399,7 @@ public class TimelineTest {
         periods.add(period4);
         periods.add(period5);
         for (String[] period : periods) {
-            instance.fillWithStatus(period[0], period[1], 2, dtUtc);
+            instance.fillWithStatus(period[0], period[1], 2, now);
             instance.optimize();
         }
         TreeMap<DateTime, Integer> expResult = createUnknownTimeline();
@@ -441,7 +441,7 @@ public class TimelineTest {
         instance = new Timeline();
         instance.insertDateTimeStamps(createTimestampList2(), true);
         for (String[] period : periods) {
-            instance.fillWithStatus(period[0], period[1], 2, dtUtc);
+            instance.fillWithStatus(period[0], period[1], 2, now);
             instance.optimize();
         }
 
@@ -484,7 +484,7 @@ public class TimelineTest {
         instance = new Timeline();
         instance.insertDateTimeStamps(createTimestampList2(), true);
         for (String[] period : periods) {
-            instance.fillWithStatus(period[0], period[1], 2, dtUtc);
+            instance.fillWithStatus(period[0], period[1], 2, now);
             instance.optimize();
         }
         expResult = createUnknownTimeline3();
@@ -502,7 +502,7 @@ public class TimelineTest {
         instance.insertDateTimeStamps(createTimestampList2(), true);
 
         for (String[] period : periods) {
-            instance.fillWithStatus(period[0], period[1], 2, dtUtc);
+            instance.fillWithStatus(period[0], period[1], 2, now);
             instance.optimize();
         }
         expResult = createUnknownTimeline4();
@@ -545,7 +545,7 @@ public class TimelineTest {
         instance.insertDateTimeStamps(createTimestampList4(), true);
 
         for (String[] period : periods) {
-            instance.fillWithStatus(period[0], period[1], 2, dtUtc);
+            instance.fillWithStatus(period[0], period[1], 2, now);
             instance.optimize();
         }
         expResult = createUnknownTimeline5();

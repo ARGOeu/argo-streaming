@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -77,7 +78,7 @@ public class ArgoMultiJobTest {
     private static boolean calcStatusTrends = false;
     private static boolean calcFlipFlops = false;
     private static boolean calcTagTrends = false;
-
+    
     public ArgoMultiJobTest() {
     }
 
@@ -93,8 +94,8 @@ public class ArgoMultiJobTest {
         System.setProperty("run.date", "2022-01-14");
             
         final ParameterTool params = ParameterTool.fromSystemProperties();
-        DateTime dtUtc=new DateTime(DateTimeZone.UTC);
-
+        DateTime now=new DateTime(DateTimeZone.UTC);
+        
         ApiResourceManager amr = mockAmr();
 
         DataSource<String> cfgDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
@@ -104,7 +105,7 @@ public class ArgoMultiJobTest {
         List<String> confData = confDS.collect();
         ReportManager cfgMgr = new ReportManager();
         cfgMgr.loadJsonString(confData);
-      
+       
         enableComputations(cfgMgr.activeComputations, params);
         DataSource<String> apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
         DataSource<String> opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
@@ -265,13 +266,13 @@ public class ArgoMultiJobTest {
         //*************** Test Endpoint  Timeline
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
-                .reduceGroup(new CalcEndpointTimeline(params, dtUtc)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                .reduceGroup(new CalcEndpointTimeline(params, now)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps").withBroadcastSet(downDS, "down");
         ArrayList<String> aggrJson = new ArrayList();
         aggrJson.add(amr.getResourceJSON(ApiResource.AGGREGATION));
 
-        ArrayList<StatusTimeline> expEndpTimelines = TestUtils.prepareLevelTimeline(expMetricTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.HOSTNAME, dtUtc);
+        ArrayList<StatusTimeline> expEndpTimelines = TestUtils.prepareLevelTimeline(expMetricTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.HOSTNAME, now);
         Assert.assertEquals(TestUtils.compareLists(expEndpTimelines, statusEndpointTimeline.collect()), true);
 
         //*************** Test Service Timeline
@@ -279,7 +280,7 @@ public class ArgoMultiJobTest {
                 .reduceGroup(new CalcServiceTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
-        ArrayList<StatusTimeline> expServTimelines = TestUtils.prepareLevelTimeline(expEndpTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.SERVICE, dtUtc);
+        ArrayList<StatusTimeline> expServTimelines = TestUtils.prepareLevelTimeline(expEndpTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.SERVICE, now);
         Assert.assertEquals(TestUtils.compareLists(expServTimelines, statusServiceTimeline.collect()), true);
 
         //*************** Test Function Timeline
@@ -288,7 +289,7 @@ public class ArgoMultiJobTest {
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
 
-        ArrayList<StatusTimeline> expFunctionTimelines = TestUtils.prepareLevelTimeline(expServTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.FUNCTION, dtUtc);
+        ArrayList<StatusTimeline> expFunctionTimelines = TestUtils.prepareLevelTimeline(expServTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.FUNCTION, now);
         Assert.assertEquals(TestUtils.compareLists(expFunctionTimelines, statusEndGroupFunctionTimeline.collect()), true);
 
         //*************** Test Group Timeline
@@ -296,7 +297,7 @@ public class ArgoMultiJobTest {
                 .reduceGroup(new CalcGroupTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(apsDS, "aps");
-        ArrayList<StatusTimeline> expGroupTimelines = TestUtils.prepareLevelTimeline(expFunctionTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.GROUP, dtUtc);
+        ArrayList<StatusTimeline> expGroupTimelines = TestUtils.prepareLevelTimeline(expFunctionTimelines, opsJson, aggrJson, downDS.collect(), params.get("run.date"), LEVEL.GROUP, now);
         Assert.assertEquals(TestUtils.compareLists(expGroupTimelines, statusGroupTimeline.collect()), true);
 
         if (calcStatus) {
@@ -469,7 +470,7 @@ public class ArgoMultiJobTest {
             List<ServiceAR> expectedServAr = TestUtils.prepareServiceAR(servArData, params.get("run.date"));
 
             Assert.assertEquals(TestUtils.compareLists(expectedServAr, serviceArDS.collect()), true);
-            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params,dtUtc)).withBroadcastSet(mpsDS, "mps")
+            DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params,now)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(cfgDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
             List<TestUtils.ArItem> groupArData = loadExpectedArData(groupExpectedData, LEVEL.GROUP, env);

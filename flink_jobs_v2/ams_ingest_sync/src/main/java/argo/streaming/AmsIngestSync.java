@@ -1,8 +1,8 @@
-package ams.publisher;
+package argo.streaming;
 
-import java.util.ArrayList;
-import java.util.List;
+import ams.connector.ArgoMessagingSource;
 import java.util.concurrent.TimeUnit;
+import org.apache.flink.api.common.JobID;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
@@ -11,25 +11,27 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
- * AmsPublisher implements a flink connector to messaging system
- * parameters: 
- * --ams.endpoint : ARGO messaging api endoint to connect to
- * msg.example.com 
- * --ams.port : ARGO messaging api port
- * --ams.token : ARGO  messaging  api token of publisher
- * --ams.project : ARGO messaging api project to connect to
- * --ams.topic : ARGO messaging topic to publish messages
+ * Flink Streaming JOB for Ingesting Sync Data to HDFS job required cli
+ * parameters: --ams.endpoint : ARGO messaging api endoint to connect to
+ * msg.example.com --ams.port : ARGO messaging api port --ams.token : ARGO
+ * messaging api token --ams.project : ARGO messaging api project to connect to
+ * --ams.sub.metric : ARGO messaging subscription to pull metric data from
+ * --ams.sub.sync : ARGO messaging subscription to pull sync data from
+ * --hdfs.path : Hdfs destination path to store the data --ams.batch : num of
+ * messages to be retrieved per request to AMS service --ams.interval : interval
+ * (in ms) between AMS service requests --ams.proxy : optional http proxy url
  * --ams.verify : optional turn on/off ssl verify
- * --ams.interval : optional interval to timeout connection
- 
+ *
+ * --run.date : optional date to run ingestion
  */
-public class AmsPublisher {
+public class AmsIngestSync {
 
     // setup logger
-    static Logger LOG = LoggerFactory.getLogger(AmsPublisher.class);
-
+    static Logger LOG = LoggerFactory.getLogger(AmsIngestSync.class);
+    private static String runDate;
     /**
      * Check if a list of expected cli arguments have been provided to this
      * flink job
@@ -49,12 +51,13 @@ public class AmsPublisher {
      * Check if flink job has been called with ams rate params
      */
     public static boolean hasAmsRateArgs(ParameterTool paramTool) {
-        String args[] = {"ams.interval"};
+        String args[] = {"ams.batch", "ams.interval"};
         return hasArgs(args, paramTool);
     }
 
     // main job function
     public static void main(String[] args) throws Exception {
+        configJID();
 
         // Create flink execution enviroment
         StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -66,21 +69,29 @@ public class AmsPublisher {
 
         // Initialize Input Source : ARGO Messaging Source
         String endpoint = parameterTool.getRequired("ams.endpoint");
-        String port = parameterTool.get("ams.port");
+        String port = parameterTool.getRequired("ams.port");
         String token = parameterTool.getRequired("ams.token");
         String project = parameterTool.getRequired("ams.project");
-        String topic = parameterTool.getRequired("ams.topic");
+        String sub = parameterTool.getRequired("ams.sub");
+        String basePath = parameterTool.getRequired("hdfs.path");
+        runDate = parameterTool.get("run.date");
+        if (runDate != null) {
+            runDate = runDate + "T00:00:00.000Z";
+        }
+           
+ 
 
         // set ams client batch and interval to default values
-        //int batch = 1;
+        int batch = 1;
         long interval = 100L;
 
         if (hasAmsRateArgs(parameterTool)) {
+            batch = parameterTool.getInt("ams.batch");
             interval = parameterTool.getLong("ams.interval");
         }
 
         //Ingest sync avro encoded data from AMS endpoint
-        ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, token, project, topic, interval);
+        ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval, runDate);
 
         if (parameterTool.has("ams.verify")) {
             ams.setVerify(parameterTool.getBoolean("ams.verify"));
@@ -89,28 +100,34 @@ public class AmsPublisher {
         if (parameterTool.has("ams.proxy")) {
             ams.setProxy(parameterTool.get("ams.proxy"));
         }
+        DataStream<String> syncDataStream = see
+                .addSource(ams);
 
-        List<String> events = new ArrayList<>();
-        int i;
-        for (i = 0; i < 10; i++) {
-            events.add("hello world! _ "+i);
-        }
-        DataStream<String> eventstreams = see.fromCollection(events);
-        eventstreams.addSink(ams);
+        SyncHDFSOutputFormat hdfsOut = new SyncHDFSOutputFormat();
+        hdfsOut.setBasePath(basePath);
+
+        syncDataStream.writeUsingOutputFormat(hdfsOut);
 
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
-        jobTitleSB.append("Publish  data to AMS ");
+        jobTitleSB.append("Ingesting sync data from ");
         jobTitleSB.append(endpoint);
         jobTitleSB.append(":");
         jobTitleSB.append(port);
         jobTitleSB.append("/v1/projects/");
         jobTitleSB.append(project);
-        jobTitleSB.append("/topic/");
-        jobTitleSB.append(topic);
+        jobTitleSB.append("/subscriptions/");
+        jobTitleSB.append(sub);
 
         see.execute(jobTitleSB.toString());
 
     }
+    private static String getJID() {
+        return JobID.generate().toString();
+    }
 
+    private static void configJID() {
+        String jobId = getJID();
+        MDC.put("JID", jobId);
+    }
 }

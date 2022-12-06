@@ -21,6 +21,7 @@ import com.mongodb.client.model.UpdateOptions;
 import java.util.Iterator;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.json.simple.JSONObject;
 
 /**
@@ -90,7 +91,7 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
         this.mDB = mClient.getDatabase(dbName);
         this.mCol = mDB.getCollection(colName);
         if (this.clearMongo) {
-            String oidString = Long.toHexString(new DateTime().getMillis() / 1000L) + "0000000000000000";
+            String oidString = Long.toHexString(new DateTime(DateTimeZone.UTC).getMillis() / 1000L) + "0000000000000000";
             this.nowId = new ObjectId(oidString);
         }
 

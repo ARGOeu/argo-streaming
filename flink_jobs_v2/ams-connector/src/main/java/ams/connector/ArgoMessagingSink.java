@@ -1,4 +1,5 @@
-package ams.publisher;
+package ams.connector;
+
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
@@ -22,12 +23,13 @@ public class ArgoMessagingSink extends RichSinkFunction<String> {
     private boolean verify = true;
     private boolean useProxy = false;
     private String proxyURL = "";
+    private String date;
 //    private transient Object rateLck; // lock for waiting to establish rate
 
     //  private volatile boolean isRunning = true;
     private ArgoMessagingClient client = null;
 
-    public ArgoMessagingSink(String endpoint, String port, String token, String project, String topic, Long interval) {
+    public ArgoMessagingSink(String endpoint, String port, String token, String project, String topic, Long interval, String date) {
         this.endpoint = endpoint;
         this.port = port;
         this.token = token;
@@ -35,6 +37,7 @@ public class ArgoMessagingSink extends RichSinkFunction<String> {
         this.topic = topic;
         this.interval = interval;
         this.verify = true;
+        this.date=date;
 
     }
 
@@ -45,7 +48,7 @@ public class ArgoMessagingSink extends RichSinkFunction<String> {
         if (this.port != null && !this.port.isEmpty()) {
             fendpoint = this.endpoint + ":" + port;
         }
-        client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.topic, this.verify);
+        client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.topic, this.verify, this.date);
         if (this.useProxy) {
             client.setProxy(this.proxyURL);
         }
@@ -53,7 +56,11 @@ public class ArgoMessagingSink extends RichSinkFunction<String> {
 
     @Override
     public void invoke(String in) throws Exception {
+        //  boolean isValid = true;
+        // boolean isValid=this.client.validate();
+        //if (isValid) {
         this.client.publish(in);
+        //}
     }
 
     @Override

@@ -4,6 +4,7 @@
  * and open the template in the editor.
  */
 package utils;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.TimeZone;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Minutes;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -30,35 +32,39 @@ public class Utils {
     }
 
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
-        DateTimeFormatter formatter = DateTimeFormat.forPattern(format);
-        DateTime dt = formatter.parseDateTime(dateStr);
-        return dt;
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Date date = sdf.parse(dateStr);
+        return new DateTime(date.getTime(), DateTimeZone.UTC);
+
     }
 
     public static DateTime createDate(String format, Date dateStr, int hour, int min, int sec) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        sdf.setTimeZone(TimeZone.getDefault());
         Calendar newCalendar = Calendar.getInstance();
+        newCalendar.setTimeZone(TimeZone.getTimeZone("UTC"));
+
         newCalendar.setTime(dateStr);
 
         newCalendar.set(Calendar.HOUR_OF_DAY, hour);
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
-        return new DateTime(newCalendar.getTime());
+        return new DateTime(newCalendar.getTime(), DateTimeZone.UTC);
     }
 
     public static boolean isPreviousDate(String format, Date nowDate, Date firstDate) throws ParseException {
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
         Calendar cal = Calendar.getInstance();
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        sdf.setTimeZone(TimeZone.getDefault());
+        cal.setTimeZone(TimeZone.getTimeZone("UTC"));
         cal.setTime(nowDate);
 
         Calendar calFirst = Calendar.getInstance();
+        calFirst.setTimeZone(TimeZone.getTimeZone("UTC"));
+
         calFirst.setTime(firstDate);
 
         if (firstDate.before(nowDate)) {
@@ -68,7 +74,7 @@ public class Utils {
         }
     }
 
-    public static boolean checkParameters(ParameterTool params, String... vars) {
+    public static boolean checkParameters(ParameterTool params,String... vars) {
 
         for (String var : vars) {
 
@@ -84,10 +90,10 @@ public class Utils {
     public static DateTime createDate(String format, int year, int month, int day, int hour, int min, int sec) throws ParseException {
 
         // String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        sdf.setTimeZone(TimeZone.getDefault());
         Calendar newCalendar = Calendar.getInstance();
+        newCalendar.setTimeZone(TimeZone.getTimeZone("UTC"));
         newCalendar.set(Calendar.YEAR, year);
+
         newCalendar.set(Calendar.MONTH, month);
         newCalendar.set(Calendar.DAY_OF_MONTH, day);
 
@@ -96,22 +102,21 @@ public class Utils {
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, 0);
 
-        return new DateTime(newCalendar.getTime());
+        return new DateTime(newCalendar.getTime(), DateTimeZone.UTC);
     }
 
     public static DateTime setTime(String format, DateTime dateStr, int hour, int min, int sec, int mill) throws ParseException {
 
         //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        sdf.setTimeZone(TimeZone.getDefault());
         Calendar newCalendar = Calendar.getInstance();
+        newCalendar.setTimeZone(TimeZone.getTimeZone("UTC"));
         newCalendar.setTime(dateStr.toDate());
 
         newCalendar.set(Calendar.HOUR_OF_DAY, hour);
         newCalendar.set(Calendar.MINUTE, min);
         newCalendar.set(Calendar.SECOND, sec);
         newCalendar.set(Calendar.MILLISECOND, mill);
-        return new DateTime(newCalendar.getTime());
+        return new DateTime(newCalendar.getTime(), DateTimeZone.UTC);
     }
 
     public static int calcDayMinutes(DateTime startDay, DateTime endDay) throws ParseException {

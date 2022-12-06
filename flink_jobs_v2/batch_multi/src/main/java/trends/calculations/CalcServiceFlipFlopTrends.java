@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import timelines.Timeline;
@@ -39,7 +40,7 @@ public class CalcServiceFlipFlopTrends implements FlatMapFunction<StatusTimeline
 
         TreeMap<DateTime, Integer> timestampMap = new TreeMap();
         for (TimeStatus ts : timestatusList) {
-            timestampMap.put(new DateTime(ts.getTimestamp()), ts.getStatus());
+            timestampMap.put(new DateTime(ts.getTimestamp(), DateTimeZone.UTC), ts.getStatus());
         }
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timestampMap, true);

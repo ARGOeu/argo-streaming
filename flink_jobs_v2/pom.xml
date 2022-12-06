@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>flink.jobs.v2</groupId>
     <artifactId>flink_jobs_v2</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -16,8 +16,10 @@
         <module>Timelines</module>
         <module>ProfilesManager</module>
         <module>batch_multi</module>
-        <module>stream_status</module>
-         <module>AmsPublisher</module>
+        <module>stream_status</module>         
+         <module>ams_ingest_metric</module>         
+         <module>ams_ingest_sync</module>
+        <module>ams-connector</module>
     </modules>
     <dependencyManagement>
         <dependencies>
