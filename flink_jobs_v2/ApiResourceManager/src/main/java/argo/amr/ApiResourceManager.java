@@ -297,7 +297,6 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/downtimes?date=%s";
         String fullURL = String.format(path, this.endpoint, this.date);
         String content = this.requestManager.getResource(fullURL);
-
         this.data.put(ApiResource.DOWNTIMES, this.apiResponseParser.getJsonData(content, false));
 
     }
