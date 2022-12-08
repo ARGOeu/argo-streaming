@@ -223,19 +223,7 @@ public class AmsIngestMetric {
             metricDataPOJO.addSink(bs);
         }
 
-        // Check if saving to Hbase is desired
-        if (hasHbaseArgs(parameterTool)) {
-            // Initialize Output : Hbase Output Format
-            HBaseMetricOutputFormat hbf = new HBaseMetricOutputFormat();
-            hbf.setMaster(parameterTool.getRequired("hbase.master"));
-            hbf.setMasterPort(parameterTool.getRequired("hbase.master-port"));
-            hbf.setZkQuorum(parameterTool.getRequired("hbase.zk.quorum"));
-            hbf.setZkPort(parameterTool.getRequired("hbase.zk.port"));
-            hbf.setNamespace(parameterTool.getRequired("hbase.namespace"));
-            hbf.setTableName(parameterTool.getRequired("hbase.table"));
-
-            metricDataPOJO.writeUsingOutputFormat(hbf);
-        }
+        
 
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
