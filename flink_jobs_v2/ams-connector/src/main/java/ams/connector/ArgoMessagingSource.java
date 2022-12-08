@@ -30,6 +30,8 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 	private boolean useProxy = false;
 	private String proxyURL = "";
 	private transient Object rateLck; // lock for waiting to establish rate
+	private boolean advanceOffset = true;
+	
 
 	private volatile boolean isRunning = true;
 
@@ -47,6 +49,21 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 		this.batch = batch;
 		this.verify = true;
 		this.runDate=runDate;
+
+	}
+	
+	// second constructor with advanceOffset parametter
+	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub, int batch, Long interval, String runDate, boolean advanceOffset) {
+		this.endpoint = endpoint;
+		this.port = port;
+		this.token = token;
+		this.project = project;
+		this.sub = sub;
+		this.interval = interval;
+		this.batch = batch;
+		this.verify = true;
+		this.runDate=runDate;
+		this.advanceOffset = advanceOffset;
 
 	}
 
@@ -115,8 +132,16 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 			if (this.useProxy) {
 				client.setProxy(this.proxyURL);
 			}
-                        int offset=client.offset(); //get the offset of the subscription, that corresponds to the date
-                        client.modifyOffset(offset); //mofify the offset of the subscription to point to the offset index of the date. if date is null then the index points to the latest offset (max)
+            
+			// if advanceOffset is set to true (default) advance the offset to latest or based to the run date provided
+			if (advanceOffset) {
+				// get the offset of the subscription, that corresponds to the date
+				int offset=client.offset(); 
+				// mofify the offset of the subscription to point to the offset index of the date. 
+				// if date is null then the index points to the latest offset (max)
+	            client.modifyOffset(offset); 
+			}
+			
 		} catch (KeyManagementException e) {
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {

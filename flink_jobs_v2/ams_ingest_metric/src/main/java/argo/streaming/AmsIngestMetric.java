@@ -34,7 +34,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import argo.avro.MetricData;
-import argo.avro.MetricDataOld;
 import org.apache.flink.api.common.JobID;
 import org.slf4j.MDC;
 
@@ -57,7 +56,8 @@ import org.slf4j.MDC;
  * optional turn on/off ssl verify
  */
 public class AmsIngestMetric {
-    // setup logger
+    private static final DatumReader<MetricData> METRIC_DATA_READER = (DatumReader<MetricData>)new SpecificData().createDatumReader(MetricData.getClassSchema());
+	// setup logger
 
     static Logger LOG = LoggerFactory.getLogger(AmsIngestMetric.class);
     private static String runDate;
@@ -156,7 +156,7 @@ public class AmsIngestMetric {
         }
 
         // Ingest sync avro encoded data from AMS endpoint
-        ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval, runDate);
+        ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval, runDate, false);
 
         if (parameterTool.has("ams.verify")) {
             ams.setVerify(parameterTool.getBoolean("ams.verify"));
@@ -188,18 +188,14 @@ public class AmsIngestMetric {
                 byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
                 // Decode from avro
 
-                DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema());
+                
+               
+               
                 Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
 
                 MetricData item;
-                try {
-                    item = avroReader.read(null, decoder);
-                } catch (java.io.EOFException ex) {
-                    //convert from old to new
-                    avroReader = new SpecificDatumReader<MetricData>(MetricDataOld.getClassSchema(), MetricData.getClassSchema());
-                    decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
-                    item = avroReader.read(null, decoder);
-                }
+                item = METRIC_DATA_READER.read(null, decoder);
+               
                 if (item != null) {
                     LOG.info("Captured data -- {}", item.toString());
                     out.collect(item);
