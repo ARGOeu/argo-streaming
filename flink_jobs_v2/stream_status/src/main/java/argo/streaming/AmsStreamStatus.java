@@ -104,8 +104,7 @@ public class AmsStreamStatus {
     private static String runDate;
     private static String apiToken;    
     private static String apiEndpoint;
-    private static ApiResourceManager amr;
- 
+
     /**
      * Sets configuration parameters to streaming enviroment
      *
@@ -213,7 +212,7 @@ public class AmsStreamStatus {
             String strictParam = parameterTool.get("interval.strict");
             strictInterval = getInterval(strictParam);
         }
-        amr = new ApiResourceManager(apiEndpoint, apiToken);
+       ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
 
         // fetch
         // set params
@@ -358,6 +357,7 @@ public class AmsStreamStatus {
         public MetricProfileManager mps;
 
         public StatusConfig config;
+        private ApiResourceManager amr;
 
         public MetricDataWithGroup(StatusConfig config) {
             LOG.info("Created new Status map");
@@ -373,19 +373,19 @@ public class AmsStreamStatus {
         @Override
         public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
 
-            ApiResourceManager amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
-            amr.setDate(config.runDate);
-            amr.setTimeoutSec((int) config.timeout);
+             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+            this.amr.setDate(config.runDate);
+            this.amr.setTimeoutSec((int) config.timeout);
 
             if (config.apiProxy != null) {
-                amr.setProxy(config.apiProxy);
+                this.amr.setProxy(config.apiProxy);
             }
 
-            amr.setReportID(config.reportID);
-            amr.getRemoteAll();
+            this.amr.setReportID(config.reportID);
+            this.amr.getRemoteAll();
 
-            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(amr.getListMetrics()));
-            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
+            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
+            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
             mps = new MetricProfileManager();
             mps.loadFromList(mpsList);
@@ -498,6 +498,7 @@ public class AmsStreamStatus {
         public int initStatus;
         public int looseInterval;
         public int strictInterval;
+        private   ApiResourceManager amr;
 
         public StatusMap(StatusConfig config, int looseInterval, int strictInterval) {
             LOG.info("Created new Status map");
@@ -518,25 +519,25 @@ public class AmsStreamStatus {
 
             pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 
-            ApiResourceManager amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
-            amr.setDate(config.runDate);
-            amr.setTimeoutSec((int) config.timeout);
+            this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+           this.amr.setDate(config.runDate);
+            this.amr.setTimeoutSec((int) config.timeout);
             if (config.apiProxy != null) {
-                amr.setProxy(config.apiProxy);
+                this.amr.setProxy(config.apiProxy);
             }
 
-            amr.setReportID(config.reportID);
-            amr.getRemoteAll();
+           this.amr.setReportID(config.reportID);
+           this.amr.getRemoteAll();
 
-            String opsJSON = amr.getResourceJSON(ApiResource.OPS);
-            String apsJSON = amr.getResourceJSON(ApiResource.AGGREGATION);
+            String opsJSON = this.amr.getResourceJSON(ApiResource.OPS);
+            String apsJSON = this.amr.getResourceJSON(ApiResource.AGGREGATION);
             ArrayList<String> opsList = new ArrayList();
             opsList.add(opsJSON);
             ArrayList<String> apsList = new ArrayList();
             apsList.add(apsJSON);
-            ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(amr.getListDowntimes()));
-            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(amr.getListMetrics()));
-            ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
+            ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
+            ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
             // create a new status manager
             sm = new StatusManager();
@@ -544,7 +545,7 @@ public class AmsStreamStatus {
             sm.setStrictInterval(strictInterval);
             // sm.setTimeout(config.timeout);
             sm.setReport(config.report);
-            sm.setGroupType(amr.getEgroup());
+            sm.setGroupType(this.amr.getEgroup());
             // load all the connector data
             sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsList);
 
@@ -580,10 +581,10 @@ public class AmsStreamStatus {
             String dayStamp = tsMon.split("T")[0];
             
               if (!sm.checkIfExistDowntime(dayStamp)) {
-                amr.setDate(dayStamp);
-                amr.getRemoteDowntimes();
-                ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(amr.getListDowntimes()));
-                sm.addDowntimeSet(dayStamp, downList);
+                  this.amr.setDate(dayStamp);
+                  this.amr.getRemoteDowntimes();
+                  ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+                  sm.addDowntimeSet(dayStamp, downList);
             }
 
             // if daily generation is enable check if has day changed?
