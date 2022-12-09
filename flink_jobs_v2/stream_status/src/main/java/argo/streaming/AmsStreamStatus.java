@@ -96,6 +96,9 @@ import status.StatusManager;
  * Any of these formats is transformed to minutes in the computations if not
  * defined the default value is 1440m
  *
+ * -- latest.offset (Optional) boolean true/false, to define if the argo messaging source 
+ * should set offset at the latest or at the start of the runDate. By default,  if not defined , the 
+ * offset should be the latest.
  */
 public class AmsStreamStatus {
     // setup logger
@@ -238,7 +241,11 @@ public class AmsStreamStatus {
 
         // Establish the metric data AMS stream
         // Ingest sync avro encoded data from AMS endpoint
-        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, runDate);
+        String offsetDt=null;
+        if(!parameterTool.getBoolean("latest.offset")){
+         offsetDt=runDate;
+        }
+        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
         ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
 
         if (parameterTool.has("ams.verify")) {
