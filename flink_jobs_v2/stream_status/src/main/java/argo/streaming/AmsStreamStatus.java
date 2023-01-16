@@ -242,7 +242,7 @@ public class AmsStreamStatus {
         // Establish the metric data AMS stream
         // Ingest sync avro encoded data from AMS endpoint
         String offsetDt=null;
-        if(!parameterTool.getBoolean("latest.offset")){
+        if(parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")){
          offsetDt=runDate;
         }
         ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
