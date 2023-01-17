@@ -14,8 +14,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,13 +103,11 @@ public class ApiResponseParser {
         this.egroup = egroup;
     }
 
-
     /**
      * Extract first JSON item from data JSON array in api response
      *
      * @param content JSON content of the full repsonse (status + data)
      * @return First available item in data array as JSON string representation
-     *
      */
     public String getJsonData(String content, boolean asArray) {
 
@@ -118,10 +116,17 @@ public class ApiResponseParser {
         JsonElement jElement = jsonParser.parse(content);
         JsonObject jRoot = jElement.getAsJsonObject();
         // Get the data array and the first item
+
         if (asArray) {
+            if (jRoot.get("data") == null) {
+                return null;
+            }
             return jRoot.get("data").toString();
         }
         JsonArray jData = jRoot.get("data").getAsJsonArray();
+        if (!jData.iterator().hasNext()) {
+            return null;
+        }
         JsonElement jItem = jData.get(0);
         return jItem.toString();
     }
@@ -161,6 +166,21 @@ public class ApiResponseParser {
 
         }
 
+    }
+
+    public List<String> getListTenants(String content) {
+        List<String> results = new ArrayList<String>();
+
+        JsonParser jsonParser = new JsonParser();
+        JsonElement jElement = jsonParser.parse(content);
+        JsonArray jArray = jElement.getAsJsonArray();
+        JsonObject jRoot = jArray.get(0).getAsJsonObject();
+        JsonArray tenants = jRoot.get("tenants").getAsJsonArray();
+        for (int i = 0; i < tenants.size(); i++) {
+            String jItem = tenants.get(i).getAsString();
+            results.add(jItem);
+        }
+        return results;
     }
 
     /**
