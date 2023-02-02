@@ -4,11 +4,11 @@
     <parent>
         <groupId>flink.jobs.v2</groupId>
         <artifactId>flink_jobs_v2</artifactId>
-        <version>2.1.0</version>
+        <version>2.1.1</version>
     </parent> 
     <groupId>timeline.manager</groupId>
     <artifactId>Timelines</artifactId>
-    <version>2.1.0</version>
+    <version>2.1.1</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
