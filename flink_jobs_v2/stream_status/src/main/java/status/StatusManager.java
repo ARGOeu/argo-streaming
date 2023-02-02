@@ -1179,4 +1179,10 @@ public class StatusManager {
         return false;
 
     }
+    
+    public boolean checkIfExistDowntime(String timestamp) {
+
+        return this.dc.getCache().keySet().contains(timestamp);
+    }
+
 }

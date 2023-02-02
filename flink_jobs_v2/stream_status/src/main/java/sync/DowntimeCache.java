@@ -120,4 +120,9 @@ public class DowntimeCache {
 		return this.cache.toString();
 	}
 
+    public TreeMap<String, DowntimeManager> getCache() {
+        return cache;
+    }
+        
+
 }

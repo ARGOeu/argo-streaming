@@ -1,18 +1,14 @@
 package argo.streaming;
 
 import ams.connector.ArgoMessagingSource;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificData;
-import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -34,7 +30,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import argo.avro.MetricData;
-import argo.avro.MetricDataOld;
 import org.apache.flink.api.common.JobID;
 import org.slf4j.MDC;
 
@@ -57,7 +52,8 @@ import org.slf4j.MDC;
  * optional turn on/off ssl verify
  */
 public class AmsIngestMetric {
-    // setup logger
+    private static final DatumReader<MetricData> METRIC_DATA_READER = (DatumReader<MetricData>)new SpecificData().createDatumReader(MetricData.getClassSchema());
+	// setup logger
 
     static Logger LOG = LoggerFactory.getLogger(AmsIngestMetric.class);
     private static String runDate;
@@ -156,7 +152,7 @@ public class AmsIngestMetric {
         }
 
         // Ingest sync avro encoded data from AMS endpoint
-        ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval, runDate);
+        ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval, runDate, false);
 
         if (parameterTool.has("ams.verify")) {
             ams.setVerify(parameterTool.getBoolean("ams.verify"));
@@ -188,18 +184,14 @@ public class AmsIngestMetric {
                 byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
                 // Decode from avro
 
-                DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema());
+                
+               
+               
                 Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
 
                 MetricData item;
-                try {
-                    item = avroReader.read(null, decoder);
-                } catch (java.io.EOFException ex) {
-                    //convert from old to new
-                    avroReader = new SpecificDatumReader<MetricData>(MetricDataOld.getClassSchema(), MetricData.getClassSchema());
-                    decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
-                    item = avroReader.read(null, decoder);
-                }
+                item = METRIC_DATA_READER.read(null, decoder);
+               
                 if (item != null) {
                     LOG.info("Captured data -- {}", item.toString());
                     out.collect(item);
@@ -231,19 +223,7 @@ public class AmsIngestMetric {
             metricDataPOJO.addSink(bs);
         }
 
-        // Check if saving to Hbase is desired
-        if (hasHbaseArgs(parameterTool)) {
-            // Initialize Output : Hbase Output Format
-            HBaseMetricOutputFormat hbf = new HBaseMetricOutputFormat();
-            hbf.setMaster(parameterTool.getRequired("hbase.master"));
-            hbf.setMasterPort(parameterTool.getRequired("hbase.master-port"));
-            hbf.setZkQuorum(parameterTool.getRequired("hbase.zk.quorum"));
-            hbf.setZkPort(parameterTool.getRequired("hbase.zk.port"));
-            hbf.setNamespace(parameterTool.getRequired("hbase.namespace"));
-            hbf.setTableName(parameterTool.getRequired("hbase.table"));
-
-            metricDataPOJO.writeUsingOutputFormat(hbf);
-        }
+        
 
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();

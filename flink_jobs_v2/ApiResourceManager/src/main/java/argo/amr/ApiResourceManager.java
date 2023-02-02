@@ -33,6 +33,7 @@ public class ApiResourceManager {
     private String weightsID;
     private RequestManager requestManager;
     private ApiResponseParser apiResponseParser;
+    private boolean isCombined;
     //private boolean verify;
     //private int timeoutSec;
 
@@ -47,8 +48,8 @@ public class ApiResourceManager {
         this.reportID = "";
         this.date = "";
         this.weightsID = "";
-        this.tenant="";
-        this.egroup="";
+        this.tenant = "";
+        this.egroup = "";
         this.requestManager = new RequestManager("", this.token);
         this.apiResponseParser = new ApiResponseParser(this.reportName, this.metricID, this.aggregationID, this.opsID, this.threshID, this.tenant, this.egroup);
     }
@@ -182,8 +183,6 @@ public class ApiResourceManager {
     public void setEgroup(String egroup) {
         this.egroup = egroup;
     }
-    
-    
 
     /**
      * Retrieves the remote report configuration based on reportID main class
@@ -297,7 +296,6 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/downtimes?date=%s";
         String fullURL = String.format(path, this.endpoint, this.date);
         String content = this.requestManager.getResource(fullURL);
-
         this.data.put(ApiResource.DOWNTIMES, this.apiResponseParser.getJsonData(content, false));
 
     }
@@ -353,8 +351,8 @@ public class ApiResourceManager {
         this.opsID = this.apiResponseParser.getOpsID();
         this.threshID = this.apiResponseParser.getThreshID();
         this.reportName = this.apiResponseParser.getReportName();
-        this.tenant=this.apiResponseParser.getTenant();
-        this.egroup=this.apiResponseParser.getEgroup();
+        this.tenant = this.apiResponseParser.getTenant();
+        this.egroup = this.apiResponseParser.getEgroup();
     }
 
     /**
@@ -459,11 +457,42 @@ public class ApiResourceManager {
     }
 
     /**
+     * Retrieves the remote report configuration based on reportID main class
+     * attribute and stores the content in the enum map
+     */
+    public void getRemoteTenantFeed() {
+        String path = "https://%s/api/v2/feeds/data";
+        String fullURL = String.format(path, this.endpoint);
+        String content = this.requestManager.getResource(fullURL);
+        if (content != null) {
+            this.data.put(ApiResource.TENANTFEED, this.apiResponseParser.getJsonData(content, true));
+        }
+    }
+
+    public String[] getListTenants() {
+        List<String> results = new ArrayList<String>();
+        if (!this.data.containsKey(ApiResource.TENANTFEED)) {
+            String[] rArr = new String[results.size()];
+            rArr = results.toArray(rArr);
+            return rArr;
+        }
+
+        String content = this.data.get(ApiResource.TENANTFEED);
+        results = this.apiResponseParser.getListTenants(content);
+        String[] rArr = new String[results.size()];
+        rArr = results.toArray(rArr);
+        return rArr;
+    }
+
+    /**
      * Executes all steps to retrieve the complete amount of the available
      * profile, topology, weights and downtime information from argo-web-api
      */
     public void getRemoteAll() {
         // Start with report and configuration
+        if (isCombined) {
+            this.getRemoteTenantFeed();
+        }
         this.getRemoteConfig();
         // parse remote report config to be able to get the other profiles
 
@@ -487,6 +516,14 @@ public class ApiResourceManager {
         // get recomptations
         this.getRemoteRecomputations();
         this.getRemoteMetricTags();
+    }
+
+    public boolean isIsCombined() {
+        return isCombined;
+    }
+
+    public void setIsCombined(boolean isCombined) {
+        this.isCombined = isCombined;
     }
 
 }

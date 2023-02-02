@@ -49,6 +49,7 @@ import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import java.text.SimpleDateFormat;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.core.fs.FileSystem;
@@ -95,13 +96,18 @@ import status.StatusManager;
  * Any of these formats is transformed to minutes in the computations if not
  * defined the default value is 1440m
  *
+ * -- latest.offset (Optional) boolean true/false, to define if the argo messaging source 
+ * should set offset at the latest or at the start of the runDate. By default,  if not defined , the 
+ * offset should be the latest.
  */
 public class AmsStreamStatus {
     // setup logger
 
     static Logger LOG = LoggerFactory.getLogger(AmsStreamStatus.class);
     private static String runDate;
- 
+    private static String apiToken;    
+    private static String apiEndpoint;
+
     /**
      * Sets configuration parameters to streaming enviroment
      *
@@ -188,8 +194,8 @@ public class AmsStreamStatus {
         String subMetric = parameterTool.getRequired("ams.sub.metric");
 
       
-        String apiEndpoint = parameterTool.getRequired("api.endpoint");
-        String apiToken = parameterTool.getRequired("api.token");
+        apiEndpoint = parameterTool.getRequired("api.endpoint");
+        apiToken = parameterTool.getRequired("api.token");
         String reportID = parameterTool.getRequired("report.uuid");
         int apiInterval = parameterTool.getInt("api.interval");
         runDate = parameterTool.get("run.date");
@@ -209,7 +215,7 @@ public class AmsStreamStatus {
             String strictParam = parameterTool.get("interval.strict");
             strictInterval = getInterval(strictParam);
         }
-        ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
+       ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
 
         // fetch
         // set params
@@ -235,7 +241,11 @@ public class AmsStreamStatus {
 
         // Establish the metric data AMS stream
         // Ingest sync avro encoded data from AMS endpoint
-        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, runDate);
+        String offsetDt=null;
+        if(parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")){
+         offsetDt=runDate;
+        }
+        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
         ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
 
         if (parameterTool.has("ams.verify")) {
@@ -354,6 +364,7 @@ public class AmsStreamStatus {
         public MetricProfileManager mps;
 
         public StatusConfig config;
+        private ApiResourceManager amr;
 
         public MetricDataWithGroup(StatusConfig config) {
             LOG.info("Created new Status map");
@@ -369,19 +380,19 @@ public class AmsStreamStatus {
         @Override
         public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
 
-            ApiResourceManager amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
-            amr.setDate(config.runDate);
-            amr.setTimeoutSec((int) config.timeout);
+             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+            this.amr.setDate(config.runDate);
+            this.amr.setTimeoutSec((int) config.timeout);
 
             if (config.apiProxy != null) {
-                amr.setProxy(config.apiProxy);
+                this.amr.setProxy(config.apiProxy);
             }
 
-            amr.setReportID(config.reportID);
-            amr.getRemoteAll();
+            this.amr.setReportID(config.reportID);
+            this.amr.getRemoteAll();
 
-            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(amr.getListMetrics()));
-            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
+            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
+            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
             mps = new MetricProfileManager();
             mps.loadFromList(mpsList);
@@ -494,6 +505,7 @@ public class AmsStreamStatus {
         public int initStatus;
         public int looseInterval;
         public int strictInterval;
+        private   ApiResourceManager amr;
 
         public StatusMap(StatusConfig config, int looseInterval, int strictInterval) {
             LOG.info("Created new Status map");
@@ -514,25 +526,25 @@ public class AmsStreamStatus {
 
             pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 
-            ApiResourceManager amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
-            amr.setDate(config.runDate);
-            amr.setTimeoutSec((int) config.timeout);
+            this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+           this.amr.setDate(config.runDate);
+            this.amr.setTimeoutSec((int) config.timeout);
             if (config.apiProxy != null) {
-                amr.setProxy(config.apiProxy);
+                this.amr.setProxy(config.apiProxy);
             }
 
-            amr.setReportID(config.reportID);
-            amr.getRemoteAll();
+           this.amr.setReportID(config.reportID);
+           this.amr.getRemoteAll();
 
-            String opsJSON = amr.getResourceJSON(ApiResource.OPS);
-            String apsJSON = amr.getResourceJSON(ApiResource.AGGREGATION);
+            String opsJSON = this.amr.getResourceJSON(ApiResource.OPS);
+            String apsJSON = this.amr.getResourceJSON(ApiResource.AGGREGATION);
             ArrayList<String> opsList = new ArrayList();
             opsList.add(opsJSON);
             ArrayList<String> apsList = new ArrayList();
             apsList.add(apsJSON);
-            ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(amr.getListDowntimes()));
-            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(amr.getListMetrics()));
-            ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
+            ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
+            ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
             // create a new status manager
             sm = new StatusManager();
@@ -540,7 +552,7 @@ public class AmsStreamStatus {
             sm.setStrictInterval(strictInterval);
             // sm.setTimeout(config.timeout);
             sm.setReport(config.report);
-            sm.setGroupType(amr.getEgroup());
+            sm.setGroupType(this.amr.getEgroup());
             // load all the connector data
             sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsList);
 
@@ -573,6 +585,14 @@ public class AmsStreamStatus {
             String monHost = item.getMonitoringHost();
             String message = item.getMessage();
             String summary = item.getSummary();
+            String dayStamp = tsMon.split("T")[0];
+            
+              if (!sm.checkIfExistDowntime(dayStamp)) {
+                  this.amr.setDate(dayStamp);
+                  this.amr.getRemoteDowntimes();
+                  ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+                  sm.addDowntimeSet(dayStamp, downList);
+            }
 
             // if daily generation is enable check if has day changed?
             if (config.daily && sm.hasDayChanged(sm.getTsLatest(), tsMon)) {
