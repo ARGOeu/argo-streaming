@@ -1,5 +1,6 @@
 package argo.batch;
 
+import argo.amr.ApiResourceManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -18,6 +19,8 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import java.text.ParseException;
+import org.joda.time.DateTime;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.GroupGroupManager;
 import profilesmanager.MetricProfileManager;
@@ -41,6 +44,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
     static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 
     private List<MetricProfile> mps;
+     private List<MetricProfile> nemps;
     private List<String> ops;
     private List<GroupEndpoint> egp;
     private List<GroupGroup> ggp;
@@ -53,6 +57,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
     private String runDate;
     private String egroupType;
     private Set<Tuple4<String, String, String, String>> expected;
+    private Set<Tuple4<String, String, String, String>> newEntries;
 
     /**
      * Initialization method of the RichGroupReduceFunction operator
@@ -74,10 +79,12 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
         this.egp = getRuntimeContext().getBroadcastVariable("egp");
         this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
         this.conf = getRuntimeContext().getBroadcastVariable("conf");
+        this.nemps = getRuntimeContext().getBroadcastVariable("nemps");
 
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
         this.mpsMgr.loadFromList(mps);
+        this.mpsMgr.setNewEntries(nemps);
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
@@ -102,8 +109,9 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
      * produces a set of available service endpoint metrics that are expected to
      * be found (as tuple objects (endpoint_group,service,hostname,metric)
      */
-    public void initExpected() {
+    public void initExpected() throws ParseException {
         this.expected = new HashSet<Tuple4<String, String, String, String>>();
+        this.newEntries = new HashSet<Tuple4<String, String, String, String>>();
         String mProfile = this.mpsMgr.getProfiles().get(0);
         for (GroupEndpoint servPoint : this.egp) {
 
@@ -113,9 +121,14 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
                 continue;
             }
             for (String metric : metrics) {
-                this.expected.add(new Tuple4<String, String, String, String>(servPoint.getGroup(), servPoint.getService(), servPoint.getHostname(), metric));
-            }
+                if (this.mpsMgr.containsNewMetric(servPoint.getService(), metric)) {
 
+                    this.newEntries.add(new Tuple4<String, String, String, String>(servPoint.getGroup(), servPoint.getService(), servPoint.getHostname(), metric));
+
+                } else {
+                    this.expected.add(new Tuple4<String, String, String, String>(servPoint.getGroup(), servPoint.getService(), servPoint.getHostname(), metric));
+                }
+            }
         }
     }
 
@@ -143,6 +156,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
 
         String timestamp = this.runDate + "T00:00:00Z";
         String state = this.opsMgr.getDefaultMissing();
+          String unknownstate = this.opsMgr.getDefaultUnknown();
         for (MetricData item : in) {
 
             service = item.getService();
@@ -187,5 +201,28 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
             mn.setTimeInt(timeInt);
             out.collect(mn);
         }
+        
+        for (Tuple4<String, String, String, String> item : newEntries) {
+            StatusMetric mn = new StatusMetric();
+            // Create a StatusMetric output
+            // Grab the timestamp to generate the date and time integer fields
+            // that are exclusively used in datastore for indexing
+            String timestamp2 = timestamp.split("Z")[0];
+            String[] tsToken = timestamp2.split("T");
+            int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
+            int timeInt = Integer.parseInt(tsToken[1].replace(":", ""));
+            mn.setGroup(item.f0);
+            mn.setService(item.f1);
+            mn.setHostname(item.f2);
+            mn.setMetric(item.f3);
+            mn.setStatus(unknownstate);
+            mn.setMessage("");
+            mn.setSummary("");
+            mn.setTimestamp(timestamp);
+            mn.setDateInt(dateInt);
+            mn.setTimeInt(timeInt);
+            out.collect(mn);
+        }
     }
+
 }

@@ -14,11 +14,15 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * Parses a given request's response
@@ -314,5 +318,31 @@ public class ApiResponseParser {
         }
         return results;
     }
+    
+    
+    
+        
+    /**
+     * Compares the metric profile between two dates,and return the ones that are newly introduced
+     * @param content
+     * @param yesterdayContent
+     * @return 
+     */
+    public List<MetricProfile> getListNewMetrics(String content, String yesterdayContent) {
+
+        List<MetricProfile> results = new ArrayList<MetricProfile>();
+
+        if (yesterdayContent == null) {
+            return results;
+        }
+        results = getListMetrics(content);
+
+        List<MetricProfile> yesterdayResults = new ArrayList<MetricProfile>();
+        yesterdayResults = getListMetrics(yesterdayContent);
+
+         results.removeAll(yesterdayResults);
+         return results;
+    }
 
 }
+

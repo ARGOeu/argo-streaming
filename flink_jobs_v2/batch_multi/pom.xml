@@ -15,11 +15,11 @@ language governing permissions and limitations under the License. -->
     <parent>
         <groupId>flink.jobs.v2</groupId>
         <artifactId>flink_jobs_v2</artifactId>
-        <version>2.1.0</version>
+        <version>2.1.1</version>
     </parent> 
     <groupId>argo.batch</groupId>
     <artifactId>ArgoMultiJob</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.1</version>
     <packaging>jar</packaging>
    
     <name>Argo Multi Job</name>
@@ -175,19 +175,19 @@ language governing permissions and limitations under the License. -->
         <dependency>
             <groupId>timeline.manager</groupId>
             <artifactId>Timelines</artifactId>
-            <version>2.1.0</version>
+            <version>2.1.1</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>profiles.manager</groupId>
             <artifactId>ProfilesManager</artifactId>
-            <version>2.1.0</version>
+            <version>2.1.1</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>api.resource.manager</groupId>
             <artifactId>ApiResourceManager</artifactId>
-            <version>2.1.0</version>
+            <version>2.1.1</version>
             <type>jar</type>
         </dependency>
 

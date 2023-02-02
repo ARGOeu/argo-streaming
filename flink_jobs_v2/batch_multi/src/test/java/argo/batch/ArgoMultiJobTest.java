@@ -136,6 +136,8 @@ public class ArgoMultiJobTest {
         confMgr.loadJsonString(cfgDS.collect());
 
         // Get conf data 
+        DataSet<MetricProfile> nempsDS = env.fromElements(new MetricProfile("","","",null));
+       
         DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
         DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
         DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
@@ -193,7 +195,7 @@ public class ArgoMultiJobTest {
         //***************************Test FillMIssing
         DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf");
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf").withBroadcastSet(nempsDS, "nemps");
 
         URL expFillMissdataURL = ArgoMultiJobTest.class.getResource("/test/fillmissing.json");
         DataSet<String> fillMissString = env.readTextFile(expFillMissdataURL.toString());
