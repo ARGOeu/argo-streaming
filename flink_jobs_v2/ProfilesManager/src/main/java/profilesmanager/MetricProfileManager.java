@@ -7,11 +7,15 @@ import com.google.gson.JsonObject;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
@@ -22,6 +26,8 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.util.Utf8;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /**
  *
@@ -40,6 +46,7 @@ public class MetricProfileManager implements Serializable {
 
     private ArrayList<ProfileItem> list; // a list of ProfileItem objects
     private Map<String, HashMap<String, ArrayList<String>>> index; //a map that stores as key a profile and as value a map of pairs of service (as key) and list of metrics (as value)
+    private DateTime creationDate;
 
     /**
      *
@@ -105,7 +112,6 @@ public class MetricProfileManager implements Serializable {
     /**
      * A constructor of a MetricProfileManager
      */
-
     public MetricProfileManager() {
         this.list = new ArrayList<ProfileItem>();
         this.index = new HashMap<String, HashMap<String, ArrayList<String>>>();
@@ -335,10 +341,16 @@ public class MetricProfileManager implements Serializable {
      * @param mps , the list of MetricProfile objects
      */
     @SuppressWarnings("unchecked")
-    public void loadFromList(List<MetricProfile> mps) {
+    public void loadFromList(List<MetricProfile> mps) throws ParseException {
 
-        // For each metric profile object in list
+        String date = mps.get(0).getDate();
+        if (mps.get(0).getDate() != null) {
+            this.creationDate = convertStringtoDate("yyyy-MM-dd", date);
+        }
+// For each metric profile object in list
+
         for (MetricProfile item : mps) {
+
             String profile = item.getProfile();
             String service = item.getService();
             String metric = item.getMetric();
@@ -357,7 +369,7 @@ public class MetricProfileManager implements Serializable {
 
     }
 
-    public void loadMetricProfile(JsonElement element) throws IOException {
+    public void loadMetricProfile(JsonElement element) throws IOException, ParseException {
 
         MetricProfile[] metrics = readJson(element);
         loadFromList(Arrays.asList(metrics));
@@ -370,11 +382,14 @@ public class MetricProfileManager implements Serializable {
      * @param jElement , a JsonElement containing the metric profile data info
      * @return
      */
-    public MetricProfile[] readJson(JsonElement jElement) {
+    public MetricProfile[] readJson(JsonElement jElement) throws ParseException {
         List<MetricProfile> results = new ArrayList<MetricProfile>();
 
         JsonObject jRoot = jElement.getAsJsonObject();
         String profileName = jRoot.get("name").getAsString();
+        String date = jRoot.get("date").getAsString();
+        this.creationDate = convertStringtoDate("yyyy-MM-dd", date);
+
         JsonArray jElements = jRoot.get("services").getAsJsonArray();
         for (int i = 0; i < jElements.size(); i++) {
             JsonObject jItem = jElements.get(i).getAsJsonObject();
@@ -384,7 +399,8 @@ public class MetricProfileManager implements Serializable {
                 String metric = jMetrics.get(j).getAsString();
 
                 Map<String, String> tags = new HashMap<String, String>();
-                MetricProfile mp = new MetricProfile(profileName, service, metric, tags);
+
+                MetricProfile mp = new MetricProfile(date, profileName, service, metric, tags);
                 results.add(mp);
             }
 
@@ -396,7 +412,8 @@ public class MetricProfileManager implements Serializable {
     }
 
     /**
-     * Checks if a combination of service, metric exists in the list of ProfileItems
+     * Checks if a combination of service, metric exists in the list of
+     * ProfileItems
      *
      * @param service, a service
      * @param metric, a metric
@@ -427,6 +444,23 @@ public class MetricProfileManager implements Serializable {
 
     public void setIndex(Map<String, HashMap<String, ArrayList<String>>> index) {
         this.index = index;
+    }
+
+    public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Date date = sdf.parse(dateStr);
+        return new DateTime(date.getTime(), DateTimeZone.UTC);
+
+    }
+
+    public DateTime getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(DateTime creationDate) {
+        this.creationDate = creationDate;
     }
 
 }

@@ -7,8 +7,9 @@ package argo.avro;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"MetricProfile\",\"namespace\":\"argo.avro\",\"fields\":[{\"name\":\"profile\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"service\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"metric\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"tags\",\"type\":[\"null\",{\"type\":\"map\",\"values\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"avro.java.string\":\"String\"}]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"MetricProfile\",\"namespace\":\"argo.avro\",\"fields\":[{\"name\":\"date\",\"type\":[\"null\",{\"type\":\"string\",\"avro.java.string\":\"String\"}],\"default\":null},{\"name\":\"profile\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"service\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"metric\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"tags\",\"type\":[\"null\",{\"type\":\"map\",\"values\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"avro.java.string\":\"String\"}]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
+  @Deprecated public java.lang.String date;
   @Deprecated public java.lang.String profile;
   @Deprecated public java.lang.String service;
   @Deprecated public java.lang.String metric;
@@ -24,7 +25,8 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
   /**
    * All-args constructor.
    */
-  public MetricProfile(java.lang.String profile, java.lang.String service, java.lang.String metric, java.util.Map<java.lang.String,java.lang.String> tags) {
+  public MetricProfile(java.lang.String date, java.lang.String profile, java.lang.String service, java.lang.String metric, java.util.Map<java.lang.String,java.lang.String> tags) {
+    this.date = date;
     this.profile = profile;
     this.service = service;
     this.metric = metric;
@@ -35,10 +37,11 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
     switch (field$) {
-    case 0: return profile;
-    case 1: return service;
-    case 2: return metric;
-    case 3: return tags;
+    case 0: return date;
+    case 1: return profile;
+    case 2: return service;
+    case 3: return metric;
+    case 4: return tags;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -46,12 +49,28 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: profile = (java.lang.String)value$; break;
-    case 1: service = (java.lang.String)value$; break;
-    case 2: metric = (java.lang.String)value$; break;
-    case 3: tags = (java.util.Map<java.lang.String,java.lang.String>)value$; break;
+    case 0: date = (java.lang.String)value$; break;
+    case 1: profile = (java.lang.String)value$; break;
+    case 2: service = (java.lang.String)value$; break;
+    case 3: metric = (java.lang.String)value$; break;
+    case 4: tags = (java.util.Map<java.lang.String,java.lang.String>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
+  }
+
+  /**
+   * Gets the value of the 'date' field.
+   */
+  public java.lang.String getDate() {
+    return date;
+  }
+
+  /**
+   * Sets the value of the 'date' field.
+   * @param value the value to set.
+   */
+  public void setDate(java.lang.String value) {
+    this.date = value;
   }
 
   /**
@@ -135,6 +154,7 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<MetricProfile>
     implements org.apache.avro.data.RecordBuilder<MetricProfile> {
 
+    private java.lang.String date;
     private java.lang.String profile;
     private java.lang.String service;
     private java.lang.String metric;
@@ -148,43 +168,76 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
     /** Creates a Builder by copying an existing Builder */
     private Builder(argo.avro.MetricProfile.Builder other) {
       super(other);
-      if (isValidValue(fields()[0], other.profile)) {
-        this.profile = data().deepCopy(fields()[0].schema(), other.profile);
+      if (isValidValue(fields()[0], other.date)) {
+        this.date = data().deepCopy(fields()[0].schema(), other.date);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.service)) {
-        this.service = data().deepCopy(fields()[1].schema(), other.service);
+      if (isValidValue(fields()[1], other.profile)) {
+        this.profile = data().deepCopy(fields()[1].schema(), other.profile);
         fieldSetFlags()[1] = true;
       }
-      if (isValidValue(fields()[2], other.metric)) {
-        this.metric = data().deepCopy(fields()[2].schema(), other.metric);
+      if (isValidValue(fields()[2], other.service)) {
+        this.service = data().deepCopy(fields()[2].schema(), other.service);
         fieldSetFlags()[2] = true;
       }
-      if (isValidValue(fields()[3], other.tags)) {
-        this.tags = data().deepCopy(fields()[3].schema(), other.tags);
+      if (isValidValue(fields()[3], other.metric)) {
+        this.metric = data().deepCopy(fields()[3].schema(), other.metric);
         fieldSetFlags()[3] = true;
+      }
+      if (isValidValue(fields()[4], other.tags)) {
+        this.tags = data().deepCopy(fields()[4].schema(), other.tags);
+        fieldSetFlags()[4] = true;
       }
     }
     
     /** Creates a Builder by copying an existing MetricProfile instance */
     private Builder(argo.avro.MetricProfile other) {
             super(argo.avro.MetricProfile.SCHEMA$);
-      if (isValidValue(fields()[0], other.profile)) {
-        this.profile = data().deepCopy(fields()[0].schema(), other.profile);
+      if (isValidValue(fields()[0], other.date)) {
+        this.date = data().deepCopy(fields()[0].schema(), other.date);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.service)) {
-        this.service = data().deepCopy(fields()[1].schema(), other.service);
+      if (isValidValue(fields()[1], other.profile)) {
+        this.profile = data().deepCopy(fields()[1].schema(), other.profile);
         fieldSetFlags()[1] = true;
       }
-      if (isValidValue(fields()[2], other.metric)) {
-        this.metric = data().deepCopy(fields()[2].schema(), other.metric);
+      if (isValidValue(fields()[2], other.service)) {
+        this.service = data().deepCopy(fields()[2].schema(), other.service);
         fieldSetFlags()[2] = true;
       }
-      if (isValidValue(fields()[3], other.tags)) {
-        this.tags = data().deepCopy(fields()[3].schema(), other.tags);
+      if (isValidValue(fields()[3], other.metric)) {
+        this.metric = data().deepCopy(fields()[3].schema(), other.metric);
         fieldSetFlags()[3] = true;
       }
+      if (isValidValue(fields()[4], other.tags)) {
+        this.tags = data().deepCopy(fields()[4].schema(), other.tags);
+        fieldSetFlags()[4] = true;
+      }
+    }
+
+    /** Gets the value of the 'date' field */
+    public java.lang.String getDate() {
+      return date;
+    }
+    
+    /** Sets the value of the 'date' field */
+    public argo.avro.MetricProfile.Builder setDate(java.lang.String value) {
+      validate(fields()[0], value);
+      this.date = value;
+      fieldSetFlags()[0] = true;
+      return this; 
+    }
+    
+    /** Checks whether the 'date' field has been set */
+    public boolean hasDate() {
+      return fieldSetFlags()[0];
+    }
+    
+    /** Clears the value of the 'date' field */
+    public argo.avro.MetricProfile.Builder clearDate() {
+      date = null;
+      fieldSetFlags()[0] = false;
+      return this;
     }
 
     /** Gets the value of the 'profile' field */
@@ -194,21 +247,21 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
     
     /** Sets the value of the 'profile' field */
     public argo.avro.MetricProfile.Builder setProfile(java.lang.String value) {
-      validate(fields()[0], value);
+      validate(fields()[1], value);
       this.profile = value;
-      fieldSetFlags()[0] = true;
+      fieldSetFlags()[1] = true;
       return this; 
     }
     
     /** Checks whether the 'profile' field has been set */
     public boolean hasProfile() {
-      return fieldSetFlags()[0];
+      return fieldSetFlags()[1];
     }
     
     /** Clears the value of the 'profile' field */
     public argo.avro.MetricProfile.Builder clearProfile() {
       profile = null;
-      fieldSetFlags()[0] = false;
+      fieldSetFlags()[1] = false;
       return this;
     }
 
@@ -219,21 +272,21 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
     
     /** Sets the value of the 'service' field */
     public argo.avro.MetricProfile.Builder setService(java.lang.String value) {
-      validate(fields()[1], value);
+      validate(fields()[2], value);
       this.service = value;
-      fieldSetFlags()[1] = true;
+      fieldSetFlags()[2] = true;
       return this; 
     }
     
     /** Checks whether the 'service' field has been set */
     public boolean hasService() {
-      return fieldSetFlags()[1];
+      return fieldSetFlags()[2];
     }
     
     /** Clears the value of the 'service' field */
     public argo.avro.MetricProfile.Builder clearService() {
       service = null;
-      fieldSetFlags()[1] = false;
+      fieldSetFlags()[2] = false;
       return this;
     }
 
@@ -244,21 +297,21 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
     
     /** Sets the value of the 'metric' field */
     public argo.avro.MetricProfile.Builder setMetric(java.lang.String value) {
-      validate(fields()[2], value);
+      validate(fields()[3], value);
       this.metric = value;
-      fieldSetFlags()[2] = true;
+      fieldSetFlags()[3] = true;
       return this; 
     }
     
     /** Checks whether the 'metric' field has been set */
     public boolean hasMetric() {
-      return fieldSetFlags()[2];
+      return fieldSetFlags()[3];
     }
     
     /** Clears the value of the 'metric' field */
     public argo.avro.MetricProfile.Builder clearMetric() {
       metric = null;
-      fieldSetFlags()[2] = false;
+      fieldSetFlags()[3] = false;
       return this;
     }
 
@@ -269,21 +322,21 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
     
     /** Sets the value of the 'tags' field */
     public argo.avro.MetricProfile.Builder setTags(java.util.Map<java.lang.String,java.lang.String> value) {
-      validate(fields()[3], value);
+      validate(fields()[4], value);
       this.tags = value;
-      fieldSetFlags()[3] = true;
+      fieldSetFlags()[4] = true;
       return this; 
     }
     
     /** Checks whether the 'tags' field has been set */
     public boolean hasTags() {
-      return fieldSetFlags()[3];
+      return fieldSetFlags()[4];
     }
     
     /** Clears the value of the 'tags' field */
     public argo.avro.MetricProfile.Builder clearTags() {
       tags = null;
-      fieldSetFlags()[3] = false;
+      fieldSetFlags()[4] = false;
       return this;
     }
 
@@ -291,10 +344,11 @@ public class MetricProfile extends org.apache.avro.specific.SpecificRecordBase i
     public MetricProfile build() {
       try {
         MetricProfile record = new MetricProfile();
-        record.profile = fieldSetFlags()[0] ? this.profile : (java.lang.String) defaultValue(fields()[0]);
-        record.service = fieldSetFlags()[1] ? this.service : (java.lang.String) defaultValue(fields()[1]);
-        record.metric = fieldSetFlags()[2] ? this.metric : (java.lang.String) defaultValue(fields()[2]);
-        record.tags = fieldSetFlags()[3] ? this.tags : (java.util.Map<java.lang.String,java.lang.String>) defaultValue(fields()[3]);
+        record.date = fieldSetFlags()[0] ? this.date : (java.lang.String) defaultValue(fields()[0]);
+        record.profile = fieldSetFlags()[1] ? this.profile : (java.lang.String) defaultValue(fields()[1]);
+        record.service = fieldSetFlags()[2] ? this.service : (java.lang.String) defaultValue(fields()[2]);
+        record.metric = fieldSetFlags()[3] ? this.metric : (java.lang.String) defaultValue(fields()[3]);
+        record.tags = fieldSetFlags()[4] ? this.tags : (java.util.Map<java.lang.String,java.lang.String>) defaultValue(fields()[4]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

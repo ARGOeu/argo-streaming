@@ -1,5 +1,6 @@
 package argo.batch;
 
+import argo.amr.ApiResourceManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -18,11 +19,17 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
+import java.text.ParseException;
+import java.util.Arrays;
+import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.ExecutionEnvironment;
+import org.joda.time.DateTime;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.GroupGroupManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
 import profilesmanager.ReportManager;
+import timelines.Utils;
 
 /**
  * Accepts a list of metric data objects and produces a list of missing mon data
@@ -36,11 +43,13 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
 
     public FillMissing(ParameterTool params) {
         this.params = params;
+
     }
 
     static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 
     private List<MetricProfile> mps;
+
     private List<String> ops;
     private List<GroupEndpoint> egp;
     private List<GroupGroup> ggp;
@@ -53,6 +62,10 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
     private String runDate;
     private String egroupType;
     private Set<Tuple4<String, String, String, String>> expected;
+    private MetricProfileManager pmpsMgr;
+
+    private Set<Tuple4<String, String, String, String>> newEntries;
+  
 
     /**
      * Initialization method of the RichGroupReduceFunction operator
@@ -65,7 +78,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
      * @param parameters A flink Configuration object
      */
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
 
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
@@ -78,7 +91,10 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
         this.mpsMgr.loadFromList(mps);
-        // Initialize operations manager
+
+        
+
+// Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
 
@@ -102,9 +118,15 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
      * produces a set of available service endpoint metrics that are expected to
      * be found (as tuple objects (endpoint_group,service,hostname,metric)
      */
-    public void initExpected() {
+    public void initExpected() throws ParseException {
         this.expected = new HashSet<Tuple4<String, String, String, String>>();
+        
+        this.newEntries = new HashSet<Tuple4<String, String, String, String>>();
         String mProfile = this.mpsMgr.getProfiles().get(0);
+           boolean todayUpdatedMetric=false;
+        if(this.mpsMgr.getCreationDate().equals(Utils.convertStringtoDate("yyyy-MM-dd", runDate))){
+             todayUpdatedMetric=true;
+        }
         for (GroupEndpoint servPoint : this.egp) {
 
             ArrayList<String> metrics = this.mpsMgr.getProfileServiceMetrics(mProfile, servPoint.getService());
@@ -113,7 +135,18 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
                 continue;
             }
             for (String metric : metrics) {
-                this.expected.add(new Tuple4<String, String, String, String>(servPoint.getGroup(), servPoint.getService(), servPoint.getHostname(), metric));
+                boolean isPrevExist = true;
+                if (todayUpdatedMetric) {
+                    loadPreviousMetricProfiles();
+                    isPrevExist = this.pmpsMgr.containsMetric(servPoint.getService(), metric);
+                }
+                if (todayUpdatedMetric && !isPrevExist) {
+                    this.newEntries.add(new Tuple4<String, String, String, String>(servPoint.getGroup(), servPoint.getService(), servPoint.getHostname(), metric));
+
+                } else {
+                    this.expected.add(new Tuple4<String, String, String, String>(servPoint.getGroup(), servPoint.getService(), servPoint.getHostname(), metric));
+                }
+
             }
 
         }
@@ -143,6 +176,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
 
         String timestamp = this.runDate + "T00:00:00Z";
         String state = this.opsMgr.getDefaultMissing();
+        String unknownstate = this.opsMgr.getDefaultUnknown();
         for (MetricData item : in) {
 
             service = item.getService();
@@ -187,5 +221,46 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
             mn.setTimeInt(timeInt);
             out.collect(mn);
         }
+        // For each item in missing create a missing metric data entry
+        for (Tuple4<String, String, String, String> item : newEntries) {
+            StatusMetric mn = new StatusMetric();
+            // Create a StatusMetric output
+            // Grab the timestamp to generate the date and time integer fields
+            // that are exclusively used in datastore for indexing
+            String timestamp2 = timestamp.split("Z")[0];
+            String[] tsToken = timestamp2.split("T");
+            int dateInt = Integer.parseInt(tsToken[0].replace("-", ""));
+            int timeInt = Integer.parseInt(tsToken[1].replace(":", ""));
+            mn.setGroup(item.f0);
+            mn.setService(item.f1);
+            mn.setHostname(item.f2);
+            mn.setMetric(item.f3);
+            mn.setStatus(unknownstate);
+            mn.setMessage("");
+            mn.setSummary("");
+            mn.setTimestamp(timestamp);
+            mn.setDateInt(dateInt);
+            mn.setTimeInt(timeInt);
+            out.collect(mn);
+        }
+    }
+
+    private void loadPreviousMetricProfiles() throws ParseException {
+
+        String endpoint = params.getRequired("api.endpoint");
+        String token = params.getRequired("api.token");
+
+        ApiResourceManager amr = new ApiResourceManager(endpoint, token);
+        DateTime runDt = utils.Utils.convertStringtoDate("yyyy-MM-dd", runDate);
+        
+        amr.setDate(utils.Utils.convertDateToString("yyyy-MM-dd", runDt.minusDays(1)));
+        amr.setReportID( params.getRequired("report.id"));
+        amr.getRemoteConfig();
+        amr.parseReport();
+        amr.getRemoteMetric();
+          this.pmpsMgr=new MetricProfileManager();
+        this.pmpsMgr.loadFromList((Arrays.asList(amr.getListMetrics())));
+                
+
     }
 }

@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import argo.avro.MetricProfile;
+import java.text.ParseException;
 import java.util.ArrayList;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.joda.time.DateTimeZone;
@@ -53,7 +54,7 @@ public class CalcStatusEndpoint extends RichFlatMapFunction<StatusTimeline, Stat
     private String runDate;
 
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
 
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables

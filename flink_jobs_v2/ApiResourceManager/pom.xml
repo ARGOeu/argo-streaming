@@ -18,17 +18,13 @@
         <hadoop.version>2.6.0</hadoop.version>
     </properties>
     
-    
-    
-      <dependencies>
+    <dependencies>
         <!-- Apache Flink dependencies -->
-       
         <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-avro_2.10</artifactId>
-            <version>${flink.version}</version>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.7.7</version>
         </dependency>
-      
 
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -74,7 +70,7 @@
             <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
-       <dependency>
+        <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock</artifactId>
             <version>1.58</version>

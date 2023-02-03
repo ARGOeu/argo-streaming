@@ -107,6 +107,8 @@ public class SyncParse {
 		JsonElement jElement = jsonParser.parse(content);
 		JsonObject jRoot = jElement.getAsJsonObject();
 		String profileName = jRoot.get("name").getAsString();
+                String date=jRoot.get("date").getAsString();
+     
 		JsonArray jElements = jRoot.get("services").getAsJsonArray();
 		for (int i = 0; i < jElements.size(); i++) {
 			JsonObject jItem= jElements.get(i).getAsJsonObject();
@@ -116,7 +118,7 @@ public class SyncParse {
 				String metric = jMetrics.get(j).getAsString();
 				
 				Map<String,String> tags = new HashMap<String,String>();
-				MetricProfile mp = new MetricProfile(profileName,service,metric,tags);
+				MetricProfile mp = new MetricProfile(date,profileName,service,metric,tags);
 				results.add(mp);
 			}
 			

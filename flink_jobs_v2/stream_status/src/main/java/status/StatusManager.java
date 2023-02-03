@@ -357,7 +357,7 @@ public class StatusManager {
      * @param opsJson operation profile contents
      */
     public void loadAll(String runDate, ArrayList<Downtime> downList, ArrayList<GroupEndpoint> egpList, ArrayList<MetricProfile> mpsList, ArrayList<String> apsJson,
-            ArrayList<String> opsJson) throws IOException {
+            ArrayList<String> opsJson) throws IOException, ParseException {
         aps.loadJsonString(apsJson);
         ops.loadJsonString(opsJson);
         mps.loadFromList(mpsList);

@@ -74,6 +74,7 @@ language governing permissions and limitations under the License. -->
 
     <dependencies>
        
+       
         <!-- Apache Flink dependencies -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -172,6 +173,7 @@ language governing permissions and limitations under the License. -->
             <version>1.58</version>
             <scope>test</scope>
         </dependency>
+        
         <dependency>
             <groupId>timeline.manager</groupId>
             <artifactId>Timelines</artifactId>
@@ -190,7 +192,6 @@ language governing permissions and limitations under the License. -->
             <version>2.1.1</version>
             <type>jar</type>
         </dependency>
-
     </dependencies>
 
     <profiles>

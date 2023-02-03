@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -238,11 +239,11 @@ public class MetricProfileManagerTest {
      * Test of loadFromList method, of class MetricProfileManager.
      */
     @Test
-    public void testLoadFromList() throws IOException {
+    public void testLoadFromList() throws IOException, ParseException {
         System.out.println("loadFromList");
         MetricProfileManager instance = new MetricProfileManager();
         JsonElement jsonElement=loadJson(new File(MetricProfileManagerTest.class.getResource("/profiles/metricprofile.json").getFile()));
-      MetricProfile[] metricProfile=instance.readJson(jsonElement);
+        MetricProfile[] metricProfile=instance.readJson(jsonElement);
         List<MetricProfile> mps = Arrays.asList(metricProfile);
         instance.loadFromList(mps);
         // TODO review the generated test code and remove the default call to fail.

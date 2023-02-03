@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import argo.avro.MetricProfile;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -49,7 +50,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     private String runDate;
 
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
         this.mps = getRuntimeContext().getBroadcastVariable("mps");

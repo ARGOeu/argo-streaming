@@ -14,6 +14,7 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import java.text.ParseException;
 import trends.calculations.ServiceTrends;
 import trends.flipflops.ZeroServiceFlipFlopFilter;
 import trends.status.EndpointTrendsCounter;
@@ -209,6 +210,8 @@ public class ArgoMultiJob {
         }else{
              tenantList.add(amr.getTenant());
         }
+        
+        
         List<Path[]> tenantPaths=new ArrayList<>();
 
             DateTime currentDate=Utils.convertStringtoDate("yyyy-MM-dd",runDate);
@@ -549,4 +552,6 @@ public class ArgoMultiJob {
         MDC.put("JID", jobId);
          
     }
+       
+
 }

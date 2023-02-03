@@ -18,6 +18,7 @@ import argo.avro.MetricProfile;
 import argo.batch.StatusTimeline;
 import argo.batch.TimeStatus;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
@@ -73,7 +74,7 @@ public class CalcEndpointAR extends RichFlatMapFunction<StatusTimeline, Endpoint
      * @param parameters A flink Configuration object
      */
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
         // Get data from broadcast variables
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
