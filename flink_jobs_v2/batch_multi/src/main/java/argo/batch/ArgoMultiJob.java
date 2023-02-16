@@ -89,7 +89,7 @@ import org.slf4j.MDC;
  */
 public class ArgoMultiJob {
 
-    static Logger LOG = LoggerFactory.getLogger( ArgoMultiJob.class);
+    static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 
     private static String dbURI;
     private static String reportID;
@@ -103,7 +103,7 @@ public class ArgoMultiJob {
     private static boolean calcStatusTrends = false;
     private static boolean calcFlipFlops = false;
     private static boolean calcTagTrends = false;
-  
+
     public static void main(String[] args) throws Exception {
 
         configJID();
@@ -132,7 +132,6 @@ public class ArgoMultiJob {
 
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
 
-
         // fetch
         // set params
         if (params.has("api.proxy")) {
@@ -155,7 +154,7 @@ public class ArgoMultiJob {
         cfgMgr.loadJsonString(confData);
 
         enableComputations(cfgMgr.activeComputations, params);
-        if(isCombined){
+        if (isCombined) {
             amr.getTenant();
         }
 
@@ -188,10 +187,15 @@ public class ArgoMultiJob {
         }
 
         // Get conf data
-     
         DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
         DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
         DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
+
+        DataSet<MetricProfile> nempsDS = env.fromElements(new MetricProfile("","","",null));
+        MetricProfile[] nempsList = amr.getNewEntriesMetrics();
+        if (nempsList.length > 0) {
+            nempsDS = env.fromElements(nempsList);
+        }
         GroupGroup[] listGroups = amr.getListGroupGroups();
         if (listGroups.length > 0) {
             ggpDS = env.fromElements(amr.getListGroupGroups());
@@ -202,55 +206,53 @@ public class ArgoMultiJob {
             downDS = env.fromElements(amr.getListDowntimes());
         }
 
-
-        List<String> tenantList=new ArrayList<>();
+        List<String> tenantList = new ArrayList<>();
         if (isCombined) {
             tenantList = Arrays.asList(amr.getListTenants());
-        }else{
-             tenantList.add(amr.getTenant());
+        } else {
+            tenantList.add(amr.getTenant());
         }
-        List<Path[]> tenantPaths=new ArrayList<>();
+        List<Path[]> tenantPaths = new ArrayList<>();
 
-            DateTime currentDate=Utils.convertStringtoDate("yyyy-MM-dd",runDate);
-            String previousDate=Utils.convertDateToString("yyyy-MM-dd",currentDate.minusDays(1));
-            for(String tenant: tenantList){
-                Path[] paths=new Path[2];
-                paths[0]=new Path(params.get("basispath")+"/"+tenant+"/mdata/"+runDate);
-                paths[1] =new Path(params.get("basispath")+"/"+tenant+"/mdata/"+previousDate);
-                tenantPaths.add(paths);
+        DateTime currentDate = Utils.convertStringtoDate("yyyy-MM-dd", runDate);
+        String previousDate = Utils.convertDateToString("yyyy-MM-dd", currentDate.minusDays(1));
+        for (String tenant : tenantList) {
+            Path[] paths = new Path[2];
+            paths[0] = new Path(params.get("basispath") + "/" + tenant + "/mdata/" + runDate);
+            paths[1] = new Path(params.get("basispath") + "/" + tenant + "/mdata/" + previousDate);
+            tenantPaths.add(paths);
+        }
+        DataSet<MetricData> allMetricData = null;
+        for (Path[] path : tenantPaths) {
+            // todays metric data
+            Path in = path[0];
+            AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat(in, MetricData.class);
+            DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
+
+            // previous metric data
+            Path pin = path[1];
+            AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat(pin, MetricData.class);
+            DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
+
+            DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
+
+            // Find the latest day
+            DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
+                    .sortGroup("timestamp", Order.DESCENDING).first(1);
+
+            // Union todays data with the latest statuses from previous day
+            DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
+
+            if (allMetricData == null) {
+                allMetricData = mdataPrevTotalDS;
+            } else {
+                allMetricData = allMetricData.union(mdataPrevTotalDS);
             }
-        DataSet<MetricData> allMetricData=null;
-        for(Path[] path:tenantPaths) {
-         // todays metric data
-         Path in = path[0];
-         AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat(in, MetricData.class);
-         DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
-
-         // previous metric data
-         Path pin = path[1];
-         AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat(pin, MetricData.class);
-         DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
-
-
-         DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
-
-         // Find the latest day
-         DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
-                 .sortGroup("timestamp", Order.DESCENDING).first(1);
-
-         // Union todays data with the latest statuses from previous day
-         DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
-         
-         if(allMetricData==null) {
-             allMetricData = mdataPrevTotalDS;
-         }else{
-             allMetricData=allMetricData.union(mdataPrevTotalDS);
-         }
-     }
+        }
         // Use yesterday's latest statuses and todays data to find the missing ones and add them to the mix
         DataSet<StatusMetric> fillMissDS = allMetricData.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(confDS, "conf");
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(confDS, "conf").withBroadcastSet(nempsDS, "nemps");
 
         // Discard unused data and attach endpoint group as information
         DataSet<StatusMetric> mdataTrimDS = allMetricData.flatMap(new PickEndpoints(params))
@@ -275,7 +277,6 @@ public class ArgoMultiJob {
         DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");
-
 
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
@@ -541,12 +542,12 @@ public class ArgoMultiJob {
     }
 
     private static String getJID() {
-         return JobID.generate().toString();
+        return JobID.generate().toString();
     }
 
     private static void configJID() {//config the JID in the log4j.properties
-        String jobId=getJID();
+        String jobId = getJID();
         MDC.put("JID", jobId);
-         
+
     }
 }

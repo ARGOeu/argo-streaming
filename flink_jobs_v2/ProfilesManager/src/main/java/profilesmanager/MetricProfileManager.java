@@ -38,6 +38,7 @@ public class MetricProfileManager implements Serializable {
 
     private static final Logger LOG = Logger.getLogger(MetricProfileManager.class.getName());
 
+    private List<MetricProfile> newEntries;
     private ArrayList<ProfileItem> list; // a list of ProfileItem objects
     private Map<String, HashMap<String, ArrayList<String>>> index; //a map that stores as key a profile and as value a map of pairs of service (as key) and list of metrics (as value)
 
@@ -105,7 +106,6 @@ public class MetricProfileManager implements Serializable {
     /**
      * A constructor of a MetricProfileManager
      */
-
     public MetricProfileManager() {
         this.list = new ArrayList<ProfileItem>();
         this.index = new HashMap<String, HashMap<String, ArrayList<String>>>();
@@ -396,7 +396,8 @@ public class MetricProfileManager implements Serializable {
     }
 
     /**
-     * Checks if a combination of service, metric exists in the list of ProfileItems
+     * Checks if a combination of service, metric exists in the list of
+     * ProfileItems
      *
      * @param service, a service
      * @param metric, a metric
@@ -407,6 +408,16 @@ public class MetricProfileManager implements Serializable {
 
         for (ProfileItem profIt : list) {
             if (profIt.service.equals(service) && profIt.metric.equals(metric)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean containsNewMetric(String service, String metric) {
+
+        for (MetricProfile profIt : newEntries) {
+            if (profIt.getService().equals(service) && profIt.getMetric().equals(metric)) {
                 return true;
             }
         }
@@ -427,6 +438,20 @@ public class MetricProfileManager implements Serializable {
 
     public void setIndex(Map<String, HashMap<String, ArrayList<String>>> index) {
         this.index = index;
+    }
+
+    public List<MetricProfile> getNewEntries() {
+        return newEntries;
+    }
+
+    public void setNewEntries(List<MetricProfile> newEntries) {
+        if (newEntries.size() == 1) {
+            MetricProfile mp = newEntries.get(0);
+            if (mp.getProfile().equals("") && mp.getService().equals("") && mp.getMetric().equals("") && mp.getTags() == null) {
+                this.newEntries = new ArrayList<>();
+            }
+        }
+        this.newEntries = newEntries;
     }
 
 }
