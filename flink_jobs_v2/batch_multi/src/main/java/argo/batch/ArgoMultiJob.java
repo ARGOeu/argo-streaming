@@ -218,9 +218,16 @@ public class ArgoMultiJob {
         String previousDate = Utils.convertDateToString("yyyy-MM-dd", currentDate.minusDays(1));
         for (String tenant : tenantList) {
             Path[] paths = new Path[2];
-            paths[0] = new Path(params.get("basispath") + "/" + tenant + "/mdata/" + runDate);
-            paths[1] = new Path(params.get("basispath") + "/" + tenant + "/mdata/" + previousDate);
-            tenantPaths.add(paths);
+            if (isCombined) {
+                paths[0] = new Path(params.getRequired("basispath") + "/" + tenant + "/mdata/" + runDate);
+                paths[1] = new Path(params.getRequired("basispath") + "/" + tenant + "/mdata/" + previousDate);
+                tenantPaths.add(paths);
+            } else {
+                paths[0] = new Path(params.getRequired("mdata"));
+                paths[1] = new Path(params.getRequired("pdata"));
+                tenantPaths.add(paths);
+
+            }
         }
         DataSet<MetricData> allMetricData = null;
         for (Path[] path : tenantPaths) {
