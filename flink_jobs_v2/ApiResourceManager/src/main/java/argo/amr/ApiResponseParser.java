@@ -114,19 +114,21 @@ public class ApiResponseParser {
      * @return First available item in data array as JSON string representation
      */
     public String getJsonData(String content, boolean asArray) {
-
+        
         JsonParser jsonParser = new JsonParser();
         // Grab the first - and only line of json from ops data
         JsonElement jElement = jsonParser.parse(content);
         JsonObject jRoot = jElement.getAsJsonObject();
+       
         // Get the data array and the first item
+        if(jRoot.get("data")==null) {
+            return null;
+        }
 
         if (asArray) {
-            if (jRoot.get("data") == null) {
-                return null;
-            }
             return jRoot.get("data").toString();
         }
+        
         JsonArray jData = jRoot.get("data").getAsJsonArray();
         if (!jData.iterator().hasNext()) {
             return null;
