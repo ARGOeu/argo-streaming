@@ -81,10 +81,11 @@ public class RequestManager {
         } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
+        }finally{
 
-        return content;
-    }
+            return content;
+        }
+        }
 
     /**
      * Create an SSL Connection Socket Factory with a strategy to trust self
