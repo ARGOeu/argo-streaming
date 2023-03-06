@@ -72,6 +72,42 @@ public class StatusManager {
     String tsLatest;
     int looseInterval = 1440;
     int strictInterval = 1440;
+    boolean  level_group=true;
+    boolean level_service=true;
+    boolean level_endpoint=true;
+    boolean level_metric=true;
+
+    public boolean isLevel_group() {
+        return level_group;
+    }
+
+    public void setLevel_group(boolean level_group) {
+        this.level_group = level_group;
+    }
+
+    public boolean isLevel_service() {
+        return level_service;
+    }
+
+    public void setLevel_service(boolean level_service) {
+        this.level_service = level_service;
+    }
+
+    public boolean isLevel_endpoint() {
+        return level_endpoint;
+    }
+
+    public void setLevel_endpoint(boolean level_endpoint) {
+        this.level_endpoint = level_endpoint;
+    }
+
+    public boolean isLevel_metric() {
+        return level_metric;
+    }
+
+    public void setLevel_metric(boolean level_metric) {
+        this.level_metric = level_metric;
+    }
 
     
 
@@ -878,9 +914,9 @@ public class StatusManager {
                                 // Create metric status level object
                                 statusMetric = new String[]{evtMetric.getStatus(), evtMetric.getPrevStatus(), evtMetric.getTsMonitored(), evtMetric.getPrevTs()};
                                 evtMetric.setStatusMetric(statusMetric);
-
-                                results.add(eventToString(evtMetric));
-
+                                if(level_metric){
+                                   results.add(eventToString(evtMetric));
+                                }
                                 metricNode.item.status = status;
                                 metricNode.item.timestamp = ts;
                                 metricNode.item.genTs = ts;
@@ -934,9 +970,9 @@ public class StatusManager {
                         Map<String, ArrayList<String>> metricStatuses = getMetricStatuses(endpointNode, ops);
                         evtEndpoint.setMetricNames(metricStatuses.get("metrics").toArray(new String[0]));
                         evtEndpoint.setMetricStatuses(metricStatuses.get("statuses").toArray(new String[0]));
-
-                        results.add(eventToString(evtEndpoint));
-
+                        if(level_endpoint){
+                            results.add(eventToString(evtEndpoint));
+                        }
                         endpointNode.item.status = endpNewStatus;
                         endpointNode.item.genTs = ts;
                         updEndpoint = true;
@@ -974,7 +1010,9 @@ public class StatusManager {
                     evtService.setStatusEndpoint(statusEndpoint);
                     evtService.setStatusService(statusService);
 
-                    results.add(eventToString(evtService));
+                    if(level_service){
+                        results.add(eventToString(evtService));
+                    }
                     serviceNode.item.status = servNewStatus;
                     serviceNode.item.genTs = ts;
                     updService = true;
@@ -1018,9 +1056,9 @@ public class StatusManager {
                 evtEgroup.setStatusEndpoint(statusEndpoint);
                 evtEgroup.setStatusService(statusService);
                 evtEgroup.setStatusEgroup(statusEgroup);
-
-                results.add(eventToString(evtEgroup));
-
+                if(level_group){
+                     results.add(eventToString(evtEgroup));
+                }
                 groupNode.item.status = groupNewStatus;
                 groupNode.item.genTs = ts;
 
