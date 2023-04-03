@@ -63,12 +63,12 @@
 		<dependency>
 			<groupId>org.apache.avro</groupId>
 			<artifactId>avro</artifactId>
-			<version>1.7.7</version>
+			<version>1.11.1</version>
 		</dependency>
 	    <dependency>
 		    <groupId>org.apache.flink</groupId>
 		    <artifactId>flink-avro</artifactId>
-		    <version>1.13.6</version>
+		    <version>${flink.version}</version>
 		</dependency>
 
 		<dependency>
@@ -123,9 +123,12 @@
 		    <artifactId>hadoop-client</artifactId>
 		    <version>${hadoop.version}</version>
 		  </dependency>
-		
 
-
+                  <dependency>
+                      <groupId>org.apache.flink</groupId>
+                      <artifactId>flink-shaded-hadoop2-uber</artifactId>
+                      <version>2.8.3-1.8.3</version>
+                  </dependency>
 
 
 	</dependencies>
@@ -141,7 +144,7 @@
 				<dependency>
 					<groupId>org.apache.avro</groupId>
 					<artifactId>avro</artifactId>
-					<version>1.7.7</version>
+					<version>1.11.1</version>
 				</dependency>
 				<dependency>
 					<groupId>org.apache.flink</groupId>
@@ -149,20 +152,20 @@
 					<version>${flink.version}</version>
 					<scope>provided</scope>
 				</dependency>
-				 <dependency>
-		    <groupId>org.apache.flink</groupId>
-		    <artifactId>flink-hadoop-compatibility_2.12</artifactId>
-		    <version>${flink.version}</version>
-		  </dependency>
-		  <dependency>
-		    <groupId>org.apache.hadoop</groupId>
-		    <artifactId>hadoop-client</artifactId>
-		    <version>${hadoop.version}</version>
-		  </dependency>
+                                <dependency>
+                                    <groupId>org.apache.flink</groupId>
+                                    <artifactId>flink-hadoop-compatibility_2.12</artifactId>
+                                    <version>${flink.version}</version>
+                                </dependency>
+                                <dependency>
+                                    <groupId>org.apache.hadoop</groupId>
+                                    <artifactId>hadoop-client</artifactId>
+                                    <version>${hadoop.version}</version>
+                                </dependency>
 		
 				<dependency>
 					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-connector-filesystem_2.10</artifactId>
+					<artifactId>flink-connector-filesystem_2.12</artifactId>
 					<version>${flink.version}</version>
 				</dependency>
 				<dependency>
@@ -179,7 +182,7 @@
 				</dependency>
 				<dependency>
 					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-connector-kafka-0.9_2.10</artifactId>
+					<artifactId>flink-connector-kafka-0.9_2.12</artifactId>
 					<version>${flink.version}</version>
 					<scope>provided</scope>
 				</dependency>
@@ -216,7 +219,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-shade-plugin</artifactId>
-						<version>2.4.1</version>
+						<version>3.4.1</version>
 						<executions>
 							<execution>
 								<phase>package</phase>
@@ -245,7 +248,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>2.4.1</version>
+				<version>3.4.1</version>
 				<executions>
 					<!-- Run shade goal on package phase -->
 					<execution>
@@ -264,14 +267,14 @@
 									<exclude>org.apache.flink:flink-shaded-curator-recipes</exclude>
 									<exclude>org.apache.flink:flink-core</exclude>
 									<exclude>org.apache.flink:flink-java</exclude>
-									<exclude>org.apache.flink:flink-scala_2.10</exclude>
-									<exclude>org.apache.flink:flink-runtime_2.10</exclude>
-									<exclude>org.apache.flink:flink-optimizer_2.10</exclude>
-									<exclude>org.apache.flink:flink-clients_2.10</exclude>
-									<exclude>org.apache.flink:flink-avro_2.10</exclude>
-									<exclude>org.apache.flink:flink-examples-batch_2.10</exclude>
-									<exclude>org.apache.flink:flink-examples-streaming_2.10</exclude>
-									<exclude>org.apache.flink:flink-streaming-java_2.10</exclude>
+									<exclude>org.apache.flink:flink-scala_2.12</exclude>
+									<exclude>org.apache.flink:flink-runtime_2.12</exclude>
+									<exclude>org.apache.flink:flink-optimizer_2.12</exclude>
+									<exclude>org.apache.flink:flink-clients_2.12</exclude>
+									<exclude>org.apache.flink:flink-avro_2.12</exclude>
+									<exclude>org.apache.flink:flink-examples-batch_2.12</exclude>
+									<exclude>org.apache.flink:flink-examples-streaming_2.12</exclude>
+									<exclude>org.apache.flink:flink-streaming-java_2.12</exclude>
 
 									<!-- Also exclude very big transitive dependencies of Flink WARNING: 
 										You have to remove these excludes if your code relies on other versions of 
@@ -309,7 +312,7 @@
 									<exclude>joda-time:joda-time</exclude>
 									<exclude>org.apache.commons:commons-lang3</exclude>
 									<exclude>org.slf4j:slf4j-api</exclude>
-									<exclude>org.slf4j:slf4j-log4j12</exclude>
+<!--									<exclude>org.slf4j:slf4j-log4j12</exclude>-->
 									<exclude>log4j:log4j</exclude>
 									<exclude>org.apache.commons:commons-math</exclude>
 									<exclude>org.apache.sling:org.apache.sling.commons.json</exclude>
