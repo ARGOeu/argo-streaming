@@ -132,7 +132,7 @@
                   </dependency>
                   <dependency>
                       <groupId>ams.connector</groupId>
-                      <artifactId>ams.connector</artifactId>
+                      <artifactId>ams-connector</artifactId>
                       <version>3.0.1</version>
                       <type>jar</type>
                   </dependency>
@@ -216,7 +216,7 @@
 				</dependency>
                                 <dependency>
                                     <groupId>ams.connector</groupId>
-                                    <artifactId>ams.connector</artifactId>
+                                    <artifactId>ams-connector</artifactId>
                                     <version>3.0.1</version>
                                     <type>jar</type>
                                 </dependency>			
