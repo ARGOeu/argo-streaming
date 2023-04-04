@@ -1,0 +1,248 @@
+{
+    "status": {
+        "message": "Success",
+        "code": "200"
+    },
+    "data": [
+        {
+            "id": "ea62ff1e-c6e1-438b-83c7-9262b3a4f179",
+            "date": "2020-06-24",
+            "name": "demo_ops",
+            "available_states": [
+                "OK",
+                "WARNING",
+                "UNKNOWN",
+                "MISSING",
+                "CRITICAL",
+                "DOWNTIME"
+            ],
+            "defaults": {
+                "down": "DOWNTIME",
+                "missing": "MISSING",
+                "unknown": "UNKNOWN"
+            },
+            "operations": [
+                {
+                    "name": "AND",
+                    "truth_table": [
+                        {
+                            "a": "OK",
+                            "b": "OK",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "WARNING",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "UNKNOWN",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "WARNING",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "UNKNOWN",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "UNKNOWN",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "CRITICAL",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "CRITICAL",
+                            "b": "DOWNTIME",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "DOWNTIME",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        }
+                    ]
+                },
+                {
+                    "name": "OR",
+                    "truth_table": [
+                        {
+                            "a": "OK",
+                            "b": "OK",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "WARNING",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "UNKNOWN",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "MISSING",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "CRITICAL",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "DOWNTIME",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "WARNING",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "UNKNOWN",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "MISSING",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "CRITICAL",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "DOWNTIME",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "UNKNOWN",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "MISSING",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "DOWNTIME",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "CRITICAL",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "CRITICAL",
+                            "b": "DOWNTIME",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "DOWNTIME",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

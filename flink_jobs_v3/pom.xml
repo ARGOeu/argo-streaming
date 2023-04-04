@@ -15,6 +15,7 @@
         <module>ams-connector</module>
         <module>profiles-manager</module>
         <module>timelines</module>
+        <module>api-resource-manager</module>
     </modules>
     <dependencyManagement>
         <dependencies>
