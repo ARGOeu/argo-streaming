@@ -1,4 +1,4 @@
-package argo.streaming;
+package ams.connector;
 
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -30,13 +30,16 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 	private boolean useProxy = false;
 	private String proxyURL = "";
 	private transient Object rateLck; // lock for waiting to establish rate
+	private boolean advanceOffset = true;
+	
 
 	private volatile boolean isRunning = true;
 
 	private ArgoMessagingClient client = null;
+	private String runDate;
 
 
-	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub, int batch, Long interval) {
+	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub, int batch, Long interval, String runDate) {
 		this.endpoint = endpoint;
 		this.port = port;
 		this.token = token;
@@ -45,6 +48,22 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 		this.interval = interval;
 		this.batch = batch;
 		this.verify = true;
+		this.runDate=runDate;
+
+	}
+	
+	// second constructor with advanceOffset parametter
+	public ArgoMessagingSource(String endpoint, String port, String token, String project, String sub, int batch, Long interval, String runDate, boolean advanceOffset) {
+		this.endpoint = endpoint;
+		this.port = port;
+		this.token = token;
+		this.project = project;
+		this.sub = sub;
+		this.interval = interval;
+		this.batch = batch;
+		this.verify = true;
+		this.runDate=runDate;
+		this.advanceOffset = advanceOffset;
 
 	}
 
@@ -61,7 +80,7 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 		this.useProxy = true;
 		this.proxyURL = proxyURL;
 	}
-	
+
 	/**
 	 * Unset proxy details for AMS client
 	 */
@@ -69,8 +88,8 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 		this.useProxy = false;
 		this.proxyURL = "";
 	}
-	
-	
+
+
 	@Override
 	public void cancel() {
 		isRunning = false;
@@ -109,10 +128,20 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 			fendpoint = this.endpoint + ":" + port;
 		}
 		try {
-			client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.sub, this.batch, this.verify);
+			client = new ArgoMessagingClient("https", this.token, fendpoint, this.project, this.sub, this.batch, this.verify, this.runDate);
 			if (this.useProxy) {
 				client.setProxy(this.proxyURL);
 			}
+            
+			// if advanceOffset is set to true (default) advance the offset to latest or based to the run date provided
+			if (advanceOffset) {
+				// get the offset of the subscription, that corresponds to the date
+				int offset=client.offset(); 
+				// mofify the offset of the subscription to point to the offset index of the date. 
+				// if date is null then the index points to the latest offset (max)
+	            client.modifyOffset(offset); 
+			}
+			
 		} catch (KeyManagementException e) {
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>flink.jobs.v3</groupId>
     <artifactId>flink_jobs_v3</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -11,7 +11,8 @@
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
     <modules>
-        <module>ams_ingest_metric</module>         
+        <module>ams-connector</module>
+        <module>ams-ingest-metric</module>
     </modules>
     <dependencyManagement>
         <dependencies>
