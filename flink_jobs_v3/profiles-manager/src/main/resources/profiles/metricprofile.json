@@ -1,0 +1,67 @@
+
+        {
+            "id": "5850d7fe-75f5-4aa4-bacc-9a5c10280b59",
+            "date": "2021-03-01",
+            "name": "ARGO_MON_CRITICAL",
+            "description": "Central ARGO-MON_CRITICAL profile",
+            "services": [
+                {
+                    "service": "ARC-CE",
+                    "metrics": [
+                        "org.nordugrid.ARC-CE-ARIS",
+                        "org.nordugrid.ARC-CE-IGTF",
+                        "org.nordugrid.ARC-CE-result",
+                        "org.nordugrid.ARC-CE-srm"
+                    ]
+                },
+                {
+                    "service": "GRAM5",
+                    "metrics": [
+                        "eu.egi.GRAM-CertValidity",
+                        "hr.srce.GRAM-Auth",
+                        "hr.srce.GRAM-Command"
+                    ]
+                },
+                {
+                    "service": "org.opensciencegrid.htcondorce",
+                    "metrics": [
+                        "ch.cern.HTCondorCE-JobState",
+                        "ch.cern.HTCondorCE-JobSubmit"
+                    ]
+                },
+                {
+                    "service": "org.openstack.nova",
+                    "metrics": [
+                        "eu.egi.cloud.OpenStack-VM",
+                        "org.nagios.Keystone-TCP"
+                    ]
+                },
+                {
+                    "service": "QCG.Computing",
+                    "metrics": [
+                        "eu.egi.QCG-Computing-CertValidity",
+                        "pl.plgrid.QCG-Computing"
+                    ]
+                },
+                {
+                    "service": "SRM",
+                    "metrics": [
+                        "eu.egi.SRM-CertValidity",
+                        "eu.egi.SRM-GetSURLs",
+                        "eu.egi.SRM-VODel",
+                        "eu.egi.SRM-VOGet",
+                        "eu.egi.SRM-VOGetTurl",
+                        "eu.egi.SRM-VOLs",
+                        "eu.egi.SRM-VOLsDir",
+                        "eu.egi.SRM-VOPut"
+                    ]
+                },
+                {
+                    "service": "webdav",
+                    "metrics": [
+                        "ch.cern.WebDAV"
+                    ]
+                }
+            ]
+        
+}
