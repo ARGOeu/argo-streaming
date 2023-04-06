@@ -32,7 +32,7 @@ pipeline {
                 }
             }
         }
-        stage('Flink Jobs Testing & Packaging') {
+        stage('Flink Jobs v2 Testing & Packaging') {
             agent {
                 docker {
                     image 'argo.registry:5000/epel-7-java18'
@@ -42,17 +42,33 @@ pipeline {
             steps {
                 echo 'Packaging & Testing Flink Jobs'
                 sh """
-                mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/stream_status/pom.xml
-                mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/batch_ar/pom.xml
-                mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/batch_status/pom.xml
-                mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/ams_ingest_metric/pom.xml
-                mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/ams_ingest_sync/pom.xml
-                mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs/status_trends/pom.xml
                 mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs_v2/pom.xml
                 """
                 junit '**/target/surefire-reports/*.xml'
                 cobertura coberturaReportFile: '**/target/site/cobertura/coverage.xml'
                 archiveArtifacts artifacts: '**/target/*.jar'
+            }
+            post {
+                always {
+                    cleanWs()
+                }
+            }
+        }
+        stage('Flink Jobs v3 Testing & Packaging') {
+            agent {
+                docker {
+                    image 'argo.registry:5000/epel-7-java11-mvn384'
+                    args '-u jenkins:jenkins -v $HOME/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -u root:root'
+                }
+            }
+            steps {
+                 sh """
+                cd ${PROJECT_DIR}/flink_jobs_v3/
+                mvn clean package
+                """
+                junit '**/target/surefire-reports/*.xml'
+                archiveArtifacts artifacts: '**/target/*.jar'
+                step( [ $class: 'JacocoPublisher' ] )
             }
             post {
                 always {
