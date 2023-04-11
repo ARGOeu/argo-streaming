@@ -16,6 +16,7 @@
         <module>profiles-manager</module>
         <module>timelines</module>
         <module>api-resource-manager</module>
+        <module>stream-status</module>
     </modules>
     <dependencyManagement>
         <dependencies>
