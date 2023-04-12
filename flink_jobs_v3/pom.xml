@@ -17,6 +17,7 @@
         <module>timelines</module>
         <module>api-resource-manager</module>
         <module>stream-status</module>
+        <module>batch-multi</module>
     </modules>
     <dependencyManagement>
         <dependencies>
