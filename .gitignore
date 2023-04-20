@@ -23,3 +23,4 @@ conf.cfg
 .classpath
 .project
 .settings/
+/flink_jobs_v3/HdfsFileMerger/target/
