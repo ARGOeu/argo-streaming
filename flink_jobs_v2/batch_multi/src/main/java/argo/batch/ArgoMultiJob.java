@@ -259,7 +259,7 @@ public class ArgoMultiJob {
 
         DateTime currentDate = Utils.convertStringtoDate("yyyy-MM-dd", runDate);
         String previousDate = Utils.convertDateToString("yyyy-MM-dd", currentDate.minusDays(1));
-        for (String tenant : tenantList) {
+          for (String tenant : tenantList) {
             Path[] paths = new Path[2];
                 paths[0] = new Path(params.getRequired("basispath") + "/" + tenant + "/mdata/" + runDate);
                 paths[1] = new Path(params.getRequired("basispath") + "/" + tenant + "/mdata/" + previousDate);
