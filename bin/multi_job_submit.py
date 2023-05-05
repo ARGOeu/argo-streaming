@@ -157,6 +157,16 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
         if "trends" not in args.calculate:
             cmd_command.append("--calcTrends")
             cmd_command.append("OFF")
+
+    # check if sources are defined
+    if "source_data" in args:
+        cmd_command.append("--source-data")
+        cmd_command.append(args.source_data)
+
+    if "source_topo" in args:
+        cmd_command.append("--source-topo")
+        cmd_command.append(args.source_topo)
+
     return cmd_command
 
 
@@ -211,6 +221,11 @@ if __name__ == "__main__":
                         action="store_true", dest="clear_results")
     parser.add_argument("--dry-run", help="Runs in test mode without actually submitting the job",
                         action="store_true", dest="dry_run")
-
+    parser.add_argument(
+        "-s", "--source-data", metavar="STRING", help="Define source of data to be used (possible values: tenant, feeds, all)", 
+        dest="source_data", required=False)
+    parser.add_argument(
+        "-S", "--source-topo", metavar="STRING", help="Define source of topology to be used (possible values: tenant, all)", 
+        dest="source_topo", required=False)
     # Pass the arguments to main method
     sys.exit(main(parser.parse_args()))

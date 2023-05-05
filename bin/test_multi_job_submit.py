@@ -19,7 +19,7 @@ expected_result = """sudo flink_path run -c multi_class multi.jar --run.date 201
 expected_result2 = """sudo flink_path run -c multi_class multi.jar --run.date 2021-01-01 --mongo.uri mongodb://localhost:21017/argo_TENANTA \
 --mongo.method insert --pdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2020-12-31 \
 --mdata hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata/2021-01-01 \
---api.endpoint api.foo --api.token key1 --report.id report_uuid --clearMongo true --calcStatus OFF"""
+--api.endpoint api.foo --api.token key1 --report.id report_uuid --clearMongo true --calcStatus OFF --source-data feeds --source-topo all"""
 
 
 class TestClass(unittest.TestCase):
@@ -61,8 +61,10 @@ class TestClass(unittest.TestCase):
         parser.add_argument('--method', default="insert")
         parser.add_argument('--clear-prev-results',dest='clear_results',action='store_true')
         parser.add_argument('--calculate')
+        parser.add_argument('--source-data')
+        parser.add_argument('--source-topo')
         args = parser.parse_args(
-            ['--tenant', 'TENANTA', '--report', 'report_name', '--sudo','--clear-prev-results', '--calculate', 'trends, ar'])
+            ['--tenant', 'TENANTA', '--report', 'report_name', '--sudo','--clear-prev-results', '--calculate', 'trends, ar', '--source-data', 'feeds', '--source-topo', 'all'])
 
         hdfs_metric = "hdfs://hdfs_test_host:hdfs_test_port/user/hdfs_test_user/argo/tenants/TENANTA/mdata"
        
