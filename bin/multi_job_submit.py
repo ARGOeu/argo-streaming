@@ -47,6 +47,11 @@ def compose_hdfs_commands(year, month, day, args, config):
     hdfs_metric = hdfs_metric.fill(
         namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
 
+    hdfs_tenants = config.get("HDFS", "path_tenants")
+    hdfs_tenants = hdfs_tenants.fill(
+        namenode=namenode.geturl(), hdfs_user=hdfs_user
+    ).geturl()
+
     # dictionary holding all the commands with their respective arguments' name
     hdfs_commands = dict()
 
@@ -57,6 +62,13 @@ def compose_hdfs_commands(year, month, day, args, config):
     # file location of target day's metric data (local or hdfs)
     hdfs_commands["--mdata"] = hdfs_check_path(
         hdfs_metric+"/"+args.date,  client)
+    
+    # if job will run in combined data mode then we should add the hdfs tenants path as --basispath to the jar
+    # to find out if the tenant will run in combined data mode we check if --source-data 
+    # is provided as argument and has value other than tenant
+
+    if ("source_data" in args and args.source_data != "tenant"):
+        hdfs_commands["--basispath"] = hdfs_check_path(hdfs_tenants, client)
 
     return hdfs_commands
 
