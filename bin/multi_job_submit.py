@@ -171,11 +171,11 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
             cmd_command.append("OFF")
 
     # check if sources are defined
-    if "source_data" in args:
+    if args.source_data:
         cmd_command.append("--source-data")
         cmd_command.append(args.source_data)
 
-    if "source_topo" in args:
+    if args.source_topo:
         cmd_command.append("--source-topo")
         cmd_command.append(args.source_topo)
 
