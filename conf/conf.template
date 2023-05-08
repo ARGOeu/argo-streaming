@@ -9,6 +9,8 @@ rollback_days: 3
 path_metric: {{namenode}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/mdata
 # hdfs path for sync data
 path_sync: {{namenode}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/sync
+# hdfs path for root folder were argo tenants reside
+path_tenants: {{namenode}}/user/{{hdfs_user}}/argo/tenants
 
 # hdfs writer executable
 writer_bin: /path/to/binary

@@ -14,6 +14,11 @@
       "type": "template,uri",
       "default": "hdfs://{{namenode}}/user/{{hdfs_user}}/argo/tenants/{{tenant}}/sync"
     },
+    "path_tenants": {
+      "desc": "template for constructing the hdfs root path to where all tenants reside",
+      "type": "template,uri",
+      "default": "hdfs://{{namenode}}/user/{{hdfs_user}}/argo/tenants"
+    },
     "user": {
       "desc": "name of the hdfs user",
       "type": "string",
