@@ -49,13 +49,13 @@ import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
-import java.text.SimpleDateFormat;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.core.fs.FileSystem;
 import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
+import profilesmanager.ReportManager;
 import status.StatusManager;
 
 /**
@@ -99,6 +99,8 @@ import status.StatusManager;
  * -- latest.offset (Optional) boolean true/false, to define if the argo messaging source 
  * should set offset at the latest or at the start of the runDate. By default,  if not defined , the 
  * offset should be the latest.
+ * --level_group,level_service,level_endpoint, level_metric,  if  ON level alerts are generated,if OFF level alerts are 
+ * disabled.if no level is defined in parameters then all levels are generated
  */
 public class AmsStreamStatus {
     // setup logger
@@ -107,6 +109,11 @@ public class AmsStreamStatus {
     private static String runDate;
     private static String apiToken;    
     private static String apiEndpoint;
+    private static boolean level_group = true;
+    private static boolean level_service=true;
+    private static boolean level_endpoint=true;
+    private static boolean level_metric=true;
+    
 
     /**
      * Sets configuration parameters to streaming enviroment
@@ -172,6 +179,7 @@ public class AmsStreamStatus {
         return hasArgs(amsPubArgs, paramTool);
     }
 
+    
     /**
      * Main dataflow of flink job
      */
@@ -192,8 +200,13 @@ public class AmsStreamStatus {
         String token = parameterTool.getRequired("ams.token");
         String project = parameterTool.getRequired("ams.project");
         String subMetric = parameterTool.getRequired("ams.sub.metric");
-
-      
+        
+        level_group = !isOFF(parameterTool, "level_group");
+        level_service =!isOFF(parameterTool, "level_service");
+        level_endpoint =!isOFF(parameterTool, "level_endpoint");
+        level_metric=!isOFF(parameterTool, "level_metric");
+        
+        
         apiEndpoint = parameterTool.getRequired("api.endpoint");
         apiToken = parameterTool.getRequired("api.token");
         String reportID = parameterTool.getRequired("report.uuid");
@@ -274,7 +287,7 @@ public class AmsStreamStatus {
         DataStream<Tuple2<String, MetricData>> groupMdata = metricAMS.connect(syncA)
                 .flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
 
-        DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf, looseInterval, strictInterval));
+        DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf, looseInterval, strictInterval, level_group,level_service,level_endpoint, level_metric));
         if (hasKafkaArgs(parameterTool)) {
             // Initialize kafka parameters
             String kafkaServers = parameterTool.get("kafka.servers");
@@ -346,7 +359,7 @@ public class AmsStreamStatus {
         jobTitleSB.append("/v1/projects/");
         jobTitleSB.append(project);
         jobTitleSB.append("/subscriptions/");
-        jobTitleSB.append(subMetric);
+         jobTitleSB.append(subMetric);
 
         // Execute flink dataflow
         see.execute(jobTitleSB.toString());
@@ -506,13 +519,21 @@ public class AmsStreamStatus {
         public int looseInterval;
         public int strictInterval;
         private   ApiResourceManager amr;
+        boolean level_group;
+        boolean level_service;
+        boolean level_endpoint;
+        boolean level_metric;
 
-        public StatusMap(StatusConfig config, int looseInterval, int strictInterval) {
+        public StatusMap(StatusConfig config, int looseInterval, int strictInterval, boolean  level_group,boolean level_service, boolean level_endpoint,boolean level_metric) {
             LOG.info("Created new Status map");
             this.config = config;
             this.looseInterval = looseInterval;
             this.strictInterval = strictInterval;
-
+            this.level_group=level_group;
+            this.level_service=level_service;
+            this.level_endpoint=level_endpoint;
+            this.level_metric=level_metric;
+            
         }
 
         /**
@@ -555,6 +576,11 @@ public class AmsStreamStatus {
             sm.setGroupType(this.amr.getEgroup());
             // load all the connector data
             sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsList);
+            sm.setLevel_group(level_group);
+            sm.setLevel_service(level_service);
+            sm.setLevel_endpoint(level_endpoint);
+            sm.setLevel_metric(level_metric);
+            
 
             // Set the default status as integer
             initStatus = sm.getOps().getIntStatus(config.initStatus);
@@ -863,5 +889,13 @@ public class AmsStreamStatus {
         String jobId = getJID();
         MDC.put("JID", jobId);
       }
+    public static boolean isOFF(ParameterTool params, String paramName) {
+        if (params.has(paramName)) {
+            return params.get(paramName).equals("OFF");
+           
+        } else {
+            return false;
+        }
+    }
 
 }

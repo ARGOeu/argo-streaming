@@ -47,6 +47,11 @@ def compose_hdfs_commands(year, month, day, args, config):
     hdfs_metric = hdfs_metric.fill(
         namenode=namenode.geturl(), hdfs_user=hdfs_user, tenant=tenant).geturl()
 
+    hdfs_tenants = config.get("HDFS", "path_tenants")
+    hdfs_tenants = hdfs_tenants.fill(
+        namenode=namenode.geturl(), hdfs_user=hdfs_user
+    ).geturl()
+
     # dictionary holding all the commands with their respective arguments' name
     hdfs_commands = dict()
 
@@ -57,6 +62,13 @@ def compose_hdfs_commands(year, month, day, args, config):
     # file location of target day's metric data (local or hdfs)
     hdfs_commands["--mdata"] = hdfs_check_path(
         hdfs_metric+"/"+args.date,  client)
+    
+    # if job will run in combined data mode then we should add the hdfs tenants path as --basispath to the jar
+    # to find out if the tenant will run in combined data mode we check if --source-data 
+    # is provided as argument and has value other than tenant
+
+    if ("source_data" in args and args.source_data != "tenant"):
+        hdfs_commands["--basispath"] = hdfs_check_path(hdfs_tenants, client)
 
     return hdfs_commands
 
@@ -157,6 +169,16 @@ def compose_command(config, args,  hdfs_commands, dry_run=False):
         if "trends" not in args.calculate:
             cmd_command.append("--calcTrends")
             cmd_command.append("OFF")
+
+    # check if sources are defined
+    if args.source_data:
+        cmd_command.append("--source-data")
+        cmd_command.append(args.source_data)
+
+    if args.source_topo:
+        cmd_command.append("--source-topo")
+        cmd_command.append(args.source_topo)
+
     return cmd_command
 
 
@@ -211,6 +233,11 @@ if __name__ == "__main__":
                         action="store_true", dest="clear_results")
     parser.add_argument("--dry-run", help="Runs in test mode without actually submitting the job",
                         action="store_true", dest="dry_run")
-
+    parser.add_argument(
+        "-s", "--source-data", metavar="STRING", help="Define source of data to be used (possible values: tenant, feeds, all)", 
+        dest="source_data", required=False)
+    parser.add_argument(
+        "-S", "--source-topo", metavar="STRING", help="Define source of topology to be used (possible values: tenant, all)", 
+        dest="source_topo", required=False)
     # Pass the arguments to main method
     sys.exit(main(parser.parse_args()))

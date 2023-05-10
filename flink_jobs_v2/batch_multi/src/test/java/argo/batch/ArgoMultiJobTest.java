@@ -27,7 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -37,7 +36,6 @@ import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
-import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Assert;
@@ -136,6 +134,8 @@ public class ArgoMultiJobTest {
         confMgr.loadJsonString(cfgDS.collect());
 
         // Get conf data 
+        DataSet<MetricProfile> nempsDS = env.fromElements(new MetricProfile("","","",null));
+       
         DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
         DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
         DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
@@ -193,7 +193,7 @@ public class ArgoMultiJobTest {
         //***************************Test FillMIssing
         DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf");
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf").withBroadcastSet(nempsDS, "nemps");
 
         URL expFillMissdataURL = ArgoMultiJobTest.class.getResource("/test/fillmissing.json");
         DataSet<String> fillMissString = env.readTextFile(expFillMissdataURL.toString());

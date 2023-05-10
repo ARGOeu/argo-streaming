@@ -1,0 +1,362 @@
+{  "data":{
+      "operations":["AND","OR"],
+      "available_states": [
+                "OK",
+                "WARNING",
+                "UNKNOWN",
+                "MISSING",
+                "CRITICAL",
+                "DOWNTIME"
+            ],
+  "operation":"AND",
+  "inputs": [
+        {
+          "name":"timeline1",
+          "timestamps":[
+            
+            {"timestamp": "2021-01-15T00:15:50Z",
+            "status": "WARNING"
+            },
+            {"timestamp": "2021-01-15T01:15:50Z",
+            "status": "WARNING"
+            },
+            {"timestamp": "2021-01-15T02:15:50Z",
+            "status": "OK"
+            },
+            {"timestamp": "2021-01-15T03:15:50Z",
+            "status": "WARNING"
+            },
+            {"timestamp": "2021-01-15T15:15:50Z",
+            "status": "OK"
+            },
+            {"timestamp": "2021-01-15T20:16:50Z",
+            "status": "WARNING"
+            }
+            
+            ]
+        }, {
+          "name":"timeline2",
+          "timestamps":[
+            {"timestamp": "2021-01-15T00:00:00Z" , "status": "OK"
+            },
+            {"timestamp": "2021-01-15T00:05:00Z",
+            "status": "OK"
+            },
+            {"timestamp": "2021-01-15T12:00:00Z",
+            "status": "WARNING"
+            },
+            {"timestamp": "2021-01-15T14:00:00Z",
+            "status": "OK"
+            },
+            
+            {"timestamp": "2021-01-15T23:05:00Z",
+            "status": "WARNING"
+            }
+            ]
+        }, {
+          "name":"timeline3",
+          "timestamps":[
+            {"timestamp": "2021-01-15T00:00:00Z" , "status": "OK"
+            },
+            {"timestamp": "2021-01-15T00:05:00Z",
+            "status": "UNKNOWN"
+            },
+            
+            {"timestamp": "2021-01-15T02:00:00Z",
+            "status": "WARNING"
+            },
+            {"timestamp": "2021-01-15T03:00:00Z",
+            "status": "OK"
+            },
+            
+            {"timestamp": "2021-01-15T06:00:00Z",
+            "status": "OK"
+            }
+            ]
+        }, {
+          "name":"timeline4",
+          "timestamps":[
+            {"timestamp": "2021-01-15T00:00:00Z" , "status": "OK"
+            },
+            {"timestamp": "2021-01-15T20:00:00Z",
+            "status": "CRITICAL"
+            },
+            
+            {"timestamp": "2021-01-15T21:00:00Z",
+            "status": "OK"
+            },
+            {"timestamp": "2021-01-15T22:00:00Z",
+            "status": "CRITICAL"
+            },
+            
+            {"timestamp": "2021-01-15T23:00:00Z",
+            "status": "OK"
+            }
+            ]
+        }
+        
+],
+  "output":{
+          "name":"merged",
+          "timestamps":[
+            {"timestamp": "2021-01-15T00:00:00Z" , "status": "MISSING"
+            },
+            {"timestamp": "2021-01-15T00:15:50Z",
+            "status": "UNKNOWN"
+            },
+            {"timestamp": "2021-01-15T02:00:00Z",
+            "status": "WARNING"
+            },
+            {"timestamp": "2021-01-15T03:00:00Z",
+            "status": "OK"
+            },
+            
+            {"timestamp": "2021-01-15T03:15:50Z",
+            "status": "WARNING"
+            },
+            
+            {"timestamp": "2021-01-15T15:15:50Z",
+            "status": "OK"
+            },
+             {"timestamp": "2021-01-15T20:00:00Z",
+            "status": "CRITICAL"
+            }
+            ,
+             {"timestamp": "2021-01-15T21:00:00Z",
+            "status": "WARNING"
+            },
+            
+             {"timestamp": "2021-01-15T22:00:00Z",
+            "status": "CRITICAL"
+            },
+            
+             {"timestamp": "2021-01-15T23:00:00Z",
+            "status": "WARNING"
+            }
+            ]
+        },  "operation_truth_table": [
+                {
+                    "name": "AND",
+                    "truth_table": [
+                        {
+                            "a": "OK",
+                            "b": "OK",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "WARNING",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "UNKNOWN",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "WARNING",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "UNKNOWN",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "UNKNOWN",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "CRITICAL",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "CRITICAL",
+                            "b": "DOWNTIME",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "DOWNTIME",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        }
+                    ]
+                },
+                {
+                    "name": "OR",
+                    "truth_table": [
+                        {
+                            "a": "OK",
+                            "b": "OK",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "WARNING",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "UNKNOWN",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "MISSING",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "CRITICAL",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "OK",
+                            "b": "DOWNTIME",
+                            "x": "OK"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "WARNING",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "UNKNOWN",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "MISSING",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "CRITICAL",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "WARNING",
+                            "b": "DOWNTIME",
+                            "x": "WARNING"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "UNKNOWN",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "MISSING",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "UNKNOWN",
+                            "b": "DOWNTIME",
+                            "x": "UNKNOWN"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "MISSING",
+                            "x": "MISSING"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "MISSING",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        },
+                        {
+                            "a": "CRITICAL",
+                            "b": "CRITICAL",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "CRITICAL",
+                            "b": "DOWNTIME",
+                            "x": "CRITICAL"
+                        },
+                        {
+                            "a": "DOWNTIME",
+                            "b": "DOWNTIME",
+                            "x": "DOWNTIME"
+                        }
+                    ]
+                }
+            ]
+}
+  
+
+}

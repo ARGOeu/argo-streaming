@@ -14,7 +14,7 @@ language governing permissions and limitations under the License. -->
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>argo.streaming</groupId>
-    <version>2.1.1</version>
+    <version>2.1.2</version>
     <name>ams-ingest-sync</name>
     <description>Stream sync data from AMS to HDFS</description>
 
@@ -57,7 +57,7 @@ language governing permissions and limitations under the License. -->
         <dependency>
             <groupId>ams.connector</groupId>
             <artifactId>ams-connector</artifactId>
-            <version>2.1.1</version>
+            <version>2.1.2</version>
             <type>jar</type>
         </dependency>
         <!-- Apache Flink dependencies -->

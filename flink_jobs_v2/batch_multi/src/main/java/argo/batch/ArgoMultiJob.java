@@ -86,10 +86,17 @@ import org.slf4j.MDC;
  * be defined from the report --calcTagTrends(Optional): set to be OFF or ON .
  * ON to calculate and write tags results in mongo db , OFF to not calculate .
  * If not set tags calculations will be defined from the report
+ * 
+ * --source-data(Optinal): tenant, all, feeds-only . Defines from where the source data can be received. if not defined or is tenant the data are received from the tenant, if value is feeds-only the data are received from 
+ * the tenant list defined in the feeds data, if is all the source data are received both from the tenant and the tenants list in the feeds data
+ * 
+ * 
+ * --source-topo(Optinal): tenant, all . Defines from where the source topology can be received. if not defined or is tenant the data are received from the tenant, 
+ * , if is all the source data are received both from the tenant and the tenants list in the feeds data and needs a parameter to be added to the api request to receive the topology
  */
 public class ArgoMultiJob {
 
-    static Logger LOG = LoggerFactory.getLogger( ArgoMultiJob.class);
+    static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 
     private static String dbURI;
     private static String reportID;
@@ -103,7 +110,23 @@ public class ArgoMultiJob {
     private static boolean calcStatusTrends = false;
     private static boolean calcFlipFlops = false;
     private static boolean calcTagTrends = false;
+    
+    enum Combined {
+        TENANT("tenant"),
+        ALL("all"), 
+        FEEDS_ONLY("feeds-only");  
+        public final String label;
+
+        private Combined(String label) {
+            this.label = label;
+        }
+        
+    }
   
+    
+    private static Enum sourceData=Combined.TENANT;
+    private static Enum sourceTopo=Combined.TENANT;
+
     public static void main(String[] args) throws Exception {
 
         configJID();
@@ -122,16 +145,32 @@ public class ArgoMultiJob {
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }
-        boolean isCombined = false;
-        if (params.get("isCombined") != null && params.getBoolean("isCombined") == true) {
+        
+        if(params.get("source-data")!=null && params.get("source-data").equals(Combined.ALL.label)){
+           sourceData=Combined.ALL;
+        }else if(params.get("source-data")!=null && params.get("source-data").equals(Combined.FEEDS_ONLY.label)){
+           sourceData=Combined.FEEDS_ONLY;
+        }
+        
+        if(params.get("source-topo")!=null && params.get("source-topo").equals(Combined.ALL.label)){
+           sourceTopo=Combined.ALL;
+        }      
+        
+        boolean isCombined=false;
+        boolean isSourceAll=false;
+        
+        if (!sourceData.equals(Combined.TENANT)) { //in case source-data is not TENANT, the tenant is a combined one
             isCombined = true;
+        }
+        
+        if (sourceTopo.equals(Combined.ALL)) { //in case source-topo is ALL, we need to add &mode=combined to api request
+            isSourceAll = true;
         }
         String apiEndpoint = params.getRequired("api.endpoint");
         String apiToken = params.getRequired("api.token");
         reportID = params.getRequired("report.id");
 
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
-
 
         // fetch
         // set params
@@ -144,6 +183,7 @@ public class ArgoMultiJob {
         }
         runDate = params.getRequired("run.date");
         amr.setIsCombined(isCombined);
+        amr.setIsSourceTopoAll(isSourceAll);
         amr.setReportID(reportID);
         amr.setDate(runDate);
         amr.getRemoteAll();
@@ -155,7 +195,7 @@ public class ArgoMultiJob {
         cfgMgr.loadJsonString(confData);
 
         enableComputations(cfgMgr.activeComputations, params);
-        if(isCombined){
+        if (isCombined) {
             amr.getTenant();
         }
 
@@ -188,69 +228,81 @@ public class ArgoMultiJob {
         }
 
         // Get conf data
-     
         DataSet<MetricProfile> mpsDS = env.fromElements(amr.getListMetrics());
         DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
         DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
+
+        DataSet<MetricProfile> nempsDS = env.fromElements(new MetricProfile("","","",null));
+        MetricProfile[] nempsList = amr.getNewEntriesMetrics();
+        if (nempsList.length > 0) {
+            nempsDS = env.fromElements(nempsList);
+        }
         GroupGroup[] listGroups = amr.getListGroupGroups();
         if (listGroups.length > 0) {
             ggpDS = env.fromElements(amr.getListGroupGroups());
         }
-
         Downtime[] listDowntimes = amr.getListDowntimes();
         if (listDowntimes.length > 0) {
             downDS = env.fromElements(amr.getListDowntimes());
         }
 
-
-        List<String> tenantList=new ArrayList<>();
-        if (isCombined) {
-            tenantList = Arrays.asList(amr.getListTenants());
-        }else{
-             tenantList.add(amr.getTenant());
+        List<String> tenantList = new ArrayList<>();
+        if(sourceData.equals(Combined.TENANT) || sourceData.equals(Combined.ALL)){
+            tenantList.add(amr.getTenant());
         }
-        List<Path[]> tenantPaths=new ArrayList<>();
+      
+        if(sourceData.equals(Combined.FEEDS_ONLY) || sourceData.equals(Combined.ALL)){   
+            tenantList.addAll(Arrays.asList(amr.getListTenants()));
+        } 
+        
+        List<Path[]> tenantPaths = new ArrayList<>();
 
-            DateTime currentDate=Utils.convertStringtoDate("yyyy-MM-dd",runDate);
-            String previousDate=Utils.convertDateToString("yyyy-MM-dd",currentDate.minusDays(1));
-            for(String tenant: tenantList){
-                Path[] paths=new Path[2];
-                paths[0]=new Path(params.get("basispath")+"/"+tenant+"/mdata/"+runDate);
-                paths[1] =new Path(params.get("basispath")+"/"+tenant+"/mdata/"+previousDate);
+        DateTime currentDate = Utils.convertStringtoDate("yyyy-MM-dd", runDate);
+        String previousDate = Utils.convertDateToString("yyyy-MM-dd", currentDate.minusDays(1));
+          for (String tenant : tenantList) {
+            Path[] paths = new Path[2];
+            if (isCombined) {
+                paths[0] = new Path(params.getRequired("basispath") + "/" + tenant + "/mdata/" + runDate);
+                paths[1] = new Path(params.getRequired("basispath") + "/" + tenant + "/mdata/" + previousDate);
                 tenantPaths.add(paths);
+            } else {
+                paths[0] = new Path(params.getRequired("mdata"));
+                paths[1] = new Path(params.getRequired("pdata"));
+                tenantPaths.add(paths);
+
             }
-        DataSet<MetricData> allMetricData=null;
-        for(Path[] path:tenantPaths) {
-         // todays metric data
-         Path in = path[0];
-         AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat(in, MetricData.class);
-         DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
+        }
+          DataSet<MetricData> allMetricData = null;
+        for (Path[] path : tenantPaths) {
+            // todays metric data
+            Path in = path[0];
+            AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat(in, MetricData.class);
+            DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
 
-         // previous metric data
-         Path pin = path[1];
-         AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat(pin, MetricData.class);
-         DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
+            // previous metric data
+            Path pin = path[1];
+            AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat(pin, MetricData.class);
+            DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 
+            DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
 
-         DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
+            // Find the latest day
+            DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
+                    .sortGroup("timestamp", Order.DESCENDING).first(1);
 
-         // Find the latest day
-         DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
-                 .sortGroup("timestamp", Order.DESCENDING).first(1);
+            // Union todays data with the latest statuses from previous day
+            DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
 
-         // Union todays data with the latest statuses from previous day
-         DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
-         
-         if(allMetricData==null) {
-             allMetricData = mdataPrevTotalDS;
-         }else{
-             allMetricData=allMetricData.union(mdataPrevTotalDS);
-         }
-     }
+            if (allMetricData == null) {
+                allMetricData = mdataPrevTotalDS;
+            } else {
+                allMetricData = allMetricData.union(mdataPrevTotalDS);
+            }
+        }
         // Use yesterday's latest statuses and todays data to find the missing ones and add them to the mix
         DataSet<StatusMetric> fillMissDS = allMetricData.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(confDS, "conf");
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(confDS, "conf").withBroadcastSet(nempsDS, "nemps");
 
         // Discard unused data and attach endpoint group as information
         DataSet<StatusMetric> mdataTrimDS = allMetricData.flatMap(new PickEndpoints(params))
@@ -275,7 +327,6 @@ public class ArgoMultiJob {
         DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");
-
 
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
@@ -541,12 +592,12 @@ public class ArgoMultiJob {
     }
 
     private static String getJID() {
-         return JobID.generate().toString();
+        return JobID.generate().toString();
     }
 
     private static void configJID() {//config the JID in the log4j.properties
-        String jobId=getJID();
+        String jobId = getJID();
         MDC.put("JID", jobId);
-         
+
     }
 }

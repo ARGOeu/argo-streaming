@@ -5,9 +5,20 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.TimeZone;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  * APIResourceManager class fetches remote argo-web-api resources such as report
@@ -33,6 +44,7 @@ public class ApiResourceManager {
     private String weightsID;
     private RequestManager requestManager;
     private ApiResponseParser apiResponseParser;
+    private boolean isSourceTopoAll;
     private boolean isCombined;
     //private boolean verify;
     //private int timeoutSec;
@@ -211,6 +223,38 @@ public class ApiResourceManager {
     }
 
     /**
+     * Retrieves the metric profile content based on the metric_id attribute and
+     * stores it to the enum map
+     */
+    public MetricProfile[] getNewEntriesMetrics() throws ParseException {
+
+        if (this.data.get(ApiResource.METRIC) == null) {
+            getRemoteMetric();
+        }
+        String content = this.data.get(ApiResource.METRIC);
+
+        JsonParser jsonParser = new JsonParser();
+        JsonElement jElement = jsonParser.parse(content);
+        JsonObject jRoot = jElement.getAsJsonObject();
+        String mpDate = jRoot.get("date").getAsString();
+        String yesterdayContent = null;
+        if (mpDate.equals(date)) {
+            DateTime yesterday = convertStringtoDate("yyyy-MM-dd", mpDate).minusDays(1);
+            String yesterdaystr = convertDateToString("yyyy-MM-dd", yesterday);
+
+            String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
+            String fullURL = String.format(path, this.endpoint, this.metricID, yesterdaystr);
+            yesterdayContent = this.apiResponseParser.getJsonData(this.requestManager.getResource(fullURL), false);
+          
+        }
+        List<MetricProfile> newentries = this.apiResponseParser.getListNewMetrics(content, yesterdayContent);
+
+        MetricProfile[] rArr = new MetricProfile[newentries.size()];
+        rArr = newentries.toArray(rArr);
+        return rArr;
+    }
+
+    /**
      * Retrieves the aggregation profile content based on the aggreagation_id
      * attribute and stores it to the enum map
      */
@@ -257,8 +301,12 @@ public class ApiResourceManager {
      * Retrieves the topology endpoint content and stores it to the enum map
      */
     public void getRemoteTopoEndpoints() {
+        String combinedparam="";
+        if(isSourceTopoAll){
+        combinedparam="&mode=combined";
+        }
         String path = "https://%s/api/v2/topology/endpoints/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date);
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
@@ -269,8 +317,13 @@ public class ApiResourceManager {
      * Retrieves the topology groups content and stores it to the enum map
      */
     public void getRemoteTopoGroups() {
+        String combinedparam="";
+        if(isSourceTopoAll){
+        combinedparam="&mode=combined";
+        }
+      
         String path = "https://%s/api/v2/topology/groups/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date);
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.TOPOGROUPS, this.apiResponseParser.getJsonData(content, true));
@@ -505,6 +558,7 @@ public class ApiResourceManager {
             this.getRemoteThresholds();
         }
         // Go to topology
+   
         this.getRemoteTopoEndpoints();
         this.getRemoteTopoGroups();
         // get weights
@@ -526,4 +580,26 @@ public class ApiResourceManager {
         this.isCombined = isCombined;
     }
 
+    public void setIsSourceTopoAll(boolean isSourceTopoAll) {
+        this.isSourceTopoAll = isSourceTopoAll;
+    }
+
+    
+
+    public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Date date = sdf.parse(dateStr);
+        return new DateTime(date.getTime(), DateTimeZone.UTC);
+
+    }
+
+    public static String convertDateToString(String format, DateTime date) throws ParseException {
+
+        //String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
+        String dateString = date.toString(dtf);
+        return dateString;
+    }
 }
