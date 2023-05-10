@@ -36,6 +36,8 @@ class TestClass(unittest.TestCase):
         parser.add_argument('--method')
         parser.add_argument('--clear-prev-results',dest='clear_results',action='store_true')
         parser.add_argument('--calculate')
+        parser.add_argument('--source-data')
+        parser.add_argument('--source-topo')
         args = parser.parse_args(
             ['--tenant', 'TENANTA', '--date', '2018-02-11', '--report', 'report_name', '--method', 'upsert', '--sudo', '--clear-prev-results', '--calculate', 'trends'])
 
