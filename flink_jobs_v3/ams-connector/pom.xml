@@ -14,7 +14,6 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <slf4j.version>2.0.7</slf4j.version>
-        <log4j.version>1.2.17</log4j.version>
         <flink.version>1.17.0</flink.version>
 	
     </properties>
@@ -40,14 +39,20 @@
         <!-- explicitly add a standard loggin framework, as Flink does not have 
         a hard dependency on one specific framework by default -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.version}</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.20.0</version>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>${log4j.version}</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.20.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -93,14 +98,20 @@
                 <!-- explicitly add a standard loggin framework, as Flink does not have 
                 a hard dependency on one specific framework by default -->
                 <dependency>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                    <version>${slf4j.version}</version>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-api</artifactId>
+                    <version>2.20.0</version>
                 </dependency>
                 <dependency>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                    <version>${log4j.version}</version>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                    <version>2.20.0</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
+                    <version>${slf4j.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.flink</groupId>
@@ -213,7 +224,7 @@
                                     <exclude>joda-time:joda-time</exclude>
                                     <exclude>org.apache.commons:commons-lang3</exclude>
                                     <exclude>org.slf4j:slf4j-api</exclude>
-                                    <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                    <exclude>org.slf4j:slf4j-reload4j</exclude>
                                     <exclude>log4j:log4j</exclude>
                                     <exclude>org.apache.commons:commons-math</exclude>
                                     <exclude>org.apache.sling:org.apache.sling.commons.json</exclude>

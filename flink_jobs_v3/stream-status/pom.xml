@@ -11,11 +11,6 @@ language governing permissions and limitations under the License. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-<!--    <parent>
-        <groupId>flink.jobs.v2</groupId>
-        <artifactId>flink_jobs_v2</artifactId>
-        <version>3.0.1</version>
-    </parent> -->
     <groupId>argo.streaming</groupId>
     <artifactId>streaming-status</artifactId>
     <version>3.0.1</version>
@@ -389,10 +384,9 @@ language governing permissions and limitations under the License. -->
                                     <exclude>commons-lang:commons-lang</exclude>
                                     <exclude>junit:junit</exclude>
                                     <exclude>de.javakaffee:kryo-serializers</exclude>
-<!--                                    <exclude>joda-time:joda-time</exclude>-->
                                     <exclude>org.apache.commons:commons-lang3</exclude>
                                     <exclude>org.slf4j:slf4j-api</exclude>
-                                    <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                    <exclude>org.slf4j:slf4j-reload4j</exclude>
                                     <exclude>log4j:log4j</exclude>
                                     <exclude>org.apache.commons:commons-math</exclude>
                                     <exclude>org.apache.sling:org.apache.sling.commons.json</exclude>
