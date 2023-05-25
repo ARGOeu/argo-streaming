@@ -87,12 +87,13 @@ import org.slf4j.MDC;
  * ON to calculate and write tags results in mongo db , OFF to not calculate .
  * If not set tags calculations will be defined from the report
  * 
- * --source-data(Optinal): tenant, all, feeds-only . Defines from where the source data can be received. if not defined or is tenant the data are received from the tenant, if value is feeds-only the data are received from 
- * the tenant list defined in the feeds data, if is all the source data are received both from the tenant and the tenants list in the feeds data
+ * 
+ * --source-data(Optinal): tenant, all, feeds-only . Defines from where the source data can be received. if not defined or is tenant the data are received from the tenant (the tenant does not combine data), if value is feeds-only the data are received from 
+ * the tenant list defined in the feeds data(the tenant is acting as a gatherer without data on it's own), if is all the source data are received both from the tenant and the tenants list in the feeds data (the tenant already exists and has data to combine)
  * 
  * 
- * --source-topo(Optinal): tenant, all . Defines from where the source topology can be received. if not defined or is tenant the data are received from the tenant, 
- * , if is all the source data are received both from the tenant and the tenants list in the feeds data and needs a parameter to be added to the api request to receive the topology
+ * --source-topo(Optinal): tenant, all . Defines from where the source topology can be received. if not defined or is tenant the data are received from the tenant (the tenant either is not combining data or acts as a gatherer without topologies on its own), 
+ * , if is all the source data are received both from the tenant and the tenants list in the feeds data and needs a parameter to be added to the api request to receive the topology (the tenant has it's own topologies)
  */
 public class ArgoMultiJob {
 
