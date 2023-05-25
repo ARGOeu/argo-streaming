@@ -18,6 +18,7 @@
         <module>api-resource-manager</module>
         <module>stream-status</module>
         <module>batch-multi</module>
+        <module>hdfs-file-merger</module>
     </modules>
     <dependencyManagement>
         <dependencies>

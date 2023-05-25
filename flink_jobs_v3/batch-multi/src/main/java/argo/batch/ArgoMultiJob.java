@@ -55,10 +55,10 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.formats.avro.AvroInputFormat;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.MDC;
-
 /**
  * Implements an ARGO Status Batch Job in flink
  * <p>
@@ -460,6 +460,7 @@ public class ArgoMultiJob {
             }
 
         }
+       
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Multi Batch job for tenant:");
@@ -561,4 +562,5 @@ public class ArgoMultiJob {
         MDC.put("JID", jobId);
 
     }
+  
 }
