@@ -1,0 +1,16 @@
+argo-ams-library==0.6.1
+avro==1.11.1
+certifi==2023.5.7
+charset-normalizer==3.1.0
+flake8==6.0.0
+idna==3.4
+influxdb-client==1.36.1
+mccabe==0.7.0
+pycodestyle==2.10.0
+pyflakes==3.0.1
+python-dateutil==2.8.2
+reactivex==4.0.4
+requests==2.31.0
+six==1.16.0
+typing_extensions==4.6.2
+urllib3==2.0.2
