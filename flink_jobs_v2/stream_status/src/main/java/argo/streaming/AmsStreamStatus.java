@@ -55,9 +55,7 @@ import org.apache.flink.core.fs.FileSystem;
 import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
-import profilesmanager.ReportManager;
 import status.StatusManager;
-
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
  * kafka, fs) job required cli parameters --ams.endpoint : ARGO messaging api
@@ -142,6 +140,7 @@ public class AmsStreamStatus {
         return hasArgs(kafkaArgs, paramTool);
     }
 
+   
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String hbaseArgs[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.namespace",
             "hbase.table"};
@@ -258,6 +257,8 @@ public class AmsStreamStatus {
         if(parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")){
          offsetDt=runDate;
         }
+        
+       
         ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
         ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
 
@@ -457,14 +458,15 @@ public class AmsStreamStatus {
             // generate events and get them
             String service = item.getService();
             String hostname = item.getHostname();
-
+            
             ArrayList<String> groups = egp.getGroup(hostname, service);
             //System.out.println(egp.getList());
-
             for (String groupItem : groups) {
                 Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
+                
                 curItem.f0 = groupItem;
                 curItem.f1 = item;
+                 
                 out.collect(curItem);
                 System.out.println("item enriched: " + curItem.toString());
             }
@@ -898,4 +900,6 @@ public class AmsStreamStatus {
         }
     }
 
-}
+        
+        
+    }

@@ -20,6 +20,7 @@
          <module>ams_ingest_metric</module>         
          <module>ams_ingest_sync</module>
         <module>ams-connector</module>
+        <module>influxdb.connector</module>
     </modules>
     <dependencyManagement>
         <dependencies>

@@ -5,8 +5,6 @@
  */
 package argo.avro;
 
-import org.apache.avro.specific.SpecificData;
-
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class MetricData extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {

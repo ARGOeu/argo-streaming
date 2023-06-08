@@ -69,6 +69,8 @@ language governing permissions and limitations under the License. -->
             <version>2.1.2</version>
             <type>jar</type>
         </dependency>
+       
+       
         <dependency>
             <groupId>api.resource.manager</groupId>
             <artifactId>ApiResourceManager</artifactId>
@@ -150,7 +152,7 @@ language governing permissions and limitations under the License. -->
             <version>1.4</version>
             <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/xerces/xercesImpl -->
+        <!-- https:/mvnrepository.com/artifact/xerces/xercesImpl -->
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
@@ -174,7 +176,7 @@ language governing permissions and limitations under the License. -->
             <artifactId>joda-time</artifactId>
             <version>1.6</version>
         </dependency>
-        
+         
     </dependencies>
 
     <profiles>
