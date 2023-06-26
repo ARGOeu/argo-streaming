@@ -72,14 +72,14 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
         String service = "";
         String endpointGroup = "";
         String function = "";
-        HashMap<String, Timeline> timelinelist = new HashMap<String,Timeline>();
+        HashMap<String, Timeline> timelinelist = new HashMap<String, Timeline>();
         boolean hasThr = false;
         for (StatusTimeline item : in) {
             service = item.getService();
             endpointGroup = item.getGroup();
             function = item.getFunction();
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
-            TreeMap<DateTime, Integer> samples = new TreeMap<DateTime,Integer>();
+            TreeMap<DateTime, Integer> samples = new TreeMap<DateTime, Integer>();
             for (TimeStatus timestatus : timestatusList) {
                 DateTime dt = new DateTime(timestatus.getTimestamp(), DateTimeZone.UTC);
                 samples.put(dt, timestatus.getStatus());
@@ -92,9 +92,14 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
                 hasThr = true;
             }
         }
-         
+
         String operation = serviceFunctionsMap.get(service);
-        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist,this.opsMgr.getDefaultExcludedInt(),runDate);
+        if (operation == null) {
+            throw new RuntimeException("Operation for group:" + endpointGroup + " service: " + service + " does not exist. Check Aggregation Profiles");
+
+        }
+
+        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt(), runDate);
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
