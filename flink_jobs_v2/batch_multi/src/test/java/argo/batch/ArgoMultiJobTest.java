@@ -193,7 +193,8 @@ public class ArgoMultiJobTest {
         //***************************Test FillMIssing
         DataSet<StatusMetric> fillMissDS = mdataPrevTotalDS.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf").withBroadcastSet(nempsDS, "nemps");
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(cfgDS, "conf").withBroadcastSet(nempsDS, "nemps")
+                .withBroadcastSet(apsDS, "aps");
 
         URL expFillMissdataURL = ArgoMultiJobTest.class.getResource("/test/fillmissing.json");
         DataSet<String> fillMissString = env.readTextFile(expFillMissdataURL.toString());
