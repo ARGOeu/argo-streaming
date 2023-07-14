@@ -59,6 +59,13 @@ language governing permissions and limitations under the License. -->
     handling. This approach is preferred and leads to much cleaner jar files. -->
 
     <dependencies>
+          <dependency>
+            <groupId>profiles.manager</groupId>
+            <artifactId>ProfilesManager</artifactId>
+            <version>2.1.2</version>
+            <type>jar</type>
+        </dependency>
+      
             
         <dependency>
             <groupId>ams.connector</groupId>
@@ -124,6 +131,24 @@ language governing permissions and limitations under the License. -->
             <version>4.5.13</version>
         </dependency>
 
+      <dependency>
+            <groupId>com.influxdb</groupId>
+            <artifactId>influxdb-client-java</artifactId>
+            <version>6.8.0</version>
+        </dependency>
+        <dependency>
+            <groupId>flink.jobs.v2</groupId>
+            <artifactId>influxdb.connector</artifactId>
+            <version>2.1.2</version>
+            <type>jar</type>
+        </dependency>
+      
+        <dependency>
+            <groupId>api.resource.manager</groupId>
+            <artifactId>ApiResourceManager</artifactId>
+            <version>2.1.2</version>
+            <type>jar</type>
+        </dependency>
 
 
 

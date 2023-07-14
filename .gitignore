@@ -24,3 +24,4 @@ conf.cfg
 .project
 .settings/
 /flink_jobs_v3/HdfsFileMerger/target/
+/flink_jobs_v2/influxdb.connector/target/
