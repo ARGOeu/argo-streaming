@@ -7,6 +7,7 @@ package utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -74,7 +75,7 @@ public class Utils {
         }
     }
 
-    public static boolean checkParameters(ParameterTool params,String... vars) {
+    public static boolean checkParameters(ParameterTool params, String... vars) {
 
         for (String var : vars) {
 
@@ -127,6 +128,55 @@ public class Utils {
         Minutes minutes = Minutes.minutesBetween(startDay, endDay);
         int minutesInt = minutes.getMinutes();
         return minutesInt;
+    }
+
+     //merges periods of time that are continuous or max 1 min away
+    public static ArrayList<String[]> mergeTimestamps(ArrayList<String[]> periods) throws ParseException { 
+
+        ArrayList<String[]> merged = new ArrayList<>();
+
+        boolean toAdd = false;
+        String previousStart = null;
+        String previousEnd = null;
+
+        for (String[] period : periods) {
+             String[] newPeriod = new String[2];
+                   
+            if (periods.indexOf(period) == 0) {
+                previousStart = period[0];
+                previousEnd = period[1];
+            } else {
+
+                String start = period[0];
+                String end = period[1];
+
+                DateTime startDt = convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", start);
+                DateTime endDt = convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", previousEnd);
+
+                if (startDt.isAfter(endDt.plusMinutes(1))) { //if the start of current period is after the end of previous period, by more than 1 minute, then save the previous period. else continue
+                    newPeriod=new String[2];
+                    newPeriod[0] = previousStart;
+                    newPeriod[1] = previousEnd;
+
+                    previousStart = start;
+                    toAdd=true;
+               }
+                if(toAdd){
+                   merged.add(newPeriod); //add the period to the list
+                   toAdd=false; 
+                }
+                 previousEnd = end; //set the previous end timestamp (used for comparison) to the current's period end
+
+            }
+        }
+        if (!toAdd) { 
+            String[] newPeriod = new String[2];
+            newPeriod[0] = previousStart;
+            newPeriod[1] = previousEnd;
+            merged.add(newPeriod);
+
+        }
+        return merged;
     }
 
 }

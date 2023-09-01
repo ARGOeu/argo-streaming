@@ -14,10 +14,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import argo.avro.MetricProfile;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import org.joda.time.DateTimeZone;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.DowntimeManager;
@@ -26,6 +30,7 @@ import profilesmanager.OperationsManager;
 
 import timelines.Timeline;
 import timelines.TimelineAggregator;
+import utils.Utils;
 
 /**
  * Accepts a list o status metrics grouped by the fields: endpoint group,
@@ -41,7 +46,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
 
     public CalcEndpointTimeline(ParameterTool params, DateTime now) {
         this.params = params;
-        this.now=now;
+        this.now = now;
     }
 
     static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
@@ -79,7 +84,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
         this.downtime = getRuntimeContext().getBroadcastVariable("down");
         this.downtimeMgr = new DowntimeManager();
         this.downtimeMgr.loadFromList(downtime);
-     
+
         this.runDate = params.getRequired("run.date");
         this.operation = this.apsMgr.getMetricOpByProfile();
 
@@ -103,7 +108,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
             for (TimeStatus timestatus : timestatusList) {
 
-                samples.put(new DateTime(timestatus.getTimestamp(),DateTimeZone.UTC), timestatus.getStatus());
+                samples.put(new DateTime(timestatus.getTimestamp(), DateTimeZone.UTC), timestatus.getStatus());
             }
             Timeline timeline = new Timeline();
             timeline.insertDateTimeStamps(samples, true);
@@ -113,16 +118,21 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
                 hasThr = true;
             }
         }
+
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt(), runDate);
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
 
-        ArrayList<String> downPeriod = this.downtimeMgr.getPeriod(hostname, service);
-     
-	
-        if (downPeriod != null && !downPeriod.isEmpty()) {
-            mergedTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt(), now);
+        ArrayList<String[]> downPeriods = this.downtimeMgr.getPeriod(hostname, service);
+
+        if (downPeriods != null && !downPeriods.isEmpty()) {
+            if (downPeriods.size() > 1) { //in case multiple dowtimes exist for service endpoint , first merge the downtime periods that are continuous
+                downPeriods = Utils.mergeTimestamps(downPeriods);
+            }
+            for (String[] downPeriod : downPeriods) {
+                mergedTimeline.fillWithStatus(downPeriod[0], downPeriod[1], this.opsMgr.getDefaultDownInt(), now);
+            }
         }
         ArrayList<TimeStatus> timestatuCol = new ArrayList();
         for (Map.Entry<DateTime, Integer> entry : mergedTimeline.getSamples()) {
@@ -135,5 +145,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
         out.collect(statusTimeline);
 
     }
+
+  
 
 }
