@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import argo.avro.Downtime;
 import argo.streaming.SyncParse;
+import java.util.Arrays;
 
 import org.apache.commons.codec.binary.Base64;
 import profilesmanager.DowntimeManager;
@@ -95,15 +96,43 @@ public class DowntimeCacheTest {
 		
 		// Assert that max items are 2
 		assertEquals(2,dc2.getMaxItems());
-		
-		assertEquals("[2018-05-13T00:00:00Z, 2018-05-13T23:59:00Z]",dc2.getDowntimePeriod("2018-05-13", "cluster51.knu.ac.kr", "Site-BDII").toString());
-		assertEquals("[2018-05-14T00:00:00Z, 2018-05-14T23:59:00Z]",dc2.getDowntimePeriod("2018-05-14", "cluster51.knu.ac.kr", "Site-BDII").toString());
-		assertEquals("[2018-05-13T14:00:00Z, 2018-05-13T23:59:00Z]",dc2.getDowntimePeriod("2018-05-13", "fal-pygrid-30.lancs.ac.uk", "webdav").toString());
+                
+                ArrayList<String[]> timePeriod = new ArrayList<String[]>();
+		String[] period=new String[2];
+                period[0]="2018-05-13T00:00:00Z";
+		period[1]="2018-05-13T23:59:00Z";            
+                timePeriod.add(period);
+             
+                 assertArrayEquals(dc2.getDowntimePeriod("2018-05-13", "cluster51.knu.ac.kr", "Site-BDII").toArray(), timePeriod.toArray());
+          
+                 
+                 timePeriod.clear();
+            
+                period[0]="2018-05-14T00:00:00Z";
+		period[1]="2018-05-14T23:59:00Z";            
+                timePeriod.add(period);
+             
+            
+                assertArrayEquals(dc2.getDowntimePeriod("2018-05-14", "cluster51.knu.ac.kr", "Site-BDII").toArray(),timePeriod.toArray());
+                timePeriod.clear();
+               
+                period[0]="2018-05-13T14:00:00Z";
+		period[1]="2018-05-13T23:59:00Z";            
+                timePeriod.add(period);             
+                
+                assertArrayEquals(dc2.getDowntimePeriod("2018-05-13", "fal-pygrid-30.lancs.ac.uk", "webdav").toArray(),timePeriod.toArray());
 		// Insert new element 2018-05-16 that will remove 2018-05-13
 		dc2.addFeed("2018-05-16", downtimeMap.get("2018-05-16"));
 		assertEquals(null,dc2.getDowntimePeriod("2018-05-13", "fal-pygrid-30.lancs.ac.uk", "webdav"));
 		// ..but 2018-05-14 still exists
-		assertEquals("[2018-05-14T00:00:00Z, 2018-05-14T23:59:00Z]",dc2.getDowntimePeriod("2018-05-14", "cluster51.knu.ac.kr", "Site-BDII").toString());
+		
+                timePeriod.clear();
+             
+                period[0]="2018-05-14T00:00:00Z";
+		period[1]="2018-05-14T23:59:00Z";            
+                timePeriod.add(period);
+             
+                assertArrayEquals(dc2.getDowntimePeriod("2018-05-14", "cluster51.knu.ac.kr", "Site-BDII").toArray(),timePeriod.toArray());
 		// Insert new element 2018-05-17 that will remove 2018-05-14
 		dc2.addFeed("2018-05-17", downtimeMap.get("2018-05-17"));
 		assertEquals(null,dc2.getDowntimePeriod("2018-05-14", "cluster51.knu.ac.kr", "Site-BDII"));
@@ -127,12 +156,13 @@ public class DowntimeCacheTest {
 		DowntimeManager dm15 = new DowntimeManager();
 		DowntimeManager dm17 = new DowntimeManager();
 		DowntimeManager dm18 = new DowntimeManager();
+                
 		
-		dm15.loadFromList(downtimeMap.get("2018-05-15"));
-		dm17.loadFromList(downtimeMap.get("2018-05-17"));
+		dm15.loadFromList(downtimeMap.get("2018-05-15"));		
+                dm17.loadFromList(downtimeMap.get("2018-05-17"));
 		dm18.loadFromList(downtimeMap.get("2018-05-18"));
-		
-		assertEquals(dm15.toString(),dc3.getDowntimeManager("2018-05-15").toString());
+                
+          	assertEquals(dm15.toString(),dc3.getDowntimeManager("2018-05-15").toString());
 		assertEquals(dm17.toString(),dc3.getDowntimeManager("2018-05-17").toString());
 		assertEquals(dm18.toString(),dc3.getDowntimeManager("2018-05-18").toString());
 		
