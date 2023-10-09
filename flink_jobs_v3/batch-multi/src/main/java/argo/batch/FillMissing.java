@@ -1,6 +1,5 @@
 package argo.batch;
 
-import argo.amr.ApiResourceManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,7 +19,8 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import java.text.ParseException;
-import org.joda.time.DateTime;
+
+import profilesmanager.AggregationProfileManager;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.GroupGroupManager;
 import profilesmanager.MetricProfileManager;
@@ -43,8 +43,9 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
 
     static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 
+    private List<String> aps;
     private List<MetricProfile> mps;
-     private List<MetricProfile> nemps;
+    private List<MetricProfile> nemps;
     private List<String> ops;
     private List<GroupEndpoint> egp;
     private List<GroupGroup> ggp;
@@ -54,6 +55,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
     private GroupGroupManager ggpMgr;
     private OperationsManager opsMgr;
     private ReportManager confMgr;
+    private AggregationProfileManager apsMgr;
     private String runDate;
     private String egroupType;
     private Set<Tuple4<String, String, String, String>> expected;
@@ -80,6 +82,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
         this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
         this.conf = getRuntimeContext().getBroadcastVariable("conf");
         this.nemps = getRuntimeContext().getBroadcastVariable("nemps");
+        this.aps = getRuntimeContext().getBroadcastVariable("aps");
 
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
@@ -98,6 +101,9 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
 
         this.confMgr = new ReportManager();
         this.confMgr.loadJsonString(conf);
+      
+        this.apsMgr = new AggregationProfileManager();
+        this.apsMgr.loadJsonString(aps);
 
         this.runDate = params.getRequired("run.date");
         this.egroupType = this.confMgr.egroup;
@@ -156,7 +162,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
 
         String timestamp = this.runDate + "T00:00:00Z";
         String state = this.opsMgr.getDefaultMissing();
-          String unknownstate = this.opsMgr.getDefaultUnknown();
+        String unknownstate = this.opsMgr.getDefaultUnknown();
         for (MetricData item : in) {
 
             service = item.getService();
@@ -201,7 +207,7 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
             mn.setTimeInt(timeInt);
             out.collect(mn);
         }
-        
+
         for (Tuple4<String, String, String, String> item : newEntries) {
             StatusMetric mn = new StatusMetric();
             // Create a StatusMetric output
