@@ -121,6 +121,9 @@ public class FillMissing extends RichGroupReduceFunction<MetricData, StatusMetri
         String mProfile = this.mpsMgr.getProfiles().get(0);
         for (GroupEndpoint servPoint : this.egp) {
 
+             if(!this.apsMgr.checkServiceExistance(servPoint.getService())){
+              continue;
+            }
             ArrayList<String> metrics = this.mpsMgr.getProfileServiceMetrics(mProfile, servPoint.getService());
 
             if (metrics == null) {

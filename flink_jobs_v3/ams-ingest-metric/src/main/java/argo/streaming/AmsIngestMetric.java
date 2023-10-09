@@ -1,9 +1,5 @@
 package argo.streaming;
 
-import ams.connector.ArgoMessagingSource;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
@@ -27,9 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
 
-import com.google.gson.JsonParser;
-
-import argo.avro.MetricData;
 import argo.avro.MetricDataOld;
 
 import ams.connector.ArgoMessagingSource;
@@ -50,13 +43,12 @@ import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
-import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
+
 
 /**
  * Flink Job : Stream metric data from ARGO messaging to Hbase job required cli

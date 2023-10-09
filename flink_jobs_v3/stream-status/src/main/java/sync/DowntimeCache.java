@@ -102,8 +102,9 @@ public class DowntimeCache {
 	/**
 	 * Check if downtime period exists for a specific endpoint (service, hostname, timestamp)
 	 */
-	public ArrayList<String> getDowntimePeriod(String dayStamp, String hostname, String service) {
-		// If downtime manager with data exists for specific day
+	
+	public ArrayList<String[]> getDowntimePeriod(String dayStamp, String hostname, String service) {
+            // If downtime manager with data exists for specific day
 		if (cache.containsKey(dayStamp)) {
 			// return the downtime period from downtime manager of specific day
 			return cache.get(dayStamp).getPeriod(hostname, service);

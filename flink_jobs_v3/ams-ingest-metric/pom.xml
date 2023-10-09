@@ -61,12 +61,6 @@ language governing permissions and limitations under the License. -->
 
     <dependencies>
         <dependency>
-            <groupId>profiles.manager</groupId>
-            <artifactId>ProfilesManager</artifactId>
-            <version>2.1.2</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
             <version>1.11.1</version>
@@ -147,16 +141,21 @@ language governing permissions and limitations under the License. -->
             <version>6.8.0</version>
         </dependency>
         <dependency>
-            <groupId>flink.jobs.v2</groupId>
+            <groupId>flink.jobs.v3</groupId>
             <artifactId>influxdb.connector</artifactId>
-            <version>2.1.2</version>
+            <version>3.0.1</version>
             <type>jar</type>
         </dependency>
-
         <dependency>
             <groupId>api.resource.manager</groupId>
-            <artifactId>ApiResourceManager</artifactId>
-            <version>2.1.2</version>
+            <artifactId>api-resource-manager</artifactId>
+            <version>3.0.1</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>profiles.manager</groupId>
+            <artifactId>profiles-manager</artifactId>
+            <version>3.0.1</version>
             <type>jar</type>
         </dependency>
     </dependencies>
