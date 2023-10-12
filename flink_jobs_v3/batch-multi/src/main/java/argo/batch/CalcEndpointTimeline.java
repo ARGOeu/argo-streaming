@@ -118,13 +118,16 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
 
-        ArrayList<String> downPeriod = this.downtimeMgr.getPeriod(hostname, service);
-     
-	
-        if (downPeriod != null && !downPeriod.isEmpty()) {
-            mergedTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), this.opsMgr.getDefaultDownInt(), now);
+         ArrayList<String[]> downPeriods = this.downtimeMgr.getPeriod(hostname, service);
+
+        if (downPeriods != null && !downPeriods.isEmpty()) { 
+            for (String[] downPeriod : downPeriods) {
+                mergedTimeline.fillWithStatus(downPeriod[0], downPeriod[1], this.opsMgr.getDefaultDownInt(), now);
+                mergedTimeline.optimize();
+            }
         }
-        ArrayList<TimeStatus> timestatuCol = new ArrayList();
+	
+       ArrayList<TimeStatus> timestatuCol = new ArrayList();
         for (Map.Entry<DateTime, Integer> entry : mergedTimeline.getSamples()) {
             TimeStatus timestatus = new TimeStatus(entry.getKey().getMillis(), entry.getValue());
             timestatuCol.add(timestatus);

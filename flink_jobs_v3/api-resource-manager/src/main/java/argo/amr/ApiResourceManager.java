@@ -20,14 +20,15 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+
 /**
  * APIResourceManager class fetches remote argo-web-api resources such as report
  * configuration, profiles, topology, weights in JSON format
  */
 public class ApiResourceManager {
 
+    
     private EnumMap<ApiResource, String> data = new EnumMap<>(ApiResource.class);
-
     private String endpoint;
     private String token;
     private String reportID;
@@ -579,10 +580,11 @@ public class ApiResourceManager {
     public void setIsCombined(boolean isCombined) {
         this.isCombined = isCombined;
     }
-
+ 
     public void setIsSourceTopoAll(boolean isSourceTopoAll) {
         this.isSourceTopoAll = isSourceTopoAll;
     }
+
 
     
 

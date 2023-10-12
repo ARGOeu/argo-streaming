@@ -59,6 +59,7 @@ import org.apache.flink.formats.avro.AvroInputFormat;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.MDC;
+
 /**
  * Implements an ARGO Status Batch Job in flink
  * <p>
@@ -86,13 +87,20 @@ import org.slf4j.MDC;
  * be defined from the report --calcTagTrends(Optional): set to be OFF or ON .
  * ON to calculate and write tags results in mongo db , OFF to not calculate .
  * If not set tags calculations will be defined from the report
- * 
- * * --source-data(Optinal): tenant, all, feeds-only . Defines from where the source data can be received. if not defined or is tenant the data are received from the tenant (the tenant does not combine data), if value is feeds-only the data are received from 
- * the tenant list defined in the feeds data(the tenant is acting as a gatherer without data on it's own), if is all the source data are received both from the tenant and the tenants list in the feeds data (the tenant already exists and has data to combine)
- * 
- * --source-topo(Optinal): tenant, all . Defines from where the source topology can be received. if not defined or is tenant the data are received from the tenant (the tenant either is not combining data or acts as a gatherer without topologies on its own), 
- * , if is all the source data are received both from the tenant and the tenants list in the feeds data and needs a parameter to be added to the api request to receive the topology (the tenant has it's own topologies)
- *
+ * --source-data(Optinal): tenant, all, feeds-only . Defines from where the
+ * source data can be received. if not defined or is tenant the data are
+ * received from the tenant (the tenant does not combine data), if value is
+ * feeds-only the data are received from the tenant list defined in the feeds
+ * data(the tenant is acting as a gatherer without data on it's own), if is all
+ * the source data are received both from the tenant and the tenants list in the
+ * feeds data (the tenant already exists and has data to combine)
+ * --source-topo(Optinal): tenant, all . Defines from where the source topology
+ * can be received. if not defined or is tenant the data are received from the
+ * tenant (the tenant either is not combining data or acts as a gatherer without
+ * topologies on its own), , if is all the source data are received both from
+ * the tenant and the tenants list in the feeds data and needs a parameter to be
+ * added to the api request to receive the topology (the tenant has it's own
+ * topologies)*
  */
 public class ArgoMultiJob {
 
@@ -110,24 +118,21 @@ public class ArgoMultiJob {
     private static boolean calcStatusTrends = false;
     private static boolean calcFlipFlops = false;
     private static boolean calcTagTrends = false;
-    
-      enum Combined {
+
+    enum Combined {
         TENANT("tenant"),
-        ALL("all"), 
-        FEEDS_ONLY("feeds-only");  
+        ALL("all"),
+        FEEDS_ONLY("feeds-only");
         public final String label;
 
         private Combined(String label) {
             this.label = label;
         }
-        
-    }
-  
-    
-    private static Enum sourceData=Combined.TENANT;
-    private static Enum sourceTopo=Combined.TENANT;
 
-    
+    }
+
+    private static Enum sourceData = Combined.TENANT;
+    private static Enum sourceTopo = Combined.TENANT;
 
     public static void main(String[] args) throws Exception {
 
@@ -147,27 +152,27 @@ public class ArgoMultiJob {
         if (params.get("clearMongo") != null && params.getBoolean("clearMongo") == true) {
             clearMongo = true;
         }
-        if(params.get("source-data")!=null && params.get("source-data").equals(Combined.ALL.label)){
-           sourceData=Combined.ALL;
-        }else if(params.get("source-data")!=null && params.get("source-data").equals(Combined.FEEDS_ONLY.label)){
-           sourceData=Combined.FEEDS_ONLY;
+        if (params.get("source-data") != null && params.get("source-data").equals(Combined.ALL.label)) {
+            sourceData = Combined.ALL;
+        } else if (params.get("source-data") != null && params.get("source-data").equals(Combined.FEEDS_ONLY.label)) {
+            sourceData = Combined.FEEDS_ONLY;
         }
-        
-        if(params.get("source-topo")!=null && params.get("source-topo").equals(Combined.ALL.label)){
-           sourceTopo=Combined.ALL;
-        }      
-        
-        boolean isCombined=false;
-        boolean isSourceAll=false;
-        
+
+        if (params.get("source-topo") != null && params.get("source-topo").equals(Combined.ALL.label)) {
+            sourceTopo = Combined.ALL;
+        }
+
+        boolean isCombined = false;
+        boolean isSourceAll = false;
+
         if (!sourceData.equals(Combined.TENANT)) { //in case source-data is not TENANT, the tenant is a combined one
             isCombined = true;
         }
-        
+
         if (sourceTopo.equals(Combined.ALL)) { //in case source-topo is ALL, we need to add &mode=combined to api request
             isSourceAll = true;
         }
- 
+
         String apiEndpoint = params.getRequired("api.endpoint");
         String apiToken = params.getRequired("api.token");
         reportID = params.getRequired("report.id");
@@ -183,7 +188,7 @@ public class ArgoMultiJob {
         if (params.has("api.timeout")) {
             amr.setTimeoutSec(params.getInt("api.timeout"));
         }
-     
+
         runDate = params.getRequired("run.date");
         amr.setIsCombined(isCombined);
         amr.setIsSourceTopoAll(isSourceAll);
@@ -214,9 +219,9 @@ public class ArgoMultiJob {
 
             mtagsDS = env.fromElements(amr.getResourceJSON(ApiResource.MTAGS));
         }
-       // DataSet<Weight> weightDS = env.fromElements(new Weight());
-        
-        DataSet<Weight> weightDS = env.fromElements(new Weight("","",""));
+        // DataSet<Weight> weightDS = env.fromElements(new Weight());
+
+        DataSet<Weight> weightDS = env.fromElements(new Weight("", "", ""));
         Weight[] listWeights = amr.getListWeights();
 
         if (listWeights.length > 0) {
@@ -224,7 +229,7 @@ public class ArgoMultiJob {
         }
 
         //DataSet<Downtime> downDS = env.fromElements(new Downtime());
-        DataSet<Downtime> downDS = env.fromElements(new Downtime("","","",""));
+        DataSet<Downtime> downDS = env.fromElements(new Downtime("", "", "", ""));
 
         // begin with empty threshold datasource
         DataSource<String> thrDS = env.fromElements("");
@@ -239,7 +244,7 @@ public class ArgoMultiJob {
         DataSet<GroupEndpoint> egpDS = env.fromElements(amr.getListGroupEndpoints());
         DataSet<GroupGroup> ggpDS = env.fromElements(new GroupGroup());
 
-        DataSet<MetricProfile> nempsDS = env.fromElements(new MetricProfile("","","",null));
+        DataSet<MetricProfile> nempsDS = env.fromElements(new MetricProfile("", "", "", null));
         MetricProfile[] nempsList = amr.getNewEntriesMetrics();
         if (nempsList.length > 0) {
             nempsDS = env.fromElements(nempsList);
@@ -254,20 +259,20 @@ public class ArgoMultiJob {
             downDS = env.fromElements(amr.getListDowntimes());
         }
 
-           List<String> tenantList = new ArrayList<>();
-        if(sourceData.equals(Combined.TENANT) || sourceData.equals(Combined.ALL)){
+        List<String> tenantList = new ArrayList<>();
+        if (sourceData.equals(Combined.TENANT) || sourceData.equals(Combined.ALL)) {
             tenantList.add(amr.getTenant());
         }
-      
-        if(sourceData.equals(Combined.FEEDS_ONLY) || sourceData.equals(Combined.ALL)){   
+
+        if (sourceData.equals(Combined.FEEDS_ONLY) || sourceData.equals(Combined.ALL)) {
             tenantList.addAll(Arrays.asList(amr.getListTenants()));
-        } 
-        
+        }
+
         List<Path[]> tenantPaths = new ArrayList<>();
 
         DateTime currentDate = Utils.convertStringtoDate("yyyy-MM-dd", runDate);
         String previousDate = Utils.convertDateToString("yyyy-MM-dd", currentDate.minusDays(1));
-          for (String tenant : tenantList) {
+        for (String tenant : tenantList) {
             Path[] paths = new Path[2];
             if (isCombined) {
                 paths[0] = new Path(params.getRequired("basispath") + "/" + tenant + "/mdata/" + runDate);
@@ -280,7 +285,7 @@ public class ArgoMultiJob {
 
             }
         }
-          DataSet<MetricData> allMetricData = null;
+        DataSet<MetricData> allMetricData = null;
         for (Path[] path : tenantPaths) {
             // todays metric data
             Path in = path[0];
@@ -307,12 +312,12 @@ public class ArgoMultiJob {
                 allMetricData = allMetricData.union(mdataPrevTotalDS);
             }
         }
-    
+
         // Use yesterday's latest statuses and todays data to find the missing ones and add them to the mix
         DataSet<StatusMetric> fillMissDS = allMetricData.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(confDS, "conf").withBroadcastSet(nempsDS, "nemps");
-
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(confDS, "conf").withBroadcastSet(nempsDS, "nemps")
+                .withBroadcastSet(apsDS, "aps");
         // Discard unused data and attach endpoint group as information
         DataSet<StatusMetric> mdataTrimDS = allMetricData.flatMap(new PickEndpoints(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
@@ -508,7 +513,7 @@ public class ArgoMultiJob {
             }
 
         }
-       
+
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Multi Batch job for tenant:");
@@ -610,5 +615,5 @@ public class ArgoMultiJob {
         MDC.put("JID", jobId);
 
     }
-  
+
 }

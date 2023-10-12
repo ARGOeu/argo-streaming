@@ -18,7 +18,8 @@
         <module>api-resource-manager</module>
         <module>stream-status</module>
         <module>batch-multi</module>
-        <module>hdfs-file-merger</module>
+        <module>hdfs-file-merger</module>        
+        <module>influxdb.connector</module>
     </modules>
     <dependencyManagement>
         <dependencies>

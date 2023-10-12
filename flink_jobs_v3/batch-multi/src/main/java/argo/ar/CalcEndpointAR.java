@@ -1,28 +1,24 @@
 package argo.ar;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.util.Collector;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
-
 import argo.avro.MetricProfile;
 import argo.batch.StatusTimeline;
 import argo.batch.TimeStatus;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.TreeMap;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.GroupGroupManager;
