@@ -300,6 +300,14 @@ public class ArgoMultiJob {
                 allMetricData = allMetricData.union(mdataPrevTotalDS);
             }
         }
+       
+        List<MetricData> metricList=allMetricData.collect();
+        for(MetricData md: metricList){
+             if (md.getHostname().equals("ce03.jinr-t1.ru") && md.getService().equals("APEL")) {
+                System.out.println("APEL endpoint " + md.getHostname() +" for service "+md.getService()+" with status "+md.getStatus()+" timestamp"+md.getTimestamp());
+            }
+        }
+       
         // Use yesterday's latest statuses and todays data to find the missing ones and add them to the mix
         DataSet<StatusMetric> fillMissDS = allMetricData.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")

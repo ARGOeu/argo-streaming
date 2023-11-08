@@ -165,10 +165,15 @@ public class AmsIngestMetric {
             long checkInt = Long.parseLong(checkInterval);
             see.enableCheckpointing(checkInt);
         }
+        String offsetDt = null;
+        if (parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")) {
+            offsetDt = runDate;
+        }
 
         // Ingest sync avro encoded data from AMS endpoint
-        ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval, runDate, false);
+      //  ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval, runDate, true);
 
+            ArgoMessagingSource ams = new ArgoMessagingSource(endpoint, port, token, project, sub, batch, interval, offsetDt);
         if (parameterTool.has("ams.verify")) {
             ams.setVerify(parameterTool.getBoolean("ams.verify"));
         }
@@ -208,6 +213,10 @@ public class AmsIngestMetric {
                 item = METRIC_DATA_READER.read(null, decoder);
                
                 if (item != null) {
+                    if(item.getService().equals("APEL")){
+                        System.out.println("item APEL "+item.getService()+" - "+item.getHostname() +" - "+item.getTimestamp()+" - "+item.getStatus());
+                    
+                    }
                     LOG.info("Captured data -- {}", item.toString());
                     out.collect(item);
                 }

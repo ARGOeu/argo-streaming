@@ -121,6 +121,9 @@ public class TrimEvent implements FlatMapFunction<String, String> {
             default:
 
         }
+    if(   json.get("service").getAsString().equals("APEL")){
+            System.out.println("****************** APEL NOTIFICATION");
+    }
 
         out.collect(json.toString());
 

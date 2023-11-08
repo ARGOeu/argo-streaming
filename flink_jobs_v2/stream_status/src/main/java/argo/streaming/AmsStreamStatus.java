@@ -51,11 +51,17 @@ import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.RichFunction;
+import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.streaming.api.functions.co.CoFlatMapFunction;
 import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
+import scala.collection.parallel.ParIterableLike;
 import status.StatusManager;
+
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
  * kafka, fs) job required cli parameters --ams.endpoint : ARGO messaging api
@@ -94,24 +100,24 @@ import status.StatusManager;
  * Any of these formats is transformed to minutes in the computations if not
  * defined the default value is 1440m
  *
- * -- latest.offset (Optional) boolean true/false, to define if the argo messaging source 
- * should set offset at the latest or at the start of the runDate. By default,  if not defined , the 
- * offset should be the latest.
- * --level_group,level_service,level_endpoint, level_metric,  if  ON level alerts are generated,if OFF level alerts are 
- * disabled.if no level is defined in parameters then all levels are generated
+ * -- latest.offset (Optional) boolean true/false, to define if the argo
+ * messaging source should set offset at the latest or at the start of the
+ * runDate. By default, if not defined , the offset should be the latest.
+ * --level_group,level_service,level_endpoint, level_metric, if ON level alerts
+ * are generated,if OFF level alerts are disabled.if no level is defined in
+ * parameters then all levels are generated
  */
 public class AmsStreamStatus {
     // setup logger
 
     static Logger LOG = LoggerFactory.getLogger(AmsStreamStatus.class);
     private static String runDate;
-    private static String apiToken;    
+    private static String apiToken;
     private static String apiEndpoint;
     private static boolean level_group = true;
-    private static boolean level_service=true;
-    private static boolean level_endpoint=true;
-    private static boolean level_metric=true;
-    
+    private static boolean level_service = true;
+    private static boolean level_endpoint = true;
+    private static boolean level_metric = true;
 
     /**
      * Sets configuration parameters to streaming enviroment
@@ -140,7 +146,6 @@ public class AmsStreamStatus {
         return hasArgs(kafkaArgs, paramTool);
     }
 
-   
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String hbaseArgs[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.namespace",
             "hbase.table"};
@@ -178,7 +183,6 @@ public class AmsStreamStatus {
         return hasArgs(amsPubArgs, paramTool);
     }
 
-    
     /**
      * Main dataflow of flink job
      */
@@ -199,48 +203,47 @@ public class AmsStreamStatus {
         String token = parameterTool.getRequired("ams.token");
         String project = parameterTool.getRequired("ams.project");
         String subMetric = parameterTool.getRequired("ams.sub.metric");
-        
-        level_group = !isOFF(parameterTool, "level_group");
-        level_service =!isOFF(parameterTool, "level_service");
-        level_endpoint =!isOFF(parameterTool, "level_endpoint");
-        level_metric=!isOFF(parameterTool, "level_metric");
-        
-        
-        apiEndpoint = parameterTool.getRequired("api.endpoint");
-        apiToken = parameterTool.getRequired("api.token");
-        String reportID = parameterTool.getRequired("report.uuid");
-        int apiInterval = parameterTool.getInt("api.interval");
+
+//        level_group = !isOFF(parameterTool, "level_group");
+//        level_service = !isOFF(parameterTool, "level_service");
+//        level_endpoint = !isOFF(parameterTool, "level_endpoint");
+//        level_metric = !isOFF(parameterTool, "level_metric");
+//
+//        apiEndpoint = parameterTool.getRequired("api.endpoint");
+//        apiToken = parameterTool.getRequired("api.token");
+//        String reportID = parameterTool.getRequired("report.uuid");
+//        int apiInterval = parameterTool.getInt("api.interval");
         runDate = parameterTool.get("run.date");
         if (runDate != null) {
             runDate = runDate + "T00:00:00.000Z";
         }
-
-        int looseInterval = 1440;
-        int strictInterval = 1440;
-
-        if (parameterTool.has("interval.loose")) {
-            String looseParam = parameterTool.get("interval.loose");
-            looseInterval = getInterval(looseParam);
-        }
-
-        if (parameterTool.has("interval.strict")) {
-            String strictParam = parameterTool.get("interval.strict");
-            strictInterval = getInterval(strictParam);
-        }
-       ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
-
-        // fetch
-        // set params
-        if (parameterTool.has("proxy")) {
-            amr.setProxy(parameterTool.get("proxy"));
-        }
-
-        if (parameterTool.has("api.timeout")) {
-            amr.setTimeoutSec(parameterTool.getInt("api.timeout"));
-        }
-
-        amr.setReportID(reportID);
-        amr.getRemoteAll();
+//
+//        int looseInterval = 1440;
+//        int strictInterval = 1440;
+//
+//        if (parameterTool.has("interval.loose")) {
+//            String looseParam = parameterTool.get("interval.loose");
+//            looseInterval = getInterval(looseParam);
+//        }
+//
+//        if (parameterTool.has("interval.strict")) {
+//            String strictParam = parameterTool.get("interval.strict");
+//            strictInterval = getInterval(strictParam);
+//        }
+//        ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
+//
+//        // fetch
+//        // set params
+//        if (parameterTool.has("proxy")) {
+//            amr.setProxy(parameterTool.get("proxy"));
+//        }
+//
+//        if (parameterTool.has("api.timeout")) {
+//            amr.setTimeoutSec(parameterTool.getInt("api.timeout"));
+//        }
+//
+//        amr.setReportID(reportID);
+//        amr.getRemoteAll();
 
         // set ams client batch and interval to default values
         int batch = 1;
@@ -253,104 +256,106 @@ public class AmsStreamStatus {
 
         // Establish the metric data AMS stream
         // Ingest sync avro encoded data from AMS endpoint
-        String offsetDt=null;
-        if(parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")){
-         offsetDt=runDate;
+        String offsetDt = null;
+        if (parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")) {
+            offsetDt = runDate;
         }
+
+        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, runDate, true);
+
         
-       
-        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
-        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
+         //  ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
+//        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
+//
+//        if (parameterTool.has("ams.verify")) {
+//            boolean verify = parameterTool.getBoolean("ams.verify");
+//            amsMetric.setVerify(verify);
+//
+//        }
+//
+//        if (parameterTool.has("proxy")) {
+//            String proxyURL = parameterTool.get("proxy");
+//            amsMetric.setProxy(proxyURL);
+//        }
 
-        if (parameterTool.has("ams.verify")) {
-            boolean verify = parameterTool.getBoolean("ams.verify");
-            amsMetric.setVerify(verify);
+        DataStream<String> metricAMS2 = see.addSource(amsMetric).setParallelism(1);
 
-        }
-
-        if (parameterTool.has("proxy")) {
-            String proxyURL = parameterTool.get("proxy");
-            amsMetric.setProxy(proxyURL);
-        }
-
-        DataStream<String> metricAMS = see.addSource(amsMetric).setParallelism(1);
-
+        DataStream<String> metricAMS = metricAMS2.flatMap(new SearchData());
         // Establish the sync stream from argowebapi
-        DataStream<Tuple2<String, String>> syncAMS = see.addSource(apiSync).setParallelism(1);
+        // DataStream<Tuple2<String, String>> syncAMS = see.addSource(apiSync).setParallelism(1);
 
         // Forward syncAMS data to two paths
         // - one with parallelism 1 to connect in the first processing step and
         // - one with max parallelism for status event generation step
         // (scalable)
-        DataStream<Tuple2<String, String>> syncA = syncAMS.forward();
-        DataStream<Tuple2<String, String>> syncB = syncAMS.broadcast();
-
-        DataStream<Tuple2<String, MetricData>> groupMdata = metricAMS.connect(syncA)
-                .flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
-
-        DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf, looseInterval, strictInterval, level_group,level_service,level_endpoint, level_metric));
-        if (hasKafkaArgs(parameterTool)) {
-            // Initialize kafka parameters
-            String kafkaServers = parameterTool.get("kafka.servers");
-            String kafkaTopic = parameterTool.get("kafka.topic");
-            Properties kafkaProps = new Properties();
-            kafkaProps.setProperty("bootstrap.servers", kafkaServers);
-            FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic, new SimpleStringSchema(),
-                    kafkaProps);
-
-            events.addSink(kSink);
-        } else if (hasAmsArgs(parameterTool)) {
-            String topic = parameterTool.get("ams.alert.topic");
-            String tokenpub = parameterTool.get("ams.token.publish");
-            String projectpub = parameterTool.get("ams.project.publish");
-
-            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval, runDate);
-            if (parameterTool.has("proxy")) {
-                String proxyURL = parameterTool.get("proxy");
-                ams.setProxy(proxyURL);
-            }
-            events.addSink(ams);
-        }
-
-        if (hasHbaseArgs(parameterTool)) {
-            // Initialize Output : Hbase Output Format
-            HBaseOutputFormat hbf = new HBaseOutputFormat();
-            hbf.setMaster(parameterTool.get("hbase.master"));
-            hbf.setMasterPort(parameterTool.get("hbase.master.port"));
-            hbf.setZkQuorum(parameterTool.get("hbase.zk.quorum"));
-            hbf.setZkPort(parameterTool.get("hbase.zk.port"));
-            hbf.setNamespace(parameterTool.get("hbase.namespace"));
-            hbf.setTableName(parameterTool.get("hbase.table"));
-            hbf.setReport(parameterTool.get("report"));
-            events.writeUsingOutputFormat(hbf);
-        }
-
-        if (hasMongoArgs(parameterTool)) {
-
-            MongoStatusOutput mongoOut = new MongoStatusOutput(parameterTool.get("mongo.uri"), "status_metrics",
-                    "status_endpoints", "status_services", "status_endpoint_groups", parameterTool.get("mongo.method"),
-                    parameterTool.get("report.uuid"));
-            events.writeUsingOutputFormat(mongoOut);
-        }
-
-        if (hasFsOutArgs(parameterTool)) {
-            events.writeAsText(parameterTool.get("fs.output"), FileSystem.WriteMode.OVERWRITE);
-            //events.print();
-        }
-        if (hasAmsPubArgs(parameterTool)) {
-            String topic = parameterTool.get("ams.notification.topic");
-            String tokenpub = parameterTool.get("ams.token.publish");
-            String projectpub = parameterTool.get("ams.project.publish");
-
-            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval, runDate);
-            if (parameterTool.has("proxy")) {
-                String proxyURL = parameterTool.get("proxy");
-                ams.setProxy(proxyURL);
-            }
-            events = events.flatMap(new TrimEvent(parameterTool, amr.getTenant(), amr.getReportName(), amr.getEgroup()));
-            events.addSink(ams);
-        }
-
+//        DataStream<Tuple2<String, String>> syncA = syncAMS.forward();
+//        DataStream<Tuple2<String, String>> syncB = syncAMS.broadcast();
+//
+//        DataStream<Tuple2<String, MetricData>> groupMdata = metricAMS.connect(syncA)
+//                .flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
+//
+//        DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf, looseInterval, strictInterval, level_group, level_service, level_endpoint, level_metric));
+//        if (hasKafkaArgs(parameterTool)) {
+//            // Initialize kafka parameters
+//            String kafkaServers = parameterTool.get("kafka.servers");
+//            String kafkaTopic = parameterTool.get("kafka.topic");
+//            Properties kafkaProps = new Properties();
+//            kafkaProps.setProperty("bootstrap.servers", kafkaServers);
+//            FlinkKafkaProducer09<String> kSink = new FlinkKafkaProducer09<String>(kafkaTopic, new SimpleStringSchema(),
+//                    kafkaProps);
+//
+//            events.addSink(kSink);
+//        } else if (hasAmsArgs(parameterTool)) {
+//            String topic = parameterTool.get("ams.alert.topic");
+//            String tokenpub = parameterTool.get("ams.token.publish");
+//            String projectpub = parameterTool.get("ams.project.publish");
+//
+//            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval, runDate);
+//            if (parameterTool.has("proxy")) {
+//                String proxyURL = parameterTool.get("proxy");
+//                ams.setProxy(proxyURL);
+//            }
+//            events.addSink(ams);
+//        }
+//
+//        if (hasHbaseArgs(parameterTool)) {
+//            // Initialize Output : Hbase Output Format
+//            HBaseOutputFormat hbf = new HBaseOutputFormat();
+//            hbf.setMaster(parameterTool.get("hbase.master"));
+//            hbf.setMasterPort(parameterTool.get("hbase.master.port"));
+//            hbf.setZkQuorum(parameterTool.get("hbase.zk.quorum"));
+//            hbf.setZkPort(parameterTool.get("hbase.zk.port"));
+//            hbf.setNamespace(parameterTool.get("hbase.namespace"));
+//            hbf.setTableName(parameterTool.get("hbase.table"));
+//            hbf.setReport(parameterTool.get("report"));
+//            events.writeUsingOutputFormat(hbf);
+//        }
+//
+//        if (hasMongoArgs(parameterTool)) {
+//
+//            MongoStatusOutput mongoOut = new MongoStatusOutput(parameterTool.get("mongo.uri"), "status_metrics",
+//                    "status_endpoints", "status_services", "status_endpoint_groups", parameterTool.get("mongo.method"),
+//                    parameterTool.get("report.uuid"));
+//            events.writeUsingOutputFormat(mongoOut);
+//        }
+//
+//        if (hasFsOutArgs(parameterTool)) {
+//            events.writeAsText(parameterTool.get("fs.output"), FileSystem.WriteMode.OVERWRITE);
+//            //events.print();
+//        }
+//        if (hasAmsPubArgs(parameterTool)) {
+//            String topic = parameterTool.get("ams.notification.topic");
+//            String tokenpub = parameterTool.get("ams.token.publish");
+//            String projectpub = parameterTool.get("ams.project.publish");
+//
+//            ArgoMessagingSink ams = new ArgoMessagingSink(endpoint, port, tokenpub, projectpub, topic, interval, runDate);
+//            if (parameterTool.has("proxy")) {
+//                String proxyURL = parameterTool.get("proxy");
+//                ams.setProxy(proxyURL);
+//            }
+//            events = events.flatMap(new TrimEvent(parameterTool, amr.getTenant(), amr.getReportName(), amr.getEgroup()));
+//            events.addSink(ams);
+//        }
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
         jobTitleSB.append("Streaming status using data from ");
@@ -360,10 +365,48 @@ public class AmsStreamStatus {
         jobTitleSB.append("/v1/projects/");
         jobTitleSB.append(project);
         jobTitleSB.append("/subscriptions/");
-         jobTitleSB.append(subMetric);
+        jobTitleSB.append(subMetric);
 
         // Execute flink dataflow
         see.execute(jobTitleSB.toString());
+    }
+
+    /**
+     * MetricDataWithGroup implements a map function that adds group information
+     * to the metric data message
+     */
+    private static class SearchData implements FlatMapFunction<String, String> {
+
+        private static final long serialVersionUID = 1L;
+
+        public SearchData() {
+        }
+
+        @Override
+        public void flatMap(String value, Collector<String> out) throws Exception {
+
+            JsonParser jsonParser = new JsonParser();
+            // parse the json root object
+            JsonElement jRoot = jsonParser.parse(value);
+            // parse the json field "data" and read it as string
+            // this is the base64 string payload
+            String data = jRoot.getAsJsonObject().get("data").getAsString();
+            // Decode from base64
+            byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
+            // Decode from avro
+            DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema(),
+                    MetricData.getClassSchema(), new SpecificData());
+            Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
+            MetricData item;
+
+            item = avroReader.read(null, decoder);
+        
+            System.out.println("item****** " + item.getService() + "-" + item.getHostname() +" - "+item.getTimestamp()+" - "+item.getStatus() );
+        
+            out.collect(value);
+
+        }
+
     }
 
     /**
@@ -394,7 +437,7 @@ public class AmsStreamStatus {
         @Override
         public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
 
-             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+            this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
             this.amr.setDate(config.runDate);
             this.amr.setTimeoutSec((int) config.timeout);
 
@@ -417,8 +460,13 @@ public class AmsStreamStatus {
             ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
             // Use optimized Endpoint Group Manager
             for (GroupEndpoint egpItem : egpList) {
-                if (validServices.contains(egpItem.getService())) {
-                    egpTrim.add(egpItem);
+                if (egpItem.getService().equals("APEL") && egpItem.getHostname().equals("ce03.jinr-t1.ru")) {
+                    System.out.println("APEL IN TOPOLOGY!!!!");
+                    if (validServices.contains(egpItem.getService())) {
+
+                        egpTrim.add(egpItem);
+                        System.out.println("APEL ADDED ");
+                    }
                 }
             }
             egp = new EndpointGroupManager();
@@ -454,20 +502,26 @@ public class AmsStreamStatus {
 
             item = avroReader.read(null, decoder);
 
+            System.out.println("item****** " + item.getService() + " " + item.getHostname());
             //System.out.println("metric data item received" + item.toString());
             // generate events and get them
             String service = item.getService();
             String hostname = item.getHostname();
-            
+
             ArrayList<String> groups = egp.getGroup(hostname, service);
             //System.out.println(egp.getList());
             for (String groupItem : groups) {
                 Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
-                
+
                 curItem.f0 = groupItem;
                 curItem.f1 = item;
-                 
+
                 out.collect(curItem);
+
+                if (item.getService().equals("APEL")) {
+                    System.out.println("APEL IS HERE TOO ");
+                }
+
                 System.out.println("item enriched: " + curItem.toString());
             }
 
@@ -493,6 +547,9 @@ public class AmsStreamStatus {
                 // Use optimized Endpoint Group Manager
                 for (GroupEndpoint egpItem : egpList) {
                     if (validServices.contains(egpItem.getService())) {
+                        if (egpItem.equals("APEL")) {
+                            System.out.println("APEL IS HERE TOO TOO");
+                        }
                         egpTrim.add(egpItem);
                     }
                 }
@@ -520,22 +577,22 @@ public class AmsStreamStatus {
         public int initStatus;
         public int looseInterval;
         public int strictInterval;
-        private   ApiResourceManager amr;
+        private ApiResourceManager amr;
         boolean level_group;
         boolean level_service;
         boolean level_endpoint;
         boolean level_metric;
 
-        public StatusMap(StatusConfig config, int looseInterval, int strictInterval, boolean  level_group,boolean level_service, boolean level_endpoint,boolean level_metric) {
+        public StatusMap(StatusConfig config, int looseInterval, int strictInterval, boolean level_group, boolean level_service, boolean level_endpoint, boolean level_metric) {
             LOG.info("Created new Status map");
             this.config = config;
             this.looseInterval = looseInterval;
             this.strictInterval = strictInterval;
-            this.level_group=level_group;
-            this.level_service=level_service;
-            this.level_endpoint=level_endpoint;
-            this.level_metric=level_metric;
-            
+            this.level_group = level_group;
+            this.level_service = level_service;
+            this.level_endpoint = level_endpoint;
+            this.level_metric = level_metric;
+
         }
 
         /**
@@ -550,14 +607,14 @@ public class AmsStreamStatus {
             pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 
             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
-           this.amr.setDate(config.runDate);
+            this.amr.setDate(config.runDate);
             this.amr.setTimeoutSec((int) config.timeout);
             if (config.apiProxy != null) {
                 this.amr.setProxy(config.apiProxy);
             }
 
-           this.amr.setReportID(config.reportID);
-           this.amr.getRemoteAll();
+            this.amr.setReportID(config.reportID);
+            this.amr.getRemoteAll();
 
             String opsJSON = this.amr.getResourceJSON(ApiResource.OPS);
             String apsJSON = this.amr.getResourceJSON(ApiResource.AGGREGATION);
@@ -582,7 +639,6 @@ public class AmsStreamStatus {
             sm.setLevel_service(level_service);
             sm.setLevel_endpoint(level_endpoint);
             sm.setLevel_metric(level_metric);
-            
 
             // Set the default status as integer
             initStatus = sm.getOps().getIntStatus(config.initStatus);
@@ -614,12 +670,12 @@ public class AmsStreamStatus {
             String message = item.getMessage();
             String summary = item.getSummary();
             String dayStamp = tsMon.split("T")[0];
-            
-              if (!sm.checkIfExistDowntime(dayStamp)) {
-                  this.amr.setDate(dayStamp);
-                  this.amr.getRemoteDowntimes();
-                  ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
-                  sm.addDowntimeSet(dayStamp, downList);
+
+            if (!sm.checkIfExistDowntime(dayStamp)) {
+                this.amr.setDate(dayStamp);
+                this.amr.getRemoteDowntimes();
+                ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+                sm.addDowntimeSet(dayStamp, downList);
             }
 
             // if daily generation is enable check if has day changed?
@@ -890,16 +946,15 @@ public class AmsStreamStatus {
     private static void configJID() { //config the JID in the log4j.properties
         String jobId = getJID();
         MDC.put("JID", jobId);
-      }
+    }
+
     public static boolean isOFF(ParameterTool params, String paramName) {
         if (params.has(paramName)) {
             return params.get(paramName).equals("OFF");
-           
+
         } else {
             return false;
         }
     }
 
-        
-        
-    }
+}

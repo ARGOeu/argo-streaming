@@ -691,19 +691,19 @@ public class StatusManager {
             return false;
         }
 
-        boolean isDowntime=false;
+        boolean isDowntime = false;
         for (String[] period : periods) {
-           boolean noDowntime=false;
+            boolean noDowntime = false;
             // else check if ts lower than period's start time (first element in array list)
             if (timestamp.compareTo(period[0]) < 0) {
-                noDowntime=true;
+                noDowntime = true;
             }
             // else check if ts higher than period's end time (second element in array list)
             if (timestamp.compareTo(period[1]) > 0) {
-               noDowntime=true;
+                noDowntime = true;
             }
-            if(!noDowntime){              
-                  isDowntime=true;
+            if (!noDowntime) {
+                isDowntime = true;
             }
 
         }
@@ -845,6 +845,10 @@ public class StatusManager {
         int oldServiceStatus;
         int oldEndpointStatus;
         int oldMetricStatus;
+        
+        if(service.equals("APEL")){
+            System.out.println("i am here my love #####################");
+        }
 
         // Open groups
         groupNode = this.groups.get(group);
@@ -862,6 +866,7 @@ public class StatusManager {
             serviceNode = groupNode.children.get(service);
 
             if (serviceNode != null) {
+
                 // check if ts is behind groupNode ts
                 if (serviceNode.item.timestamp.compareTo(ts) > 0) {
                     return results;
@@ -951,6 +956,12 @@ public class StatusManager {
                         if (repeat && endpointNode.item.status == endpNewStatus) {
                             isReminder = true;
                         }
+                        
+                          if (service.equals("APEL")) {
+
+                        System.out.println("******************************* APEL ALERT endpoint level !");
+                    }
+                  
 
                         evtEndpoint = genEvent("endpoint", group, service, hostname, metric,
                                 ops.getStrStatus(endpNewStatus), monHost, ts,
@@ -1003,6 +1014,10 @@ public class StatusManager {
                     boolean isReminder = false;
                     if (repeat && serviceNode.item.status == servNewStatus) {
                         isReminder = true;
+                    }
+                    if (service.equals("APEL")) {
+
+                        System.out.println("******************************* APEL ALERT service level!");
                     }
                     evtService = genEvent("service", group, service, hostname, metric, ops.getStrStatus(servNewStatus),
                             monHost, ts, ops.getStrStatus(oldServiceStatus), oldServiceTS, repeat, summary, message, isReminder);
