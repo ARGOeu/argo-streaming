@@ -65,14 +65,31 @@ import profilesmanager.MetricProfileManager;
  * per request to AMS service --ams.interval : interval (in ms) between AMS
  * service requests --ams.proxy : optional http proxy url --ams.verify :
  * optional turn on/off ssl verify
+ * 
+ * --proxy:  optional http proxy url for api endpoint
+ * --influx.token the token to the influx db
+ * --influx.port the port of the influxdb
+ * --influx.endpoint the endpoint to influx db
+ * --influx.org the organisation of influx db
+ * --influx.bucket the bucket of the influx db 
+ * --influx.proxy the http url to the influx db
+ * --influx.proxyport the proxy port for influx db
+ * --run.date the date to retrieve api data
+ * --report.uuid the report uuid of the tenant
+ * --api.endpoint the api endpoint
+ * --api.token the api token
+ * --report the tenants report
+ * --api.interval the api interval 
+ * --api.timeout 1
  */
 public class AmsIngestMetric {
-    private static final DatumReader<MetricData> METRIC_DATA_READER = (DatumReader<MetricData>)new SpecificData().createDatumReader(MetricData.getClassSchema());
-	// setup logger
+
+    private static final DatumReader<MetricData> METRIC_DATA_READER = (DatumReader<MetricData>) new SpecificData().createDatumReader(MetricData.getClassSchema());
+    // setup logger
 
     static Logger LOG = LoggerFactory.getLogger(AmsIngestMetric.class);
     private static String runDate;
- 
+
     /**
      * Check if flink job has been called with ams rate params
      */
@@ -153,7 +170,6 @@ public class AmsIngestMetric {
         if (runDate != null) {
             runDate = runDate + "T00:00:00.000Z";
         }
-              
 
         // Check if checkpointing is desired
         if (hasCheckArgs(parameterTool)) {
@@ -199,14 +215,11 @@ public class AmsIngestMetric {
                 byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
                 // Decode from avro
 
-                
-               
-               
                 Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
 
                 MetricData item;
                 item = METRIC_DATA_READER.read(null, decoder);
-               
+
                 if (item != null) {
                     LOG.info("Captured data -- {}", item.toString());
                     out.collect(item);
@@ -236,22 +249,19 @@ public class AmsIngestMetric {
 
             bs.setWriter(new SpecificAvroWriter<MetricData>());
             metricDataPOJO.addSink(bs);
-        }else if (hasInfluxDBArgs(parameterTool)) {
+        } 
+        if (hasInfluxDBArgs(parameterTool)) {
 
             String apiEndpoint = parameterTool.getRequired("api.endpoint");
             String apiToken = parameterTool.getRequired("api.token");
             String reportID = parameterTool.getRequired("report.uuid");
             int apiInterval = parameterTool.getInt("api.interval");
-            runDate = parameterTool.get("run.date");
-            if (runDate != null) {
-                runDate = runDate + "T00:00:00.000Z";
-            }
+
             final StatusConfig conf = new StatusConfig(parameterTool);
 
             ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
 
             DataStream<Tuple2<String, String>> syncAMS = see.addSource(apiSync).setParallelism(1);
-
 
             // Forward syncAMS data to two paths
             // - one with parallelism 1 to connect in the first processing step and
@@ -259,9 +269,8 @@ public class AmsIngestMetric {
             // (scalable)
             DataStream<Tuple2<String, String>> syncA = syncAMS.forward();
 
-
             DataStream<Tuple2<String, MetricData>> groupMdata = metricDataPOJO.connect(syncA)
-                    .flatMap(new MetricDataWithGroup(conf)).setParallelism(1);   
+                    .flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
 
             DataStream<Point> perfData = groupMdata
                     .flatMap(new PerformanceDataFlatMap()).setParallelism(1);
@@ -269,9 +278,7 @@ public class AmsIngestMetric {
             InfluxDBSink sink = new InfluxDBSink(parameterTool);
             perfData.addSink(sink);
 
-        } 
-
-        
+        }
 
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
@@ -286,6 +293,7 @@ public class AmsIngestMetric {
 
         see.execute(jobTitleSB.toString());
     }
+
     private static String getJID() {
         return JobID.generate().toString();
     }
@@ -294,8 +302,7 @@ public class AmsIngestMetric {
         String jobId = getJID();
         MDC.put("JID", jobId);
     }
-    
-    
+
     /**
      * MetricDataWithGroup implements a map function that adds group information
      * to the metric data message
@@ -367,9 +374,8 @@ public class AmsIngestMetric {
         @Override
         public void flatMap1(MetricData item, Collector<Tuple2<String, MetricData>> out)
                 throws IOException, ParseException {
-           
-          
-            ArrayList<String> groups = egp.getGroup(item.getHostname(),item.getService());
+
+            ArrayList<String> groups = egp.getGroup(item.getHostname(), item.getService());
             for (String groupItem : groups) {
                 Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
 
@@ -410,6 +416,7 @@ public class AmsIngestMetric {
         }
 
     }
+
     public static boolean hasInfluxDBArgs(ParameterTool paramTool) {
 
         String influxArgs[] = {"influx.token", "influx.port", "influx.endpoint", "influx.bucket", "influx.org"};
