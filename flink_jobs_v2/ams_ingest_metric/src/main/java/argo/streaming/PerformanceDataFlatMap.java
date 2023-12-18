@@ -29,7 +29,9 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
     private static final long serialVersionUID = 1L;
     static Logger LOG = LoggerFactory.getLogger(PerformanceDataFlatMap.class);
 
-    public PerformanceDataFlatMap() {
+    private String tenant;
+    public PerformanceDataFlatMap(String tenant) {
+        this.tenant=tenant;
     }
 
     /**
@@ -55,6 +57,7 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
             tags.put("service", tuple.f3);
             tags.put("endpoint", tuple.f4);
             tags.put("metric", tuple.f5);
+            tags.put("tenant",tenant);
 
             HashMap<String, Object> fields = new HashMap<>();
             fields.put("value", tuple.f6);
@@ -64,8 +67,8 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
             SimpleDateFormat sdf = new SimpleDateFormat(format);
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date date = sdf.parse(tuple.f1);
-         
             Point p = Point.measurement(tuple.f0).time(date.getTime(), WritePrecision.MS).addTags(tags).addFields(fields);
+            
             out.collect(p);
         }
     }
