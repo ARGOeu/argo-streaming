@@ -337,17 +337,14 @@ public class AmsIngestMetric {
             //in order to update the metric profile and endpoint info
             String currTimestampDate = item.getTimestamp().split("T")[0];
             if (this.runDate == null || !runDate.equals(currTimestampDate)) {
-                this.runDate = currTimestampDate;
-                this.amr.setDate(this.runDate);
-                this.amr.getAllRemoteTopoEndpoints();
-               
-                ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
-
-                egp = new EndpointGroupManager();
-                egp.loadFromList(egpList);
+                loadTopology(currTimestampDate);
             }
 
             ArrayList<String> groups = egp.getGroup(item.getHostname(), item.getService());
+            if (groups.isEmpty()) {
+                loadTopology(currTimestampDate);
+                groups = egp.getGroup(item.getHostname(), item.getService());
+            }
             for (String groupItem : groups) {
                 Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
 
@@ -359,6 +356,17 @@ public class AmsIngestMetric {
 
         }
 
+        private void loadTopology(String currTimestampDate) {
+            this.runDate = currTimestampDate;
+            this.amr.setDate(this.runDate);
+            this.amr.getAllRemoteTopoEndpoints();
+
+            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
+
+            egp = new EndpointGroupManager();
+            egp.loadFromList(egpList);
+
+        }
     }
 
     public static boolean hasInfluxDBArgs(ParameterTool paramTool) {
