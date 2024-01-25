@@ -1073,7 +1073,7 @@ public class StatusManager {
             LOG.info("Downtime encountered for group:{},service:{},host:{} - events will be discarded", group, service, hostname);
             results.clear();
         }
-
+        
         return results;
 
     }

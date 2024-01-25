@@ -1,4 +1,5 @@
 package argo.streaming;
+import Utils.IntervalType;
 import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
 import java.time.Duration;
@@ -22,7 +23,9 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String,String>> {
 	private String endpoint = null;
 	private String token = null;
 	private String reportID = null;
-	private int hourCheck = 24;
+        private int syncInterval = 24;
+        private IntervalType intervalType = IntervalType.HOURS;
+   
 	private long interval = 100L;
 	private boolean verify = true;
 	private boolean useProxy = false;
@@ -31,22 +34,33 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String,String>> {
 
 	private volatile boolean isRunning = true;
 
-    private ApiResourceManager client = null;
+        private ApiResourceManager client = null;
 	private Instant timeSnapshot = null;
 	
-	
+    public ArgoApiSource(String endpoint, String token, String reportID, String syncInterval, Long interval) {
+        this.endpoint = endpoint;
+        this.token = token;
+        this.reportID = reportID;
+        this.interval = interval;
+        this.verify = true;
+        if(syncInterval!=null){
+            setSyncUpdate(syncInterval);
+        }
 
+    }
 
+    private void setSyncUpdate(String syncInterval) {
+        AmsStreamStatus.IntervalStruct intervalStruct = AmsStreamStatus.parseInterval(syncInterval);
 
-	public ArgoApiSource(String endpoint, String token, String reportID, int hourCheck,  Long interval) {
-		this.endpoint = endpoint;
-		this.token = token;
-		this.reportID = reportID;
-		this.hourCheck = hourCheck;
-		this.interval = interval;
-		this.verify = true;
+        if (intervalStruct.getIntervalType() == null) {
+            this.syncInterval = 24;
+            this.intervalType = IntervalType.HOURS;
+        } else {
+            this.syncInterval = intervalStruct.intervalValue;
+            this.intervalType = intervalStruct.intervalType;
+        }
 
-	}
+    }
 
 	/**
 	 * Set verify to true or false. If set to false AMS client will be able to contact AMS endpoints that use self-signed certificates
@@ -86,8 +100,9 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String,String>> {
 			Instant ti = Instant.now();
 			Duration td = Duration.between(this.timeSnapshot,ti);
 			// interval has passed do consume from api
-			if (td.toHours() > this.hourCheck) {
-				this.timeSnapshot = ti;
+			 if (isTimeForSync(td)) {
+                             System.out.println("update sync ");
+                        	this.timeSnapshot = ti;
 				// retrieve info from api
 				this.client.getRemoteAll();
 
@@ -140,5 +155,29 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String,String>> {
 			rateLck.notify();
 		}
 	}
+       
+        private boolean isTimeForSync(Duration td) {
+        boolean isTime=false;
+        switch (this.intervalType) {
+           
+            case DAY:
+                isTime=td.toDays() > this.syncInterval;
+                return td.toDays() > this.syncInterval;
+            case HOURS:
+                
+                isTime=td.toDays() > this.syncInterval;
+                return td.toHours() > this.syncInterval;
+            case MINUTES:
+                
+                isTime=td.toDays() > this.syncInterval;
+                return td.toMinutes() > this.syncInterval;
+            default:
+                
+                 isTime=td.toDays() > this.syncInterval;
+                return td.toHours() > this.syncInterval;
+
+        }
+    }
+
 
 }
