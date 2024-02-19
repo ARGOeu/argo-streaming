@@ -1,6 +1,9 @@
 package argo.streaming;
 
 import Utils.IntervalType;
+import static Utils.IntervalType.DAY;
+import static Utils.IntervalType.HOURS;
+import static Utils.IntervalType.MINUTES;
 import ams.connector.ArgoMessagingSink;
 import ams.connector.ArgoMessagingSource;
 import java.io.IOException;
@@ -56,6 +59,7 @@ import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
 import status.StatusManager;
+
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
  * kafka, fs) job required cli parameters --ams.endpoint : ARGO messaging api
@@ -94,24 +98,30 @@ import status.StatusManager;
  * Any of these formats is transformed to minutes in the computations if not
  * defined the default value is 1440m
  *
- * -- latest.offset (Optional) boolean true/false, to define if the argo messaging source 
- * should set offset at the latest or at the start of the runDate. By default,  if not defined , the 
- * offset should be the latest.
- * --level_group,level_service,level_endpoint, level_metric,  if  ON level alerts are generated,if OFF level alerts are 
- * disabled.if no level is defined in parameters then all levels are generated
+ * -- latest.offset (Optional) boolean true/false, to define if the argo
+ * messaging source should set offset at the latest or at the start of the
+ * runDate. By default, if not defined , the offset should be the latest.
+ * --level_group,level_service,level_endpoint, level_metric, if ON level alerts
+ * are generated,if OFF level alerts are disabled.if no level is defined in
+ * parameters then all levels are generated
+ *
+ * --sync.interval(Optional) , the interval to sync with the argo web api source
+ * (metric profiles, topology, downtimes) it can be * in the format of DAYS,
+ * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
+ * the parameter is not configured
+ *
  */
 public class AmsStreamStatus {
     // setup logger
 
     static Logger LOG = LoggerFactory.getLogger(AmsStreamStatus.class);
     private static String runDate;
-    private static String apiToken;    
+    private static String apiToken;
     private static String apiEndpoint;
     private static boolean level_group = true;
-    private static boolean level_service=true;
-    private static boolean level_endpoint=true;
-    private static boolean level_metric=true;
-    
+    private static boolean level_service = true;
+    private static boolean level_endpoint = true;
+    private static boolean level_metric = true;
 
     /**
      * Sets configuration parameters to streaming enviroment
@@ -140,7 +150,6 @@ public class AmsStreamStatus {
         return hasArgs(kafkaArgs, paramTool);
     }
 
-   
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String hbaseArgs[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.namespace",
             "hbase.table"};
@@ -178,7 +187,6 @@ public class AmsStreamStatus {
         return hasArgs(amsPubArgs, paramTool);
     }
 
-    
     /**
      * Main dataflow of flink job
      */
@@ -199,17 +207,16 @@ public class AmsStreamStatus {
         String token = parameterTool.getRequired("ams.token");
         String project = parameterTool.getRequired("ams.project");
         String subMetric = parameterTool.getRequired("ams.sub.metric");
-        
+
         level_group = !isOFF(parameterTool, "level_group");
-        level_service =!isOFF(parameterTool, "level_service");
-        level_endpoint =!isOFF(parameterTool, "level_endpoint");
-        level_metric=!isOFF(parameterTool, "level_metric");
-        
-        
+        level_service = !isOFF(parameterTool, "level_service");
+        level_endpoint = !isOFF(parameterTool, "level_endpoint");
+        level_metric = !isOFF(parameterTool, "level_metric");
+
         apiEndpoint = parameterTool.getRequired("api.endpoint");
         apiToken = parameterTool.getRequired("api.token");
         String reportID = parameterTool.getRequired("report.uuid");
-        int apiInterval = parameterTool.getInt("api.interval");
+        Long apiInterval = parameterTool.getLong("api.interval");
         runDate = parameterTool.get("run.date");
         if (runDate != null) {
             runDate = runDate + "T00:00:00.000Z";
@@ -227,7 +234,7 @@ public class AmsStreamStatus {
             String strictParam = parameterTool.get("interval.strict");
             strictInterval = getInterval(strictParam);
         }
-       ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
+        ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
 
         // fetch
         // set params
@@ -253,14 +260,18 @@ public class AmsStreamStatus {
 
         // Establish the metric data AMS stream
         // Ingest sync avro encoded data from AMS endpoint
-        String offsetDt=null;
-        if(parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")){
-         offsetDt=runDate;
+        String offsetDt = null;
+        if (parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")) {
+            offsetDt = runDate;
         }
-        
-       
+        String syncInterval = null;
+        if (parameterTool.has("sync.interval")) {
+            syncInterval = parameterTool.get("sync.interval");
+
+        }
+
         ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
-        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
+        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, syncInterval, apiInterval);
 
         if (parameterTool.has("ams.verify")) {
             boolean verify = parameterTool.getBoolean("ams.verify");
@@ -271,6 +282,11 @@ public class AmsStreamStatus {
         if (parameterTool.has("proxy")) {
             String proxyURL = parameterTool.get("proxy");
             amsMetric.setProxy(proxyURL);
+
+        }
+        if (parameterTool.has("proxy")) {
+            String proxyURL = parameterTool.get("proxy");
+            apiSync.setProxy(proxyURL);
         }
 
         DataStream<String> metricAMS = see.addSource(amsMetric).setParallelism(1);
@@ -288,7 +304,7 @@ public class AmsStreamStatus {
         DataStream<Tuple2<String, MetricData>> groupMdata = metricAMS.connect(syncA)
                 .flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
 
-        DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf, looseInterval, strictInterval, level_group,level_service,level_endpoint, level_metric));
+        DataStream<String> events = groupMdata.connect(syncB).flatMap(new StatusMap(conf, looseInterval, strictInterval, level_group, level_service, level_endpoint, level_metric));
         if (hasKafkaArgs(parameterTool)) {
             // Initialize kafka parameters
             String kafkaServers = parameterTool.get("kafka.servers");
@@ -360,7 +376,7 @@ public class AmsStreamStatus {
         jobTitleSB.append("/v1/projects/");
         jobTitleSB.append(project);
         jobTitleSB.append("/subscriptions/");
-         jobTitleSB.append(subMetric);
+        jobTitleSB.append(subMetric);
 
         // Execute flink dataflow
         see.execute(jobTitleSB.toString());
@@ -394,7 +410,7 @@ public class AmsStreamStatus {
         @Override
         public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
 
-             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+            this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
             this.amr.setDate(config.runDate);
             this.amr.setTimeoutSec((int) config.timeout);
 
@@ -454,19 +470,17 @@ public class AmsStreamStatus {
 
             item = avroReader.read(null, decoder);
 
-            //System.out.println("metric data item received" + item.toString());
             // generate events and get them
             String service = item.getService();
             String hostname = item.getHostname();
-            
+
             ArrayList<String> groups = egp.getGroup(hostname, service);
-            //System.out.println(egp.getList());
             for (String groupItem : groups) {
                 Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
-                
+
                 curItem.f0 = groupItem;
                 curItem.f1 = item;
-                 
+
                 out.collect(curItem);
                 System.out.println("item enriched: " + curItem.toString());
             }
@@ -496,6 +510,11 @@ public class AmsStreamStatus {
                         egpTrim.add(egpItem);
                     }
                 }
+                ArrayList<GroupEndpoint> test = egpTrim;
+
+                // load next topology into a temporary endpoint group manager
+                egp.loadFromList(egpTrim);
+
             }
 
         }
@@ -520,22 +539,22 @@ public class AmsStreamStatus {
         public int initStatus;
         public int looseInterval;
         public int strictInterval;
-        private   ApiResourceManager amr;
+        private ApiResourceManager amr;
         boolean level_group;
         boolean level_service;
         boolean level_endpoint;
         boolean level_metric;
 
-        public StatusMap(StatusConfig config, int looseInterval, int strictInterval, boolean  level_group,boolean level_service, boolean level_endpoint,boolean level_metric) {
+        public StatusMap(StatusConfig config, int looseInterval, int strictInterval, boolean level_group, boolean level_service, boolean level_endpoint, boolean level_metric) {
             LOG.info("Created new Status map");
             this.config = config;
             this.looseInterval = looseInterval;
             this.strictInterval = strictInterval;
-            this.level_group=level_group;
-            this.level_service=level_service;
-            this.level_endpoint=level_endpoint;
-            this.level_metric=level_metric;
-            
+            this.level_group = level_group;
+            this.level_service = level_service;
+            this.level_endpoint = level_endpoint;
+            this.level_metric = level_metric;
+
         }
 
         /**
@@ -550,14 +569,14 @@ public class AmsStreamStatus {
             pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 
             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
-           this.amr.setDate(config.runDate);
+            this.amr.setDate(config.runDate);
             this.amr.setTimeoutSec((int) config.timeout);
             if (config.apiProxy != null) {
                 this.amr.setProxy(config.apiProxy);
             }
 
-           this.amr.setReportID(config.reportID);
-           this.amr.getRemoteAll();
+            this.amr.setReportID(config.reportID);
+            this.amr.getRemoteAll();
 
             String opsJSON = this.amr.getResourceJSON(ApiResource.OPS);
             String apsJSON = this.amr.getResourceJSON(ApiResource.AGGREGATION);
@@ -582,7 +601,6 @@ public class AmsStreamStatus {
             sm.setLevel_service(level_service);
             sm.setLevel_endpoint(level_endpoint);
             sm.setLevel_metric(level_metric);
-            
 
             // Set the default status as integer
             initStatus = sm.getOps().getIntStatus(config.initStatus);
@@ -614,12 +632,12 @@ public class AmsStreamStatus {
             String message = item.getMessage();
             String summary = item.getSummary();
             String dayStamp = tsMon.split("T")[0];
-            
-              if (!sm.checkIfExistDowntime(dayStamp)) {
-                  this.amr.setDate(dayStamp);
-                  this.amr.getRemoteDowntimes();
-                  ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
-                  sm.addDowntimeSet(dayStamp, downList);
+
+            if (!sm.checkIfExistDowntime(dayStamp)) {
+                this.amr.setDate(dayStamp);
+                this.amr.getRemoteDowntimes();
+                ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+                sm.addDowntimeSet(dayStamp, downList);
             }
 
             // if daily generation is enable check if has day changed?
@@ -844,14 +862,44 @@ public class AmsStreamStatus {
         }
     }
 
-    private static int getInterval(String intervalParam) {
+    public static class IntervalStruct {
+
+        IntervalType intervalType;
+        int intervalValue;
+
+        public IntervalStruct(IntervalType intervalType, int intervalValue) {
+            this.intervalType = intervalType;
+            this.intervalValue = intervalValue;
+        }
+
+        public IntervalType getIntervalType() {
+            return intervalType;
+        }
+
+        public void setIntervalType(IntervalType intervalType) {
+            this.intervalType = intervalType;
+        }
+
+        public int getIntervalValue() {
+            return intervalValue;
+        }
+
+        public void setIntervalValue(int intervalValue) {
+            this.intervalValue = intervalValue;
+        }
+
+    }
+
+    public static IntervalStruct parseInterval(String intervalParam) {
 
         String regex = "[0-9]*[h,d,m]$";
         boolean matches = intervalParam.matches(regex);
+        int intervalValue = 1440;
+        IntervalType intervalType = null;
+
         if (matches) {
 
             String intervals[] = new String[]{};
-            IntervalType intervalType = null;
             if (intervalParam.contains("h")) {
                 intervalType = IntervalType.HOURS;
                 intervals = intervalParam.split("h");
@@ -867,20 +915,32 @@ public class AmsStreamStatus {
                 int interval = Integer.parseInt(intervals[0]);
                 switch (intervalType) {
                     case DAY:
-                        return interval * 24 * 60;
+                        intervalValue = interval * 24 * 60;
+                        break;
                     case HOURS:
-                        return interval * 60;
+                        intervalValue = interval * 60;
+                        break;
                     case MINUTES:
-                        return interval;
+                        intervalValue = interval;
+                        break;
                     default:
-                        return 1440;
+                        intervalValue = 1440;
+                        break;
                 }
 
             }
-            return 1440;
 
         }
-        return 1440;
+        return new IntervalStruct(intervalType, intervalValue);
+
+    }
+
+    public static int getInterval(String intervalParam) {
+
+        IntervalStruct intervalStruct = parseInterval(intervalParam);
+
+        return intervalStruct.getIntervalValue();
+
     }
 
     private static String getJID() {
@@ -890,16 +950,15 @@ public class AmsStreamStatus {
     private static void configJID() { //config the JID in the log4j.properties
         String jobId = getJID();
         MDC.put("JID", jobId);
-      }
+    }
+
     public static boolean isOFF(ParameterTool params, String paramName) {
         if (params.has(paramName)) {
             return params.get(paramName).equals("OFF");
-           
+
         } else {
             return false;
         }
     }
 
-        
-        
-    }
+}
