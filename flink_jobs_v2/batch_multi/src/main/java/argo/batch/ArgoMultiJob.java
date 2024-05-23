@@ -299,8 +299,8 @@ public class ArgoMultiJob {
             } else {
                 allMetricData = allMetricData.union(mdataPrevTotalDS);
             }
-        }
-        // Use yesterday's latest statuses and todays data to find the missing ones and add them to the mix
+         }
+        
         DataSet<StatusMetric> fillMissDS = allMetricData.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(confDS, "conf").withBroadcastSet(nempsDS, "nemps")
@@ -319,15 +319,15 @@ public class ArgoMultiJob {
         mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
         dbURI = params.getRequired("mongo.uri");
         String dbMethod = params.getRequired("mongo.method");
-
+        
         // Create status detail data set
-        DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
+        DataSet<StatusMetric> stDetailDS = mdataTotalDS.distinct("group","hostname","metric","status","timestamp").groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
 
-        //Create StatusMetricTimeline dataset for endpoints
+        
         DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
-                .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
+                        .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");
 
         //Create StatusMetricTimeline dataset for endpoints
