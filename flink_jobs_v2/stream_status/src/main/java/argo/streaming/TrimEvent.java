@@ -7,6 +7,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
 import org.apache.flink.util.Collector;
@@ -139,10 +142,9 @@ public class TrimEvent implements FlatMapFunction<String, String> {
         DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
         DateTime dt = formatter.parseDateTime(dateStr);
-
         DateTimeFormatter dtf = DateTimeFormat.forPattern("yyyy-MM-dd");
         String endDate = dt.toString(dtf);
-
+     
         DateTime prevTime = dt.minusDays(2);
         String startDate = prevTime.toString(dtf);
 
@@ -152,9 +154,11 @@ public class TrimEvent implements FlatMapFunction<String, String> {
     }
 
     private String uriString(String urlpath) throws UnsupportedEncodingException, MalformedURLException, URISyntaxException {
-        URI uri = new URI(urlpath);
+      
+        URL url = new URL(URLDecoder.decode(urlpath, StandardCharsets.UTF_8.toString()));
+        URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
         return uri.toString();
-
+ 
     }
 
 }
