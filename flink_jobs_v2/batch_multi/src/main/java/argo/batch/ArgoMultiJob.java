@@ -406,7 +406,7 @@ public class ArgoMultiJob {
             serviceArDS.output(serviceARMongoOut);
             endpointGroupArDS.output(endGroupARMongoOut);
         }
-
+      
         if (calcFlipFlops || calcStatusTrends) {
             DataSet<MetricTrends> metricTrends = statusMetricTimeline.flatMap(new CalcMetricFlipFlopTrends());
             DataSet<EndpointTrends> endpointTrends = statusEndpointTimeline.flatMap(new CalcEndpointFlipFlopTrends());
@@ -465,6 +465,7 @@ public class ArgoMultiJob {
             if (calcStatusTrends) {
                 //flatMap dataset to tuples and count the apperances of each status type to the timeline 
                 DataSet<Tuple8<String, String, String, String, String, Integer, Integer, String>> metricStatusTrendsData = metricTrends.flatMap(new MetricTrendsCounter()).withBroadcastSet(opsDS, "ops").withBroadcastSet(mtagsDS, "mtags");
+             
                 //filter dataset for each status type and write to mongo db
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "critical");
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "warning");

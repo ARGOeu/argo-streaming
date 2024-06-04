@@ -1,6 +1,7 @@
 package argo.batch;
 
 import argo.ar.ServiceAR;
+import com.mongodb.ConnectionString;
 import java.io.IOException;
 
 import org.apache.flink.api.common.io.OutputFormat;
@@ -8,83 +9,86 @@ import org.apache.flink.configuration.Configuration;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-
 
 /**
  * MongoOutputFormat for storing Service AR data to mongodb
  */
 public class MongoServiceArOutput implements OutputFormat<ServiceAR> {
 
-	public enum MongoMethod {
-		INSERT, UPSERT
-	};
+    public enum MongoMethod {
+        INSERT, UPSERT
+    };
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private String mongoHost;
-	private int mongoPort;
-	private String dbName;
-	private String colName;
-	private MongoMethod method;
+    private String mongoHost;
+    private int mongoPort;
+    private String dbName;
+    private String colName;
+    private MongoMethod method;
 
-	private MongoClient mClient;
-	private MongoDatabase mDB;
-	private MongoCollection<Document> mCol;
-        private boolean clearMongo;
-        private String report; 
-        private int date;
-        private ObjectId nowId;
+    private MongoClient mClient;
+    private MongoDatabase mDB;
+    private MongoCollection<Document> mCol;
+    private boolean clearMongo;
+    private String report;
+    private int date;
+    private ObjectId nowId;
+    private String uri;
 
- 
-	// constructor
-	public MongoServiceArOutput(String uri, String col, String method, String report, String date, boolean clearMongo) {
-         this.date = Integer.parseInt(date.replace("-", ""));
-         this.report = report;
+    // constructor
+    public MongoServiceArOutput(String uri, String col, String method, String report, String date, boolean clearMongo) {
+        this.date = Integer.parseInt(date.replace("-", ""));
+        this.report = report;
 
-		if (method.equalsIgnoreCase("upsert")) {
-			this.method = MongoMethod.UPSERT;
-		} else {
-			this.method = MongoMethod.INSERT;
-		}
+        if (method.equalsIgnoreCase("upsert")) {
+            this.method = MongoMethod.UPSERT;
+        } else {
+            this.method = MongoMethod.INSERT;
+        }
+        this.uri = uri;
+        ConnectionString connectionString = new ConnectionString(this.uri);
 
-		MongoClientURI mURI = new MongoClientURI(uri);
-		String[] hostParts = mURI.getHosts().get(0).split(":");
-		String hostname = hostParts[0];
-		int port = Integer.parseInt(hostParts[1]);
+        String[] hostParts = connectionString.getHosts().get(0).split(":");
+        String hostname = hostParts[0];
+        int port = Integer.parseInt(hostParts[1]);
 
-		this.mongoHost = hostname;
-		this.mongoPort = port;
-		this.dbName = mURI.getDatabase();
-		this.colName = col;
-                this.clearMongo = clearMongo;
-    
-	}
+        this.mongoHost = hostname;
+        this.mongoPort = port;
+        this.dbName = connectionString.getDatabase();
+        this.colName = col;
+        this.clearMongo = clearMongo;
 
-	// constructor
-	public MongoServiceArOutput(String host, int port, String db, String col, MongoMethod method, String report, String date, boolean clearMongo) {
-	        this.date = Integer.parseInt(date.replace("-", ""));
-                this.report = report;
+    }
 
-                this.mongoHost = host;
-		this.mongoPort = port;
-		this.dbName = db;
-		this.colName = col;
-		this.method = method;
-                this.clearMongo = clearMongo;
-    
-	}
+    // constructor
+    public MongoServiceArOutput(String host, int port, String db, String col, MongoMethod method, String report, String date, boolean clearMongo) {
+        this.date = Integer.parseInt(date.replace("-", ""));
+        this.report = report;
 
-	   private void initMongo() {
-        this.mClient = new MongoClient(mongoHost, mongoPort);
+        this.mongoHost = host;
+        this.mongoPort = port;
+        this.dbName = db;
+        this.colName = col;
+        this.method = method;
+        this.clearMongo = clearMongo;
+        this.uri = "mongodb://" + this.mongoHost + ":" + this.mongoPort;
+
+    }
+
+    private void initMongo() {
+        ConnectionString connectionString = new ConnectionString(this.uri);
+
+        this.mClient = MongoClients.create(connectionString);
         this.mDB = mClient.getDatabase(dbName);
         this.mCol = mDB.getCollection(colName);
         if (this.clearMongo) {
@@ -100,62 +104,60 @@ public class MongoServiceArOutput implements OutputFormat<ServiceAR> {
         mCol.deleteMany(filter);
     }
 
+    /**
+     * Initialize MongoDB remote connection
+     */
+    @Override
+    public void open(int taskNumber, int numTasks) throws IOException {
+        // Configure mongo
+        initMongo();
+    }
 
+    /**
+     * Store a MongoDB document record
+     */
+    @Override
+    public void writeRecord(ServiceAR record) throws IOException {
 
-	/**
-	 * Initialize MongoDB remote connection
-	 */
-	@Override
-	public void open(int taskNumber, int numTasks) throws IOException {
-		// Configure mongo
-		initMongo();
-	}
+        // create document from record
+        Document doc = new Document("report", record.getReport()).append("date", record.getDateInt())
+                .append("name", record.getName()).append("supergroup", record.getGroup())
+                .append("availability", record.getA()).append("reliability", record.getR()).append("up", record.getUp())
+                .append("unknown", record.getUnknown()).append("down", record.getDown());
 
-	/**
-	 * Store a MongoDB document record
-	 */
-	@Override
-	public void writeRecord(ServiceAR record) throws IOException {
+        if (this.method == MongoMethod.UPSERT) {
+            Bson f = Filters.and(Filters.eq("report", record.getReport()), Filters.eq("date", record.getDateInt()),
+                    Filters.eq("name", record.getName()), Filters.eq("supergroup", record.getGroup()));
 
-		// create document from record
-		Document doc = new Document("report", record.getReport()).append("date", record.getDateInt())
-				.append("name", record.getName()).append("supergroup", record.getGroup())
-				.append("availability", record.getA()).append("reliability", record.getR()).append("up", record.getUp())
-				.append("unknown", record.getUnknown()).append("down", record.getDown());
+            ReplaceOptions opts = new ReplaceOptions().upsert(true);
 
-		if (this.method == MongoMethod.UPSERT) {
-			Bson f = Filters.and(Filters.eq("report", record.getReport()), Filters.eq("date", record.getDateInt()),
-					Filters.eq("name", record.getName()), Filters.eq("supergroup", record.getGroup()));
+            mCol.replaceOne(f, doc, opts);
+        } else {
+            mCol.insertOne(doc);
+        }
+    }
 
-			UpdateOptions opts = new UpdateOptions().upsert(true);
+    /**
+     * Close MongoDB Connection
+     */
+    @Override
+    public void close() throws IOException {
+        if (clearMongo) {
+            deleteDoc();
+        }
 
-			mCol.replaceOne(f, doc, opts);
-		} else {
-			mCol.insertOne(doc);
-		}
-	}
+        if (mClient != null) {
+            mClient.close();
+            mClient = null;
+            mDB = null;
+            mCol = null;
+        }
+    }
 
-	/**
-	 * Close MongoDB Connection
-	 */
-	@Override
-	public void close() throws IOException {
-            if (clearMongo) {
-                deleteDoc();
-            }
+    @Override
+    public void configure(Configuration arg0) {
+        // configure
 
-		if (mClient != null) {
-			mClient.close();
-			mClient = null;
-			mDB = null;
-			mCol = null;
-		}
-	}
-
-	@Override
-	public void configure(Configuration arg0) {
-		// configure
-
-	}
+    }
 
 }
