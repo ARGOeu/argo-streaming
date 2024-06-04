@@ -127,12 +127,13 @@ language governing permissions and limitations under the License. -->
         </dependency>
 
 
+
+        <!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
         <dependency>
             <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-            <version>3.12.11</version>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>5.1.0</version>
         </dependency>
-
 
         <!-- explicitly add a standard loggin framework, as Flink does not (in 
         the future) have a hard dependency on one specific framework by default -->
@@ -250,10 +251,11 @@ language governing permissions and limitations under the License. -->
                     <version>2.2.4</version>
                 </dependency>
 
+                <!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
                 <dependency>
                     <groupId>org.mongodb</groupId>
-                    <artifactId>mongo-java-driver</artifactId>
-                    <version>3.12.11</version>
+                    <artifactId>mongodb-driver-sync</artifactId>
+                    <version>5.1.0</version>
                 </dependency>
 
                 <dependency>
