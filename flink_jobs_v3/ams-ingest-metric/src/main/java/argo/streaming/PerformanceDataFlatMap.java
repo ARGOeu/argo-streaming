@@ -2,22 +2,23 @@ package argo.streaming;
 
 import argo.avro.MetricData;
 import com.influxdb.client.domain.WritePrecision;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import com.influxdb.client.write.Point;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
-import com.influxdb.client.write.Point;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.TimeZone;
 
 /**
  * PerformanceDataFlatMap implements a map function that creates InfluxDB
@@ -29,7 +30,9 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
     private static final long serialVersionUID = 1L;
     static Logger LOG = LoggerFactory.getLogger(PerformanceDataFlatMap.class);
 
-    public PerformanceDataFlatMap() {
+    private String tenant;
+    public PerformanceDataFlatMap(String tenant) {
+        this.tenant=tenant;
     }
 
     /**
@@ -44,7 +47,7 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
     }
 
     //FlatMap to retrieve actual data from MetricData , parse them and create the Point expressing performance data , to be written in influxdb
-      @Override
+    @Override
     public void flatMap(Tuple2<String, MetricData> in, Collector<Point> out) throws Exception {
 
         ArrayList<Tuple8> tuples = parsePerformanceData(in.f0, in.f1); //parsing MetricData to retrieve actual data and the info representing performance
@@ -55,6 +58,7 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
             tags.put("service", tuple.f3);
             tags.put("endpoint", tuple.f4);
             tags.put("metric", tuple.f5);
+            tags.put("tenant",tenant);
 
             HashMap<String, Object> fields = new HashMap<>();
             fields.put("value", tuple.f6);
@@ -64,13 +68,13 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
             SimpleDateFormat sdf = new SimpleDateFormat(format);
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date date = sdf.parse(tuple.f1);
-         
             Point p = Point.measurement(tuple.f0).time(date.getTime(), WritePrecision.MS).addTags(tags).addFields(fields);
+
             out.collect(p);
         }
     }
 
-    
+
     private static ArrayList<Tuple8> parsePerformanceData(String group, MetricData item) {
 
         ArrayList<Tuple8> list = new ArrayList<>();
@@ -81,7 +85,7 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
 
         String actualData = item.getActualData();
         if(actualData==null){
-        return new ArrayList<>();
+            return new ArrayList<>();
         }
         ArrayList<PerformanceValue> performanceValues = splitActualData(actualData);//splits the actual data string to retrieve the info about performace data
 
@@ -104,21 +108,21 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
             String[] labelSplit = actualData.split("="); //split on "=" to seperate the name and the values 
             String label = labelSplit[0]; // the first part is the name of the entity e.g time
             if(label.equals("time")){
-             String[] values = labelSplit[1].split(";"); //the second part contains the value-unit and the min,max limits e.g 2.227776s;;;0.000000. we split on ; to get the value-unit
-            String value = values[0]; //gets the value-unit e.g  2.227776s
-             
-            String unit = value.replaceAll("[^A-Za-z]", ""); //we recognize the unit by the alpharithmetic part e.g s
-            String numericVal = value.replaceAll("[^0-9]", ""); //we recognize the value by the numeric part e.g 2.227776
-            Float floatVal=Float.valueOf(numericVal);
-            PerformanceValue perfValue = new PerformanceValue(label, floatVal, unit); // we keep the performance entity as name,value,unit e.g [time,2.227776,s]
-            perfValueList.add(perfValue);
+                String[] values = labelSplit[1].split(";"); //the second part contains the value-unit and the min,max limits e.g 2.227776s;;;0.000000. we split on ; to get the value-unit
+                String value = values[0]; //gets the value-unit e.g  2.227776s
+
+                String unit = value.replaceAll("[^A-Za-z]", ""); //we recognize the unit by the alpharithmetic part e.g s
+                String numericVal = value.replaceAll("[^0-9]", ""); //we recognize the value by the numeric part e.g 2.227776
+                Float floatVal=Float.valueOf(numericVal);
+                PerformanceValue perfValue = new PerformanceValue(label, floatVal, unit); // we keep the performance entity as name,value,unit e.g [time,2.227776,s]
+                perfValueList.add(perfValue);
             }
         }
         return perfValueList;
 
     }
 
-  
+
     private static class PerformanceValue {
 
         private String label;

@@ -604,4 +604,19 @@ public class ApiResourceManager {
         String dateString = date.toString(dtf);
         return dateString;
     }
+    /**
+     * Retrieves the topology endpoint content and stores it to the enum map
+     */
+    public void getAllRemoteTopoEndpoints() {
+        String combinedparam="";
+        if(isSourceTopoAll){
+            combinedparam="&mode=combined";
+        }
+        String path = "https://%s/api/v2/topology/endpoints?date=%s";
+        String fullURL = String.format(path, this.endpoint, this.date+combinedparam);
+        String content = this.requestManager.getResource(fullURL);
+
+        this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
+
+    }
 }

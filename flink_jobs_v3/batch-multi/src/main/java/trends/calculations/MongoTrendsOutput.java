@@ -1,12 +1,13 @@
 package trends.calculations;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import java.io.IOException;
 
 import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.configuration.Configuration;
 import org.bson.Document;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -42,6 +43,7 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
     private MongoCollection<Document> mCol;
     private boolean clearMongo;
     private ObjectId nowId;
+    private String uri;
 
     // constructor
     public MongoTrendsOutput(String uri, String col, TrendsType trendsType, String report, String date, boolean clearMongo) {
@@ -50,14 +52,15 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
         this.trendsType = trendsType;
         this.report = report;
 
-        MongoClientURI mURI = new MongoClientURI(uri);
-        String[] hostParts = mURI.getHosts().get(0).split(":");
+        this.uri = uri;
+        ConnectionString connectionString = new ConnectionString(this.uri);
+        String[] hostParts = connectionString.getHosts().get(0).split(":");
         String hostname = hostParts[0];
         int port = Integer.parseInt(hostParts[1]);
 
         this.mongoHost = hostname;
         this.mongoPort = port;
-        this.dbName = mURI.getDatabase();
+        this.dbName = connectionString.getDatabase();
         this.colName = col;
         this.clearMongo = clearMongo;
     }
@@ -74,14 +77,19 @@ public class MongoTrendsOutput implements OutputFormat<Trends> {
         this.trendsType = trendsType;
         this.report = report;
         this.clearMongo = clearMongo;
+        this.uri = "mongodb://" + this.mongoHost + ":" + this.mongoPort;
+
     }
 
     private void initMongo() {
-        this.mClient = new MongoClient(mongoHost, mongoPort);
+
+        ConnectionString connectionString = new ConnectionString(this.uri);
+        this.mClient = MongoClients.create(connectionString);
+
         this.mDB = mClient.getDatabase(dbName);
         this.mCol = mDB.getCollection(colName);
         if (this.clearMongo) {
-            String oidString = Long.toHexString(new DateTime( DateTimeZone.UTC).getMillis() / 1000L) + "0000000000000000";
+            String oidString = Long.toHexString(new DateTime(DateTimeZone.UTC).getMillis() / 1000L) + "0000000000000000";
             this.nowId = new ObjectId(oidString);
         }
 

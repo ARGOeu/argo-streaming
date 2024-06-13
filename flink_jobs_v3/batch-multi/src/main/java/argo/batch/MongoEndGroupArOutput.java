@@ -1,6 +1,8 @@
 package argo.batch;
 
 import argo.ar.EndpointGroupAR;
+import com.mongodb.ConnectionString;
+import com.mongodb.client.MongoClient;
 import java.io.IOException;
 
 import org.apache.flink.api.common.io.OutputFormat;
@@ -8,25 +10,24 @@ import org.apache.flink.configuration.Configuration;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-
 
 /**
  * MongoOutputFormat for storing Endpoint Group AR data to MongoDB.
  */
 public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
 
-	
-	public enum MongoMethod { INSERT, UPSERT };
-	
+	public enum MongoMethod {
+		INSERT, UPSERT
+	};
+
 	private static final long serialVersionUID = 1L;
 
 	private String mongoHost;
@@ -34,71 +35,74 @@ public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
 	private String dbName;
 	private String colName;
 	private MongoMethod method;
-	
-	
-	
+
 	private MongoClient mClient;
 	private MongoDatabase mDB;
-	private MongoCollection<Document> mCol; 
-        private boolean clearMongo;
-        private String report;
-        private int date;
-       private ObjectId nowId;
-
+	private MongoCollection<Document> mCol;
+	private boolean clearMongo;
+	private String report;
+	private int date;
+	private ObjectId nowId;
+	private String uri;
 
 	// constructor
 	public MongoEndGroupArOutput(String uri, String col, String method, String report, String date, boolean clearMongo) {
-	       this.date = Integer.parseInt(date.replace("-", ""));
-               this.report = report;
-	
-		if (method.equalsIgnoreCase("upsert")){
+		this.date = Integer.parseInt(date.replace("-", ""));
+		this.report = report;
+
+		if (method.equalsIgnoreCase("upsert")) {
 			this.method = MongoMethod.UPSERT;
 		} else {
 			this.method = MongoMethod.INSERT;
 		}
-		
-		MongoClientURI mURI = new MongoClientURI(uri);
-		String[] hostParts = mURI.getHosts().get(0).split(":");
+		this.uri = uri;
+		ConnectionString connectionString = new ConnectionString(this.uri);
+
+		// MongoClientURI mURI = new MongoClientURI(uri);
+		String[] hostParts = connectionString.getHosts().get(0).split(":");
 		String hostname = hostParts[0];
 		int port = Integer.parseInt(hostParts[1]);
-		
+
 		this.mongoHost = hostname;
 		this.mongoPort = port;
-		this.dbName = mURI.getDatabase();
+		this.dbName = connectionString.getDatabase();
 		this.colName = col;
-                this.clearMongo = clearMongo;
-    
+		this.clearMongo = clearMongo;
+
 	}
-	
+
 	public MongoEndGroupArOutput(String host, int port, String db, String col, MongoMethod method, String report, String date, boolean clearMongo) {
-                this.date = Integer.parseInt(date.replace("-", ""));
-                this.report = report;
-		
-                this.mongoHost = host;
+		this.date = Integer.parseInt(date.replace("-", ""));
+		this.report = report;
+
+		this.mongoHost = host;
 		this.mongoPort = port;
 		this.dbName = db;
 		this.colName = col;
 		this.method = method;
-                this.clearMongo = clearMongo;
-    	}
-	
+		this.clearMongo = clearMongo;
+		this.uri = "mongodb://" + this.mongoHost + ":" + this.mongoPort;
+	}
 
-    private void initMongo() {
-        this.mClient = new MongoClient(mongoHost, mongoPort);
-        this.mDB = mClient.getDatabase(dbName);
-        this.mCol = mDB.getCollection(colName);
-        if (this.clearMongo) {
-            String oidString = Long.toHexString(new DateTime(DateTimeZone.UTC).getMillis() / 1000L) + "0000000000000000";
-            this.nowId = new ObjectId(oidString);
-        }
+	private void initMongo() {
+		ConnectionString connectionString = new ConnectionString(this.uri);
 
-    }
-    private void deleteDoc() {
+		this.mClient = MongoClients.create(connectionString);
+		this.mDB = mClient.getDatabase(dbName);
+		this.mCol = mDB.getCollection(colName);
+		if (this.clearMongo) {
+			String oidString = Long.toHexString(new DateTime(DateTimeZone.UTC).getMillis() / 1000L) + "0000000000000000";
+			this.nowId = new ObjectId(oidString);
+		}
 
-        Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date", this.date), Filters.lte("_id", this.nowId));
-        mCol.deleteMany(filter);
-    }
-	
+	}
+
+	private void deleteDoc() {
+
+		Bson filter = Filters.and(Filters.eq("report", this.report), Filters.eq("date", this.date), Filters.lte("_id", this.nowId));
+		mCol.deleteMany(filter);
+	}
+
 	/**
 	 * Initialize MongoDB remote connection
 	 */
@@ -112,31 +116,29 @@ public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
 	 * Store a MongoDB document record
 	 */
 	@Override
-	public void writeRecord(EndpointGroupAR record) throws IOException  {
-		
-	
+	public void writeRecord(EndpointGroupAR record) throws IOException {
+
 		// create document from record
-		Document doc = new Document("report",record.getReport())
+		Document doc = new Document("report", record.getReport())
 				.append("date", record.getDateInt())
 				.append("name", record.getName())
 				.append("supergroup", record.getGroup())
-				.append("weight",record.getWeight())
+				.append("weight", record.getWeight())
 				.append("availability", record.getA())
 				.append("reliability", record.getR())
 				.append("up", record.getUp())
 				.append("unknown", record.getUnknown())
 				.append("down", record.getDown());
-				
-		
-		if (this.method == MongoMethod.UPSERT) { 
+
+		if (this.method == MongoMethod.UPSERT) {
 			Bson f = Filters.and(Filters.eq("report", record.getReport()),
 					Filters.eq("date", record.getDateInt()),
-					Filters.eq("name", record.getName()),		
+					Filters.eq("name", record.getName()),
 					Filters.eq("supergroup", record.getGroup()));
-			
-			UpdateOptions opts = new UpdateOptions().upsert(true);
-			
-			mCol.replaceOne(f,doc,opts);
+
+			ReplaceOptions opts = new ReplaceOptions().upsert(true);
+
+			mCol.replaceOne(f, doc, opts);
 		} else {
 			mCol.insertOne(doc);
 		}
@@ -147,11 +149,11 @@ public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
 	 */
 	@Override
 	public void close() throws IOException {
-            if (clearMongo) {
-                deleteDoc();
-            }
-	
-            if (mClient != null) {
+		if (clearMongo) {
+			deleteDoc();
+		}
+
+		if (mClient != null) {
 			mClient.close();
 			mClient = null;
 			mDB = null;
@@ -162,11 +164,7 @@ public class MongoEndGroupArOutput implements OutputFormat<EndpointGroupAR> {
 	@Override
 	public void configure(Configuration arg0) {
 		// configure
-		
+
 	}
-
-
-
-	
 
 }

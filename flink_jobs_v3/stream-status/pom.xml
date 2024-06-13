@@ -19,7 +19,6 @@ language governing permissions and limitations under the License. -->
     <name>ARGO Streaming status job</name>
 
 
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flink.version>1.17.0</flink.version>
@@ -101,13 +100,13 @@ language governing permissions and limitations under the License. -->
             <version>${hadoop.version}</version>
         </dependency>
 
-		
+
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-avro</artifactId>
             <version>${flink.version}</version>
         </dependency>
-     
+
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-files</artifactId>
@@ -145,14 +144,14 @@ language governing permissions and limitations under the License. -->
             <version>3.0.0-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
-         <!--      https://mvnrepository.com/artifact/org.apache.hbase/hbase-client -->
-<!--        <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-            https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+        <!--      https://mvnrepository.com/artifact/org.apache.hbase/hbase-client -->
+        <!--        <dependency>
+                    <groupId>org.apache.hbase</groupId>
+                    <artifactId>hbase</artifactId>
+                    <version>3.0.0-SNAPSHOT</version>
+                    <type>jar</type>
+                </dependency>
+                    https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -176,15 +175,15 @@ language governing permissions and limitations under the License. -->
             <scope>test</scope>
         </dependency>
         <!--   https://mvnrepository.com/artifact/xerces/xercesImpl -->
-       <dependency>
+        <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
             <version>2.12.2</version>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-            <version>3.12.12</version>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>5.1.0</version>
             <scope>compile</scope>
         </dependency>
         <!--    https://mvnrepository.com/artifact/com.github.tomakehurst/wiremock -->
@@ -209,6 +208,12 @@ language governing permissions and limitations under the License. -->
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka</artifactId>
             <version>${flink.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -240,24 +245,25 @@ language governing permissions and limitations under the License. -->
                     <version>3.0.0-SNAPSHOT</version>
                     <type>jar</type>
                 </dependency>
-        
+
                 <dependency>
                     <groupId>org.apache.flink</groupId>
                     <artifactId>flink-java</artifactId>
                     <version>${flink.version}</version>
                     <scope>provided</scope>
                 </dependency>
+                <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-streaming-java -->
                 <dependency>
                     <groupId>org.apache.flink</groupId>
                     <artifactId>flink-streaming-java</artifactId>
                     <version>${flink.version}</version>
                     <scope>provided</scope>
                 </dependency>
+
                 <dependency>
                     <groupId>org.apache.flink</groupId>
                     <artifactId>flink-clients</artifactId>
                     <version>${flink.version}</version>
-                    <scope>provided</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.flink</groupId>
@@ -265,6 +271,7 @@ language governing permissions and limitations under the License. -->
                     <version>${flink.version}</version>
                     <scope>provided</scope>
                 </dependency>
+
                 <dependency>
                     <groupId>commons-codec</groupId>
                     <artifactId>commons-codec</artifactId>
@@ -298,7 +305,7 @@ language governing permissions and limitations under the License. -->
                     <artifactId>joda-time</artifactId>
                     <version>2.12.4</version>
                 </dependency>
-              
+
             </dependencies>
 
             <build>
@@ -447,7 +454,7 @@ language governing permissions and limitations under the License. -->
                             <transformers>
                                 <!-- add Main-Class to manifest file -->
                                 <transformer
-                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>argo.streaming.AmsStreamStatus</mainClass>
                                 </transformer>
                             </transformers>

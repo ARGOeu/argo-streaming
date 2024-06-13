@@ -333,7 +333,8 @@ public class ArgoMultiJob {
         String dbMethod = params.getRequired("mongo.method");
 
         // Create status detail data set
-        DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
+
+        DataSet<StatusMetric> stDetailDS = mdataTotalDS.distinct("group","hostname","metric","status","timestamp").groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
 
