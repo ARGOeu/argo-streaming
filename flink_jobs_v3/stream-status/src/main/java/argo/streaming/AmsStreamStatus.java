@@ -19,6 +19,7 @@ import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -46,7 +47,6 @@ import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
-import org.apache.commons.lang.StringUtils;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.hadoop.hbase.HBaseConfiguration;

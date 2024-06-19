@@ -24,8 +24,8 @@ language governing permissions and limitations under the License. -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flink.version>1.17.0</flink.version>
-        <slf4j.version>2.0.7</slf4j.version>
-        <hadoop.version>2.6.0</hadoop.version>
+        <slf4j.version>2.0.13</slf4j.version>
+        <hadoop.version>3.2.0</hadoop.version>
         <project.date>19700101</project.date>
         <buildNumber>1</buildNumber>
     </properties>
@@ -68,7 +68,11 @@ language governing permissions and limitations under the License. -->
     handling. This approach is preferred and leads to much cleaner jar files. -->
 
     <dependencies>
-       
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
         <!-- Apache Flink dependencies -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -129,13 +133,6 @@ language governing permissions and limitations under the License. -->
         </dependency>
 
 
-        <!-- explicitly add a standard loggin framework, as Flink does not (in 
-        the future) have a hard dependency on one specific framework by default -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-reload4j</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -235,7 +232,7 @@ language governing permissions and limitations under the License. -->
                 <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-hadoop-compatibility -->
                 <dependency>
                     <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-hadoop-compatibility</artifactId>
+                    <artifactId>flink-hadoop-compatibility_2.12</artifactId>
                     <version>${flink.version}</version>
                 </dependency>
                 <dependency>
@@ -435,10 +432,10 @@ language governing permissions and limitations under the License. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
+                <version>3.11.0</version>
                 <configuration>
-                    <source>1.8</source> <!-- If you want to use Java 8, change this to "1.8" -->
-                    <target>1.8</target> <!-- If you want to use Java 8, change this to "1.8" -->
+                    <source>11</source> <!-- If you want to use Java 8, change this to "1.8" -->
+                    <target>11</target> <!-- If you want to use Java 8, change this to "1.8" -->
                 </configuration>
             </plugin>
         </plugins>

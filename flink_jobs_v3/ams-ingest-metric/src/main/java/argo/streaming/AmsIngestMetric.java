@@ -28,6 +28,7 @@ import argo.avro.MetricDataOld;
 import ams.connector.ArgoMessagingSource;
 import argo.amr.ApiResourceManager;
 import argo.avro.GroupEndpoint;
+
 import java.util.concurrent.TimeUnit;
 
 import org.apache.avro.io.DatumReader;
@@ -38,11 +39,13 @@ import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import com.influxdb.client.write.Point;
 import influxdb.connector.InfluxDBSink;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
@@ -53,7 +56,7 @@ import profilesmanager.MetricProfileManager;
 /**
  * Flink Job : Stream metric data from ARGO messaging to Hbase job required cli
  * parameters:
- *
+ * <p>
  * --ams.endpoint : ARGO messaging api endoint to connect to msg.example.com
  * --ams.port : ARGO messaging api port --ams.token : ARGO messaging api token
  * --ams.project : ARGO messaging api project to connect to --ams.sub : ARGO
@@ -98,7 +101,7 @@ public class AmsIngestMetric {
      */
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String args[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.zk.port", "hbase.namespace",
-            "hbase.table"};
+                "hbase.table"};
         return hasArgs(args, paramTool);
     }
 
@@ -172,7 +175,6 @@ public class AmsIngestMetric {
         if (parameterTool.has("ams.proxy")) {
             ams.setProxy(parameterTool.get("ams.proxy"));
         }
-
         DataStream<String> metricDataJSON = see.addSource(ams);
         DataStream<MetricData> metricDataPOJO = metricDataJSON.flatMap(new FlatMapFunction<String, MetricData>() {
 
@@ -232,7 +234,6 @@ public class AmsIngestMetric {
                     .withOutputFileConfig(mdataOutputConfig)
                     .withBucketCheckInterval(1000) // set the bucket check interval to 1 second
                     .build();
-
             metricDataPOJO.sinkTo(bs);
         } else if (hasInfluxDBArgs(parameterTool)) {
 
@@ -254,6 +255,7 @@ public class AmsIngestMetric {
             // - one with parallelism 1 to connect in the first processing step and
             // - one with max parallelism for status event generation step
             // (scalable)
+
             DataStream<Tuple2<String, String>> syncA = syncAMS.forward();
 
             DataStream<Tuple2<String, MetricData>> groupMdata = metricDataPOJO.connect(syncA)
@@ -357,8 +359,6 @@ public class AmsIngestMetric {
          * The main flat map function that accepts metric data and generates
          * metric data with group information
          *
-         * @param value Input metric data in base64 encoded format from AMS
-         * service
          * @param out Collection of generated Tuple2<MetricData,String> objects
          */
         @Override
