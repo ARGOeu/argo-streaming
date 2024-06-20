@@ -1,56 +1,45 @@
 package argo.streaming;
 
+import ams.connector.ArgoMessagingSource;
+import argo.amr.ApiResourceManager;
+import argo.avro.GroupEndpoint;
+import argo.avro.MetricData;
+import argo.avro.MetricDataOld;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.influxdb.client.write.Point;
+import influxdb.connector.InfluxDBSink;
+import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.file.sink.FileSink;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.formats.avro.AvroWriters;
 import org.apache.flink.streaming.api.datastream.DataStream;
-
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.filesystem.OutputFileConfig;
 import org.apache.flink.streaming.api.functions.sink.filesystem.bucketassigners.BasePathBucketAssigner;
 import org.apache.flink.util.Collector;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.JsonElement;
-
-import argo.avro.MetricDataOld;
-
-import ams.connector.ArgoMessagingSource;
-import argo.amr.ApiResourceManager;
-import argo.avro.GroupEndpoint;
-
-import java.util.concurrent.TimeUnit;
-
-import org.apache.avro.io.DatumReader;
-
-import com.google.gson.JsonParser;
-
-import argo.avro.MetricData;
-import argo.avro.MetricProfile;
-import com.influxdb.client.write.Point;
-import influxdb.connector.InfluxDBSink;
+import profilesmanager.EndpointGroupManager;
+import profilesmanager.MetricProfileManager;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
-import profilesmanager.EndpointGroupManager;
-import profilesmanager.MetricProfileManager;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -64,7 +53,16 @@ import profilesmanager.MetricProfileManager;
  * retrieved per request to AMS service --ams.interval : interval (in ms)
  * between AMS service requests --ams.proxy : optional http proxy url
  * --ams.verify : optional turn on/off ssl verify
+ * --proxy: optional http proxy url for api endpoint --influx.token the token to
+ * the influx db --influx.port the port of the influxdb --influx.endpoint the
+ * endpoint to influx db --influx.org the organisation of influx db
+ * --influx.bucket the bucket of the influx db --influx.proxy the http url to
+ * the influx db --influx.proxyport the proxy port for influx db --influx.tenant
+ * the tenants name for whom the performance data is generated --api.endpoint
+ * the api endpoint --api.token the api token --api.interval the api interval
+ * --api.timeout 1
  */
+
 public class AmsIngestMetric {
     // setup logger
 
@@ -175,6 +173,7 @@ public class AmsIngestMetric {
         if (parameterTool.has("ams.proxy")) {
             ams.setProxy(parameterTool.get("ams.proxy"));
         }
+
         DataStream<String> metricDataJSON = see.addSource(ams);
         DataStream<MetricData> metricDataPOJO = metricDataJSON.flatMap(new FlatMapFunction<String, MetricData>() {
 
@@ -234,35 +233,14 @@ public class AmsIngestMetric {
                     .withOutputFileConfig(mdataOutputConfig)
                     .withBucketCheckInterval(1000) // set the bucket check interval to 1 second
                     .build();
+
             metricDataPOJO.sinkTo(bs);
         } else if (hasInfluxDBArgs(parameterTool)) {
-
-            String apiEndpoint = parameterTool.getRequired("api.endpoint");
-            String apiToken = parameterTool.getRequired("api.token");
-            String reportID = parameterTool.getRequired("report.uuid");
-            int apiInterval = parameterTool.getInt("api.interval");
-            runDate = parameterTool.get("run.date");
-            if (runDate != null) {
-                runDate = runDate + "T00:00:00.000Z";
-            }
-            final StatusConfig conf = new StatusConfig(parameterTool);
-
-            ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
-
-            DataStream<Tuple2<String, String>> syncAMS = see.addSource(apiSync).setParallelism(1);
-
-            // Forward syncAMS data to two paths
-            // - one with parallelism 1 to connect in the first processing step and
-            // - one with max parallelism for status event generation step
-            // (scalable)
-
-            DataStream<Tuple2<String, String>> syncA = syncAMS.forward();
-
-            DataStream<Tuple2<String, MetricData>> groupMdata = metricDataPOJO.connect(syncA)
-                    .flatMap(new MetricDataWithGroup(conf)).setParallelism(1);
-
+            String tenant = parameterTool.get("influx.tenant");
+            DataStream<Tuple2<String, MetricData>> groupMdata = metricDataPOJO
+                    .flatMap(new MetricDataWithGroup(parameterTool)).setParallelism(1);
             DataStream<Point> perfData = groupMdata
-                    .flatMap(new PerformanceDataFlatMap()).setParallelism(1);
+                    .flatMap(new PerformanceDataFlatMap(tenant)).setParallelism(1);
 
             InfluxDBSink sink = new InfluxDBSink(parameterTool);
             perfData.addSink(sink);
@@ -299,19 +277,19 @@ public class AmsIngestMetric {
      * MetricDataWithGroup implements a map function that adds group information
      * to the metric data message
      */
-    private static class MetricDataWithGroup extends RichCoFlatMapFunction<MetricData, Tuple2<String, String>, Tuple2<String, MetricData>> {
-
+    private static class MetricDataWithGroup extends RichFlatMapFunction<MetricData, Tuple2<String, MetricData>> {
         private static final long serialVersionUID = 1L;
 
         public EndpointGroupManager egp;
         public MetricProfileManager mps;
 
-        public StatusConfig config;
         private ApiResourceManager amr;
+        private ParameterTool params;
+        private String runDate;
 
-        public MetricDataWithGroup(StatusConfig config) {
-            LOG.info("Created new Status map");
-            this.config = config;
+        public MetricDataWithGroup(ParameterTool params) {
+            LOG.info("Enrich Metric Data with Group Info");
+            this.params = params;
         }
 
         /**
@@ -323,49 +301,33 @@ public class AmsIngestMetric {
         @Override
         public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
 
-            this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
-            this.amr.setDate(config.runDate);
-            this.amr.setTimeoutSec((int) config.timeout);
-
-            if (config.apiProxy != null) {
-                this.amr.setProxy(config.apiProxy);
+            this.amr = new ApiResourceManager(this.params.getRequired("api.endpoint"), this.params.getRequired("api.token"));
+            this.amr.setTimeoutSec(params.getInt("api.timeout"));
+            if (params.has("proxy")) {
+                this.amr.setProxy(params.get("proxy"));
             }
-
-            this.amr.setReportID(config.reportID);
-            this.amr.getRemoteAll();
-
-            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
-            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
-
-            mps = new MetricProfileManager();
-            mps.loadFromList(mpsList);
-            String validMetricProfile = mps.getProfiles().get(0);
-            ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
-
-            // Trim profile services
-            ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
-            // Use optimized Endpoint Group Manager
-            for (GroupEndpoint egpItem : egpList) {
-                if (validServices.contains(egpItem.getService())) {
-                    egpTrim.add(egpItem);
-                }
-            }
-            egp = new EndpointGroupManager();
-            egp.loadFromList(egpTrim);
-
         }
 
         /**
-         * The main flat map function that accepts metric data and generates
-         * metric data with group information
-         *
-         * @param out Collection of generated Tuple2<MetricData,String> objects
+         * Flat Map Function that accepts AMS message and exports the metric
+         * data object (encoded in the payload)
          */
         @Override
-        public void flatMap1(MetricData item, Collector<Tuple2<String, MetricData>> out)
+        public void flatMap(MetricData item, Collector<Tuple2<String, MetricData>> out)
                 throws IOException, ParseException {
 
+            //set rundate from the first item's timestamp and update each time the date is changed to the next day
+            //in order to update the metric profile and endpoint info
+            String currTimestampDate = item.getTimestamp().split("T")[0];
+            if (this.runDate == null || !runDate.equals(currTimestampDate)) {
+                loadTopology(currTimestampDate);
+            }
+
             ArrayList<String> groups = egp.getGroup(item.getHostname(), item.getService());
+            if (groups.isEmpty()) {
+                loadTopology(currTimestampDate);
+                groups = egp.getGroup(item.getHostname(), item.getService());
+            }
             for (String groupItem : groups) {
                 Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
 
@@ -373,44 +335,27 @@ public class AmsIngestMetric {
                 curItem.f1 = item;
 
                 out.collect(curItem);
-                System.out.println("item enriched: " + curItem.toString());
             }
 
         }
+        private void loadTopology(String currTimestampDate) {
+            this.runDate = currTimestampDate;
+            this.amr.setDate(this.runDate);
+            this.amr.getAllRemoteTopoEndpoints();
 
-        public void flatMap2(Tuple2<String, String> value, Collector<Tuple2<String, MetricData>> out)
-                throws IOException, ParseException {
+            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
-            if (value.f0.equalsIgnoreCase("metric_profile")) {
-                // Update mps
-                ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
-                mps = new MetricProfileManager();
-                mps.loadFromList(mpsList);
-            } else if (value.f0.equalsIgnoreCase("group_endpoints")) {
-                // Update egp
-                ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpointJSON(value.f1);
-                egp = new EndpointGroupManager();
-
-                String validMetricProfile = mps.getProfiles().get(0);
-                ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
-                // Trim profile services
-                ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
-                // Use optimized Endpoint Group Manager
-                for (GroupEndpoint egpItem : egpList) {
-                    if (validServices.contains(egpItem.getService())) {
-                        egpTrim.add(egpItem);
-                    }
-                }
-            }
+            egp = new EndpointGroupManager();
+            egp.loadFromList(egpList);
 
         }
 
     }
+
 
     public static boolean hasInfluxDBArgs(ParameterTool paramTool) {
 
         String influxArgs[] = {"influx.token", "influx.port", "influx.endpoint", "influx.bucket", "influx.org"};
         return hasArgs(influxArgs, paramTool);
     }
-
 }

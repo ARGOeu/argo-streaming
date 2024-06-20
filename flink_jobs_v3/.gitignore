@@ -5,4 +5,4 @@
 .classpath
 /nbproject
 nbactions.xml
-
+/flink_jobs_v3/influxdb.connector/target/

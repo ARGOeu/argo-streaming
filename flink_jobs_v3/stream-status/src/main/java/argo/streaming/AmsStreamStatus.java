@@ -99,11 +99,17 @@ import org.apache.flink.connector.kafka.sink.KafkaSink;
  * Any of these formats is transformed to minutes in the computations if not
  * defined the default value is 1440m
  *
- * -- latest.offset (Optional) boolean true/false, to define if the argo messaging source 
- * should set offset at the latest or at the start of the runDate. By default,  if not defined , the 
- * offset should be the latest.
- * --level_group,level_service,level_endpoint, level_metric,  if  ON level alerts are generated,if OFF level alerts are 
- * disabled.if no level is defined in parameters then all levels are generated
+ * -- latest.offset (Optional) boolean true/false, to define if the argo
+ * messaging source should set offset at the latest or at the start of the
+ * runDate. By default, if not defined , the offset should be the latest.
+ * --level_group,level_service,level_endpoint, level_metric, if ON level alerts
+ * are generated,if OFF level alerts are disabled.if no level is defined in
+ * parameters then all levels are generated
+ *
+ * --sync.interval(Optional) , the interval to sync with the argo web api source
+ * (metric profiles, topology, downtimes) it can be * in the format of DAYS,
+ * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
+ * the parameter is not configured
  */
 public class AmsStreamStatus {
     // setup logger
@@ -212,7 +218,7 @@ public class AmsStreamStatus {
         apiEndpoint = parameterTool.getRequired("api.endpoint");
         apiToken = parameterTool.getRequired("api.token");
         String reportID = parameterTool.getRequired("report.uuid");
-        int apiInterval = parameterTool.getInt("api.interval");
+        Long apiInterval = parameterTool.getLong("api.interval");
         runDate = parameterTool.get("run.date");
         if (runDate != null) {
             runDate = runDate + "T00:00:00.000Z";
@@ -256,13 +262,16 @@ public class AmsStreamStatus {
 
         // Establish the metric data AMS stream
         // Ingest sync avro encoded data from AMS endpoint
-        String offsetDt=null;
-        if(parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")){
-         offsetDt=runDate;
+        String offsetDt = null;
+        if (parameterTool.has("latest.offset") && !parameterTool.getBoolean("latest.offset")) {
+            offsetDt = runDate;
+        }
+        String syncInterval = null;
+        if (parameterTool.has("sync.interval")) {
+            syncInterval = parameterTool.get("sync.interval");
         }
         ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
-        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, apiInterval, interval);
-
+        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, syncInterval, apiInterval);
         if (parameterTool.has("ams.verify")) {
             boolean verify = parameterTool.getBoolean("ams.verify");
             amsMetric.setVerify(verify);
@@ -272,6 +281,7 @@ public class AmsStreamStatus {
         if (parameterTool.has("proxy")) {
             String proxyURL = parameterTool.get("proxy");
             amsMetric.setProxy(proxyURL);
+            apiSync.setProxy(proxyURL);
         }
 
         DataStream<String> metricAMS = see.addSource(amsMetric).setParallelism(1);
@@ -423,6 +433,7 @@ public class AmsStreamStatus {
             ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
 
             // Trim profile services
+            // Trim profile services
             ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
             // Use optimized Endpoint Group Manager
             for (GroupEndpoint egpItem : egpList) {
@@ -432,7 +443,6 @@ public class AmsStreamStatus {
             }
             egp = new EndpointGroupManager();
             egp.loadFromList(egpTrim);
-
         }
 
         /**
@@ -852,14 +862,44 @@ public class AmsStreamStatus {
         }
     }
 
-    private static int getInterval(String intervalParam) {
+    public static class IntervalStruct {
+
+        IntervalType intervalType;
+        int intervalValue;
+
+        public IntervalStruct(IntervalType intervalType, int intervalValue) {
+            this.intervalType = intervalType;
+            this.intervalValue = intervalValue;
+        }
+
+        public IntervalType getIntervalType() {
+            return intervalType;
+        }
+
+        public void setIntervalType(IntervalType intervalType) {
+            this.intervalType = intervalType;
+        }
+
+        public int getIntervalValue() {
+            return intervalValue;
+        }
+
+        public void setIntervalValue(int intervalValue) {
+            this.intervalValue = intervalValue;
+        }
+
+    }
+
+    public static IntervalStruct parseInterval(String intervalParam) {
 
         String regex = "[0-9]*[h,d,m]$";
         boolean matches = intervalParam.matches(regex);
+        int intervalValue = 1440;
+        IntervalType intervalType = null;
+
         if (matches) {
 
             String intervals[] = new String[]{};
-            IntervalType intervalType = null;
             if (intervalParam.contains("h")) {
                 intervalType = IntervalType.HOURS;
                 intervals = intervalParam.split("h");
@@ -875,21 +915,34 @@ public class AmsStreamStatus {
                 int interval = Integer.parseInt(intervals[0]);
                 switch (intervalType) {
                     case DAY:
-                        return interval * 24 * 60;
+                        intervalValue = interval * 24 * 60;
+                        break;
                     case HOURS:
-                        return interval * 60;
+                        intervalValue = interval * 60;
+                        break;
                     case MINUTES:
-                        return interval;
+                        intervalValue = interval;
+                        break;
                     default:
-                        return 1440;
+                        intervalValue = 1440;
+                        break;
                 }
 
             }
-            return 1440;
 
         }
-        return 1440;
+        return new IntervalStruct(intervalType, intervalValue);
+
     }
+
+    public static int getInterval(String intervalParam) {
+
+        IntervalStruct intervalStruct = parseInterval(intervalParam);
+
+        return intervalStruct.getIntervalValue();
+
+    }
+
 
     private static String getJID() {
         return JobID.generate().toString();

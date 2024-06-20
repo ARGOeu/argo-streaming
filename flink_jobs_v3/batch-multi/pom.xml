@@ -128,8 +128,8 @@ language governing permissions and limitations under the License. -->
 
         <dependency>
             <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-            <version>3.12.12</version>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>5.1.0</version>
         </dependency>
 
 
@@ -174,12 +174,15 @@ language governing permissions and limitations under the License. -->
             <artifactId>xercesImpl</artifactId>
             <version>2.12.2</version>
         </dependency>
-      
+
+        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-shaded-hadoop-2-uber -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-shaded-hadoop2-uber</artifactId>
             <version>2.8.3-1.8.3</version>
+            <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>timeline.manager</groupId>
             <artifactId>timelines</artifactId>
@@ -229,6 +232,7 @@ language governing permissions and limitations under the License. -->
                     <version>${flink.version}</version>
                     <scope>provided</scope>
                 </dependency>
+
                 <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-hadoop-compatibility -->
                 <dependency>
                     <groupId>org.apache.flink</groupId>
@@ -339,7 +343,7 @@ language governing permissions and limitations under the License. -->
                                     <exclude>org.apache.flink:flink-scala_2.12</exclude>
                                     <exclude>org.apache.flink:flink-runtime_2.12</exclude>
                                     <exclude>org.apache.flink:flink-optimizer_2.12</exclude>
-                                    <exclude>org.apache.flink:flink-clients_2.12</exclude>
+                                    <exclude>org.apache.flink:flink-clients</exclude>
                                     <exclude>org.apache.flink:flink-avro_2.12</exclude>
                                     <exclude>org.apache.flink:flink-examples-batch_2.12</exclude>
                                     <exclude>org.apache.flink:flink-examples-streaming_2.12</exclude>
@@ -437,6 +441,7 @@ language governing permissions and limitations under the License. -->
                     <source>11</source> <!-- If you want to use Java 8, change this to "1.8" -->
                     <target>11</target> <!-- If you want to use Java 8, change this to "1.8" -->
                 </configuration>
+
             </plugin>
         </plugins>
         <finalName>${project.artifactId}-${project.version}.${buildNumber}-${project.date}</finalName>

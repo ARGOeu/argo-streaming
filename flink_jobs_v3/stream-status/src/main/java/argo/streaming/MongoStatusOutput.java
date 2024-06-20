@@ -10,15 +10,15 @@ import org.bson.conversions.Bson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.mongodb.ConnectionString;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
 
 import status.StatusEvent;
-
 
 /**
  * MongoOutputFormat for storing status data to mongodb
@@ -29,7 +29,6 @@ public class MongoStatusOutput implements OutputFormat<String> {
 		INSERT, UPSERT
 	};
 
-	
 	private static final long serialVersionUID = 1L;
 
 	private String mongoHost;
@@ -48,9 +47,10 @@ public class MongoStatusOutput implements OutputFormat<String> {
 	private MongoCollection<Document> endpointCol;
 	private MongoCollection<Document> serviceCol;
 	private MongoCollection<Document> egroupCol;
+	private String uri;
 
 	// constructor
-	public MongoStatusOutput(String uri, String metricName,String serviceName, String endpointName, String egroupName, String method , String report) {
+	public MongoStatusOutput(String uri, String metricName, String serviceName, String endpointName, String egroupName, String method, String report) {
 
 		if (method.equalsIgnoreCase("upsert")) {
 			this.method = MongoMethod.UPSERT;
@@ -58,17 +58,17 @@ public class MongoStatusOutput implements OutputFormat<String> {
 			this.method = MongoMethod.INSERT;
 		}
 
-		
 		this.report = report;
+		this.uri = uri;
 
-		MongoClientURI mURI = new MongoClientURI(uri);
-		String[] hostParts = mURI.getHosts().get(0).split(":");
+		ConnectionString connectionString = new ConnectionString(this.uri);
+		String[] hostParts = connectionString.getHosts().get(0).split(":");
 		String hostname = hostParts[0];
 		int port = Integer.parseInt(hostParts[1]);
 
 		this.mongoHost = hostname;
 		this.mongoPort = port;
-		this.dbName = mURI.getDatabase();
+		this.dbName = connectionString.getDatabase();
 		this.metricName = metricName;
 		this.serviceName = serviceName;
 		this.endpointName = endpointName;
@@ -76,8 +76,8 @@ public class MongoStatusOutput implements OutputFormat<String> {
 	}
 
 	// constructor
-	public MongoStatusOutput(String host, int port, String db, String metricName,String serviceName, String endpointName, String egroupName, MongoMethod method, 
-			String report) {
+	public MongoStatusOutput(String host, int port, String db, String metricName, String serviceName, String endpointName, String egroupName, MongoMethod method,
+							 String report) {
 		this.mongoHost = host;
 		this.mongoPort = port;
 		this.dbName = db;
@@ -87,10 +87,14 @@ public class MongoStatusOutput implements OutputFormat<String> {
 		this.egroupName = egroupName;
 		this.method = method;
 		this.report = report;
+		this.uri = "mongodb://" + this.mongoHost + ":" + this.mongoPort;
+
 	}
 
 	private void initMongo() {
-		this.mClient = new MongoClient(mongoHost, mongoPort);
+		ConnectionString connectionString = new ConnectionString(this.uri);
+
+		this.mClient = MongoClients.create(connectionString);
 		this.mDB = mClient.getDatabase(dbName);
 		this.metricCol = mDB.getCollection(metricName);
 		this.endpointCol = mDB.getCollection(endpointName);
@@ -108,82 +112,79 @@ public class MongoStatusOutput implements OutputFormat<String> {
 	}
 
 	/**
-	 * Prepare correct MongoDocument according to record values and selected StatusType.
-	 * A different document is needed for storing Status Metric results than Endpoint,
-	 * Service or Endpoint Group ones.       
+	 * Prepare correct MongoDocument according to record values and selected
+	 * StatusType. A different document is needed for storing Status Metric
+	 * results than Endpoint, Service or Endpoint Group ones.
 	 */
 	private Document prepDoc(StatusEvent record) {
-		Document doc = new Document("report",this.report)
+		Document doc = new Document("report", this.report)
 				.append("endpoint_group", record.getGroup());
-				
-		
+
 		if (record.getType().equalsIgnoreCase("service")) {
-			
-			doc.append("service",record.getService());
-		
+
+			doc.append("service", record.getService());
+
 		} else if (record.getType().equalsIgnoreCase("endpoint")) {
-			
+
 			doc.append("service", record.getService())
-			.append("host", record.getHostname());
-				
+					.append("host", record.getHostname());
+
 		} else if (record.getType().equalsIgnoreCase("metric")) {
-		
+
 			doc.append("service", record.getService())
-			.append("host", record.getHostname())
-			.append("metric", record.getMetric())
-			.append("message", record.getMessage())
-			.append("summary", record.getSummary())
-			.append("time_integer",record.getTimeInt()) 
-			.append("previous_state",record.getPrevStatus())
-			.append("previous_ts", record.getPrevTs());
+					.append("host", record.getHostname())
+					.append("metric", record.getMetric())
+					.append("message", record.getMessage())
+					.append("summary", record.getSummary())
+					.append("time_integer", record.getTimeInt())
+					.append("previous_state", record.getPrevStatus())
+					.append("previous_ts", record.getPrevTs());
 		}
-		
-		
-		doc.append("status",record.getStatus())
-				.append("timestamp",record.getTsMonitored())
-				.append("date_integer",record.getDateInt());
-		
+
+		doc.append("status", record.getStatus())
+				.append("timestamp", record.getTsMonitored())
+				.append("date_integer", record.getDateInt());
+
 		return doc;
 	}
-	
+
 	/**
-	 * Prepare correct Update filter according to record values and selected StatusType.
-	 * A different update filter is needed for updating Status Metric results than Endpoint,
-	 * Service or Endpoint Group ones.       
+	 * Prepare correct Update filter according to record values and selected
+	 * StatusType. A different update filter is needed for updating Status
+	 * Metric results than Endpoint, Service or Endpoint Group ones.
 	 */
 	private Bson prepFilter(StatusEvent record) {
-	
+
 		if (record.getType().equalsIgnoreCase("metric")) {
-			
+
 			return Filters.and(Filters.eq("report", this.report), Filters.eq("date_integer", record.getDateInt()),
 					Filters.eq("endpoint_group", record.getGroup()), Filters.eq("service", record.getService()),
 					Filters.eq("host", record.getHostname()), Filters.eq("metric", record.getMetric()),
 					Filters.eq("timestamp", record.getTsMonitored()));
-		
+
 		} else if (record.getType().equalsIgnoreCase("endpoint")) {
-			
+
 			return Filters.and(Filters.eq("report", this.report), Filters.eq("date_integer", record.getDateInt()),
 					Filters.eq("endpoint_group", record.getGroup()), Filters.eq("service", record.getService()),
 					Filters.eq("host", record.getHostname()), Filters.eq("timestamp", record.getTsMonitored()));
-			
+
 		} else if (record.getType().equalsIgnoreCase("service")) {
-			
+
 			return Filters.and(Filters.eq("report", this.report), Filters.eq("date_integer", record.getDateInt()),
 					Filters.eq("endpoint_group", record.getGroup()), Filters.eq("service", record.getService()),
 					Filters.eq("timestamp", record.getTsMonitored()));
-		
+
 		} else if (record.getType().equalsIgnoreCase("endpoint_group")) {
-			
+
 			return Filters.and(Filters.eq("report", this.report), Filters.eq("date_integer", record.getDateInt()),
 					Filters.eq("endpoint_group", record.getGroup()), Filters.eq("timestamp", record.getTsMonitored()));
 
 		}
-		
+
 		return null;
-		
-	
+
 	}
-	
+
 	/**
 	 * Extract json representation as string to be used as a field value
 	 */
@@ -196,9 +197,9 @@ public class MongoStatusOutput implements OutputFormat<String> {
 		}
 		return "";
 	}
-	
+
 	public StatusEvent jsonToStatusEvent(JsonObject jRoot) {
-		
+
 		String rep = this.report;
 		String tp = extractJson("type", jRoot);
 		String dt = extractJson("date", jRoot);
@@ -211,12 +212,12 @@ public class MongoStatusOutput implements OutputFormat<String> {
 		String prevTs = extractJson("prev_ts", jRoot);
 		String tsm = extractJson("ts_monitored", jRoot);
 		String tsp = extractJson("ts_processed", jRoot);
-		String monHost = extractJson("monitor_host",jRoot);
-		String repeat = extractJson("repeat",jRoot);
-		String message = extractJson("message",jRoot);
-		String summary = extractJson("summary",jRoot);                
-		String reminder = extractJson("reminder",jRoot);
-		return new StatusEvent(rep,tp,dt,eGroup,service,hostname,metric,status,monHost,tsm,tsp,prevStatus,prevTs,repeat,summary,message, reminder);
+		String monHost = extractJson("monitor_host", jRoot);
+		String repeat = extractJson("repeat", jRoot);
+		String message = extractJson("message", jRoot);
+		String summary = extractJson("summary", jRoot);
+		String reminder = extractJson("reminder", jRoot);
+		return new StatusEvent(rep, tp, dt, eGroup, service, hostname, metric, status, monHost, tsm, tsp, prevStatus, prevTs, repeat, summary, message, reminder);
 	}
 
 	/**
@@ -229,8 +230,7 @@ public class MongoStatusOutput implements OutputFormat<String> {
 		// parse the json root object
 		JsonObject jRoot = jsonParser.parse(recordJSON).getAsJsonObject();
 		StatusEvent record = jsonToStatusEvent(jRoot);
-		
-		
+
 		// Mongo Document to be prepared according to StatusType of input
 		Document doc = prepDoc(record);
 
@@ -238,17 +238,17 @@ public class MongoStatusOutput implements OutputFormat<String> {
 
 			// Filter for upsert to be prepared according to StatusType of input
 			Bson f = prepFilter(record);
-			UpdateOptions opts = new UpdateOptions().upsert(true);
+			ReplaceOptions opts = new ReplaceOptions().upsert(true);
 			if (record.getType().equalsIgnoreCase("metric")) {
 				metricCol.replaceOne(f, doc, opts);
 			} else if (record.getType().equalsIgnoreCase("endpoint")) {
 				endpointCol.replaceOne(f, doc, opts);
 			} else if (record.getType().equalsIgnoreCase("service")) {
 				serviceCol.replaceOne(f, doc, opts);
-			}  else if (record.getType().equalsIgnoreCase("endpoint_group")) {
+			} else if (record.getType().equalsIgnoreCase("endpoint_group")) {
 				egroupCol.replaceOne(f, doc, opts);
 			}
-			
+
 		} else {
 			if (record.getType().equalsIgnoreCase("metric")) {
 				metricCol.insertOne(doc);
@@ -256,7 +256,7 @@ public class MongoStatusOutput implements OutputFormat<String> {
 				endpointCol.insertOne(doc);
 			} else if (record.getType().equalsIgnoreCase("service")) {
 				serviceCol.insertOne(doc);
-			}  else if (record.getType().equalsIgnoreCase("endpoint_group")) {
+			} else if (record.getType().equalsIgnoreCase("endpoint_group")) {
 				egroupCol.insertOne(doc);
 			}
 		}
@@ -274,7 +274,7 @@ public class MongoStatusOutput implements OutputFormat<String> {
 			metricCol = null;
 			endpointCol = null;
 			serviceCol = null;
-			egroupCol = null; 
+			egroupCol = null;
 		}
 	}
 
