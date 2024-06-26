@@ -4,7 +4,6 @@ import ams.connector.ArgoMessagingSource;
 import argo.amr.ApiResourceManager;
 import argo.avro.GroupEndpoint;
 import argo.avro.MetricData;
-import argo.avro.MetricDataOld;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.influxdb.client.write.Point;
@@ -12,6 +11,7 @@ import influxdb.connector.InfluxDBSink;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -65,7 +65,7 @@ import java.util.concurrent.TimeUnit;
 
 public class AmsIngestMetric {
     // setup logger
-
+    private static final DatumReader<MetricData> METRIC_DATA_READER = (DatumReader<MetricData>) new SpecificData().createDatumReader(MetricData.getClassSchema());
     static Logger LOG = LoggerFactory.getLogger(AmsIngestMetric.class);
 
     private static String runDate;
@@ -196,18 +196,11 @@ public class AmsIngestMetric {
                 byte[] decoded64 = Base64.decodeBase64(data.getBytes("UTF-8"));
                 // Decode from avro
 
-                DatumReader<MetricData> avroReader = new SpecificDatumReader<MetricData>(MetricData.getClassSchema());
                 Decoder decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
 
                 MetricData item;
-                try {
-                    item = avroReader.read(null, decoder);
-                } catch (java.io.EOFException ex) {
-                    //convert from old to new
-                    avroReader = new SpecificDatumReader<MetricData>(MetricDataOld.getClassSchema(), MetricData.getClassSchema());
-                    decoder = DecoderFactory.get().binaryDecoder(decoded64, null);
-                    item = avroReader.read(null, decoder);
-                }
+                item = METRIC_DATA_READER.read(null, decoder);
+
                 if (item != null) {
                     LOG.info("Captured data -- {}", item.toString());
                     out.collect(item);
@@ -233,7 +226,6 @@ public class AmsIngestMetric {
                     .withOutputFileConfig(mdataOutputConfig)
                     .withBucketCheckInterval(1000) // set the bucket check interval to 1 second
                     .build();
-
             metricDataPOJO.sinkTo(bs);
         } else if (hasInfluxDBArgs(parameterTool)) {
             String tenant = parameterTool.get("influx.tenant");
