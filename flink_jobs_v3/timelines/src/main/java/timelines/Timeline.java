@@ -282,7 +282,7 @@ public class Timeline {
      * @param truthTable
      * @param op aggregate a set of timestamp,status pairs that are stored in a
      * timeline with a set of timestamp,status pairs of a different timeline,
-     * @param excludedint , the int value of excluded status
+    // * @param excludedint , the int value of excluded status
      */
     public void aggregate(Timeline second, int[][][] truthTable, int op) {
         if (this.isEmpty()) {
