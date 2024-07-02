@@ -1,6 +1,8 @@
 package argo.batch;
 
-public class StatusMetric {
+import java.io.Serializable;
+
+public class StatusMetric implements Serializable {
 
     private String group;
     private String function;

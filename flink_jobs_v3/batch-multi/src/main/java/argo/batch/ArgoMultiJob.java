@@ -312,6 +312,8 @@ public class ArgoMultiJob {
                 allMetricData = allMetricData.union(mdataPrevTotalDS);
             }
         }
+                long start =System.currentTimeMillis();
+        System.out.println("start - "+start);
 
         // Use yesterday's latest statuses and todays data to find the missing ones and add them to the mix
         DataSet<StatusMetric> fillMissDS = allMetricData.reduceGroup(new FillMissing(params))
@@ -393,6 +395,11 @@ public class ArgoMultiJob {
             stEndpointDS.output(endpointMongoOut);
             stServiceDS.output(serviceMongoOut);
             stEndGroupDS.output(endGroupMongoOut);
+
+            long end =System.currentTimeMillis();
+            System.out.println("end - "+start);
+            long duration =end-start;
+            System.out.println("total - "+duration);
 
         }
 
