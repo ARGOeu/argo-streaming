@@ -14,6 +14,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -114,21 +115,20 @@ public class ApiResponseParser {
      * @return First available item in data array as JSON string representation
      */
     public String getJsonData(String content, boolean asArray) {
-        
         JsonParser jsonParser = new JsonParser();
         // Grab the first - and only line of json from ops data
         JsonElement jElement = jsonParser.parse(content);
         JsonObject jRoot = jElement.getAsJsonObject();
-       
+
         // Get the data array and the first item
-        if(jRoot.get("data")==null) {
+        if (jRoot.get("data") == null) {
             return null;
         }
 
         if (asArray) {
             return jRoot.get("data").toString();
         }
-        
+
         JsonArray jData = jRoot.get("data").getAsJsonArray();
         if (!jData.iterator().hasNext()) {
             return null;
@@ -320,15 +320,14 @@ public class ApiResponseParser {
         }
         return results;
     }
-    
-    
-    
-        
+
+
     /**
      * Compares the metric profile between two dates,and return the ones that are newly introduced
+     *
      * @param content
      * @param yesterdayContent
-     * @return 
+     * @return
      */
     public List<MetricProfile> getListNewMetrics(String content, String yesterdayContent) {
 
@@ -342,10 +341,9 @@ public class ApiResponseParser {
         List<MetricProfile> yesterdayResults = new ArrayList<MetricProfile>();
         yesterdayResults = getListMetrics(yesterdayContent);
 
-         results.removeAll(yesterdayResults);
-         return results;
-    }   
-    
+        results.removeAll(yesterdayResults);
+        return results;
+    }
+
 
 }
-

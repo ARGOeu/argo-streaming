@@ -77,7 +77,7 @@ public class ReportManager {
         this.ggroupTags.clear();
         this.mdataTags.clear();
         this.profiles.clear();
-        this.activeComputations = null;
+        this.activeComputations = new ActiveComputations(false, false, false, false, false);
 
     }
 
@@ -167,6 +167,10 @@ public class ReportManager {
      * @return
      */
     public void readJson(JsonElement jElement) {
+
+        if(!jElement.isJsonObject()){
+            return;
+        }
 
         JsonObject jObj = jElement.getAsJsonObject();
         // Get the simple fields
@@ -303,8 +307,8 @@ public class ReportManager {
             this.tagTrends = tagTrends;
         }
 
-   
-        
+
+
 
     }
 
