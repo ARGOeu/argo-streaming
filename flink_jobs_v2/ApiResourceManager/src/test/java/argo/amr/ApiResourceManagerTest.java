@@ -101,7 +101,7 @@ public class ApiResourceManagerTest {
         String dataWeights = loadResJSON("/amr/data_WEIGHTS.json");
         String dataRecomp = loadResJSON("/amr/data_RECOMPUTATIONS.json");
         // String dataMetricTags = loadResJSON("/amr/data_RECOMPUTATIONS.json");
-        String dataMetricTags = null;
+        String dataMetricTags = "";
         stubFor(get(urlEqualTo("/api/v2/reports/f29eeb59-ab38-4aa0-b372-5d3c0709dfb2"))
                 .willReturn(aResponse().withBody(jsonReport)));
         stubFor(get(urlEqualTo("/api/v2/metric_profiles/92fa5d74-015c-4122-b8b9-7b344f3154d4?date=2020-11-01"))

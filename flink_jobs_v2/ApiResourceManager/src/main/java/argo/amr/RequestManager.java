@@ -81,6 +81,7 @@ public class RequestManager {
         } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+            return content;
         }
 
         return content;
@@ -128,6 +129,6 @@ public class RequestManager {
     public void setVerify(boolean verify) {
         this.verify = verify;
     }
-    
-    
+
+
 }
