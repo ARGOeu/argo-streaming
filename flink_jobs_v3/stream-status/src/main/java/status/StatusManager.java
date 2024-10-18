@@ -390,30 +390,56 @@ public class StatusManager {
      * @param apsJson aggregation profile contents
      * @param opsJson operation profile contents
      */
-    public void loadAll(String runDate, ArrayList<Downtime> downList, ArrayList<GroupEndpoint> egpList, ArrayList<MetricProfile> mpsList, ArrayList<String> apsJson,
-            ArrayList<String> opsJson) throws IOException {
-        aps.loadJsonString(apsJson);
-        ops.loadJsonString(opsJson);
-        mps.loadFromList(mpsList);
+    public void loadAll(String runDate, ArrayList<Downtime> downList, ArrayList<GroupEndpoint> egpList,
+                        ArrayList<MetricProfile> mpsList, ArrayList<String> apsJson,
+                        ArrayList<String> opsJson) throws IOException {
 
-        // First downtime loaded in cache 
-        dc.addFeed(runDate, downList);
+        try {
+            // Load application profiles (aps) and operational profiles (ops) from JSON strings
+            aps.loadJsonString(apsJson);
+            LOG.info("Loaded application profiles: {}", apsJson);
 
-        setValidProfileServices();
-        // Trim endpoint group list based on metric profile information (remove unwanted
-        // services)
+            ops.loadJsonString(opsJson);
+            LOG.info("Loaded operational profiles: {}", opsJson);
 
-        ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
+            // Load metric profiles
+            mps.loadFromList(mpsList);
+            LOG.info("Loaded metric profiles: {}", mpsList);
 
+            // First downtime loaded in cache
+            dc.addFeed(runDate, downList);
+            LOG.info("Added downtimes for date {}: {}", runDate, downList);
+
+            // Set valid profile services and trim endpoint group list based on metric profile information
+            setValidProfileServices();
+            ArrayList<GroupEndpoint> egpTrim = trimEndpointGroups(egpList);
+            egp.loadFromList(egpTrim);
+            LOG.info("Trimmed and loaded endpoint groups: {}", egpTrim);
+
+        } catch (IOException e) {
+            LOG.error("IO error while loading data: {}", e.getMessage(), e);
+            throw e; // Rethrow the exception to propagate the error
+        } catch (Exception e) {
+            LOG.error("Unexpected error during loading: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Trims the endpoint groups based on valid services.
+     *
+     * @param egpList the original list of endpoint groups
+     * @return the trimmed list of endpoint groups
+     */
+    private ArrayList<GroupEndpoint> trimEndpointGroups(ArrayList<GroupEndpoint> egpList) {
+        ArrayList<GroupEndpoint> egpTrim = new ArrayList<>();
         for (GroupEndpoint egpItem : egpList) {
             if (validServices.contains(egpItem.getService())) {
                 egpTrim.add(egpItem);
             }
         }
-
-        egp.loadFromList(egpTrim);
-
+        return egpTrim;
     }
+
 
     /**
      * Load all initial Profiles directly from files

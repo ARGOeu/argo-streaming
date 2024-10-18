@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/ams-connector/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ams-connector/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ams-ingest-metric/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ams-ingest-metric/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/api-resource-manager/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/api-resource-manager/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/batch-multi/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/batch-multi/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/hdfs-file-merger/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/hdfs-file-merger/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/influxdb.connector/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/influxdb.connector/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/profiles-manager/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/profiles-manager/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/stream-status/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/stream-status/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/timelines/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/timelines/src/main/resources" charset="UTF-8" />
+  </component>
+</project>

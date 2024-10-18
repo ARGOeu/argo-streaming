@@ -8,6 +8,7 @@ import argo.avro.Weight;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.TimeZone;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -203,8 +205,15 @@ public class ApiResourceManager {
     public void getRemoteConfig() {
         String path = "https://%s/api/v2/reports/%s";
         String fullURL = String.format(path, this.endpoint, this.reportID);
-        String content = this.requestManager.getResource(fullURL);
-        this.data.put(ApiResource.CONFIG, this.apiResponseParser.getJsonData(content, false));
+        try {
+            String content = this.requestManager.getResource(fullURL);
+            this.data.put(ApiResource.CONFIG, this.apiResponseParser.getJsonData(content, false));
+        } catch (Exception e) {
+            // Log the error to keep track of failures
+            System.err.println("Failed to fetch remote config from URL: " + fullURL + ". Error: " + e.getMessage());
+            // Optionally, store default or empty data instead of the fetched content
+            this.data.put(ApiResource.CONFIG, this.apiResponseParser.getJsonData("{}", false));
+        }
 
     }
 
@@ -216,10 +225,15 @@ public class ApiResourceManager {
 
         String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.metricID, this.date);
-        String content = this.requestManager.getResource(fullURL);
-
-        this.data.put(ApiResource.METRIC, this.apiResponseParser.getJsonData(content, false));
-
+        try {
+            String content = this.requestManager.getResource(fullURL);
+            this.data.put(ApiResource.METRIC, this.apiResponseParser.getJsonData(content, false));
+        } catch (Exception e) {
+            // Log the error to keep track of failures
+            System.err.println("Failed to fetch remote metric from URL: " + fullURL + ". Error: " + e.getMessage());
+            // Store default or empty data to prevent nulls
+            this.data.put(ApiResource.METRIC, this.apiResponseParser.getJsonData("{}", false));
+        }
     }
 
     /**
@@ -227,31 +241,38 @@ public class ApiResourceManager {
      * stores it to the enum map
      */
     public MetricProfile[] getNewEntriesMetrics() throws ParseException {
+        try {
+            if (this.data.get(ApiResource.METRIC) == null) {
+                getRemoteMetric();
+            }
+            String content = this.data.get(ApiResource.METRIC);
 
-        if (this.data.get(ApiResource.METRIC) == null) {
-            getRemoteMetric();
+            JsonParser jsonParser = new JsonParser();
+            JsonElement jElement = jsonParser.parse(content);
+            JsonObject jRoot = jElement.getAsJsonObject();
+            String mpDate = jRoot.get("date").getAsString();
+            String yesterdayContent = null;
+            if (mpDate.equals(date)) {
+                DateTime yesterday = convertStringtoDate("yyyy-MM-dd", mpDate).minusDays(1);
+                String yesterdaystr = convertDateToString("yyyy-MM-dd", yesterday);
+
+                String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
+                String fullURL = String.format(path, this.endpoint, this.metricID, yesterdaystr);
+                yesterdayContent = this.apiResponseParser.getJsonData(this.requestManager.getResource(fullURL), false);
+
+            }
+            List<MetricProfile> newentries = this.apiResponseParser.getListNewMetrics(content, yesterdayContent);
+
+            MetricProfile[] rArr = new MetricProfile[newentries.size()];
+            rArr = newentries.toArray(rArr);
+            return rArr;
+        } catch (Exception e) {
+            // Log the error and return an empty array in case of any failure
+            System.err.println("Error occurred while fetching new metric entries: " + e.getMessage());
+            e.printStackTrace();
+            return new MetricProfile[0];
         }
-        String content = this.data.get(ApiResource.METRIC);
 
-        JsonParser jsonParser = new JsonParser();
-        JsonElement jElement = jsonParser.parse(content);
-        JsonObject jRoot = jElement.getAsJsonObject();
-        String mpDate = jRoot.get("date").getAsString();
-        String yesterdayContent = null;
-        if (mpDate.equals(date)) {
-            DateTime yesterday = convertStringtoDate("yyyy-MM-dd", mpDate).minusDays(1);
-            String yesterdaystr = convertDateToString("yyyy-MM-dd", yesterday);
-
-            String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
-            String fullURL = String.format(path, this.endpoint, this.metricID, yesterdaystr);
-            yesterdayContent = this.apiResponseParser.getJsonData(this.requestManager.getResource(fullURL), false);
-          
-        }
-        List<MetricProfile> newentries = this.apiResponseParser.getListNewMetrics(content, yesterdayContent);
-
-        MetricProfile[] rArr = new MetricProfile[newentries.size()];
-        rArr = newentries.toArray(rArr);
-        return rArr;
     }
 
     /**
@@ -262,10 +283,15 @@ public class ApiResourceManager {
 
         String path = "https://%s/api/v2/aggregation_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.aggregationID, this.date);
-        String content = this.requestManager.getResource(fullURL);
+        try {
+            String content = this.requestManager.getResource(fullURL);
 
-        this.data.put(ApiResource.AGGREGATION, this.apiResponseParser.getJsonData(content, false));
-
+            this.data.put(ApiResource.AGGREGATION, this.apiResponseParser.getJsonData(content, false));
+        } catch (Exception e) {
+            // Log the error to track the failure
+            System.err.println("Failed to fetch remote aggregation from URL: " + fullURL + ". Error: " + e.getMessage());
+            this.data.put(ApiResource.AGGREGATION, this.apiResponseParser.getJsonData("{}", false));
+        }
     }
 
     /**
@@ -277,9 +303,16 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/operations_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.opsID, this.date);
 
-        String content = this.requestManager.getResource(fullURL);
+        try {
+            String content = this.requestManager.getResource(fullURL);
+            this.data.put(ApiResource.OPS, this.apiResponseParser.getJsonData(content, false));
 
-        this.data.put(ApiResource.OPS, this.apiResponseParser.getJsonData(content, false));
+        } catch (Exception e) {
+            // Log the error and keep the job running
+            System.err.println("Failed to fetch remote operations from URL: " + fullURL + ". Error: " + e.getMessage());
+            // Store default or empty data to avoid null issues
+            this.data.put(ApiResource.OPS, this.apiResponseParser.getJsonData("{}", false));
+        }
 
     }
 
@@ -291,39 +324,49 @@ public class ApiResourceManager {
 
         String path = "https://%s/api/v2/thresholds_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.threshID, this.date);
-        String content = this.requestManager.getResource(fullURL);
-
-        this.data.put(ApiResource.THRESHOLDS, this.apiResponseParser.getJsonData(content, false));
-
+        try {
+            String content = this.requestManager.getResource(fullURL);
+            this.data.put(ApiResource.THRESHOLDS, this.apiResponseParser.getJsonData(content, false));
+        } catch (Exception e) {
+            // Log the error and keep the job running
+            System.err.println("Failed to fetch remote thresholds from URL: " + fullURL + ". Error: " + e.getMessage());
+            // Store default or empty data to prevent null issues
+            this.data.put(ApiResource.THRESHOLDS, this.apiResponseParser.getJsonData("{}", false));
+        }
     }
 
     /**
      * Retrieves the topology endpoint content and stores it to the enum map
      */
     public void getRemoteTopoEndpoints() {
-        String combinedparam="";
-        if(isSourceTopoAll){
-        combinedparam="&mode=combined";
+        String combinedparam = "";
+        if (isSourceTopoAll) {
+            combinedparam = "&mode=combined";
         }
         String path = "https://%s/api/v2/topology/endpoints/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
-        String content = this.requestManager.getResource(fullURL);
-
-        this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
-
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date + combinedparam);
+        try {
+            String content = this.requestManager.getResource(fullURL);
+            this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
+        } catch (Exception e) {
+            // Log the error and keep the job running
+            System.err.println("Failed to fetch remote topology endpoints from URL: " + fullURL + ". Error: " + e.getMessage());
+            // Store default or empty data to prevent null issues
+            this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData("{}", true));
+        }
     }
 
     /**
      * Retrieves the topology groups content and stores it to the enum map
      */
     public void getRemoteTopoGroups() {
-        String combinedparam="";
-        if(isSourceTopoAll){
-        combinedparam="&mode=combined";
+        String combinedparam = "";
+        if (isSourceTopoAll) {
+            combinedparam = "&mode=combined";
         }
-      
+
         String path = "https://%s/api/v2/topology/groups/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date + combinedparam);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.TOPOGROUPS, this.apiResponseParser.getJsonData(content, true));
@@ -336,10 +379,15 @@ public class ApiResourceManager {
     public void getRemoteWeights() {
         String path = "https://%s/api/v2/weights/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.weightsID, this.date);
-        String content = this.requestManager.getResource(fullURL);
-
-        this.data.put(ApiResource.WEIGHTS, this.apiResponseParser.getJsonData(content, false));
-
+        try {
+            String content = this.requestManager.getResource(fullURL);
+            this.data.put(ApiResource.WEIGHTS, this.apiResponseParser.getJsonData(content, false));
+        } catch (Exception e) {
+            // Log the error and keep the job running
+            System.err.println("Failed to fetch remote topology groups from URL: " + fullURL + ". Error: " + e.getMessage());
+            // Store default or empty data to prevent null issues
+            this.data.put(ApiResource.TOPOGROUPS, this.apiResponseParser.getJsonData("{}", true));
+        }
     }
 
     /**
@@ -348,18 +396,30 @@ public class ApiResourceManager {
     public void getRemoteDowntimes() {
         String path = "https://%s/api/v2/downtimes?date=%s";
         String fullURL = String.format(path, this.endpoint, this.date);
-        String content = this.requestManager.getResource(fullURL);
-        this.data.put(ApiResource.DOWNTIMES, this.apiResponseParser.getJsonData(content, false));
+        try {
+            String content = this.requestManager.getResource(fullURL);
+            this.data.put(ApiResource.DOWNTIMES, this.apiResponseParser.getJsonData(content, false));
 
+        } catch (Exception e) {
+            // Log the error and keep the job running
+            System.err.println("Failed to fetch remote downtimes from URL: " + fullURL + ". Error: " + e.getMessage());
+            // Store default or empty data to prevent null issues
+            this.data.put(ApiResource.DOWNTIMES, this.apiResponseParser.getJsonData("{}", false));
+        }
     }
 
     public void getRemoteRecomputations() {
         String path = "https://%s/api/v2/recomputations?date=%s";
         String fullURL = String.format(path, this.endpoint, this.date);
-        String content = this.requestManager.getResource(fullURL);
-
-        this.data.put(ApiResource.RECOMPUTATIONS, this.apiResponseParser.getJsonData(content, true));
-
+        try {
+            String content = this.requestManager.getResource(fullURL);
+            this.data.put(ApiResource.RECOMPUTATIONS, this.apiResponseParser.getJsonData(content, true));
+        } catch (Exception e) {
+            // Log the error and keep the job running
+            System.err.println("Failed to fetch remote recomputations from URL: " + fullURL + ". Error: " + e.getMessage());
+            // Store default or empty data to prevent null issues
+            this.data.put(ApiResource.RECOMPUTATIONS, this.apiResponseParser.getJsonData("{}", true));
+        }
     }
 
     /**
@@ -369,10 +429,16 @@ public class ApiResourceManager {
     public void getRemoteMetricTags() {
         String path = "https://%s/api/v2/metrics/by_report/%s";
         String fullURL = String.format(path, this.endpoint, this.reportName);
-        String content = this.requestManager.getResource(fullURL);
-        if (!content.equals("{}")) {
+        try {
+            String content = this.requestManager.getResource(fullURL);
             this.data.put(ApiResource.MTAGS, this.apiResponseParser.getJsonData(content, true));
+        } catch (Exception e) {
+            // Log the error and keep the job running
+            System.err.println("Failed to fetch remote metric tags from URL: " + fullURL + ". Error: " + e.getMessage());
+            // Store default or empty data to prevent null issues
+            this.data.put(ApiResource.MTAGS, this.apiResponseParser.getJsonData("{}", true));
         }
+
     }
 
     /**
@@ -558,7 +624,7 @@ public class ApiResourceManager {
             this.getRemoteThresholds();
         }
         // Go to topology
-   
+
         this.getRemoteTopoEndpoints();
         this.getRemoteTopoGroups();
         // get weights
@@ -576,18 +642,18 @@ public class ApiResourceManager {
      * Retrieves the topology endpoint content and stores it to the enum map
      */
     public void getAllRemoteTopoEndpoints() {
-        String combinedparam="";
-        if(isSourceTopoAll){
-        combinedparam="&mode=combined";
+        String combinedparam = "";
+        if (isSourceTopoAll) {
+            combinedparam = "&mode=combined";
         }
         String path = "https://%s/api/v2/topology/endpoints?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.date+combinedparam);
+        String fullURL = String.format(path, this.endpoint, this.date + combinedparam);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
 
     }
-    
+
     public boolean isIsCombined() {
         return isCombined;
     }
@@ -600,7 +666,6 @@ public class ApiResourceManager {
         this.isSourceTopoAll = isSourceTopoAll;
     }
 
-    
 
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
 

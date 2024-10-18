@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="api-resource-manager" />
+        <module name="streaming-status" />
+        <module name="timelines" />
+        <module name="ams-ingest-metric" />
+        <module name="profiles-manager" />
+        <module name="hdfs-file-merger" />
+        <module name="influxdb.connector" />
+        <module name="argo-multi-job" />
+        <module name="ams-connector" />
+      </profile>
+    </annotationProcessing>
+  </component>
+</project>

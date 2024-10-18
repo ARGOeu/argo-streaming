@@ -28,6 +28,7 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String, String>> {
     private String reportID = null;
     private int syncInterval = 24;
     private IntervalType intervalType = IntervalType.HOURS;
+
     private long interval = 100L;
     private boolean verify = true;
     private boolean useProxy = false;
@@ -98,55 +99,62 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String, String>> {
     public void run(SourceContext<Tuple2<String, String>> ctx) throws Exception {
         // This is the main run logic
         while (isRunning) {
-
-            // check if interval in hours has passed to make a move
+            // Check if the interval in hours has passed to make a move
             Instant ti = Instant.now();
             Duration td = Duration.between(this.timeSnapshot, ti);
-            // interval has passed do consume from api
-            if (isTimeForSync(td)) {
-                System.out.println("update sync ");
+            Thread.sleep(12000);
+            // Interval has passed; consume from API
+            // if (isTimeForSync(td)) {
+            if (true) {
+
+                LOG.info("Updating sync at: {}", ti);
                 this.timeSnapshot = ti;
-                // retrieve info from api
-                this.client.getRemoteAll();
 
-                Tuple2<String, String> mt = new Tuple2<String, String>("metric_profile", client.getResourceJSON(ApiResource.METRIC));
-                Tuple2<String, String> gt = new Tuple2<String, String>("group_endpoints", client.getResourceJSON(ApiResource.TOPOENDPOINTS));
-                Tuple2<String, String> dt = new Tuple2<String, String>("downtimes", client.getResourceJSON(ApiResource.DOWNTIMES));
+                // Retrieve info from API
+                try {
+                    this.client.getRemoteAll();
 
-                ctx.collect(mt);
-                ctx.collect(gt);
-                ctx.collect(dt);
+                    String metricProfileJSON = this.client.getResourceJSON(ApiResource.METRIC);
+                    String groupEndpointsJSON = this.client.getResourceJSON(ApiResource.TOPOENDPOINTS);
+                    String downtimesJSON = this.client.getResourceJSON(ApiResource.DOWNTIMES);
 
+                    // Check for null values before creating tuples
+                    if (metricProfileJSON != null) {
+                        ctx.collect(new Tuple2<>("metric_profile", metricProfileJSON));
+                    } else {
+                        LOG.warn("Received null for metric profiles.");
+                    }
 
+                    if (groupEndpointsJSON != null) {
+                        ctx.collect(new Tuple2<>("group_endpoints", groupEndpointsJSON));
+                    } else {
+                        LOG.warn("Received null for group endpoints.");
+                    }
+
+                    if (downtimesJSON != null) {
+                        ctx.collect(new Tuple2<>("downtimes", downtimesJSON));
+                    } else {
+                        LOG.warn("Received null for downtimes.");
+                    }
+
+                } catch (Exception e) {
+                    LOG.error("Error retrieving data from API: {}", e.getMessage());
+                }
             }
+
             synchronized (rateLck) {
-                rateLck.wait(this.interval);
+                try {
+                    rateLck.wait(this.interval);
+                } catch (InterruptedException e) {
+                    // Handle the interruption (e.g., restore the interrupt status or break the loop)
+                    LOG.info("Thread interrupted. Exiting run method.");
+                    Thread.currentThread().interrupt();
+                    break; // Exit the loop if interrupted
+                }
             }
-
         }
 
-    }
 
-    private boolean isTimeForSync(Duration td) {
-        switch (this.intervalType) {
-
-            case DAY:
-//                isTime = td.toDays() > this.syncInterval;
-                return td.toDays() > this.syncInterval;
-            case HOURS:
-
-  //              isTime = td.toDays() > this.syncInterval;
-                return td.toHours() > this.syncInterval;
-            case MINUTES:
-
-    //            isTime = td.toDays() > this.syncInterval;
-                return td.toMinutes() > this.syncInterval;
-            default:
-
-      //          isTime = td.toDays() > this.syncInterval;
-                return td.toHours() > this.syncInterval;
-
-        }
     }
 
     /**
@@ -179,5 +187,21 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String, String>> {
             rateLck.notify();
         }
     }
+
+    private boolean isTimeForSync(Duration td) {
+        switch (this.intervalType) {
+
+            case DAY:
+                return td.toDays() > this.syncInterval;
+            case HOURS:
+                return td.toHours() > this.syncInterval;
+            case MINUTES:
+                return td.toMinutes() > this.syncInterval;
+            default:
+                return td.toHours() > this.syncInterval;
+
+        }
+    }
+
 
 }

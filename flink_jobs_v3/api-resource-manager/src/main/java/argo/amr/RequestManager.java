@@ -6,11 +6,16 @@
 package argo.amr;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
+import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -19,7 +24,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 
 /**
- *
  * Establish a connection to the given url and request data
  */
 public class RequestManager {
@@ -48,14 +52,14 @@ public class RequestManager {
      * content (expected in json format)
      *
      * @param fullURL String containing the full url representation of the
-     * argo-web-api resource
+     *                argo-web-api resource
      * @return A string representation of the resource json content
-     * @throws ClientProtocolException
      * @throws IOException
      * @throws KeyStoreException
      * @throws NoSuchAlgorithmException
      * @throws KeyManagementException
      */
+
     public String getResource(String fullURL) {
 
         Request r = Request.Get(fullURL).addHeader("Accept", "application/json").addHeader("Content-type",
@@ -78,11 +82,17 @@ public class RequestManager {
 
                 content = r.execute().returnContent().asString();
             }
-        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        }  catch (ConnectTimeoutException | SocketTimeoutException | HttpHostConnectException
+                  | ClientProtocolException e) {
+            // Handle API connectivity-related exceptions
+            e.printStackTrace(); // Optionally log the stack trace
+        } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
+            // Handle SSL-related exceptions
+            throw new RuntimeException("SSL configuration error: " + e.getMessage(), e);
+        } catch (IOException e) {
+            // Handle general I/O errors
+            throw new RuntimeException("I/O error occurred while calling the API: " + e.getMessage(), e);
         }
-
         return content;
     }
 
@@ -128,6 +138,6 @@ public class RequestManager {
     public void setVerify(boolean verify) {
         this.verify = verify;
     }
-    
-    
+
+
 }

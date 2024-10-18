@@ -193,7 +193,11 @@ public class OperationsManager implements Serializable {
      * @return the status as an int
      */
     public int getIntStatus(String status) {
-        return this.states.get(status);
+        if(this.states.containsKey(status)) {
+            return this.states.get(status);
+        }else{
+            return -1;
+        }
     }
 
     /**
