@@ -10,10 +10,8 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -114,21 +112,21 @@ public class ApiResponseParser {
      * @return First available item in data array as JSON string representation
      */
     public String getJsonData(String content, boolean asArray) {
-        
+
         JsonParser jsonParser = new JsonParser();
         // Grab the first - and only line of json from ops data
         JsonElement jElement = jsonParser.parse(content);
         JsonObject jRoot = jElement.getAsJsonObject();
-       
+
         // Get the data array and the first item
-        if(jRoot.get("data")==null) {
+        if (jRoot.get("data") == null) {
             return null;
         }
 
         if (asArray) {
             return jRoot.get("data").toString();
         }
-        
+
         JsonArray jData = jRoot.get("data").getAsJsonArray();
         if (!jData.iterator().hasNext()) {
             return null;
@@ -142,36 +140,46 @@ public class ApiResponseParser {
      * profile IDs
      */
     public void parseReport(String content) {
-        JsonParser jsonParser = new JsonParser();
-        JsonElement jElement = jsonParser.parse(content);
-        JsonObject jRoot = jElement.getAsJsonObject();
-        JsonArray jProfiles = jRoot.get("profiles").getAsJsonArray();
+        try {
+            JsonParser jsonParser = new JsonParser();
+            JsonElement jElement = jsonParser.parse(content);
+            JsonObject jRoot = jElement.getAsJsonObject();
+            JsonArray jProfiles = jRoot.get("profiles").getAsJsonArray();
 
-        JsonObject jInfo = jRoot.get("info").getAsJsonObject();
-        this.reportName = jInfo.get("name").getAsString();
-        this.tenant = jRoot.get("tenant").getAsString();
+            JsonObject jInfo = jRoot.get("info").getAsJsonObject();
+            this.reportName = jInfo.get("name").getAsString();
+            this.tenant = jRoot.get("tenant").getAsString();
 
-        JsonObject topoGroup = jRoot.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
-        this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
+            JsonObject topoGroup = jRoot.get("topology_schema").getAsJsonObject().getAsJsonObject("group");
+            this.egroup = topoGroup.get("group").getAsJsonObject().get("type").getAsString();
 
-        // for each profile iterate and store it's id in profile manager for later
-        // reference
-        for (int i = 0; i < jProfiles.size(); i++) {
-            JsonObject jProf = jProfiles.get(i).getAsJsonObject();
-            String profType = jProf.get("type").getAsString();
-            String profID = jProf.get("id").getAsString();
-            if (profType.equalsIgnoreCase("metric")) {
-                this.metricID = profID;
-            } else if (profType.equalsIgnoreCase("aggregation")) {
-                this.aggregationID = profID;
-            } else if (profType.equalsIgnoreCase("operations")) {
-                this.opsID = profID;
-            } else if (profType.equalsIgnoreCase("thresholds")) {
-                this.threshID = profID;
+            // for each profile iterate and store it's id in profile manager for later
+            // reference
+            for (int i = 0; i < jProfiles.size(); i++) {
+                JsonObject jProf = jProfiles.get(i).getAsJsonObject();
+                String profType = jProf.get("type").getAsString();
+                String profID = jProf.get("id").getAsString();
+                if (profType.equalsIgnoreCase("metric")) {
+                    this.metricID = profID;
+                } else if (profType.equalsIgnoreCase("aggregation")) {
+                    this.aggregationID = profID;
+                } else if (profType.equalsIgnoreCase("operations")) {
+                    this.opsID = profID;
+                } else if (profType.equalsIgnoreCase("thresholds")) {
+                    this.threshID = profID;
+                }
+
             }
-
+        } catch (JsonParseException e) {
+            System.err.println("Failed to parse report content. Error: " + e.getMessage());
+            // Optionally, you could store default values or take other actions here
+        } catch (NullPointerException e) {
+            System.err.println("Missing expected data in the report content. Error: " + e.getMessage());
+            // Handle missing data gracefully, perhaps with defaults
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred while parsing the report. Error: " + e.getMessage());
+            // Handle any other unforeseen errors
         }
-
     }
 
     public List<String> getListTenants(String content) {
@@ -196,22 +204,28 @@ public class ApiResponseParser {
      */
     public List<Downtime> getListDowntimes(String content) {
         List<Downtime> results = new ArrayList<Downtime>();
-        JsonParser jsonParser = new JsonParser();
-        JsonElement jElement = jsonParser.parse(content);
-        JsonObject jRoot = jElement.getAsJsonObject();
-        JsonArray jElements = jRoot.get("endpoints").getAsJsonArray();
-        for (int i = 0; i < jElements.size(); i++) {
-            JsonObject jItem = jElements.get(i).getAsJsonObject();
-            String hostname = jItem.get("hostname").getAsString();
-            String service = jItem.get("service").getAsString();
-            String startTime = jItem.get("start_time").getAsString();
-            String endTime = jItem.get("end_time").getAsString();
 
-            Downtime d = new Downtime(hostname, service, startTime, endTime);
-            results.add(d);
+        try {
+            JsonParser jsonParser = new JsonParser();
+            JsonElement jElement = jsonParser.parse(content);
+            JsonObject jRoot = jElement.getAsJsonObject();
+            JsonArray jElements = jRoot.get("endpoints").getAsJsonArray();
+            for (int i = 0; i < jElements.size(); i++) {
+                JsonObject jItem = jElements.get(i).getAsJsonObject();
+                String hostname = jItem.get("hostname").getAsString();
+                String service = jItem.get("service").getAsString();
+                String startTime = jItem.get("start_time").getAsString();
+                String endTime = jItem.get("end_time").getAsString();
+
+                Downtime d = new Downtime(hostname, service, startTime, endTime);
+                results.add(d);
+            }
+        } catch (JsonParseException e) {
+            System.err.println("Failed to parse JSON content. Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred while processing downtimes. Error: " + e.getMessage());
         }
         return results;
-
     }
 
     /**
@@ -221,23 +235,28 @@ public class ApiResponseParser {
      */
     public List<GroupEndpoint> getListGroupEndpoints(String content) {
         List<GroupEndpoint> results = new ArrayList<GroupEndpoint>();
-
-        JsonParser jsonParser = new JsonParser();
-        JsonElement jElement = jsonParser.parse(content);
-        JsonArray jRoot = jElement.getAsJsonArray();
-        for (int i = 0; i < jRoot.size(); i++) {
-            JsonObject jItem = jRoot.get(i).getAsJsonObject();
-            String group = jItem.get("group").getAsString();
-            String gType = jItem.get("type").getAsString();
-            String service = jItem.get("service").getAsString();
-            String hostname = jItem.get("hostname").getAsString();
-            JsonObject jTags = jItem.get("tags").getAsJsonObject();
-            Map<String, String> tags = new HashMap<String, String>();
-            for (Map.Entry<String, JsonElement> kv : jTags.entrySet()) {
-                tags.put(kv.getKey(), kv.getValue().getAsString());
+        try {
+            JsonParser jsonParser = new JsonParser();
+            JsonElement jElement = jsonParser.parse(content);
+            JsonArray jRoot = jElement.getAsJsonArray();
+            for (int i = 0; i < jRoot.size(); i++) {
+                JsonObject jItem = jRoot.get(i).getAsJsonObject();
+                String group = jItem.get("group").getAsString();
+                String gType = jItem.get("type").getAsString();
+                String service = jItem.get("service").getAsString();
+                String hostname = jItem.get("hostname").getAsString();
+                JsonObject jTags = jItem.get("tags").getAsJsonObject();
+                Map<String, String> tags = new HashMap<String, String>();
+                for (Map.Entry<String, JsonElement> kv : jTags.entrySet()) {
+                    tags.put(kv.getKey(), kv.getValue().getAsString());
+                }
+                GroupEndpoint ge = new GroupEndpoint(gType, group, service, hostname, tags);
+                results.add(ge);
             }
-            GroupEndpoint ge = new GroupEndpoint(gType, group, service, hostname, tags);
-            results.add(ge);
+        } catch (JsonParseException e) {
+            System.err.println("Failed to parse JSON content. Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred while processing metrics. Error: " + e.getMessage());
         }
         return results;
     }
@@ -249,21 +268,27 @@ public class ApiResponseParser {
      */
     public List<GroupGroup> getListGroupGroups(String content) {
         List<GroupGroup> results = new ArrayList<GroupGroup>();
-        JsonParser jsonParser = new JsonParser();
-        JsonElement jElement = jsonParser.parse(content);
-        JsonArray jRoot = jElement.getAsJsonArray();
-        for (int i = 0; i < jRoot.size(); i++) {
-            JsonObject jItem = jRoot.get(i).getAsJsonObject();
-            String group = jItem.get("group").getAsString();
-            String gType = jItem.get("type").getAsString();
-            String subgroup = jItem.get("subgroup").getAsString();
-            JsonObject jTags = jItem.get("tags").getAsJsonObject();
-            Map<String, String> tags = new HashMap<String, String>();
-            for (Map.Entry<String, JsonElement> kv : jTags.entrySet()) {
-                tags.put(kv.getKey(), kv.getValue().getAsString());
+        try {
+            JsonParser jsonParser = new JsonParser();
+            JsonElement jElement = jsonParser.parse(content);
+            JsonArray jRoot = jElement.getAsJsonArray();
+            for (int i = 0; i < jRoot.size(); i++) {
+                JsonObject jItem = jRoot.get(i).getAsJsonObject();
+                String group = jItem.get("group").getAsString();
+                String gType = jItem.get("type").getAsString();
+                String subgroup = jItem.get("subgroup").getAsString();
+                JsonObject jTags = jItem.get("tags").getAsJsonObject();
+                Map<String, String> tags = new HashMap<String, String>();
+                for (Map.Entry<String, JsonElement> kv : jTags.entrySet()) {
+                    tags.put(kv.getKey(), kv.getValue().getAsString());
+                }
+                GroupGroup gg = new GroupGroup(gType, group, subgroup, tags);
+                results.add(gg);
             }
-            GroupGroup gg = new GroupGroup(gType, group, subgroup, tags);
-            results.add(gg);
+        } catch (JsonParseException e) {
+            System.err.println("Failed to parse JSON content. Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred while processing metrics. Error: " + e.getMessage());
         }
         return results;
 
@@ -275,19 +300,24 @@ public class ApiResponseParser {
      */
     public List<Weight> getListWeights(String content) {
         List<Weight> results = new ArrayList<Weight>();
+        try {
+            JsonParser jsonParser = new JsonParser();
+            JsonElement jElement = jsonParser.parse(content);
+            JsonObject jRoot = jElement.getAsJsonObject();
+            String wType = jRoot.get("weight_type").getAsString();
+            JsonArray jElements = jRoot.get("groups").getAsJsonArray();
+            for (int i = 0; i < jElements.size(); i++) {
+                JsonObject jItem = jElements.get(i).getAsJsonObject();
+                String group = jItem.get("name").getAsString();
+                String weight = jItem.get("value").getAsString();
 
-        JsonParser jsonParser = new JsonParser();
-        JsonElement jElement = jsonParser.parse(content);
-        JsonObject jRoot = jElement.getAsJsonObject();
-        String wType = jRoot.get("weight_type").getAsString();
-        JsonArray jElements = jRoot.get("groups").getAsJsonArray();
-        for (int i = 0; i < jElements.size(); i++) {
-            JsonObject jItem = jElements.get(i).getAsJsonObject();
-            String group = jItem.get("name").getAsString();
-            String weight = jItem.get("value").getAsString();
-
-            Weight w = new Weight(wType, group, weight);
-            results.add(w);
+                Weight w = new Weight(wType, group, weight);
+                results.add(w);
+            }
+        } catch (JsonParseException e) {
+            System.err.println("Failed to parse JSON content. Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred while processing metrics. Error: " + e.getMessage());
         }
         return results;
     }
@@ -299,52 +329,62 @@ public class ApiResponseParser {
      */
     public List<MetricProfile> getListMetrics(String content) {
         List<MetricProfile> results = new ArrayList<MetricProfile>();
+        try {
+            JsonParser jsonParser = new JsonParser();
+            JsonElement jElement = jsonParser.parse(content);
+            JsonObject jRoot = jElement.getAsJsonObject();
+            String profileName = jRoot.get("name").getAsString();
+            JsonArray jElements = jRoot.get("services").getAsJsonArray();
+            for (int i = 0; i < jElements.size(); i++) {
+                JsonObject jItem = jElements.get(i).getAsJsonObject();
+                String service = jItem.get("service").getAsString();
+                JsonArray jMetrics = jItem.get("metrics").getAsJsonArray();
+                for (int j = 0; j < jMetrics.size(); j++) {
+                    String metric = jMetrics.get(j).getAsString();
 
-        JsonParser jsonParser = new JsonParser();
-        JsonElement jElement = jsonParser.parse(content);
-        JsonObject jRoot = jElement.getAsJsonObject();
-        String profileName = jRoot.get("name").getAsString();
-        JsonArray jElements = jRoot.get("services").getAsJsonArray();
-        for (int i = 0; i < jElements.size(); i++) {
-            JsonObject jItem = jElements.get(i).getAsJsonObject();
-            String service = jItem.get("service").getAsString();
-            JsonArray jMetrics = jItem.get("metrics").getAsJsonArray();
-            for (int j = 0; j < jMetrics.size(); j++) {
-                String metric = jMetrics.get(j).getAsString();
+                    Map<String, String> tags = new HashMap<String, String>();
+                    MetricProfile mp = new MetricProfile(profileName, service, metric, tags);
+                    results.add(mp);
+                }
 
-                Map<String, String> tags = new HashMap<String, String>();
-                MetricProfile mp = new MetricProfile(profileName, service, metric, tags);
-                results.add(mp);
             }
-
+        } catch (JsonParseException e) {
+            System.err.println("Failed to parse JSON content. Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred while processing metrics. Error: " + e.getMessage());
         }
         return results;
     }
-    
-    
-    
-        
+
+
     /**
      * Compares the metric profile between two dates,and return the ones that are newly introduced
+     *
      * @param content
      * @param yesterdayContent
-     * @return 
+     * @return
      */
     public List<MetricProfile> getListNewMetrics(String content, String yesterdayContent) {
 
         List<MetricProfile> results = new ArrayList<MetricProfile>();
+        try {
+            if (yesterdayContent == null) {
+                return results;
+            }
+            results = getListMetrics(content);
 
-        if (yesterdayContent == null) {
-            return results;
+            List<MetricProfile> yesterdayResults = new ArrayList<MetricProfile>();
+            yesterdayResults = getListMetrics(yesterdayContent);
+
+            results.removeAll(yesterdayResults);
+        } catch (JsonParseException e) {
+            System.err.println("Failed to parse JSON content. Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred while processing metrics. Error: " + e.getMessage());
         }
-        results = getListMetrics(content);
-
-        List<MetricProfile> yesterdayResults = new ArrayList<MetricProfile>();
-        yesterdayResults = getListMetrics(yesterdayContent);
-
-         results.removeAll(yesterdayResults);
-         return results;
+        return results;
     }
+
 
 }
 
