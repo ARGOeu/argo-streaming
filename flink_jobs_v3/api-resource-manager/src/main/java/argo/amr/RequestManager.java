@@ -50,7 +50,6 @@ public class RequestManager {
      * @param fullURL String containing the full url representation of the
      * argo-web-api resource
      * @return A string representation of the resource json content
-     * @throws ClientProtocolException
      * @throws IOException
      * @throws KeyStoreException
      * @throws NoSuchAlgorithmException
@@ -58,29 +57,45 @@ public class RequestManager {
      */
     public String getResource(String fullURL) {
 
-        Request r = Request.Get(fullURL).addHeader("Accept", "application/json").addHeader("Content-type",
-                "application/json").addHeader("x-api-key", this.token);
+        Request r = Request.Get(fullURL)
+                .addHeader("Accept", "application/json")
+                .addHeader("Content-type", "application/json")
+                .addHeader("x-api-key", this.token);
+
         if (!this.proxy.isEmpty()) {
             r = r.viaProxy(proxy);
         }
 
-        r = r.connectTimeout(this.timeoutSec * 1000).socketTimeout(this.timeoutSec * 1000);
+        r = r.connectTimeout(this.timeoutSec * 1000)
+                .socketTimeout(this.timeoutSec * 1000);
 
         String content = "{}";
 
         try {
-            if (this.verify == false) {
-                CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(selfSignedSSLF()).build();
+            // First check if the URL is reachable with a HEAD request
+            Request headRequest = Request.Head(fullURL);
+            if (!this.proxy.isEmpty()) {
+                headRequest = headRequest.viaProxy(proxy);
+            }
+
+            // Perform the HEAD request to verify reachability
+            headRequest.execute().returnResponse(); // If this doesn't throw an exception, URL is reachable
+
+            // If reachable, continue with the original request
+            if (!this.verify) {
+                CloseableHttpClient httpClient = HttpClients.custom()
+                        .setSSLSocketFactory(selfSignedSSLF())
+                        .build();
                 Executor executor = Executor.newInstance(httpClient);
                 content = executor.execute(r).returnContent().asString();
                 httpClient.close();
             } else {
-
                 content = r.execute().returnContent().asString();
             }
-        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+            System.err.println("SSL configuration error: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("IO Exception or URL is not reachable: " + e.getMessage());
         }
 
         return content;
@@ -128,6 +143,6 @@ public class RequestManager {
     public void setVerify(boolean verify) {
         this.verify = verify;
     }
-    
-    
+
+
 }
