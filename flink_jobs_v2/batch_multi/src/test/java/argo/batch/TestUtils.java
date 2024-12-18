@@ -9,6 +9,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -21,7 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
+
 import static org.apache.commons.math3.util.Precision.round;
+
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -36,7 +39,6 @@ import trends.calculations.Trends;
 import utils.Utils;
 
 /**
- *
  * Utils class to prepare datasets
  */
 public class TestUtils {
@@ -418,8 +420,24 @@ public class TestUtils {
         List tempB = new ArrayList(listB);
 
         if (tempA.size() != tempB.size()) {
-            return false;
+             return false;
         }
+
+        for (Object oA : listA) {
+
+            if(!listB.contains(oA)){
+                System.out.println("not found oA : "+oA.toString());
+            }
+        }
+
+        for (Object oB : listB) {
+
+            if(!listA.contains(oB)){
+                System.out.println("not found oB : "+oB.toString());
+            }
+        }
+
+
         Iterator iterA = tempA.iterator();
 
         while (iterA.hasNext()) { //iterates over the objects of the first list and if the object is found at the second list the object is removed from both lists
@@ -609,9 +627,9 @@ public class TestUtils {
         return trendsList;
     }
 
-    public static List<Tuple8< String, String, String, String, String, Integer, Integer, String>> prepareTrends(List<StatisticsItem> statisticList, LEVEL level) {
+    public static List<Tuple8<String, String, String, String, String, Integer, Integer, String>> prepareTrends(List<StatisticsItem> statisticList, LEVEL level) {
 
-        ArrayList<Tuple8< String, String, String, String, String, Integer, Integer, String>> trendsList = new ArrayList<>();
+        ArrayList<Tuple8<String, String, String, String, String, Integer, Integer, String>> trendsList = new ArrayList<>();
         for (StatisticsItem item : statisticList) {
             String group = item.getGroup();
             String service = item.getService();
@@ -636,7 +654,7 @@ public class TestUtils {
                 freq = statistics.get("CRITICAL")[0];
                 duration = statistics.get("CRITICAL")[1];
             }
-            Tuple8<String, String, String, String, String, Integer, Integer, String> tupleCritical = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+            Tuple8<String, String, String, String, String, Integer, Integer, String> tupleCritical = new Tuple8<String, String, String, String, String, Integer, Integer, String>(
                     group, service, hostname, metric, "CRITICAL", freq, duration, item.getTags());
 
             duration = 0;
@@ -645,7 +663,7 @@ public class TestUtils {
                 freq = statistics.get("WARNING")[0];
                 duration = statistics.get("WARNING")[1];
             }
-            Tuple8<String, String, String, String, String, Integer, Integer, String> tupleWarning = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+            Tuple8<String, String, String, String, String, Integer, Integer, String> tupleWarning = new Tuple8<String, String, String, String, String, Integer, Integer, String>(
                     group, service, hostname, metric, "WARNING", freq, duration, item.getTags());
 
             duration = 0;
@@ -654,7 +672,7 @@ public class TestUtils {
                 freq = statistics.get("UNKNOWN")[0];
                 duration = statistics.get("UNKNOWN")[1];
             }
-            Tuple8<String, String, String, String, String, Integer, Integer, String> tupleUnknown = new Tuple8<  String, String, String, String, String, Integer, Integer, String>(
+            Tuple8<String, String, String, String, String, Integer, Integer, String> tupleUnknown = new Tuple8<String, String, String, String, String, Integer, Integer, String>(
                     group, service, hostname, metric, "UNKNOWN", freq, duration, item.getTags());
 
             trendsList.add(tupleCritical);

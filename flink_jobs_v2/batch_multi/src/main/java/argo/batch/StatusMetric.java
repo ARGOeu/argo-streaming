@@ -1,5 +1,7 @@
 package argo.batch;
 
+import java.util.Objects;
+
 public class StatusMetric {
 
     private String group;
@@ -223,5 +225,18 @@ public class StatusMetric {
     public String toString() {
         return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + ","
                 + this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + "," + this.tags + ")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof StatusMetric)) return false;
+        StatusMetric that = (StatusMetric) o;
+        boolean isEqual= (dateInt == that.dateInt && timeInt == that.timeInt && Objects.equals(group, that.group) && Objects.equals(function, that.function) && Objects.equals(service, that.service) && Objects.equals(hostname, that.hostname) && Objects.equals(metric, that.metric) && Objects.equals(status, that.status) && Objects.equals(timestamp, that.timestamp) && Objects.equals(prevState, that.prevState) && Objects.equals(prevTs, that.prevTs));
+        return isEqual;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(group, function, service, hostname, metric, status, timestamp, dateInt, timeInt, prevState, prevTs);
     }
 }

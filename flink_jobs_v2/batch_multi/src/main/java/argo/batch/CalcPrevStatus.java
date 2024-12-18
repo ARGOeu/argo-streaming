@@ -14,8 +14,10 @@ import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
 
 import argo.avro.MetricProfile;
+
 import java.io.IOException;
 import java.text.ParseException;
+
 import org.joda.time.DateTime;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
@@ -31,6 +33,7 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
     public CalcPrevStatus(ParameterTool params) {
         this.params = params;
     }
+
     static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
     private List<MetricProfile> mps;
     private List<GroupEndpoint> egp;
@@ -64,10 +67,11 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
 
     @Override
     public void reduce(Iterable<StatusMetric> in, Collector<StatusMetric> out) throws Exception {
-        // group input is sorted 
+        // group input is sorted
         String prevStatus = "MISSING";
         String prevTimestamp = this.runDate + "T00:00:00Z";
         boolean gotPrev = false;
+        boolean checkedPrevInRecomp = false;
         for (StatusMetric item : in) {
             // If haven't captured yet previous timestamp
             if (!gotPrev) {
@@ -83,55 +87,46 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
             item.setPrevState(prevStatus);
             item.setPrevTs(prevTimestamp);
             if (item.getTimestamp().split("T")[0].compareToIgnoreCase(this.runDate) == 0) {
+
+                if (!checkedPrevInRecomp) {
+
+                    if (prevStatusInRecomputation(item)) {
+                        prevStatus = this.opsMgr.getDefaultExcludedState();
+                        checkedPrevInRecomp = true;
+                        item.setPrevState(prevStatus);
+                        item.setPrevTs(prevTimestamp);
+                    }
+                }
+
                 if (!item.getOgStatus().equals("")) {
                     item.setHasThr(true);
                 }
-                RecomputationsManager.ExcludedMetric excludedMetric = this.recMgr.findMetricExcluded(item.getGroup(), item.getService(), item.getHostname(), item.getMetric());
-                if (excludedMetric != null) {
-                    String status = item.getStatus();
-                    DateTime today = Utils.convertStringtoDate("yyyy-MM-dd", runDate);
-                    today.withTime(0, 0, 0, 0);
-                    DateTime tomorrow = today.plusDays(1);
-
-                    DateTime timestamp = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", item.getTimestamp());
-                    DateTime startPeriod = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", excludedMetric.getStartPeriod());
-                    DateTime endPeriod = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", excludedMetric.getEndPeriod());
-                    if (!timestamp.isBefore(startPeriod) && !timestamp.isAfter(endPeriod)) {
-                        item.setStatus(this.opsMgr.getDefaultExcludedState());
-                        out.collect(item);
-
-                        if (!endPeriod.isBefore(today) && !endPeriod.isAfter(tomorrow)) {
-                            item.setTimestamp(endPeriod.plusSeconds(1).toString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-
-                            String timestamp2 = item.getTimestamp().split("Z")[0];
-                            String[] tsToken = timestamp2.split("T");
-                            int timeInt = Integer.parseInt(tsToken[1].replace(":", ""));
-
-                            item.setStatus(status);
-                            item.setTimeInt(timeInt);
-                            item.setPrevState(this.opsMgr.getDefaultExcludedState());
-                            item.setPrevTs(today.toString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-                            out.collect(item);
-                        }
-                        if (!startPeriod.isBefore(today) && !startPeriod.isAfter(tomorrow)) {
-                            item.setStatus(status);
-                            item.setPrevState(prevStatus);
-                            item.setPrevTs(prevTimestamp);
-                            item.setTimestamp(startPeriod.plusSeconds(1).toString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-                            String timestamp2 = item.getTimestamp().split("Z")[0];
-                            String[] tsToken = timestamp2.split("T");
-                            int timeInt = Integer.parseInt(tsToken[1].replace(":", ""));
-                            item.setTimeInt(timeInt);
-                            out.collect(item);
-                        }
-                    }
-                } else {
-                    out.collect(item);
-                }
+                out.collect(item);
             }
-            
+
             prevStatus = item.getStatus();
             prevTimestamp = item.getTimestamp();
         }
+
+    }
+
+    private boolean prevStatusInRecomputation(StatusMetric item) throws ParseException {
+        RecomputationsManager.ExcludedMetric excludedMetric = this.recMgr.findMetricExcluded(item.getGroup(), item.getService(), item.getHostname(), item.getMetric());
+        boolean isPrevInRecompute=false;
+        if (excludedMetric != null) {
+            DateTime today = Utils.convertStringtoDate("yyyy-MM-dd", runDate);
+            today.withTime(0, 0, 0, 0);
+            DateTime endOfToday = Utils.convertStringtoDate("yyyy-MM-dd", runDate);
+            endOfToday.withTime(23, 59, 59, 59);
+
+            DateTime startPeriod = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", excludedMetric.getStartPeriod());
+
+            if (startPeriod.isBefore(today)) {
+                isPrevInRecompute= true;
+            }
+
+         }
+        return isPrevInRecompute;
+
     }
 }

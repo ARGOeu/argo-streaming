@@ -319,13 +319,17 @@ public class ArgoMultiJob {
         mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
         dbURI = params.getRequired("mongo.uri");
         String dbMethod = params.getRequired("mongo.method");
-        
+
+
+        DataSet<StatusMetric> calcRecompDS = mdataTotalDS.distinct("group","service","hostname","metric","status","timestamp").groupBy("group", "service", "hostname", "metric")
+                .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcRecomputation(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
+
         // Create status detail data set
-        DataSet<StatusMetric> stDetailDS = mdataTotalDS.distinct("group","service","hostname","metric","status","timestamp").groupBy("group", "service", "hostname", "metric")
+        DataSet<StatusMetric> stDetailDS = calcRecompDS.distinct("group","service","hostname","metric","status","timestamp").groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
 
-        
         DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                         .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(apsDS, "aps");

@@ -36,6 +36,7 @@ import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.Path;
+import org.apache.hadoop.fs.Stat;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Assert;
@@ -211,6 +212,7 @@ public class ArgoMultiJobTest {
                 .withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
 
+
         URL expPickdataURL = ArgoMultiJobTest.class.getResource("/test/pickdata.json");
         DataSet<String> expPickDataString = env.readTextFile(expPickdataURL.toString());
         List<String> pickDataList = expPickDataString.collect();
@@ -224,9 +226,26 @@ public class ArgoMultiJobTest {
 
         DataSet<StatusMetric> mdataTotalDS = mdataTrimDS.union(fillMissDS);
         Assert.assertEquals(TestUtils.compareLists(expPickDataRes, mdataTotalDS.collect()), true);
+        for(StatusMetric st:mdataTotalDS.collect()) {
+            System.out.println("trim total  -- " + st.getGroup() + " " + st.getService() + " " + st.getHostname() + " " + st.getMetric() + " " + st.getStatus() + " " + st.getTimestamp());
 
+        }
         //********************* Test Map Services
         mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
+        for(StatusMetric st:mdataTotalDS.collect()){
+            System.out.println("total -- "+st.getGroup()+" "+st.getService()+" "+st.getHostname()+" "+st.getMetric()+" "+st.getStatus()+" "+st.getTimestamp());
+//            if(st.getGroup().equals("Group_X")){
+//                System.out.println("GROUP X _-- "+st.toString());
+//            }
+//
+//            if(st.getGroup().equals("Group_XXX")){
+//                System.out.println("GROUP XXX _-- "+st.toString());
+//            }
+//
+//            if(st.getGroup().equals("Group_XXXX")){
+//                System.out.println("GROUP XXXX _-- "+st.toString());
+//            }
+        }
 
         URL mapServicesURL = ArgoMultiJobTest.class.getResource("/test/mapservices.json");
         DataSet<String> mapServicesString = env.readTextFile(mapServicesURL.toString());
@@ -238,9 +257,31 @@ public class ArgoMultiJobTest {
         }
         Assert.assertEquals(TestUtils.compareLists(expMapServicesRes, mdataTotalDS.collect()), true);
         //************** Test CalcPrevStatus
-        DataSet<StatusMetric> stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
+
+        for(StatusMetric st:mdataTotalDS.collect()){
+            if(st.getGroup().equals("Group_X") ||st.getGroup().equals("Group_XX") || st.getGroup().equals("Group_XXX") || st.getGroup().equals("Group_XXXX") || st.getGroup().equals("Group_XXXXX")){
+                System.out.println("group is : "+st.toString());
+            }
+        }
+
+        DataSet<StatusMetric> calcRecompDS = mdataTotalDS.distinct("group","service","hostname","metric","status","timestamp").groupBy("group", "service", "hostname", "metric")
+                .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcRecomputation(params))
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
+
+        for(StatusMetric rec: calcRecompDS.collect()){
+            if(rec.getGroup().equals("Group_X")||rec.getGroup().equals("Group_XX")||rec.getGroup().equals("Group_XXX")||rec.getGroup().equals("Group_XXXXX")|| rec.getGroup().equals("Group_XXXXX")) {
+                System.out.println("rec-- " + rec.toString());
+            }
+        }
+        DataSet<StatusMetric> stDetailDS = calcRecompDS.groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
+        for(StatusMetric rec: stDetailDS.collect()){
+            if(rec.getGroup().equals("Group_X")||rec.getGroup().equals("Group_XX")||rec.getGroup().equals("Group_XXX")||rec.getGroup().equals("Group_XXXXX")|| rec.getGroup().equals("Group_XXXXX")) {
+                System.out.println("prev-- " + rec.toString());
+            }
+        }
+
 
         URL calcPrevStatusURL = ArgoMultiJob.class.getResource("/test/expCalcPrevStatus.json");
         DataSet<String> calcPrevStatusString = env.readTextFile(calcPrevStatusURL.toString());
@@ -250,6 +291,20 @@ public class ArgoMultiJobTest {
             DataSet<StatusMetric> expCalcPrepStatusDS = env.fromElements(getListCalcPrevData(calcPrevStatusList.get(0)));
             expCalcPrevStatusRes = preparePickData(expCalcPrepStatusDS.collect());
         }
+        System.out.println("prev status *********************************");
+        for(StatusMetric st: expCalcPrevStatusRes){
+            if(st.getGroup().equals("Group_X") ||st.getGroup().equals("Group_XX") || st.getGroup().equals("Group_XXX") || st.getGroup().equals("Group_XXXX") || st.getGroup().equals("Group_XXXXX")) {
+
+                System.out.println("exp-- " + st.toString());
+            }
+        }
+        for(StatusMetric res: stDetailDS.collect()){
+            if(res.getGroup().equals("Group_X") ||res.getGroup().equals("Group_XX") || res.getGroup().equals("Group_XXX") || res.getGroup().equals("Group_XXXX") || res.getGroup().equals("Group_XXXXX")) {
+
+                System.out.println("res-- " + res.toString());
+            }
+        }
+
         Assert.assertEquals(TestUtils.compareLists(expCalcPrevStatusRes, stDetailDS.collect()), true);
 
         //*************** Test Metric Timeline
@@ -344,7 +399,6 @@ public class ArgoMultiJobTest {
                 expStatusServRes = prepareStatusData(expStatusServDS.collect());
 
             }
-            List listB = stServiceDS.collect();
             Assert.assertEquals(TestUtils.compareLists(expStatusServRes, stServiceDS.collect()), true);
             DataSet<StatusMetric> stEndGroupDS = statusGroupTimeline.flatMap(new CalcStatusEndGroup(params))
                     .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
