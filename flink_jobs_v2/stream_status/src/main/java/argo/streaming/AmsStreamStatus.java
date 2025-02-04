@@ -1,31 +1,30 @@
 package argo.streaming;
 
 import Utils.IntervalType;
-import static Utils.IntervalType.DAY;
-import static Utils.IntervalType.HOURS;
-import static Utils.IntervalType.MINUTES;
 import ams.connector.ArgoMessagingSink;
 import ams.connector.ArgoMessagingSource;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Properties;
-
+import argo.amr.ApiResource;
+import argo.amr.ApiResourceManager;
+import argo.avro.Downtime;
+import argo.avro.GroupEndpoint;
+import argo.avro.MetricData;
+import argo.avro.MetricProfile;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
-
+import org.apache.commons.lang.StringUtils;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
@@ -41,24 +40,16 @@ import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import argo.amr.ApiResource;
-import argo.amr.ApiResourceManager;
-import argo.avro.Downtime;
-import argo.avro.GroupEndpoint;
-import argo.avro.MetricData;
-import argo.avro.MetricProfile;
-import org.apache.commons.lang.StringUtils;
-import org.apache.flink.api.common.JobID;
-import org.apache.flink.core.fs.FileSystem;
 import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
 import status.StatusManager;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.*;
 
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
@@ -92,24 +83,25 @@ import status.StatusManager;
  * DAYS, HOURS, MINUTES eg. 1h, 2d, 30m to define the period . Any of these
  * formats is transformed to minutes in the computations if not defined the
  * default value is 1440m
- *
+ * <p>
  * --interval.strict(Optional)interval to repeat events for CRITICAL . it can be
  * in the format of DAYS, HOURS, MINUTES eg. 1h, 2d, 30m to define the period .
  * Any of these formats is transformed to minutes in the computations if not
  * defined the default value is 1440m
- *
+ * <p>
  * -- latest.offset (Optional) boolean true/false, to define if the argo
  * messaging source should set offset at the latest or at the start of the
  * runDate. By default, if not defined , the offset should be the latest.
  * --level_group,level_service,level_endpoint, level_metric, if ON level alerts
  * are generated,if OFF level alerts are disabled.if no level is defined in
  * parameters then all levels are generated
- *
+ * <p>
  * --sync.interval(Optional) , the interval to sync with the argo web api source
  * (metric profiles, topology, downtimes) it can be * in the format of DAYS,
  * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
  * the parameter is not configured
- *
+ * <p>
+ * --check.api.interval , the interval (in HOURS) to check the argo-web api , in case the api is unreachable
  */
 public class AmsStreamStatus {
     // setup logger
@@ -122,12 +114,13 @@ public class AmsStreamStatus {
     private static boolean level_service = true;
     private static boolean level_endpoint = true;
     private static boolean level_metric = true;
+    private static EnumMap<ApiResource, String> apiData = new EnumMap<>(ApiResource.class);
 
     /**
      * Sets configuration parameters to streaming enviroment
      *
      * @param config A StatusConfig object that holds configuration parameters
-     * for this job
+     *               for this job
      * @return Stream execution enviroment
      */
     private static StreamExecutionEnvironment setupEnvironment(StatusConfig config) {
@@ -152,7 +145,7 @@ public class AmsStreamStatus {
 
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String hbaseArgs[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.namespace",
-            "hbase.table"};
+                "hbase.table"};
         return hasArgs(hbaseArgs, paramTool);
     }
 
@@ -235,6 +228,7 @@ public class AmsStreamStatus {
             strictInterval = getInterval(strictParam);
         }
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
+        apiData = amr.getData();
 
         // fetch
         // set params
@@ -248,6 +242,7 @@ public class AmsStreamStatus {
 
         amr.setReportID(reportID);
         amr.getRemoteAll();
+        // amr.scheduleCheckApi();
 
         // set ams client batch and interval to default values
         int batch = 1;
@@ -272,13 +267,11 @@ public class AmsStreamStatus {
 
         ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
         ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, syncInterval, apiInterval);
-
+        apiSync.setApiData(apiData);
         if (parameterTool.has("ams.verify")) {
             boolean verify = parameterTool.getBoolean("ams.verify");
             amsMetric.setVerify(verify);
-
         }
-
         if (parameterTool.has("proxy")) {
             String proxyURL = parameterTool.get("proxy");
             amsMetric.setProxy(proxyURL);
@@ -289,6 +282,9 @@ public class AmsStreamStatus {
             apiSync.setProxy(proxyURL);
         }
 
+        if (parameterTool.has("check.api.interval")) {
+            apiSync.setCheckApiInterval(parameterTool.getInt("check.api.interval"));
+        }
         DataStream<String> metricAMS = see.addSource(amsMetric).setParallelism(1);
 
         // Establish the sync stream from argowebapi
@@ -395,10 +391,12 @@ public class AmsStreamStatus {
 
         public StatusConfig config;
         private ApiResourceManager amr;
+    //    private EnumMap<ApiResource, String> data;
 
         public MetricDataWithGroup(StatusConfig config) {
             LOG.info("Created new Status map");
             this.config = config;
+         //   this.data = data;
         }
 
         /**
@@ -411,16 +409,20 @@ public class AmsStreamStatus {
         public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
 
             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+            this.amr.setData(apiData);
             this.amr.setDate(config.runDate);
             this.amr.setTimeoutSec((int) config.timeout);
-
             if (config.apiProxy != null) {
                 this.amr.setProxy(config.apiProxy);
             }
 
+
             this.amr.setReportID(config.reportID);
             this.amr.getRemoteAll();
 
+            if (!this.amr.isShouldRepeat()) {
+                apiData = this.amr.getData();
+            }
             ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
             ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
@@ -447,8 +449,8 @@ public class AmsStreamStatus {
          * metric data with group information
          *
          * @param value Input metric data in base64 encoded format from AMS
-         * service
-         * @param out Collection of generated Tuple2<MetricData,String> objects
+         *              service
+         * @param out   Collection of generated Tuple2<MetricData,String> objects
          */
         @Override
         public void flatMap1(String value, Collector<Tuple2<String, MetricData>> out)
@@ -510,7 +512,6 @@ public class AmsStreamStatus {
                         egpTrim.add(egpItem);
                     }
                 }
-                ArrayList<GroupEndpoint> test = egpTrim;
 
                 // load next topology into a temporary endpoint group manager
                 egp.loadFromList(egpTrim);
@@ -569,14 +570,18 @@ public class AmsStreamStatus {
             pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 
             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+            this.amr.setData(apiData);
             this.amr.setDate(config.runDate);
             this.amr.setTimeoutSec((int) config.timeout);
             if (config.apiProxy != null) {
                 this.amr.setProxy(config.apiProxy);
             }
-
+            //this.amr.setCheckApiInterval(config.checkApiInterval);
             this.amr.setReportID(config.reportID);
             this.amr.getRemoteAll();
+            if (!this.amr.isShouldRepeat()) {
+                apiData = this.amr.getData();
+            }
 
             String opsJSON = this.amr.getResourceJSON(ApiResource.OPS);
             String apsJSON = this.amr.getResourceJSON(ApiResource.AGGREGATION);
@@ -613,8 +618,8 @@ public class AmsStreamStatus {
          * status events
          *
          * @param value Input metric data in base64 encoded format from AMS
-         * service
-         * @param out Collection of generated status events as json strings
+         *              service
+         * @param out   Collection of generated status events as json strings
          */
         @Override
         public void flatMap1(Tuple2<String, MetricData> value, Collector<String> out)
@@ -693,7 +698,7 @@ public class AmsStreamStatus {
 
                 // Use existing topology manager inside status manager to make a comparison
                 // with the new topology stored in the temp endpoint group manager
-                // update topology also sets the next topology manager as status manager current 
+                // update topology also sets the next topology manager as status manager current
                 // topology manager only after removal of decomissioned items
                 sm.updateTopology(egpNext);
 
@@ -961,4 +966,11 @@ public class AmsStreamStatus {
         }
     }
 
+    public static EnumMap<ApiResource, String> getApiData() {
+        return apiData;
+    }
+
+    public static void setApiData(EnumMap<ApiResource, String> apiData) {
+        AmsStreamStatus.apiData = apiData;
+    }
 }

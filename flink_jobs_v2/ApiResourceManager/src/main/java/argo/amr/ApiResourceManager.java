@@ -48,6 +48,7 @@ public class ApiResourceManager {
     private boolean isCombined;
     //private boolean verify;
     //private int timeoutSec;
+    private boolean shouldRepeat;
 
     public ApiResourceManager(String endpoint, String token) {
         this.endpoint = endpoint;
@@ -64,7 +65,9 @@ public class ApiResourceManager {
         this.egroup = "";
         this.requestManager = new RequestManager("", this.token);
         this.apiResponseParser = new ApiResponseParser(this.reportName, this.metricID, this.aggregationID, this.opsID, this.threshID, this.tenant, this.egroup);
+
     }
+
 
     public void setProxy(String proxy) {
 
@@ -196,6 +199,15 @@ public class ApiResourceManager {
         this.egroup = egroup;
     }
 
+    public boolean isShouldRepeat() {
+        return shouldRepeat;
+    }
+
+    public void setShouldRepeat(boolean shouldRepeat) {
+        this.shouldRepeat = shouldRepeat;
+    }
+
+
     /**
      * Retrieves the remote report configuration based on reportID main class
      * attribute and stores the content in the enum map
@@ -204,6 +216,11 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/reports/%s";
         String fullURL = String.format(path, this.endpoint, this.reportID);
         String content = this.requestManager.getResource(fullURL);
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
+
         this.data.put(ApiResource.CONFIG, this.apiResponseParser.getJsonData(content, false));
 
     }
@@ -217,7 +234,10 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.metricID, this.date);
         String content = this.requestManager.getResource(fullURL);
-
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
         this.data.put(ApiResource.METRIC, this.apiResponseParser.getJsonData(content, false));
 
     }
@@ -244,8 +264,10 @@ public class ApiResourceManager {
 
             String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
             String fullURL = String.format(path, this.endpoint, this.metricID, yesterdaystr);
-            yesterdayContent = this.apiResponseParser.getJsonData(this.requestManager.getResource(fullURL), false);
-          
+            String jsoncontent = this.requestManager.getResource(fullURL);
+            if (!jsoncontent.equals("{}")) {
+                yesterdayContent = this.apiResponseParser.getJsonData(this.requestManager.getResource(fullURL), false);
+            }
         }
         List<MetricProfile> newentries = this.apiResponseParser.getListNewMetrics(content, yesterdayContent);
 
@@ -263,7 +285,10 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/aggregation_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.aggregationID, this.date);
         String content = this.requestManager.getResource(fullURL);
-
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
         this.data.put(ApiResource.AGGREGATION, this.apiResponseParser.getJsonData(content, false));
 
     }
@@ -278,6 +303,10 @@ public class ApiResourceManager {
         String fullURL = String.format(path, this.endpoint, this.opsID, this.date);
 
         String content = this.requestManager.getResource(fullURL);
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
 
         this.data.put(ApiResource.OPS, this.apiResponseParser.getJsonData(content, false));
 
@@ -292,6 +321,10 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/thresholds_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.threshID, this.date);
         String content = this.requestManager.getResource(fullURL);
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
 
         this.data.put(ApiResource.THRESHOLDS, this.apiResponseParser.getJsonData(content, false));
 
@@ -301,13 +334,17 @@ public class ApiResourceManager {
      * Retrieves the topology endpoint content and stores it to the enum map
      */
     public void getRemoteTopoEndpoints() {
-        String combinedparam="";
-        if(isSourceTopoAll){
-        combinedparam="&mode=combined";
+        String combinedparam = "";
+        if (isSourceTopoAll) {
+            combinedparam = "&mode=combined";
         }
         String path = "https://%s/api/v2/topology/endpoints/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date + combinedparam);
         String content = this.requestManager.getResource(fullURL);
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
 
         this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
 
@@ -317,14 +354,18 @@ public class ApiResourceManager {
      * Retrieves the topology groups content and stores it to the enum map
      */
     public void getRemoteTopoGroups() {
-        String combinedparam="";
-        if(isSourceTopoAll){
-        combinedparam="&mode=combined";
+        String combinedparam = "";
+        if (isSourceTopoAll) {
+            combinedparam = "&mode=combined";
         }
-      
+
         String path = "https://%s/api/v2/topology/groups/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date + combinedparam);
         String content = this.requestManager.getResource(fullURL);
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
 
         this.data.put(ApiResource.TOPOGROUPS, this.apiResponseParser.getJsonData(content, true));
 
@@ -337,6 +378,10 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/weights/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.weightsID, this.date);
         String content = this.requestManager.getResource(fullURL);
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
 
         this.data.put(ApiResource.WEIGHTS, this.apiResponseParser.getJsonData(content, false));
 
@@ -349,6 +394,11 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/downtimes?date=%s";
         String fullURL = String.format(path, this.endpoint, this.date);
         String content = this.requestManager.getResource(fullURL);
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
+
         this.data.put(ApiResource.DOWNTIMES, this.apiResponseParser.getJsonData(content, false));
 
     }
@@ -357,6 +407,10 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/recomputations?date=%s";
         String fullURL = String.format(path, this.endpoint, this.date);
         String content = this.requestManager.getResource(fullURL);
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
 
         this.data.put(ApiResource.RECOMPUTATIONS, this.apiResponseParser.getJsonData(content, true));
 
@@ -370,9 +424,14 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/metrics/by_report/%s";
         String fullURL = String.format(path, this.endpoint, this.reportName);
         String content = this.requestManager.getResource(fullURL);
-        if (!content.equals("{}")) {
-            this.data.put(ApiResource.MTAGS, this.apiResponseParser.getJsonData(content, true));
+        if (content.equals("{}")) {
+
+            this.shouldRepeat = true;
+            return;
         }
+
+        this.data.put(ApiResource.MTAGS, this.apiResponseParser.getJsonData(content, true));
+
     }
 
     /**
@@ -558,7 +617,7 @@ public class ApiResourceManager {
             this.getRemoteThresholds();
         }
         // Go to topology
-   
+
         this.getRemoteTopoEndpoints();
         this.getRemoteTopoGroups();
         // get weights
@@ -576,18 +635,21 @@ public class ApiResourceManager {
      * Retrieves the topology endpoint content and stores it to the enum map
      */
     public void getAllRemoteTopoEndpoints() {
-        String combinedparam="";
-        if(isSourceTopoAll){
-        combinedparam="&mode=combined";
+        String combinedparam = "";
+        if (isSourceTopoAll) {
+            combinedparam = "&mode=combined";
         }
         String path = "https://%s/api/v2/topology/endpoints?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.date+combinedparam);
+        String fullURL = String.format(path, this.endpoint, this.date + combinedparam);
         String content = this.requestManager.getResource(fullURL);
-
+        if (content.equals("{}")) {
+            this.shouldRepeat = true;
+            return;
+        }
         this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
 
     }
-    
+
     public boolean isIsCombined() {
         return isCombined;
     }
@@ -600,7 +662,6 @@ public class ApiResourceManager {
         this.isSourceTopoAll = isSourceTopoAll;
     }
 
-    
 
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
 
@@ -617,5 +678,7 @@ public class ApiResourceManager {
         DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
         String dateString = date.toString(dtf);
         return dateString;
+
     }
+
 }

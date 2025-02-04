@@ -124,7 +124,6 @@ public class TrimEvent implements FlatMapFunction<String, String> {
             default:
 
         }
-
         out.collect(json.toString());
 
     }

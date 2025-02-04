@@ -31,7 +31,6 @@ public class StatusConfig implements Serializable {
     public int hourCheck = 24;
     public String reportID;
     public long interval = 100L;
-
     // Sync files
     public String aps;
     public String mps;

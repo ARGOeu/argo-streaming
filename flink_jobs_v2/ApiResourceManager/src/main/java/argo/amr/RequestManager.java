@@ -9,8 +9,11 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
+import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -19,7 +22,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 
 /**
- *
  * Establish a connection to the given url and request data
  */
 public class RequestManager {
@@ -48,7 +50,7 @@ public class RequestManager {
      * content (expected in json format)
      *
      * @param fullURL String containing the full url representation of the
-     * argo-web-api resource
+     *                argo-web-api resource
      * @return A string representation of the resource json content
      * @throws ClientProtocolException
      * @throws IOException
@@ -78,9 +80,38 @@ public class RequestManager {
 
                 content = r.execute().returnContent().asString();
             }
-        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (HttpHostConnectException | ConnectTimeoutException e) {
+            // Handle the case where the API is not reachable
+            content = "{}";
+        } catch (IOException e) {
+            // Handle HTTP response errors
+            if (e instanceof org.apache.http.client.HttpResponseException) {
+                org.apache.http.client.HttpResponseException httpException = (org.apache.http.client.HttpResponseException) e;
+                int statusCode = httpException.getStatusCode();
+
+                if (statusCode == 404) {
+                    // Specific report does not exist
+                    System.err.println("The report ID does not exist: " + fullURL);
+                    throw new RuntimeException("Path does not exist: " + fullURL);
+                } else {
+                    // Other HTTP errors
+                    System.err.println("HTTP error: " + statusCode + " - " + httpException.getMessage());
+                    throw new RuntimeException("HTTP error: " + statusCode + " - " + httpException.getMessage());
+                }
+            }  else {
+                // If it's a general IOException (non-HTTP related)
+                System.err.println("General I/O error: " + e.getMessage());
+                // Throw the IOException with a specific message
+                try {
+                    throw new IOException("An error occurred during I/O operation: " + e.getMessage());
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+            // Handle SSL-related exceptions
+            System.err.println("SSL configuration error: " + e.getMessage());
+            throw new RuntimeException("SSL configuration error: " + e.getMessage(), e);
         }
 
         return content;
@@ -128,6 +159,6 @@ public class RequestManager {
     public void setVerify(boolean verify) {
         this.verify = verify;
     }
-    
-    
+
+
 }

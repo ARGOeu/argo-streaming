@@ -1,61 +1,52 @@
 package argo.streaming;
 
 import ams.connector.ArgoMessagingSource;
+import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
 import argo.avro.GroupEndpoint;
-import java.util.concurrent.TimeUnit;
-
+import argo.avro.MetricData;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.influxdb.client.write.Point;
+import influxdb.connector.InfluxDBSink;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificData;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
-
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.datastream.DataStream;
-
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-
 import org.apache.flink.streaming.connectors.fs.bucketing.Bucketer;
 import org.apache.flink.streaming.connectors.fs.bucketing.BucketingSink;
 import org.apache.flink.util.Collector;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import profilesmanager.EndpointGroupManager;
 
-import com.google.gson.JsonElement;
-
-import com.google.gson.JsonParser;
-
-import argo.avro.MetricData;
-import argo.avro.MetricProfile;
-import com.influxdb.client.write.Point;
-import influxdb.connector.InfluxDBSink;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.TimeZone;
-import org.apache.flink.api.common.JobID;
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
-import org.slf4j.MDC;
-import profilesmanager.EndpointGroupManager;
-import profilesmanager.MetricProfileManager;
+import java.util.EnumMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Flink Job : Stream metric data from ARGO messaging to Hbase job required cli
  * parameters:
- *
+ * <p>
  * --ams.endpoint : ARGO messaging api endoint to connect to msg.example.com
  * --ams.port : ARGO messaging api port --ams.token : ARGO messaging api token
  * --ams.project : ARGO messaging api project to connect to --ams.sub : ARGO
@@ -69,7 +60,7 @@ import profilesmanager.MetricProfileManager;
  * per request to AMS service --ams.interval : interval (in ms) between AMS
  * service requests --ams.proxy : optional http proxy url --ams.verify :
  * optional turn on/off ssl verify
- *
+ * <p>
  * --proxy: optional http proxy url for api endpoint --influx.token the token to
  * the influx db --influx.port the port of the influxdb --influx.endpoint the
  * endpoint to influx db --influx.org the organisation of influx db
@@ -86,7 +77,9 @@ public class AmsIngestMetric {
 
     static Logger LOG = LoggerFactory.getLogger(AmsIngestMetric.class);
     private static String runDate;
-
+    private static int checkApiInterval = 1;
+    private static ScheduledExecutorService scheduler;
+    private static EnumMap<ApiResource, String> apiData = new EnumMap<>(ApiResource.class);
     /**
      * Check if flink job has been called with ams rate params
      */
@@ -116,7 +109,7 @@ public class AmsIngestMetric {
      */
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String args[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.zk.port", "hbase.namespace",
-            "hbase.table"};
+                "hbase.table"};
         return hasArgs(args, paramTool);
     }
 
@@ -151,6 +144,10 @@ public class AmsIngestMetric {
         int batch = 1;
         long interval = 100L;
         long inactivityThresh = 1800000L; // default inactivity threshold value ~ 30mins
+        //  checkApiInterval = 1;
+        if (parameterTool.has("check.api.interval")) {
+            checkApiInterval = parameterTool.getInt("check.api.interval");
+        }
 
         if (hasAmsRateArgs(parameterTool)) {
             batch = parameterTool.getInt("ams.batch");
@@ -167,6 +164,7 @@ public class AmsIngestMetric {
         if (runDate != null) {
             runDate = runDate + "T00:00:00.000Z";
         }
+
 
         // Check if checkpointing is desired
         if (hasCheckArgs(parameterTool)) {
@@ -218,7 +216,7 @@ public class AmsIngestMetric {
                 item = METRIC_DATA_READER.read(null, decoder);
 
                 if (item != null) {
-                    LOG.info("Captured data -- {}", item.toString());
+                    //   LOG.info("Captured data -- {}", item.toString());
                     out.collect(item);
                 }
 
@@ -249,7 +247,6 @@ public class AmsIngestMetric {
         }
         if (hasInfluxDBArgs(parameterTool)) {
             String tenant = parameterTool.get("influx.tenant");
-
             DataStream<Tuple2<String, MetricData>> groupMdata = metricDataPOJO
                     .flatMap(new MetricDataWithGroup(parameterTool)).setParallelism(1);
 
@@ -260,6 +257,7 @@ public class AmsIngestMetric {
             perfData.addSink(sink);
 
         }
+
 
         // Create a job title message to discern job in flink dashboard/cli
         StringBuilder jobTitleSB = new StringBuilder();
@@ -294,23 +292,24 @@ public class AmsIngestMetric {
 
         public EndpointGroupManager egp;
 
-        private ApiResourceManager amr;
+       private ApiResourceManager amr;
         private ParameterTool params;
         private String runDate;
-
+        private  EnumMap<ApiResource, String> data = new EnumMap<>(ApiResource.class);
         public MetricDataWithGroup(ParameterTool params) {
             LOG.info("Enrich Metric Data with Group Info");
             this.params = params;
+
         }
 
-//        /**
+        //        /**
 //         * Initializes constructs in the beginning of operation
 //         *
 //         * @param parameters Configuration parameters to initialize structures
 //         * @throws URISyntaxException
 //         */
         @Override
-        public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
+        public void open(Configuration parameters ) throws IOException, ParseException, URISyntaxException {
 
             this.amr = new ApiResourceManager(this.params.getRequired("api.endpoint"), this.params.getRequired("api.token"));
             this.amr.setTimeoutSec(params.getInt("api.timeout"));
@@ -318,20 +317,24 @@ public class AmsIngestMetric {
             if (params.has("proxy")) {
                 this.amr.setProxy(params.get("proxy"));
             }
+            if (params.has("check.api.interval")) {
+                checkApiInterval = params.getInt("check.api.interval");
+            }
+            scheduleApi(this.amr);
 
         }
 
         /**
          * The main flat map function that accepts metric data and generates
          * metric data with group information
-         *
-         * @param value Input metric data in base64 encoded format from AMS
+         * <p>
+         * // * @param value Input metric data in base64 encoded format from AMS
          * service
+         *
          * @param out Collection of generated Tuple2<MetricData,String> objects
          */
         @Override
-        public void flatMap(MetricData item, Collector<Tuple2<String, MetricData>> out)
-                throws IOException, ParseException {
+        public void flatMap(MetricData item, Collector<Tuple2<String, MetricData>> out) {
 
             //set rundate from the first item's timestamp and update each time the date is changed to the next day
             //in order to update the metric profile and endpoint info
@@ -358,20 +361,56 @@ public class AmsIngestMetric {
 
         private void loadTopology(String currTimestampDate) {
             this.runDate = currTimestampDate;
-            this.amr.setDate(this.runDate);
-            this.amr.getAllRemoteTopoEndpoints();
-
-            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
+//            this.amr.setDate(this.runDate);
+//            this.amr.getAllRemoteTopoEndpoints();
+            amr.setDate(this.runDate);
+            amr.getAllRemoteTopoEndpoints();
+            if(!amr.isShouldRepeat()){
+                System.out.println("update my data");
+                data=amr.getData();
+            }
+            if(amr.isShouldRepeat() && data.size()>0){
+                amr.setData(data);
+            }
+            System.out.println("topology data is : "+amr.getData().size());
+           // ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
+            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(amr.getListGroupEndpoints()));
 
             egp = new EndpointGroupManager();
             egp.loadFromList(egpList);
 
         }
+
+        public EnumMap<ApiResource, String> getData() {
+            return data;
+        }
+
+        public void setData(EnumMap<ApiResource, String> data) {
+            this.data = data;
+        }
+    }
+        public static boolean hasInfluxDBArgs(ParameterTool paramTool) {
+
+            String influxArgs[] = {"influx.token", "influx.port", "influx.endpoint", "influx.bucket", "influx.org"};
+            return hasArgs(influxArgs, paramTool);
+        }
+
+        private static void scheduleApi(final ApiResourceManager apiResourceManager) {
+            scheduler = Executors.newSingleThreadScheduledExecutor();
+            // Schedule the task to run every 1 minute (60 seconds)
+            scheduler.scheduleAtFixedRate(new Runnable() {
+                @Override
+                public void run() {
+                    checkAndExecuteRemoteCall(apiResourceManager);
+                }
+            }, 3, checkApiInterval, TimeUnit.MINUTES);
+        }
+
+        public static void checkAndExecuteRemoteCall(ApiResourceManager amr) {
+            if (amr.isShouldRepeat()) {
+                amr.setShouldRepeat(false);
+                amr.getAllRemoteTopoEndpoints();
+            }
+        }
     }
 
-    public static boolean hasInfluxDBArgs(ParameterTool paramTool) {
-
-        String influxArgs[] = {"influx.token", "influx.port", "influx.endpoint", "influx.bucket", "influx.org"};
-        return hasArgs(influxArgs, paramTool);
-    }
-}
