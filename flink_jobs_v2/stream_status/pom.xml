@@ -163,7 +163,7 @@ language governing permissions and limitations under the License. -->
                 <dependency>
                     <groupId>org.mongodb</groupId>
                     <artifactId>mongodb-driver-sync</artifactId>
-                    <version>5.1.0</version>
+                    <version>4.7.2</version>
                     <scope>compile</scope>
                 </dependency>
         <!-- https://mvnrepository.com/artifact/com.github.tomakehurst/wiremock -->
@@ -230,7 +230,7 @@ language governing permissions and limitations under the License. -->
                 <dependency>
                     <groupId>org.mongodb</groupId>
                     <artifactId>mongodb-driver-sync</artifactId>
-                    <version>5.1.0</version>
+                    <version>4.7.2</version>
                     <scope>compile</scope>
                 </dependency>
                 <dependency>
