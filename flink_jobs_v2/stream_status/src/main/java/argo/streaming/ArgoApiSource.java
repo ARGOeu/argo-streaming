@@ -42,7 +42,7 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String,String>> {
         this.token = token;
         this.reportID = reportID;
         this.interval = interval;
-        this.verify = false;
+        this.verify = true;
         if(syncInterval!=null){
             setSyncUpdate(syncInterval);
         }
