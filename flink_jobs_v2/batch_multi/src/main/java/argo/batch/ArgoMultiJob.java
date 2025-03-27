@@ -183,6 +183,7 @@ public class ArgoMultiJob {
             amr.setTimeoutSec(params.getInt("api.timeout"));
         }
         runDate = params.getRequired("run.date");
+        amr.setVerify(false);
         amr.setIsCombined(isCombined);
         amr.setIsSourceTopoAll(isSourceAll);
         amr.setReportID(reportID);
