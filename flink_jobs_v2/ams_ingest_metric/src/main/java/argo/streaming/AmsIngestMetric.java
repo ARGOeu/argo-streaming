@@ -3,8 +3,10 @@ package argo.streaming;
 import ams.connector.ArgoMessagingSource;
 import argo.amr.ApiResourceManager;
 import argo.avro.GroupEndpoint;
-import java.util.concurrent.TimeUnit;
 
+import java.net.UnknownHostException;
+import java.util.concurrent.TimeUnit;
+import com.esotericsoftware.minlog.Log;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
@@ -32,30 +34,23 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import argo.avro.MetricData;
-import argo.avro.MetricProfile;
 import com.influxdb.client.write.Point;
 import influxdb.connector.InfluxDBSink;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.TimeZone;
+
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
 import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
-import profilesmanager.MetricProfileManager;
 
 /**
  * Flink Job : Stream metric data from ARGO messaging to Hbase job required cli
  * parameters:
- *
+ * <p>
  * --ams.endpoint : ARGO messaging api endoint to connect to msg.example.com
  * --ams.port : ARGO messaging api port --ams.token : ARGO messaging api token
  * --ams.project : ARGO messaging api project to connect to --ams.sub : ARGO
@@ -69,7 +64,7 @@ import profilesmanager.MetricProfileManager;
  * per request to AMS service --ams.interval : interval (in ms) between AMS
  * service requests --ams.proxy : optional http proxy url --ams.verify :
  * optional turn on/off ssl verify
- *
+ * <p>
  * --proxy: optional http proxy url for api endpoint --influx.token the token to
  * the influx db --influx.port the port of the influxdb --influx.endpoint the
  * endpoint to influx db --influx.org the organisation of influx db
@@ -78,6 +73,9 @@ import profilesmanager.MetricProfileManager;
  * the tenants name for whom the performance data is generated --api.endpoint
  * the api endpoint --api.token the api token --api.interval the api interval
  * --api.timeout 1
+ * --check.api.interval: the interval to check the argo-web api connection,by default 24h. it can be * in the format of DAYS,
+ *  * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
+ *  * the parameter is not configured
  */
 public class AmsIngestMetric {
 
@@ -86,6 +84,8 @@ public class AmsIngestMetric {
 
     static Logger LOG = LoggerFactory.getLogger(AmsIngestMetric.class);
     private static String runDate;
+    private static IntervalType checkApiIntervalType = IntervalType.HOURS;
+    private static int checkApiInterval = 1;
 
     /**
      * Check if flink job has been called with ams rate params
@@ -116,7 +116,7 @@ public class AmsIngestMetric {
      */
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String args[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.zk.port", "hbase.namespace",
-            "hbase.table"};
+                "hbase.table"};
         return hasArgs(args, paramTool);
     }
 
@@ -156,7 +156,11 @@ public class AmsIngestMetric {
             batch = parameterTool.getInt("ams.batch");
             interval = parameterTool.getLong("ams.interval");
         }
-
+        String checkApiIntervalParam = null;
+        if (parameterTool.has("check.api.interval")) {
+            checkApiIntervalParam = parameterTool.get("check.api.interval");
+        }
+        setCheckApiInterval(checkApiIntervalParam);
         // Initialize Input Source : ARGO Messaging Source
         String endpoint = parameterTool.getRequired("ams.endpoint");
         String port = parameterTool.get("ams.port");
@@ -289,6 +293,9 @@ public class AmsIngestMetric {
      * to the metric data message
      */
     private static class MetricDataWithGroup extends RichFlatMapFunction<MetricData, Tuple2<String, MetricData>> {
+        private boolean shouldCheckApi = false;
+        private long lastCheckTimestamp = 0L;
+        //  private long lastTopologyLoadTime = 0L; // NEW
 
         private static final long serialVersionUID = 1L;
 
@@ -297,76 +304,134 @@ public class AmsIngestMetric {
         private ApiResourceManager amr;
         private ParameterTool params;
         private String runDate;
+        private boolean firstRun = true;
 
         public MetricDataWithGroup(ParameterTool params) {
             LOG.info("Enrich Metric Data with Group Info");
             this.params = params;
         }
 
-//        /**
+        //        /**
 //         * Initializes constructs in the beginning of operation
 //         *
 //         * @param parameters Configuration parameters to initialize structures
 //         * @throws URISyntaxException
 //         */
         @Override
-        public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
-
+        public void open(Configuration parameters) {
             this.amr = new ApiResourceManager(this.params.getRequired("api.endpoint"), this.params.getRequired("api.token"));
             this.amr.setTimeoutSec(params.getInt("api.timeout"));
 
             if (params.has("proxy")) {
                 this.amr.setProxy(params.get("proxy"));
             }
-
+            //shouldCheckApi = !this.amr.isApiUp();
         }
 
         /**
          * The main flat map function that accepts metric data and generates
          * metric data with group information
          *
-         * @param value Input metric data in base64 encoded format from AMS
-         * service
          * @param out Collection of generated Tuple2<MetricData,String> objects
          */
         @Override
-        public void flatMap(MetricData item, Collector<Tuple2<String, MetricData>> out)
-                throws IOException, ParseException {
+        public void flatMap(MetricData item, Collector<Tuple2<String, MetricData>> out) {
+            long now = System.currentTimeMillis();
 
             //set rundate from the first item's timestamp and update each time the date is changed to the next day
             //in order to update the metric profile and endpoint info
             String currTimestampDate = item.getTimestamp().split("T")[0];
-            if (this.runDate == null || !runDate.equals(currTimestampDate)) {
-                loadTopology(currTimestampDate);
+
+            // Actually loadTopology() will be executed either if runDate is null or the timestamp of the
+            //MetricData points to next day so the topology should be refreshed. Also if it is the first run to load topology.
+            // if the api is up initially and at sometime it fails this will be noticed at the next day that the topology should sync
+            //if the api is down initially and at sometime it succeeds this will be noticed the next time shouldCheckApI() is executed
+
+            if (this.runDate == null || !runDate.equals(currTimestampDate) || (shouldCheckApi(lastCheckTimestamp))) {
+                try {
+                    loadTopology(currTimestampDate);
+                    lastCheckTimestamp = now;
+                } catch (Exception ex) {
+                    lastCheckTimestamp = now;
+
+                }
             }
+            try {
 
-            ArrayList<String> groups = egp.getGroupAllTopo(item.getHostname(), item.getService());
-            if (groups.isEmpty()) {
-                loadTopology(currTimestampDate);
-                groups = egp.getGroupAllTopo(item.getHostname(), item.getService());
-            }
-            for (String groupItem : groups) {
-                Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
+                ArrayList<String> groups = egp.getGroupAllTopo(item.getHostname(), item.getService());
+                System.out.println(" MetricDataWithGroup size " + egp.getGroupList().size());
+                if (groups.isEmpty()) {
+                    loadTopology(currTimestampDate);
+                    groups = egp.getGroupAllTopo(item.getHostname(), item.getService());
+                }
+                for (String groupItem : groups) {
+                    Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
+                    curItem.f0 = groupItem;
+                    curItem.f1 = item;
 
-                curItem.f0 = groupItem;
-                curItem.f1 = item;
-
-                out.collect(curItem);
+                    out.collect(curItem);
+                }
+            } catch (Exception e) {
+                Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
             }
 
         }
 
         private void loadTopology(String currTimestampDate) {
             this.runDate = currTimestampDate;
-            this.amr.setDate(this.runDate);
-            this.amr.getAllRemoteTopoEndpoints();
+            //  lastCheckTimestamp = System.currentTimeMillis(); // Update last load time
 
-            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
+            try {
+                this.amr.setDate(this.runDate);
+                this.amr.getAllRemoteTopoEndpoints();
 
-            egp = new EndpointGroupManager();
-            egp.loadFromList(egpList);
+                ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
+                egp = new EndpointGroupManager();
+                egp.loadFromList(egpList);
+                shouldCheckApi = false;
+            } catch (UnknownHostException e) {
+                shouldCheckApi = true;
+                // DNS resolution failure — API domain does not exist
+                Log.error("UnknownHostException: API endpoint not found:", e.getMessage());
+                throw new RuntimeException("API domain not found: ", e); // Wrap in a RuntimeException
+            } catch (Exception e) {
+                shouldCheckApi = true;
+                Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
+            }
 
         }
+
+        // this function succeeds if
+        // 1. is first run to load topology, so it forces the procedure
+        // 2. if shouldCheckApi flag is true based on the succeed or not of loadTopology()
+        //and time interval to check the api has passed
+
+        private boolean shouldCheckApi(long lastCheckTimestamp) {//should check api every time interval , regardless if
+            if (firstRun) {
+                firstRun = false;
+                return true; // force first fetch
+            }
+
+            if (!shouldCheckApi) {  //once the shouldCheckApi is false it returns.
+                return false; //so by this we succeed to check api only if it has failed and not periodicallhy
+            }
+            if (checkApiIntervalType == null) {
+                // Fallback or exception for invalid enum state
+                throw new IllegalStateException("checkApiIntervalType must not be null");
+            }
+
+            switch (checkApiIntervalType) {
+                case DAY:
+                    return TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastCheckTimestamp) >= checkApiInterval;
+                case HOURS:
+                    return TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - lastCheckTimestamp) >= checkApiInterval;
+                case MINUTES:
+                    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - lastCheckTimestamp) >= checkApiInterval;
+                default:
+                    throw new UnsupportedOperationException("Unsupported interval type: " + checkApiIntervalType);
+            }
+        }
+
     }
 
     public static boolean hasInfluxDBArgs(ParameterTool paramTool) {
@@ -374,4 +439,13 @@ public class AmsIngestMetric {
         String influxArgs[] = {"influx.token", "influx.port", "influx.endpoint", "influx.bucket", "influx.org"};
         return hasArgs(influxArgs, paramTool);
     }
+
+    private static void setCheckApiInterval(String checkApiIntervalParam) {
+        IntervalStruct intervalStruct = IntervalStruct.parseInterval(checkApiIntervalParam);
+
+        checkApiInterval = intervalStruct.intervalValue;
+        checkApiIntervalType = intervalStruct.intervalType;
+
+    }
+
 }

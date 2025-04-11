@@ -179,7 +179,7 @@ public class ArgoMessagingClient {
             result.append(rLine);
         }
         isRdr.close();
-        Log.warn("ApiStatusCode={}, ApiErrorMessage={}", statusCode, result);
+       Log.warn("ApiStatusCode={}, ApiErrorMessage={}", statusCode, result);
 
     }
 
@@ -366,7 +366,7 @@ public class ArgoMessagingClient {
             // Gather message from json
             JsonParser jsonParser = new JsonParser();
             // parse the json root object
-            Log.info("response: {}", result.toString());
+             Log.info("response: {}", result.toString());
             JsonElement jRoot = jsonParser.parse(result.toString());
 
             if (this.runDate != null) {
