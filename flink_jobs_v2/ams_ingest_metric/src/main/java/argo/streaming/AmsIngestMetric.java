@@ -3,8 +3,11 @@ package argo.streaming;
 import ams.connector.ArgoMessagingSource;
 import argo.amr.ApiResourceManager;
 import argo.avro.GroupEndpoint;
+
+import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 
+import com.esotericsoftware.minlog.Log;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
@@ -35,6 +38,7 @@ import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import com.influxdb.client.write.Point;
 import influxdb.connector.InfluxDBSink;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -43,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
+
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -55,7 +60,7 @@ import profilesmanager.MetricProfileManager;
 /**
  * Flink Job : Stream metric data from ARGO messaging to Hbase job required cli
  * parameters:
- *
+ * <p>
  * --ams.endpoint : ARGO messaging api endoint to connect to msg.example.com
  * --ams.port : ARGO messaging api port --ams.token : ARGO messaging api token
  * --ams.project : ARGO messaging api project to connect to --ams.sub : ARGO
@@ -69,7 +74,7 @@ import profilesmanager.MetricProfileManager;
  * per request to AMS service --ams.interval : interval (in ms) between AMS
  * service requests --ams.proxy : optional http proxy url --ams.verify :
  * optional turn on/off ssl verify
- *
+ * <p>
  * --proxy: optional http proxy url for api endpoint --influx.token the token to
  * the influx db --influx.port the port of the influxdb --influx.endpoint the
  * endpoint to influx db --influx.org the organisation of influx db
@@ -116,7 +121,7 @@ public class AmsIngestMetric {
      */
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String args[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.zk.port", "hbase.namespace",
-            "hbase.table"};
+                "hbase.table"};
         return hasArgs(args, paramTool);
     }
 
@@ -303,7 +308,7 @@ public class AmsIngestMetric {
             this.params = params;
         }
 
-//        /**
+        //        /**
 //         * Initializes constructs in the beginning of operation
 //         *
 //         * @param parameters Configuration parameters to initialize structures
@@ -312,12 +317,17 @@ public class AmsIngestMetric {
         @Override
         public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
 
-            this.amr = new ApiResourceManager(this.params.getRequired("api.endpoint"), this.params.getRequired("api.token"));
-            this.amr.setTimeoutSec(params.getInt("api.timeout"));
+            try {
+                this.amr = new ApiResourceManager(this.params.getRequired("api.endpoint"), this.params.getRequired("api.token"));
+                this.amr.setTimeoutSec(params.getInt("api.timeout"));
 
-            if (params.has("proxy")) {
-                this.amr.setProxy(params.get("proxy"));
+                if (params.has("proxy")) {
+                    this.amr.setProxy(params.get("proxy"));
+                }
+            } catch (Exception e) {
+                Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
             }
+
 
         }
 
@@ -325,8 +335,6 @@ public class AmsIngestMetric {
          * The main flat map function that accepts metric data and generates
          * metric data with group information
          *
-         * @param value Input metric data in base64 encoded format from AMS
-         * service
          * @param out Collection of generated Tuple2<MetricData,String> objects
          */
         @Override
@@ -339,32 +347,44 @@ public class AmsIngestMetric {
             if (this.runDate == null || !runDate.equals(currTimestampDate)) {
                 loadTopology(currTimestampDate);
             }
+            try {
 
-            ArrayList<String> groups = egp.getGroup(item.getHostname(), item.getService());
-            if (groups.isEmpty()) {
-                loadTopology(currTimestampDate);
-                groups = egp.getGroup(item.getHostname(), item.getService());
-            }
-            for (String groupItem : groups) {
-                Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
+                ArrayList<String> groups = egp.getGroup(item.getHostname(), item.getService());
+                if (groups.isEmpty()) {
+                    loadTopology(currTimestampDate);
+                    groups = egp.getGroup(item.getHostname(), item.getService());
+                }
+                for (String groupItem : groups) {
+                    Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
 
-                curItem.f0 = groupItem;
-                curItem.f1 = item;
+                    curItem.f0 = groupItem;
+                    curItem.f1 = item;
 
-                out.collect(curItem);
+                    out.collect(curItem);
+                }
+            } catch (Exception e) {
+                Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
             }
 
         }
 
         private void loadTopology(String currTimestampDate) {
             this.runDate = currTimestampDate;
-            this.amr.setDate(this.runDate);
-            this.amr.getAllRemoteTopoEndpoints();
+            try {
+                this.amr.setDate(this.runDate);
+                this.amr.getAllRemoteTopoEndpoints();
 
-            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
+                ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
-            egp = new EndpointGroupManager();
-            egp.loadFromList(egpList);
+                egp = new EndpointGroupManager();
+                egp.loadFromList(egpList);
+            } catch (UnknownHostException e) {
+                // DNS resolution failure — API domain does not exist
+                Log.error("UnknownHostException: API endpoint not found:", e.getMessage());
+                throw new RuntimeException("API domain not found: ", e); // Wrap in a RuntimeException
+            } catch (Exception e) {
+                Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
+            }
 
         }
     }

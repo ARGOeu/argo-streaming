@@ -1,24 +1,18 @@
 package argo.amr;
 
-import argo.avro.Downtime;
-import argo.avro.GroupEndpoint;
-import argo.avro.GroupGroup;
-import argo.avro.MetricProfile;
-import argo.avro.Weight;
+import argo.avro.*;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.TimeZone;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+
+import java.net.UnknownHostException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * APIResourceManager class fetches remote argo-web-api resources such as report
@@ -63,6 +57,7 @@ public class ApiResourceManager {
         this.tenant = "";
         this.egroup = "";
         this.requestManager = new RequestManager("", this.token);
+
         this.apiResponseParser = new ApiResponseParser(this.reportName, this.metricID, this.aggregationID, this.opsID, this.threshID, this.tenant, this.egroup);
     }
 
@@ -200,7 +195,7 @@ public class ApiResourceManager {
      * Retrieves the remote report configuration based on reportID main class
      * attribute and stores the content in the enum map
      */
-    public void getRemoteConfig() {
+    public void getRemoteConfig() throws UnknownHostException {
         String path = "https://%s/api/v2/reports/%s";
         String fullURL = String.format(path, this.endpoint, this.reportID);
         String content = this.requestManager.getResource(fullURL);
@@ -212,7 +207,7 @@ public class ApiResourceManager {
      * Retrieves the metric profile content based on the metric_id attribute and
      * stores it to the enum map
      */
-    public void getRemoteMetric() {
+    public void getRemoteMetric() throws UnknownHostException {
 
         String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.metricID, this.date);
@@ -226,7 +221,7 @@ public class ApiResourceManager {
      * Retrieves the metric profile content based on the metric_id attribute and
      * stores it to the enum map
      */
-    public MetricProfile[] getNewEntriesMetrics() throws ParseException {
+    public MetricProfile[] getNewEntriesMetrics() throws ParseException, UnknownHostException {
 
         if (this.data.get(ApiResource.METRIC) == null) {
             getRemoteMetric();
@@ -245,7 +240,7 @@ public class ApiResourceManager {
             String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
             String fullURL = String.format(path, this.endpoint, this.metricID, yesterdaystr);
             yesterdayContent = this.apiResponseParser.getJsonData(this.requestManager.getResource(fullURL), false);
-          
+
         }
         List<MetricProfile> newentries = this.apiResponseParser.getListNewMetrics(content, yesterdayContent);
 
@@ -258,7 +253,7 @@ public class ApiResourceManager {
      * Retrieves the aggregation profile content based on the aggreagation_id
      * attribute and stores it to the enum map
      */
-    public void getRemoteAggregation() {
+    public void getRemoteAggregation() throws UnknownHostException {
 
         String path = "https://%s/api/v2/aggregation_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.aggregationID, this.date);
@@ -272,7 +267,7 @@ public class ApiResourceManager {
      * Retrieves the ops profile content based on the ops_id attribute and
      * stores it to the enum map
      */
-    public void getRemoteOps() {
+    public void getRemoteOps() throws UnknownHostException {
 
         String path = "https://%s/api/v2/operations_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.opsID, this.date);
@@ -287,7 +282,7 @@ public class ApiResourceManager {
      * Retrieves the thresholds profile content based on the thresh_id attribute
      * and stores it to the enum map
      */
-    public void getRemoteThresholds() {
+    public void getRemoteThresholds() throws UnknownHostException {
 
         String path = "https://%s/api/v2/thresholds_profiles/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.threshID, this.date);
@@ -300,13 +295,13 @@ public class ApiResourceManager {
     /**
      * Retrieves the topology endpoint content and stores it to the enum map
      */
-    public void getRemoteTopoEndpoints() {
-        String combinedparam="";
-        if(isSourceTopoAll){
-        combinedparam="&mode=combined";
+    public void getRemoteTopoEndpoints() throws UnknownHostException {
+        String combinedparam = "";
+        if (isSourceTopoAll) {
+            combinedparam = "&mode=combined";
         }
         String path = "https://%s/api/v2/topology/endpoints/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date + combinedparam);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
@@ -316,14 +311,14 @@ public class ApiResourceManager {
     /**
      * Retrieves the topology groups content and stores it to the enum map
      */
-    public void getRemoteTopoGroups() {
-        String combinedparam="";
-        if(isSourceTopoAll){
-        combinedparam="&mode=combined";
+    public void getRemoteTopoGroups() throws UnknownHostException {
+        String combinedparam = "";
+        if (isSourceTopoAll) {
+            combinedparam = "&mode=combined";
         }
-      
+
         String path = "https://%s/api/v2/topology/groups/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date + combinedparam);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.TOPOGROUPS, this.apiResponseParser.getJsonData(content, true));
@@ -333,7 +328,7 @@ public class ApiResourceManager {
     /**
      * Retrieves the weights content and stores it to the enum map
      */
-    public void getRemoteWeights() {
+    public void getRemoteWeights() throws UnknownHostException {
         String path = "https://%s/api/v2/weights/%s?date=%s";
         String fullURL = String.format(path, this.endpoint, this.weightsID, this.date);
         String content = this.requestManager.getResource(fullURL);
@@ -345,7 +340,7 @@ public class ApiResourceManager {
     /**
      * Retrieves the downtimes content and stores it to the enum map
      */
-    public void getRemoteDowntimes() {
+    public void getRemoteDowntimes() throws UnknownHostException {
         String path = "https://%s/api/v2/downtimes?date=%s";
         String fullURL = String.format(path, this.endpoint, this.date);
         String content = this.requestManager.getResource(fullURL);
@@ -353,7 +348,7 @@ public class ApiResourceManager {
 
     }
 
-    public void getRemoteRecomputations() {
+    public void getRemoteRecomputations() throws UnknownHostException {
         String path = "https://%s/api/v2/recomputations?date=%s";
         String fullURL = String.format(path, this.endpoint, this.date);
         String content = this.requestManager.getResource(fullURL);
@@ -366,7 +361,7 @@ public class ApiResourceManager {
      * Retrieves the remote report configuration based on reportID main class
      * attribute and stores the content in the enum map
      */
-    public void getRemoteMetricTags() {
+    public void getRemoteMetricTags() throws UnknownHostException {
         String path = "https://%s/api/v2/metrics/by_report/%s";
         String fullURL = String.format(path, this.endpoint, this.reportName);
         String content = this.requestManager.getResource(fullURL);
@@ -513,7 +508,7 @@ public class ApiResourceManager {
      * Retrieves the remote report configuration based on reportID main class
      * attribute and stores the content in the enum map
      */
-    public void getRemoteTenantFeed() {
+    public void getRemoteTenantFeed() throws UnknownHostException {
         String path = "https://%s/api/v2/feeds/data";
         String fullURL = String.format(path, this.endpoint);
         String content = this.requestManager.getResource(fullURL);
@@ -541,7 +536,7 @@ public class ApiResourceManager {
      * Executes all steps to retrieve the complete amount of the available
      * profile, topology, weights and downtime information from argo-web-api
      */
-    public void getRemoteAll() {
+    public void getRemoteAll() throws UnknownHostException {
         // Start with report and configuration
         if (isCombined) {
             this.getRemoteTenantFeed();
@@ -558,7 +553,7 @@ public class ApiResourceManager {
             this.getRemoteThresholds();
         }
         // Go to topology
-   
+
         this.getRemoteTopoEndpoints();
         this.getRemoteTopoGroups();
         // get weights
@@ -575,19 +570,19 @@ public class ApiResourceManager {
     /**
      * Retrieves the topology endpoint content and stores it to the enum map
      */
-    public void getAllRemoteTopoEndpoints() {
-        String combinedparam="";
-        if(isSourceTopoAll){
-        combinedparam="&mode=combined";
+    public void getAllRemoteTopoEndpoints() throws UnknownHostException {
+        String combinedparam = "";
+        if (isSourceTopoAll) {
+            combinedparam = "&mode=combined";
         }
         String path = "https://%s/api/v2/topology/endpoints?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.date+combinedparam);
+        String fullURL = String.format(path, this.endpoint, this.date + combinedparam);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
 
     }
-    
+
     public boolean isIsCombined() {
         return isCombined;
     }
@@ -600,7 +595,6 @@ public class ApiResourceManager {
         this.isSourceTopoAll = isSourceTopoAll;
     }
 
-    
 
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
 
