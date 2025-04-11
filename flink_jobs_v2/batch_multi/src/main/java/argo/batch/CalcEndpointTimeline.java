@@ -126,6 +126,9 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
 
         ArrayList<String[]> downPeriods = this.downtimeMgr.getPeriod(hostname, service);
 
+        if(service.equals("eu.eosc.wpfo.static")){
+            System.out.println("here" );
+        }
         if (downPeriods != null && !downPeriods.isEmpty()) { 
             for (String[] downPeriod : downPeriods) {
                 mergedTimeline.fillWithStatus(downPeriod[0], downPeriod[1], this.opsMgr.getDefaultDownInt(), now);

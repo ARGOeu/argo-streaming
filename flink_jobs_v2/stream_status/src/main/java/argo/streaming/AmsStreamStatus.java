@@ -1,31 +1,31 @@
 package argo.streaming;
 
 import Utils.IntervalType;
-import static Utils.IntervalType.DAY;
-import static Utils.IntervalType.HOURS;
-import static Utils.IntervalType.MINUTES;
 import ams.connector.ArgoMessagingSink;
 import ams.connector.ArgoMessagingSource;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Properties;
-
+import argo.amr.ApiResource;
+import argo.amr.ApiResourceManager;
+import argo.avro.Downtime;
+import argo.avro.GroupEndpoint;
+import argo.avro.MetricData;
+import argo.avro.MetricProfile;
+import com.esotericsoftware.minlog.Log;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
-
+import org.apache.commons.lang.StringUtils;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
@@ -41,24 +41,20 @@ import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import argo.amr.ApiResource;
-import argo.amr.ApiResourceManager;
-import argo.avro.Downtime;
-import argo.avro.GroupEndpoint;
-import argo.avro.MetricData;
-import argo.avro.MetricProfile;
-import org.apache.commons.lang.StringUtils;
-import org.apache.flink.api.common.JobID;
-import org.apache.flink.core.fs.FileSystem;
 import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
 import status.StatusManager;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Properties;
 
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
@@ -92,24 +88,23 @@ import status.StatusManager;
  * DAYS, HOURS, MINUTES eg. 1h, 2d, 30m to define the period . Any of these
  * formats is transformed to minutes in the computations if not defined the
  * default value is 1440m
- *
+ * <p>
  * --interval.strict(Optional)interval to repeat events for CRITICAL . it can be
  * in the format of DAYS, HOURS, MINUTES eg. 1h, 2d, 30m to define the period .
  * Any of these formats is transformed to minutes in the computations if not
  * defined the default value is 1440m
- *
+ * <p>
  * -- latest.offset (Optional) boolean true/false, to define if the argo
  * messaging source should set offset at the latest or at the start of the
  * runDate. By default, if not defined , the offset should be the latest.
  * --level_group,level_service,level_endpoint, level_metric, if ON level alerts
  * are generated,if OFF level alerts are disabled.if no level is defined in
  * parameters then all levels are generated
- *
+ * <p>
  * --sync.interval(Optional) , the interval to sync with the argo web api source
  * (metric profiles, topology, downtimes) it can be * in the format of DAYS,
  * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
  * the parameter is not configured
- *
  */
 public class AmsStreamStatus {
     // setup logger
@@ -127,7 +122,7 @@ public class AmsStreamStatus {
      * Sets configuration parameters to streaming enviroment
      *
      * @param config A StatusConfig object that holds configuration parameters
-     * for this job
+     *               for this job
      * @return Stream execution enviroment
      */
     private static StreamExecutionEnvironment setupEnvironment(StatusConfig config) {
@@ -152,7 +147,7 @@ public class AmsStreamStatus {
 
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String hbaseArgs[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.namespace",
-            "hbase.table"};
+                "hbase.table"};
         return hasArgs(hbaseArgs, paramTool);
     }
 
@@ -245,10 +240,16 @@ public class AmsStreamStatus {
         if (parameterTool.has("api.timeout")) {
             amr.setTimeoutSec(parameterTool.getInt("api.timeout"));
         }
-
-        amr.setReportID(reportID);
-        amr.getRemoteAll();
-
+        try {
+            amr.setReportID(reportID);
+            amr.getRemoteAll();
+        } catch (UnknownHostException e) {
+            // DNS resolution failure — API domain does not exist
+            Log.error("UnknownHostException: API endpoint not found: ", e.getMessage());
+            throw new RuntimeException("API domain not found: ", e); // Wrap in a RuntimeException
+        } catch (Exception e) {
+            Log.error("Exception in main due to web api error connection : ", e.getMessage());
+        }
         // set ams client batch and interval to default values
         int batch = 1;
         long interval = 100L;
@@ -267,12 +268,15 @@ public class AmsStreamStatus {
         String syncInterval = null;
         if (parameterTool.has("sync.interval")) {
             syncInterval = parameterTool.get("sync.interval");
-
         }
 
-        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
-        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, syncInterval, apiInterval);
 
+        String checkApiInterval = null;
+        if (parameterTool.has("check.api.interval")) {
+            checkApiInterval = parameterTool.get("check.api.interval");
+        }
+        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
+        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, syncInterval, apiInterval, checkApiInterval);
         if (parameterTool.has("ams.verify")) {
             boolean verify = parameterTool.getBoolean("ams.verify");
             amsMetric.setVerify(verify);
@@ -395,6 +399,9 @@ public class AmsStreamStatus {
 
         public StatusConfig config;
         private ApiResourceManager amr;
+        private transient Thread endpointSchedulerThread;
+        boolean isCorrectEndpoint = true;
+        private volatile boolean isRunning = true;
 
         public MetricDataWithGroup(StatusConfig config) {
             LOG.info("Created new Status map");
@@ -419,26 +426,38 @@ public class AmsStreamStatus {
             }
 
             this.amr.setReportID(config.reportID);
-            this.amr.getRemoteAll();
 
-            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
-            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
-
-            mps = new MetricProfileManager();
-            mps.loadFromList(mpsList);
-            String validMetricProfile = mps.getProfiles().get(0);
-            ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
-
-            // Trim profile services
-            ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
-            // Use optimized Endpoint Group Manager
-            for (GroupEndpoint egpItem : egpList) {
-                if (validServices.contains(egpItem.getService())) {
-                    egpTrim.add(egpItem);
-                }
-            }
             egp = new EndpointGroupManager();
-            egp.loadFromList(egpTrim);
+            mps = new MetricProfileManager();
+
+            try {
+                this.amr.getRemoteAll();
+
+                ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
+                ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
+
+                //    mps = new MetricProfileManager();
+                mps.loadFromList(mpsList);
+                String validMetricProfile = mps.getProfiles().get(0);
+                ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
+
+                // Trim profile services
+                ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
+                // Use optimized Endpoint Group Manager
+                for (GroupEndpoint egpItem : egpList) {
+                    if (validServices.contains(egpItem.getService())) {
+                        egpTrim.add(egpItem);
+                    }
+                }
+                //  egp = new EndpointGroupManager();
+                egp.loadFromList(egpTrim);
+            } catch (UnknownHostException e) {
+                // DNS resolution failure — API domain does not exist
+                Log.error("UnknownHostException: API endpoint not found:", e.getMessage());
+                throw new RuntimeException("API domain not found: ", e); // Wrap in a RuntimeException
+            } catch (Exception e) {
+                Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
+            }
 
         }
 
@@ -447,8 +466,8 @@ public class AmsStreamStatus {
          * metric data with group information
          *
          * @param value Input metric data in base64 encoded format from AMS
-         * service
-         * @param out Collection of generated Tuple2<MetricData,String> objects
+         *              service
+         * @param out   Collection of generated Tuple2<MetricData,String> objects
          */
         @Override
         public void flatMap1(String value, Collector<Tuple2<String, MetricData>> out)
@@ -482,7 +501,7 @@ public class AmsStreamStatus {
                 curItem.f1 = item;
 
                 out.collect(curItem);
-                System.out.println("item enriched: " + curItem.toString());
+                //  System.out.println("item enriched: " + curItem.toString());
             }
 
         }
@@ -494,86 +513,97 @@ public class AmsStreamStatus {
                 // Update mps
                 ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
                 mps = new MetricProfileManager();
-                mps.loadFromList(mpsList);
+
+                try {
+                    mps.loadFromList(mpsList);
+                } catch (Exception e) {
+                    Log.error("Exception in MetricDataWithGroup flatMap2 loading metric profile due to web api error connection : ", e.getMessage());
+                }
+
             } else if (value.f0.equalsIgnoreCase("group_endpoints")) {
                 // Update egp
                 ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpointJSON(value.f1);
                 egp = new EndpointGroupManager();
-
-                String validMetricProfile = mps.getProfiles().get(0);
-                ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
-                // Trim profile services
-                ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
-                // Use optimized Endpoint Group Manager
-                for (GroupEndpoint egpItem : egpList) {
-                    if (validServices.contains(egpItem.getService())) {
-                        egpTrim.add(egpItem);
+                try {
+                    String validMetricProfile = mps.getProfiles().get(0);
+                    ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
+                    // Trim profile services
+                    ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
+                    // Use optimized Endpoint Group Manager
+                    for (GroupEndpoint egpItem : egpList) {
+                        if (validServices.contains(egpItem.getService())) {
+                            egpTrim.add(egpItem);
+                        }
                     }
+
+                    // load next topology into a temporary endpoint group manager
+                    egp.loadFromList(egpTrim);
+                } catch (Exception e) {
+                    Log.error("Exception in MetricDataWithGroup flatMap2 loading metric profile due to web api error connection : ", e.getMessage());
                 }
-                ArrayList<GroupEndpoint> test = egpTrim;
-
-                // load next topology into a temporary endpoint group manager
-                egp.loadFromList(egpTrim);
-
-            }
-
         }
+    }
+
+}
+
+/**
+ * StatusMap implements a rich flat map function which holds status
+ * information for all entities in topology and for each received metric
+ * generates the appropriate status events
+ */
+private static class StatusMap extends RichCoFlatMapFunction<Tuple2<String, MetricData>, Tuple2<String, String>, String> {
+
+    private static final long serialVersionUID = 1L;
+
+    private String pID;
+
+    public StatusManager sm;
+
+    public StatusConfig config;
+
+    public int initStatus;
+    public int looseInterval;
+    public int strictInterval;
+    private ApiResourceManager amr;
+    boolean level_group;
+    boolean level_service;
+    boolean level_endpoint;
+    boolean level_metric;
+    private transient Thread endpointSchedulerThread;
+    boolean isCorrectEndpoint = true;
+    private volatile boolean isRunning = true;
+
+    public StatusMap(StatusConfig config, int looseInterval, int strictInterval, boolean level_group, boolean level_service, boolean level_endpoint, boolean level_metric) {
+        LOG.info("Created new Status map");
+        this.config = config;
+        this.looseInterval = looseInterval;
+        this.strictInterval = strictInterval;
+        this.level_group = level_group;
+        this.level_service = level_service;
+        this.level_endpoint = level_endpoint;
+        this.level_metric = level_metric;
 
     }
 
     /**
-     * StatusMap implements a rich flat map function which holds status
-     * information for all entities in topology and for each received metric
-     * generates the appropriate status events
+     * Initializes constructs in the beginning of operation
+     *
+     * @param parameters Configuration parameters to initialize structures
+     * @throws URISyntaxException
      */
-    private static class StatusMap extends RichCoFlatMapFunction<Tuple2<String, MetricData>, Tuple2<String, String>, String> {
+    @Override
+    public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
+        pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 
-        private static final long serialVersionUID = 1L;
-
-        private String pID;
-
-        public StatusManager sm;
-
-        public StatusConfig config;
-
-        public int initStatus;
-        public int looseInterval;
-        public int strictInterval;
-        private ApiResourceManager amr;
-        boolean level_group;
-        boolean level_service;
-        boolean level_endpoint;
-        boolean level_metric;
-
-        public StatusMap(StatusConfig config, int looseInterval, int strictInterval, boolean level_group, boolean level_service, boolean level_endpoint, boolean level_metric) {
-            LOG.info("Created new Status map");
-            this.config = config;
-            this.looseInterval = looseInterval;
-            this.strictInterval = strictInterval;
-            this.level_group = level_group;
-            this.level_service = level_service;
-            this.level_endpoint = level_endpoint;
-            this.level_metric = level_metric;
-
+        this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+        this.amr.setDate(config.runDate);
+        this.amr.setTimeoutSec((int) config.timeout);
+        if (config.apiProxy != null) {
+            this.amr.setProxy(config.apiProxy);
         }
+        sm = new StatusManager();
 
-        /**
-         * Initializes constructs in the beginning of operation
-         *
-         * @param parameters Configuration parameters to initialize structures
-         * @throws URISyntaxException
-         */
-        @Override
-        public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
-
-            pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
-
-            this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
-            this.amr.setDate(config.runDate);
-            this.amr.setTimeoutSec((int) config.timeout);
-            if (config.apiProxy != null) {
-                this.amr.setProxy(config.apiProxy);
-            }
+        try {
 
             this.amr.setReportID(config.reportID);
             this.amr.getRemoteAll();
@@ -588,8 +618,9 @@ public class AmsStreamStatus {
             ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
             ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
+
             // create a new status manager
-            sm = new StatusManager();
+//                sm = new StatusManager();
             sm.setLooseInterval(looseInterval);
             sm.setStrictInterval(strictInterval);
             // sm.setTimeout(config.timeout);
@@ -605,34 +636,41 @@ public class AmsStreamStatus {
             // Set the default status as integer
             initStatus = sm.getOps().getIntStatus(config.initStatus);
             LOG.info("Initialized status manager:" + pID + " (with critical timeout:" + sm.getStrictInterval() + " and warning/unknown/missing timeout " + sm.getLooseInterval() + ")");
-
+        } catch (UnknownHostException e) {
+            // DNS resolution failure — API domain does not exist
+            Log.error("UnknownHostException: API endpoint not found:", e.getMessage());
+            throw new RuntimeException("API domain not found: ", e); // Wrap in a RuntimeException
+        } catch (Exception e) {
+            Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
         }
+    }
 
-        /**
-         * The main flat map function that accepts metric data and generates
-         * status events
-         *
-         * @param value Input metric data in base64 encoded format from AMS
-         * service
-         * @param out Collection of generated status events as json strings
-         */
-        @Override
-        public void flatMap1(Tuple2<String, MetricData> value, Collector<String> out)
-                throws IOException, ParseException {
+    /**
+     * The main flat map function that accepts metric data and generates
+     * status events
+     *
+     * @param value Input metric data in base64 encoded format from AMS
+     *              service
+     * @param out   Collection of generated status events as json strings
+     */
+    @Override
+    public void flatMap1(Tuple2<String, MetricData> value, Collector<String> out)
+            throws IOException, ParseException {
 
-            MetricData item = value.f1;
-            String group = value.f0;
+        MetricData item = value.f1;
+        String group = value.f0;
 
-            String service = item.getService();
-            String hostname = item.getHostname();
-            String metric = item.getMetric();
-            String status = item.getStatus();
-            String tsMon = item.getTimestamp();
-            String monHost = item.getMonitoringHost();
-            String message = item.getMessage();
-            String summary = item.getSummary();
-            String dayStamp = tsMon.split("T")[0];
-
+        String service = item.getService();
+        String hostname = item.getHostname();
+        String metric = item.getMetric();
+        String status = item.getStatus();
+        String tsMon = item.getTimestamp();
+        String monHost = item.getMonitoringHost();
+        String message = item.getMessage();
+        String summary = item.getSummary();
+        String dayStamp = tsMon.split("T")[0];
+        try {
+            System.out.println("flat map 1 token amr --- " + this.amr.getToken());
             if (!sm.checkIfExistDowntime(dayStamp)) {
                 this.amr.setDate(dayStamp);
                 this.amr.getRemoteDowntimes();
@@ -664,18 +702,36 @@ public class AmsStreamStatus {
                 out.collect(event);
                 LOG.info("sm-" + pID + ": event produced: " + item);
             }
+        } catch (Exception e) {
+            System.out.println("error in StatusMap flatmap 1");
+
         }
+    }
 
-        public void flatMap2(Tuple2<String, String> value, Collector<String> out) throws IOException, ParseException {
+    public void flatMap2(Tuple2<String, String> value, Collector<String> out) throws IOException, ParseException {
 
-            if (value.f0.equalsIgnoreCase("metric_profile")) {
-                // Update mps
-                ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
+        if (value.f0.equalsIgnoreCase("metric_profile")) {
+
+            // Update mps
+            try {
                 sm.mps = new MetricProfileManager();
+
+                ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
+                System.out.println("StatusMap  flatmap2 mpsList size --- " + mpsList.size());
+
                 sm.mps.loadFromList(mpsList);
-            } else if (value.f0.equals("group_endpoints")) {
-                // Update egp
+            } catch (Exception e) {
+                System.out.println("error in statusMap flatmap2 metric profiles");
+            }
+
+        } else if (value.f0.equals("group_endpoints")) {
+            // Update egp
+
+            try {
+                EndpointGroupManager egpNext = new EndpointGroupManager();
                 ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpointJSON(value.f1);
+
+                System.out.println("StatusMap egpList size --- " + egpList.size());
 
                 String validMetricProfile = sm.mps.getProfiles().get(0);
                 ArrayList<String> validServices = sm.mps.getProfileServices(validMetricProfile);
@@ -688,277 +744,289 @@ public class AmsStreamStatus {
                     }
                 }
                 // load next topology into a temporary endpoint group manager
-                EndpointGroupManager egpNext = new EndpointGroupManager();
                 egpNext.loadFromList(egpTrim);
 
                 // Use existing topology manager inside status manager to make a comparison
                 // with the new topology stored in the temp endpoint group manager
-                // update topology also sets the next topology manager as status manager current 
+                // update topology also sets the next topology manager as status manager current
                 // topology manager only after removal of decomissioned items
                 sm.updateTopology(egpNext);
 
-            } else if (value.f0.equalsIgnoreCase("downtimes")) {
-                String pDate = Instant.now().toString().split("T")[0];
-                ArrayList<Downtime> downList = SyncParse.parseDowntimesJSON(value.f1);
-                // Update downtime cache in status manager
-                sm.addDowntimeSet(pDate, downList);
+            } catch (Exception e) {
+                System.out.println("error in statusMap flatmap2 endpoints");
             }
 
+        } else if (value.f0.equalsIgnoreCase("downtimes")) {
+            String pDate = Instant.now().toString().split("T")[0];
+            try {
+                ArrayList<Downtime> downList = SyncParse.parseDowntimesJSON(value.f1);
+
+                // Update downtime cache in status manager
+                sm.addDowntimeSet(pDate, downList);
+
+            } catch (Exception e) {
+                System.out.println("error in StatusMap flatmap 2 downtimes");
+            }
+
+
+        }
+
+    }
+
+}
+
+/**
+ * HbaseOutputFormat implements a custom output format for storing results
+ * in hbase
+ */
+private static class HBaseOutputFormat implements OutputFormat<String> {
+
+    private String report = null;
+    private String master = null;
+    private String masterPort = null;
+    private String zkQuorum = null;
+    private String zkPort = null;
+    private String namespace = null;
+    private String tname = null;
+    private Connection connection = null;
+    private Table ht = null;
+
+    private static final long serialVersionUID = 1L;
+
+    // Setters
+    public void setMasterPort(String masterPort) {
+        this.masterPort = masterPort;
+    }
+
+    public void setMaster(String master) {
+        this.master = master;
+    }
+
+    public void setZkQuorum(String zkQuorum) {
+        this.zkQuorum = zkQuorum;
+    }
+
+    public void setZkPort(String zkPort) {
+        this.zkPort = zkPort;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public void setTableName(String tname) {
+        this.tname = tname;
+    }
+
+    public void setReport(String report) {
+        this.report = report;
+    }
+
+    @Override
+    public void configure(Configuration parameters) {
+
+    }
+
+    /**
+     * Structure initialization
+     */
+    @Override
+    public void open(int taskNumber, int numTasks) throws IOException {
+        // Create hadoop based configuration for hclient to use
+        org.apache.hadoop.conf.Configuration config = HBaseConfiguration.create();
+        // Modify configuration to job needs
+        config.setInt("timeout", 120000);
+        if (masterPort != null && !masterPort.isEmpty()) {
+            config.set("hbase.master", master + ":" + masterPort);
+        } else {
+            config.set("hbase.master", master + ":60000");
+        }
+
+        config.set("hbase.zookeeper.quorum", zkQuorum);
+        config.set("hbase.zookeeper.property.clientPort", (zkPort));
+        // Create the connection
+        connection = ConnectionFactory.createConnection(config);
+        if (namespace != null) {
+            ht = connection.getTable(TableName.valueOf(namespace + ":" + tname));
+        } else {
+            ht = connection.getTable(TableName.valueOf(tname));
         }
 
     }
 
     /**
-     * HbaseOutputFormat implements a custom output format for storing results
-     * in hbase
+     * Extract json representation as string to be used as a field value
      */
-    private static class HBaseOutputFormat implements OutputFormat<String> {
+    private String extractJson(String field, JsonObject root) {
+        JsonElement el = root.get(field);
+        if (el != null && !(el.isJsonNull())) {
 
-        private String report = null;
-        private String master = null;
-        private String masterPort = null;
-        private String zkQuorum = null;
-        private String zkPort = null;
-        private String namespace = null;
-        private String tname = null;
-        private Connection connection = null;
-        private Table ht = null;
-
-        private static final long serialVersionUID = 1L;
-
-        // Setters
-        public void setMasterPort(String masterPort) {
-            this.masterPort = masterPort;
-        }
-
-        public void setMaster(String master) {
-            this.master = master;
-        }
-
-        public void setZkQuorum(String zkQuorum) {
-            this.zkQuorum = zkQuorum;
-        }
-
-        public void setZkPort(String zkPort) {
-            this.zkPort = zkPort;
-        }
-
-        public void setNamespace(String namespace) {
-            this.namespace = namespace;
-        }
-
-        public void setTableName(String tname) {
-            this.tname = tname;
-        }
-
-        public void setReport(String report) {
-            this.report = report;
-        }
-
-        @Override
-        public void configure(Configuration parameters) {
+            return el.getAsString();
 
         }
-
-        /**
-         * Structure initialization
-         */
-        @Override
-        public void open(int taskNumber, int numTasks) throws IOException {
-            // Create hadoop based configuration for hclient to use
-            org.apache.hadoop.conf.Configuration config = HBaseConfiguration.create();
-            // Modify configuration to job needs
-            config.setInt("timeout", 120000);
-            if (masterPort != null && !masterPort.isEmpty()) {
-                config.set("hbase.master", master + ":" + masterPort);
-            } else {
-                config.set("hbase.master", master + ":60000");
-            }
-
-            config.set("hbase.zookeeper.quorum", zkQuorum);
-            config.set("hbase.zookeeper.property.clientPort", (zkPort));
-            // Create the connection
-            connection = ConnectionFactory.createConnection(config);
-            if (namespace != null) {
-                ht = connection.getTable(TableName.valueOf(namespace + ":" + tname));
-            } else {
-                ht = connection.getTable(TableName.valueOf(tname));
-            }
-
-        }
-
-        /**
-         * Extract json representation as string to be used as a field value
-         */
-        private String extractJson(String field, JsonObject root) {
-            JsonElement el = root.get(field);
-            if (el != null && !(el.isJsonNull())) {
-
-                return el.getAsString();
-
-            }
-            return "";
-        }
-
-        /**
-         * Accepts status event as json string and stores it in hbase table
-         *
-         * @parameter record A string with json represantation of a status event
-         */
-        @Override
-        public void writeRecord(String record) throws IOException {
-
-            JsonParser jsonParser = new JsonParser();
-            // parse the json root object
-            JsonObject jRoot = jsonParser.parse(record).getAsJsonObject();
-            // Get fields
-
-            String rep = this.report;
-            String tp = extractJson("type", jRoot);
-            String dt = extractJson("date", jRoot);
-            String eGroup = extractJson("endpoint_group", jRoot);
-            String service = extractJson("service", jRoot);
-            String hostname = extractJson("hostname", jRoot);
-            String metric = extractJson("metric", jRoot);
-            String status = extractJson("status", jRoot);
-            String prevStatus = extractJson("prev_status", jRoot);
-            String prevTs = extractJson("prev_ts", jRoot);
-            String tsm = extractJson("ts_monitored", jRoot);
-            String tsp = extractJson("ts_processed", jRoot);
-
-            // Compile key
-            // Key is constructed based on
-            // report > metric_type > date(day) > endpoint group > service >
-            // hostname > metric
-            String key = rep + "|" + tp + "|" + dt + "|" + eGroup + "|" + service + "|" + hostname + "|" + metric + "|"
-                    + tsm;
-
-            // Prepare columns
-            Put put = new Put(Bytes.toBytes(key));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("report"), Bytes.toBytes(rep));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("type"), Bytes.toBytes(tp));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("endpoint_group"), Bytes.toBytes(eGroup));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("service"), Bytes.toBytes(service));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("hostname"), Bytes.toBytes(hostname));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("metric"), Bytes.toBytes(metric));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("status"), Bytes.toBytes(status));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_status"), Bytes.toBytes(prevStatus));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_ts"), Bytes.toBytes(prevTs));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_monitored"), Bytes.toBytes(tsm));
-            put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_processed"), Bytes.toBytes(tsp));
-
-            // Insert row in hbase
-            ht.put(put);
-
-        }
-
-        /**
-         * Closes hbase table and hbase connection
-         */
-        @Override
-        public void close() throws IOException {
-            ht.close();
-            connection.close();
-        }
+        return "";
     }
 
-    public static class IntervalStruct {
+    /**
+     * Accepts status event as json string and stores it in hbase table
+     *
+     * @parameter record A string with json represantation of a status event
+     */
+    @Override
+    public void writeRecord(String record) throws IOException {
 
-        IntervalType intervalType;
-        int intervalValue;
+        JsonParser jsonParser = new JsonParser();
+        // parse the json root object
+        JsonObject jRoot = jsonParser.parse(record).getAsJsonObject();
+        // Get fields
 
-        public IntervalStruct(IntervalType intervalType, int intervalValue) {
-            this.intervalType = intervalType;
-            this.intervalValue = intervalValue;
-        }
+        String rep = this.report;
+        String tp = extractJson("type", jRoot);
+        String dt = extractJson("date", jRoot);
+        String eGroup = extractJson("endpoint_group", jRoot);
+        String service = extractJson("service", jRoot);
+        String hostname = extractJson("hostname", jRoot);
+        String metric = extractJson("metric", jRoot);
+        String status = extractJson("status", jRoot);
+        String prevStatus = extractJson("prev_status", jRoot);
+        String prevTs = extractJson("prev_ts", jRoot);
+        String tsm = extractJson("ts_monitored", jRoot);
+        String tsp = extractJson("ts_processed", jRoot);
 
-        public IntervalType getIntervalType() {
-            return intervalType;
-        }
+        // Compile key
+        // Key is constructed based on
+        // report > metric_type > date(day) > endpoint group > service >
+        // hostname > metric
+        String key = rep + "|" + tp + "|" + dt + "|" + eGroup + "|" + service + "|" + hostname + "|" + metric + "|"
+                + tsm;
 
-        public void setIntervalType(IntervalType intervalType) {
-            this.intervalType = intervalType;
-        }
+        // Prepare columns
+        Put put = new Put(Bytes.toBytes(key));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("report"), Bytes.toBytes(rep));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("type"), Bytes.toBytes(tp));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("endpoint_group"), Bytes.toBytes(eGroup));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("service"), Bytes.toBytes(service));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("hostname"), Bytes.toBytes(hostname));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("metric"), Bytes.toBytes(metric));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("status"), Bytes.toBytes(status));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_status"), Bytes.toBytes(prevStatus));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("prev_ts"), Bytes.toBytes(prevTs));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_monitored"), Bytes.toBytes(tsm));
+        put.addColumn(Bytes.toBytes("data"), Bytes.toBytes("ts_processed"), Bytes.toBytes(tsp));
 
-        public int getIntervalValue() {
-            return intervalValue;
-        }
-
-        public void setIntervalValue(int intervalValue) {
-            this.intervalValue = intervalValue;
-        }
+        // Insert row in hbase
+        ht.put(put);
 
     }
 
-    public static IntervalStruct parseInterval(String intervalParam) {
+    /**
+     * Closes hbase table and hbase connection
+     */
+    @Override
+    public void close() throws IOException {
+        ht.close();
+        connection.close();
+    }
+}
 
-        String regex = "[0-9]*[h,d,m]$";
-        boolean matches = intervalParam.matches(regex);
-        int intervalValue = 1440;
-        IntervalType intervalType = null;
+public static class IntervalStruct {
 
-        if (matches) {
+    IntervalType intervalType;
+    int intervalValue;
 
-            String intervals[] = new String[]{};
-            if (intervalParam.contains("h")) {
-                intervalType = IntervalType.HOURS;
-                intervals = intervalParam.split("h");
-            } else if (intervalParam.contains("d")) {
-                intervalType = IntervalType.DAY;
-                intervals = intervalParam.split("d");
+    public IntervalStruct(IntervalType intervalType, int intervalValue) {
+        this.intervalType = intervalType;
+        this.intervalValue = intervalValue;
+    }
 
-            } else if (intervalParam.contains("m")) {
-                intervalType = IntervalType.MINUTES;
-                intervals = intervalParam.split("m");
-            }
-            if (intervalType != null && StringUtils.isNumeric(intervals[0])) {
-                int interval = Integer.parseInt(intervals[0]);
-                switch (intervalType) {
-                    case DAY:
-                        intervalValue = interval * 24 * 60;
-                        break;
-                    case HOURS:
-                        intervalValue = interval * 60;
-                        break;
-                    case MINUTES:
-                        intervalValue = interval;
-                        break;
-                    default:
-                        intervalValue = 1440;
-                        break;
-                }
+    public IntervalType getIntervalType() {
+        return intervalType;
+    }
 
+    public void setIntervalType(IntervalType intervalType) {
+        this.intervalType = intervalType;
+    }
+
+    public int getIntervalValue() {
+        return intervalValue;
+    }
+
+    public void setIntervalValue(int intervalValue) {
+        this.intervalValue = intervalValue;
+    }
+
+}
+
+public static IntervalStruct parseInterval(String intervalParam) {
+
+    String regex = "[0-9]*[h,d,m]$";
+    boolean matches = intervalParam.matches(regex);
+    int intervalValue = 1440;
+    IntervalType intervalType = null;
+
+    if (matches) {
+
+        String intervals[] = new String[]{};
+        if (intervalParam.contains("h")) {
+            intervalType = IntervalType.HOURS;
+            intervals = intervalParam.split("h");
+        } else if (intervalParam.contains("d")) {
+            intervalType = IntervalType.DAY;
+            intervals = intervalParam.split("d");
+
+        } else if (intervalParam.contains("m")) {
+            intervalType = IntervalType.MINUTES;
+            intervals = intervalParam.split("m");
+        }
+        if (intervalType != null && StringUtils.isNumeric(intervals[0])) {
+            int interval = Integer.parseInt(intervals[0]);
+            switch (intervalType) {
+                case DAY:
+                    intervalValue = interval * 24 * 60;
+                    break;
+                case HOURS:
+                    intervalValue = interval * 60;
+                    break;
+                case MINUTES:
+                    intervalValue = interval;
+                    break;
+                default:
+                    intervalValue = 1440;
+                    break;
             }
 
         }
-        return new IntervalStruct(intervalType, intervalValue);
 
     }
+    return new IntervalStruct(intervalType, intervalValue);
 
-    public static int getInterval(String intervalParam) {
+}
 
-        IntervalStruct intervalStruct = parseInterval(intervalParam);
+public static int getInterval(String intervalParam) {
 
-        return intervalStruct.getIntervalValue();
+    IntervalStruct intervalStruct = parseInterval(intervalParam);
 
+    return intervalStruct.getIntervalValue();
+
+}
+
+private static String getJID() {
+    return JobID.generate().toString();
+}
+
+private static void configJID() { //config the JID in the log4j.properties
+    String jobId = getJID();
+    MDC.put("JID", jobId);
+}
+
+public static boolean isOFF(ParameterTool params, String paramName) {
+    if (params.has(paramName)) {
+        return params.get(paramName).equals("OFF");
+
+    } else {
+        return false;
     }
+}
 
-    private static String getJID() {
-        return JobID.generate().toString();
-    }
-
-    private static void configJID() { //config the JID in the log4j.properties
-        String jobId = getJID();
-        MDC.put("JID", jobId);
-    }
-
-    public static boolean isOFF(ParameterTool params, String paramName) {
-        if (params.has(paramName)) {
-            return params.get(paramName).equals("OFF");
-
-        } else {
-            return false;
-        }
-    }
 
 }
