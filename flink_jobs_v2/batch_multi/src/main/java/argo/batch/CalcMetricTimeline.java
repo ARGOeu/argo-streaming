@@ -107,7 +107,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             timestatusList.add(timestatus);
         }
 
-        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList);
+        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList,Boolean.FALSE);
         statusTimeline.setHasThr(hasThr);
         out.collect(statusTimeline);
     }

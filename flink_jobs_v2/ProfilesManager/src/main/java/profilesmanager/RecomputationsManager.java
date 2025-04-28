@@ -1,5 +1,6 @@
 package profilesmanager;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
@@ -8,19 +9,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.annotation.ElementType;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.util.Objects;
 
 /**
  * RecomputationsManager, provide information about the endpoints for which
@@ -35,10 +32,13 @@ public class RecomputationsManager {
     public Map<String, ArrayList<Map<String, Date>>> monEngines;
     public ArrayList<ExcludedMetric> excludedMetrics;// a list of excluded metrics
 
+    public HashMap<ElementType, List<ChangedStatusItem>> changedStatusItems;
+
     public RecomputationsManager() {
         this.groups = new HashMap<String, ArrayList<Map<String, String>>>();
         this.monEngines = new HashMap<String, ArrayList<Map<String, Date>>>();
         this.excludedMetrics = new ArrayList<>();
+        this.changedStatusItems = new HashMap<>();
     }
 
     // Clear all the recomputation data
@@ -46,6 +46,7 @@ public class RecomputationsManager {
         this.groups = new HashMap<String, ArrayList<Map<String, String>>>();
         this.monEngines = new HashMap<String, ArrayList<Map<String, Date>>>();
         this.excludedMetrics = new ArrayList<>();
+        this.changedStatusItems = new HashMap<>();
     }
 
     // Insert new recomputation data for a specific endpoint group
@@ -100,6 +101,32 @@ public class RecomputationsManager {
             } else if (excludedMetric.metric.equals(metric)) {
                 return excludedMetric;
             }
+        }
+        return null;
+    }
+
+    public ChangedStatusItem findChangedStatusItem(String group, String service, String hostname, String metric, ElementType elementType) {
+        boolean isExcluded = false;
+        List<ChangedStatusItem> changedStatusItemsList = this.changedStatusItems.get(elementType);
+        if (changedStatusItemsList != null) {
+            for (ChangedStatusItem item : changedStatusItemsList) {
+                if (elementType.equals(ElementType.GROUP) && item.getGroup().equals(group)) {
+                    return item;
+                }
+                if (elementType.equals(ElementType.SERVICE) && item.getService().equals(group)) {
+                    return item;
+                }
+                if (elementType.equals(ElementType.ENDPOINT) && item.getHostname().equals(group)) {
+                    return item;
+                }
+                if (elementType.equals(ElementType.METRIC) && item.getMetric().equals(group)) {
+                    boolean metricMatches = item.getMetric().equals(metric);
+                    if (metricMatches && isEqualGroup(item, group, service, hostname)) {
+                        return item;
+                    }
+                }
+            }
+            return null;
         }
         return null;
     }
@@ -231,6 +258,71 @@ public class RecomputationsManager {
                         this.insertMon(monHost, monStart, monEnd);
                     }
                 }
+                // Get the excluded Monitoring sources
+                if (item.getAsJsonObject().get("applied_status_changes") != null) {
+                    JsonArray jStatus = item.getAsJsonObject().get("applied_status_changes").getAsJsonArray();
+                    String start = item.getAsJsonObject().get("start_time").getAsString();
+                    String end = item.getAsJsonObject().get("end_time").getAsString();
+
+                    for (JsonElement element : jStatus) {
+                        JsonObject itemObj = element.getAsJsonObject();
+                        ChangedStatusItem changedItem = new ChangedStatusItem();
+                        ElementType elementType = null;
+                        String status=null;
+                        if (itemObj.has("state")) {
+                            status=itemObj.get("state").getAsString();
+                        }
+                            // Set all fields
+                        if (itemObj.has("group")) {
+                            changedItem.setGroup(itemObj.get("group").getAsString());
+                        }
+                        if (itemObj.has("service")) {
+                            changedItem.setService(itemObj.get("service").getAsString());
+                        }
+                        if (itemObj.has("hostname")) {
+                            changedItem.setHostname(itemObj.get("hostname").getAsString());
+                        }
+                        if (itemObj.has("metric") || itemObj.has("netric")) {
+                            String metric = itemObj.has("metric") ? itemObj.get("metric").getAsString() : itemObj.get("netric").getAsString();
+                            changedItem.setMetric(metric);
+                        }
+                        changedItem.setStartPeriod(start);
+                        changedItem.setEndPeriod(end);
+                        changedItem.setStatus(status);
+
+                        // Priority logic
+                        if (changedItem.getMetric() != null) {
+                            elementType = ElementType.METRIC;
+                        } else if (changedItem.getHostname() != null) {
+                            elementType = ElementType.ENDPOINT;
+                        } else if (changedItem.getService() != null) {
+                            elementType = ElementType.SERVICE;
+                        } else if (changedItem.getGroup() != null) {
+                            elementType = ElementType.GROUP;
+                        }
+                        if (elementType != null) {
+
+                            changedItem.setElementType(elementType);
+                            List<ChangedStatusItem> list = changedStatusItems.get(elementType);
+                            if (list == null) {
+                                list = new ArrayList<>();
+                                changedStatusItems.put(elementType, list);
+                            }
+                            list.add(changedItem);
+                        }
+                    }
+//                        for (JsonElement subitem : jStatus) {
+//                        String status = subitem.getAsJsonObject().get("state").getAsString();
+//
+//
+//                        JsonArray statusGroups = subitem.getAsJsonObject().get("groups").getAsJsonArray();
+//                        for (JsonElement statusItem : statusGroups) {
+//                            System.out.println("status item is : " + statusItem.getAsString());
+//                            String statusGroup = statusItem.getAsString();
+//                            this.insertChangedStatus(statusGroup, status, start, end, ElementType.GROUP);
+//                        }
+//                    }
+                }
 
             }
         } catch (ParseException pex) {
@@ -296,6 +388,9 @@ public class RecomputationsManager {
         private String metric;
         private String startPeriod;
         private String endPeriod;
+
+        public ExcludedMetric() {
+        }
 
         public ExcludedMetric(String group, String service, String hostname, String metric, String startPeriod, String endPeriod) {
             this.group = group;
@@ -387,5 +482,44 @@ public class RecomputationsManager {
             return true;
         }
 
+    }
+
+
+    public class ChangedStatusItem extends ExcludedMetric {
+
+        private String status;
+        private ElementType elementType;
+
+        public ChangedStatusItem() {
+        }
+
+        public ChangedStatusItem(String group, String service, String hostname, String metric, String startPeriod, String endPeriod, String status, ElementType type) {
+            super(group, service, hostname, metric, startPeriod, endPeriod);
+            this.status = status;
+            this.elementType = type;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public ElementType getElementType() {
+            return elementType;
+        }
+
+        public void setElementType(ElementType elementType) {
+            this.elementType = elementType;
+        }
+    }
+
+    public enum ElementType {
+        GROUP,
+        SERVICE,
+        ENDPOINT,
+        METRIC
     }
 }

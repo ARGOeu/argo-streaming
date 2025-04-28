@@ -21,6 +21,7 @@ public class StatusMetric {
     private String info; // extra endpoint information provided by the topology
     private String tags;
     private boolean hasThr;
+    private Boolean overrideByRecomp = Boolean.FALSE;
 
     public StatusMetric() {
         this.group = "";
@@ -45,7 +46,7 @@ public class StatusMetric {
     }
 
     public StatusMetric(String group, String function, String service, String hostname, String metric, String status, String timestamp,
-            int dateInt, int timeInt, String summary, String message, String prevState, String prevTs, String actualData, String ogStatus, String ruleApplied, String info, String tags) {
+                        int dateInt, int timeInt, String summary, String message, String prevState, String prevTs, String actualData, String ogStatus, String ruleApplied, String info, String tags) {
 
         this.group = group;
         this.function = function;
@@ -217,6 +218,14 @@ public class StatusMetric {
 
     public void setInfo(String info) {
         this.info = info;
+    }
+
+    public Boolean getOverrideByRecomp() {
+        return overrideByRecomp;
+    }
+
+    public void setOverrideByRecomp(Boolean overrideByRecomp) {
+        this.overrideByRecomp = overrideByRecomp;
     }
 
     @Override

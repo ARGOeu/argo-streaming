@@ -23,6 +23,7 @@ public class StatusTimeline implements Serializable {
     ArrayList<TimeStatus> timestamps;
     private boolean hasThr;
 
+    private boolean overrideByRecomp;
     public StatusTimeline() {
         group = "";
         function = "";
@@ -30,9 +31,10 @@ public class StatusTimeline implements Serializable {
         hostname = "";
         timestamps = new ArrayList<>();
         hasThr = false;
+        overrideByRecomp=Boolean.FALSE;
     }
 
-    public StatusTimeline(String group, String function, String service, String hostname, String metric, ArrayList<TimeStatus> timestamps) {
+    public StatusTimeline(String group, String function, String service, String hostname, String metric, ArrayList<TimeStatus> timestamps,Boolean overrideByRecomp) {
         this.group = group;
         this.function = function;
         this.service = service;
@@ -40,6 +42,7 @@ public class StatusTimeline implements Serializable {
         this.metric = metric;
         this.timestamps = timestamps;
         hasThr = false;
+        this.overrideByRecomp=overrideByRecomp;
     }
 
     public boolean hasThr() {
@@ -107,5 +110,12 @@ public class StatusTimeline implements Serializable {
             resultsTimeStatus += st.toString();
         }
         return "StatusTimeline{" + "group=" + group + ", service=" + service + ", hostname=" + hostname + ", metric=" + metric + ", statusMetrics=" + resultsStatusMetrics + ", timestamps=" + resultsTimeStatus + '}';
+    }
+    public boolean isOverrideByRecomp() {
+        return overrideByRecomp;
+    }
+
+    public void setOverrideByRecomp(boolean overrideByRecomp) {
+        this.overrideByRecomp = overrideByRecomp;
     }
 }

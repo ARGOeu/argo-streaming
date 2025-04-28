@@ -242,6 +242,11 @@ public class ArgoMultiJob {
         if (listGroups.length > 0) {
             ggpDS = env.fromElements(amr.getListGroupGroups());
         }
+        List<GroupGroup> list=ggpDS.collect();
+        for(GroupGroup gp:list){
+            System.out.println("group is : "+gp.getGroup());
+        }
+
         Downtime[] listDowntimes = amr.getListDowntimes();
         if (listDowntimes.length > 0) {
             downDS = env.fromElements(amr.getListDowntimes());
@@ -300,6 +305,10 @@ public class ArgoMultiJob {
                 allMetricData = allMetricData.union(mdataPrevTotalDS);
             }
          }
+        List<MetricData> mdList=allMetricData.collect();
+        for(MetricData md: mdList){
+            System.out.println("md list : "+ md.getService()+" - " +md.getHostname());
+        }
         
         DataSet<StatusMetric> fillMissDS = allMetricData.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
@@ -319,12 +328,20 @@ public class ArgoMultiJob {
         mdataTotalDS = mdataTotalDS.flatMap(new MapServices()).withBroadcastSet(apsDS, "aps");
         dbURI = params.getRequired("mongo.uri");
         String dbMethod = params.getRequired("mongo.method");
-        
+
+        List<StatusMetric> totalList=mdataTotalDS.collect();
+        for(StatusMetric st: totalList){
+            System.out.println("st list total: "+st.getGroup()+" - "+st.getService());
+        }
         // Create status detail data set
         DataSet<StatusMetric> stDetailDS = mdataTotalDS.distinct("group","service","hostname","metric","status","timestamp").groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
 
+        List<StatusMetric> stList=stDetailDS.collect();
+        for(StatusMetric mt: stList){
+            System.out.println("st list : "+mt.getGroup()+" - "+mt.getService());
+        }
         
         DataSet<StatusTimeline> statusMetricTimeline = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                         .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
@@ -349,7 +366,7 @@ public class ArgoMultiJob {
         DataSet<StatusTimeline> statusGroupTimeline = statusEndGroupFunctionTimeline.groupBy("group")
                 .reduceGroup(new CalcGroupTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(apsDS, "aps");
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(recDS,"recs");
 
         if (calcStatus) {
             //Calculate endpoint timeline timestamps             

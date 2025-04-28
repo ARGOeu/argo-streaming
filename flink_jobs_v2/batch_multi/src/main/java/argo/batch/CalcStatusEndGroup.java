@@ -72,7 +72,8 @@ public class CalcStatusEndGroup extends RichFlatMapFunction<StatusTimeline, Stat
     
     @Override
     public void flatMap(StatusTimeline in, Collector<StatusMetric> out) throws Exception {
-        
+
+        Boolean overrideByRecomp=in.isOverrideByRecomp();
         int dateInt = Integer.parseInt(this.runDate.replace("-", ""));
         
         String endpointGroup = in.getGroup();
@@ -81,7 +82,6 @@ public class CalcStatusEndGroup extends RichFlatMapFunction<StatusTimeline, Stat
         if (in.hasThr()) {
             hasThr = true;
         }
-        
         for (TimeStatus item : timestamps) {
             StatusMetric cur = new StatusMetric();
             cur.setDateInt(dateInt);
@@ -89,8 +89,8 @@ public class CalcStatusEndGroup extends RichFlatMapFunction<StatusTimeline, Stat
             cur.setTimestamp(utils.Utils.convertDateToString("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateTime(item.getTimestamp(), DateTimeZone.UTC)));
             cur.setStatus(opsMgr.getStrStatus(item.getStatus()));
             cur.setHasThr(hasThr);
+            cur.setOverrideByRecomp(overrideByRecomp);
             out.collect(cur);
         }
-        
     }
 }

@@ -139,6 +139,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
     private Document prepDoc(StatusMetric record) {
 
         Document doc = new Document("report", this.report)
+                .append("override_by_recomputation",record.getOverrideByRecomp())
                 .append("endpoint_group", record.getGroup());
 
         if (this.sType == StatusType.STATUS_SERVICE) {
@@ -169,7 +170,6 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
                     // append original status and threshold rule applied
                     .append("original_status", record.getOgStatus())
                     .append("threshold_rule_applied", record.getRuleApplied());
-
             String info = record.getInfo();
             doc.append("info", parseInfo(info));
 

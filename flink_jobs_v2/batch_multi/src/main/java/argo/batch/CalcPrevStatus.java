@@ -69,6 +69,7 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
         String prevTimestamp = this.runDate + "T00:00:00Z";
         boolean gotPrev = false;
         for (StatusMetric item : in) {
+            System.out.println("previous data: "+item.getGroup()+" "+item.getService());
             // If haven't captured yet previous timestamp
             if (!gotPrev) {
                 if (item.getTimestamp().split("T")[0].compareToIgnoreCase(this.runDate) != 0) {

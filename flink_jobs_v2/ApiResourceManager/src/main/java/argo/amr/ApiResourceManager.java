@@ -358,6 +358,7 @@ public class ApiResourceManager {
         String fullURL = String.format(path, this.endpoint, this.date);
         String content = this.requestManager.getResource(fullURL);
 
+        content=buildTestRecomp();
         this.data.put(ApiResource.RECOMPUTATIONS, this.apiResponseParser.getJsonData(content, true));
 
     }
@@ -617,5 +618,62 @@ public class ApiResourceManager {
         DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
         String dateString = date.toString(dtf);
         return dateString;
+    }
+    private String buildTestRecomp(){
+
+        return "{\n" +
+                "  \"status\": {\n" +
+                "    \"message\": \"Success\",\n" +
+                "    \"code\": \"200\"\n" +
+                "  },\n" +
+                "  \"data\": [\n" +
+                "    {\n" +
+                "      \"id\": \"a4386139-445a-4f5a-8d80-36c03fdd97ae\",\n" +
+                "      \"requester_name\": \"john-doe\",\n" +
+                "      \"requester_email\": \"john-doe@grnet.gr\",\n" +
+                "      \"reason\": \"recomputation due to grnet network issue\",\n" +
+                "      \"start_time\": \"2025-04-01T09:30:00Z\",\n" +
+                "      \"end_time\": \"2025-04-05T11:00:00Z\",\n" +
+                "      \"report\": \"Default\",\n" +
+                "      \"applied_status_changes\": [\n" +
+                "        {\n" +
+                "          \"group\": \"Monitoring\",\n" +
+                "          \"state\":\"CRITICAL\"\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"group\": \"static-site\",\n" +
+                "          \"state\":\"CRITICAL\"\n" +
+                "        },\n" +
+                "        \n" +
+                "        {\n" +
+                "          \"service\": \"Service-a\",\n" +
+                "          \"state\":\"OK\"\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"service\": \"Service-b\",\n" +
+                "          \"state\":\"OK\"\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"hostname\": \"Hostname-b\",\n" +
+                "          \"state\":\"OK\"\n" +
+                "        },        \n" +
+                "        {\n" +
+                "          \"hostname\": \"Hostname-a\",\n" +
+                "          \"state\":\"CRITICAL\"\n" +
+                "        },        \n" +
+                "        {\n" +
+                "          \"netric\": \"Metric-a\",\n" +
+                "          \"state\":\"CRITICAL\"\n" +
+                "        },\n" +
+                "        \n" +
+                "        {\n" +
+                "          \"netric\": \"Metric-b\",\n" +
+                "          \"group\":\"Monitoring\",\n" +
+                "          \"state\":\"CRITICAL\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n";
     }
 }

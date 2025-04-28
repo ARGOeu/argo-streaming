@@ -51,13 +51,14 @@ public class Timeline {
 
     private TreeMap<DateTime, Integer> samples;
     private int excludedInt = -1;
-
+    private boolean overrideByRecomp;
     /**
      * Constructs an empty timeline
      */
     public Timeline() {
         this.date = null;
         this.samples = new TreeMap<DateTime, Integer>();
+        this.overrideByRecomp=Boolean.FALSE;
     }
 
     /**
@@ -72,6 +73,7 @@ public class Timeline {
 
         this.date = tmp_date.toLocalDate();
         this.samples = new TreeMap<DateTime, Integer>();
+        this.overrideByRecomp=Boolean.FALSE;
 
     }
 
@@ -90,6 +92,7 @@ public class Timeline {
         this.date = tmp_date.toLocalDate();
         this.samples = new TreeMap<DateTime, Integer>();
         this.samples.put(tmp_date, state);
+        this.overrideByRecomp=Boolean.FALSE;
     }
 
     public int get(String timestamp) throws ParseException { 
@@ -286,7 +289,6 @@ public class Timeline {
      * @param truthTable
      * @param op aggregate a set of timestamp,status pairs that are stored in a
      * timeline with a set of timestamp,status pairs of a different timeline,
-     * @param excludedint , the int value of excluded status
      */
     public void aggregate(Timeline second, int[][][] truthTable, int op) {
         if (this.isEmpty()) {
@@ -564,5 +566,16 @@ public class Timeline {
     public String toString() {
         return "Timeline{" + "date=" + this.date + ", excludedInt=" + this.excludedInt + " , samples=" + this.samples + '}';
     }
+    public TreeMap<DateTime, Integer> getSamplesMap() {
+        return samples;
+    }
 
+    public boolean isOverrideByRecomp() {
+        return overrideByRecomp;
+    }
+
+    public void setOverrideByRecomp(boolean overrideByRecomp) {
+        this.overrideByRecomp = overrideByRecomp;
+    }
+    
 }
