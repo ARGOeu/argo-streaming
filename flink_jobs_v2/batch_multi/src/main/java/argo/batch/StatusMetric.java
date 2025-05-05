@@ -1,6 +1,8 @@
 package argo.batch;
 
-public class StatusMetric {
+import java.util.Objects;
+
+public class StatusMetric  implements  Cloneable{
 
     private String group;
     private String function;
@@ -21,7 +23,6 @@ public class StatusMetric {
     private String info; // extra endpoint information provided by the topology
     private String tags;
     private boolean hasThr;
-    private Boolean overrideByRecomp = Boolean.FALSE;
 
     public StatusMetric() {
         this.group = "";
@@ -220,17 +221,31 @@ public class StatusMetric {
         this.info = info;
     }
 
-    public Boolean getOverrideByRecomp() {
-        return overrideByRecomp;
-    }
-
-    public void setOverrideByRecomp(Boolean overrideByRecomp) {
-        this.overrideByRecomp = overrideByRecomp;
-    }
 
     @Override
     public String toString() {
         return "(" + this.group + "," + this.service + "," + this.hostname + "," + this.metric + "," + this.status + "," + this.timestamp + ","
                 + this.dateInt + "," + this.timeInt + "," + this.prevState + "," + this.prevTs + "," + this.actualData + "," + this.ogStatus + "," + this.ruleApplied + "," + this.info + "," + this.tags + ")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof StatusMetric)) return false;
+        StatusMetric that = (StatusMetric) o;
+        return dateInt == that.dateInt && timeInt == that.timeInt && hasThr == that.hasThr && Objects.equals(group, that.group) && Objects.equals(function, that.function) && Objects.equals(service, that.service) && Objects.equals(hostname, that.hostname) && Objects.equals(metric, that.metric) && Objects.equals(status, that.status) && Objects.equals(timestamp, that.timestamp) && Objects.equals(summary, that.summary) && Objects.equals(message, that.message) && Objects.equals(prevState, that.prevState) && Objects.equals(prevTs, that.prevTs) && Objects.equals(actualData, that.actualData) && Objects.equals(ogStatus, that.ogStatus) && Objects.equals(ruleApplied, that.ruleApplied) && Objects.equals(info, that.info) && Objects.equals(tags, that.tags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(group, function, service, hostname, metric, status, timestamp, dateInt, timeInt, summary, message, prevState, prevTs, actualData, ogStatus, ruleApplied, info, tags, hasThr);
+    }
+
+    @Override
+    public StatusMetric clone() {
+        try {
+            return (StatusMetric) super.clone(); // shallow copy
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError(); // should never happen if Cloneable is implemented
+        }
     }
 }

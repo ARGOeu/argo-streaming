@@ -1,36 +1,23 @@
 package argo.batch;
 
 import argo.avro.Downtime;
-import java.io.IOException;
-import java.util.List;
-
+import argo.avro.MetricProfile;
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
-
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import argo.avro.MetricProfile;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.logging.Level;
-import org.joda.time.DateTimeZone;
-import profilesmanager.AggregationProfileManager;
-import profilesmanager.DowntimeManager;
-import profilesmanager.MetricProfileManager;
-import profilesmanager.OperationsManager;
-
+import profilesmanager.*;
 import timelines.Timeline;
 import timelines.TimelineAggregator;
-import utils.Utils;
+import utils.RecompTimelineBuilder;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.*;
 
 /**
  * Accepts a list o status metrics grouped by the fields: endpoint group,
@@ -62,15 +49,19 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
     private DowntimeManager downtimeMgr;
     private List<Downtime> downtime;
     private DateTime now;
+    private List<String> recs;
+    private RecomputationsManager recMgr;
 
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
 
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
+        this.recs = getRuntimeContext().getBroadcastVariable("rec");
+
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
         this.mpsMgr.loadFromList(mps);
@@ -84,6 +75,8 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
         this.downtime = getRuntimeContext().getBroadcastVariable("down");
         this.downtimeMgr = new DowntimeManager();
         this.downtimeMgr.loadFromList(downtime);
+        this.recMgr = new RecomputationsManager();
+        this.recMgr.loadJsonString(recs);
 
         this.runDate = params.getRequired("run.date");
         this.operation = this.apsMgr.getMetricOpByProfile();
@@ -97,17 +90,21 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
         String endpointGroup = "";
         String hostname = "";
         String function = "";
+        String metric = "";
         HashMap<String, Timeline> timelinelist = new HashMap<>();
+        ArrayList<String> recompRequestIds = new ArrayList<>();
+
         boolean hasThr = false;
         for (StatusTimeline item : in) {
             service = item.getService();
             endpointGroup = item.getGroup();
             hostname = item.getHostname();
             function = item.getFunction();
+            metric = item.getMetric();
+
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
             for (TimeStatus timestatus : timestatusList) {
-
                 samples.put(new DateTime(timestatus.getTimestamp(), DateTimeZone.UTC), timestatus.getStatus());
             }
             Timeline timeline = new Timeline();
@@ -117,7 +114,10 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
             if (item.hasThr()) {
                 hasThr = true;
             }
+
         }
+
+
 
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt(), runDate);
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));
@@ -126,10 +126,28 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
 
         ArrayList<String[]> downPeriods = this.downtimeMgr.getPeriod(hostname, service);
 
-        if (downPeriods != null && !downPeriods.isEmpty()) { 
+        if (downPeriods != null && !downPeriods.isEmpty()) {
             for (String[] downPeriod : downPeriods) {
                 mergedTimeline.fillWithStatus(downPeriod[0], downPeriod[1], this.opsMgr.getDefaultDownInt(), now);
                 mergedTimeline.optimize();
+            }
+        }
+// Attempt to find if there's a recomputation status change request for the current endpoint
+        ArrayList<RecomputationsManager.RecomputationElement> recompItems = recMgr.findChangedStatusItem(
+                endpointGroup, service, hostname, null, RecomputationsManager.ElementType.ENDPOINT);
+
+        if (!recompItems.isEmpty()) { // If a recomputation request is found for this metric
+            //     mergedTimeline.clear();
+            for (RecomputationsManager.RecomputationElement recompItem : recompItems) {
+
+                TreeMap<DateTime,Integer> recomputedSamples=(TreeMap<DateTime,Integer>)mergedTimeline.getSamplesMap().clone();
+                mergedTimeline.bulkInsert(RecompTimelineBuilder.calcRecomputations(
+                        recomputedSamples, // existing timeline samples
+                        recompItem,                     // recomputation details
+                        runDate,                        // the current day of execution
+                        this.opsMgr                     // operations manager to interpret statuses
+                ).entrySet());
+
             }
         }
         ArrayList<TimeStatus> timestatuCol = new ArrayList();
@@ -138,12 +156,10 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
             timestatuCol.add(timestatus);
         }
 
-        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, hostname, "", timestatuCol,Boolean.FALSE);
+        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, hostname, "", timestatuCol);
         statusTimeline.setHasThr(hasThr);
+
         out.collect(statusTimeline);
 
     }
-
-  
-
 }

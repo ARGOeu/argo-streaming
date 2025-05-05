@@ -3,6 +3,7 @@ package argo.batch;
 import com.google.gson.Gson;
 import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoClient;
+
 import java.io.IOException;
 
 import org.apache.flink.api.common.io.OutputFormat;
@@ -15,10 +16,12 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.ReplaceOptions;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -31,7 +34,9 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
     public enum MongoMethod {
         INSERT, UPSERT
-    };
+    }
+
+    ;
 
     // Select the type of status input
     public enum StatusType {
@@ -61,6 +66,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
         this.date = Integer.parseInt(date.replace("-", ""));
         this.report = report;
 
+
         if (method.equalsIgnoreCase("upsert")) {
             this.method = MongoMethod.UPSERT;
         } else {
@@ -85,7 +91,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
     // constructor
     public MongoStatusOutput(String host, int port, String db, String col, MongoMethod method, StatusType sType,
-            String report, String date, boolean clearMongo) {
+                             String report, String date, boolean clearMongo) {
 
         this.date = Integer.parseInt(date.replace("-", ""));
         this.report = report;
@@ -139,7 +145,6 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
     private Document prepDoc(StatusMetric record) {
 
         Document doc = new Document("report", this.report)
-                .append("override_by_recomputation",record.getOverrideByRecomp())
                 .append("endpoint_group", record.getGroup());
 
         if (this.sType == StatusType.STATUS_SERVICE) {
@@ -234,6 +239,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
             mCol.replaceOne(f, doc, opts);
         } else {
+
             mCol.insertOne(doc);
         }
     }

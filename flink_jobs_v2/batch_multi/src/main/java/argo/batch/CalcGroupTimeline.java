@@ -21,6 +21,7 @@ import profilesmanager.OperationsManager;
 import profilesmanager.RecomputationsManager;
 import timelines.Timeline;
 import timelines.TimelineAggregator;
+import utils.RecompTimelineBuilder;
 import utils.Utils;
 
 /**
@@ -58,7 +59,7 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
         // Get data from broadcast variables
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
-        this.recs = getRuntimeContext().getBroadcastVariable("recs");
+        this.recs = getRuntimeContext().getBroadcastVariable("rec");
         // Initialize aggregation profile manager
         this.apsMgr = new AggregationProfileManager();
 
@@ -77,24 +78,31 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
     @Override
     public void reduce(Iterable<StatusTimeline> in, Collector<StatusTimeline> out) throws Exception {
         String endpointGroup = "";
+        String function = "";
 
         HashMap<String, Timeline> timelinelist = new HashMap<>();
         boolean hasThr = false;
+        ArrayList<String> recompRequestIds = new ArrayList<>();
 
-        boolean overrideByRecomp=Boolean.FALSE;
         for (StatusTimeline item : in) {
             endpointGroup = item.getGroup();
+            function = item.getFunction();
 
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
+            for (TimeStatus timestatus : timestatusList) {
+                DateTime dt = new DateTime(timestatus.getTimestamp(), DateTimeZone.UTC);
+                samples.put(dt, timestatus.getStatus());
+            }
+            Timeline timeline = new Timeline();
+            timeline.insertDateTimeStamps(samples, true);
 
-            Timeline timeline = calcRecomputation(endpointGroup, timestatusList, samples);
-            overrideByRecomp=timeline.isOverrideByRecomp();
             timelinelist.put(item.getFunction(), timeline);
             if (item.hasThr()) {
                 hasThr = true;
             }
-        }
+
+          }
 
         String groupOperation = this.apsMgr.retrieveProfileOperation();
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt(), runDate);
@@ -102,96 +110,37 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
 
+        // Find a recomputation request for the given endpoint group.
+        // The search is specific to the group (ElementType.GROUP) to find changes in the status.
+        ArrayList<RecomputationsManager.RecomputationElement> recompItems = recMgr.findChangedStatusItem(
+                endpointGroup,   // The endpoint group for which the recomputation is being checked
+                null,             // No specific service filter
+                null,             // No specific hostname filter
+                null,             // No specific metric filter
+                RecomputationsManager.ElementType.GROUP // Element type set to GROUP for group-level recomputation
+        );
+
+        if (!recompItems.isEmpty()) { // If a recomputation request is found for this metric
+            for (RecomputationsManager.RecomputationElement recompItem : recompItems) {
+                TreeMap<DateTime,Integer> recomputedSamples=(TreeMap<DateTime,Integer>)mergedTimeline.getSamplesMap().clone();
+                mergedTimeline.bulkInsert(RecompTimelineBuilder.calcRecomputations(
+                        recomputedSamples, // existing timeline samples
+                        recompItem,                     // recomputation details
+                        runDate,                        // the current day of execution
+                        this.opsMgr                     // operations manager to interpret statuses
+                ).entrySet());
+            }
+
+        }
+
         ArrayList<TimeStatus> timestatuCol = new ArrayList();
         for (Map.Entry<DateTime, Integer> entry : mergedTimeline.getSamples()) {
             TimeStatus timestatus = new TimeStatus(entry.getKey().getMillis(), entry.getValue());
             timestatuCol.add(timestatus);
         }
 
-        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, "", "", "", "", timestatuCol,overrideByRecomp);
+        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, "", "", "", "", timestatuCol);
         statusTimeline.setHasThr(hasThr);
         out.collect(statusTimeline);
     }
-
-    private Timeline calcRecomputation(String group, ArrayList<TimeStatus> timeStatusList, TreeMap<DateTime, Integer> samples) throws ParseException {
-        boolean overrideByRecomp = Boolean.FALSE;
-        System.out.println("timeline list-- " + timeStatusList.size() + " group " + group);
-        if (group.equals("static-site")) {
-            System.out.println("here it is ");
-
-        }
-        System.out.println("group is : " + group);
-        String formatter = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-        RecomputationsManager.ChangedStatusItem changedStatusItem = recMgr.findChangedStatusItem(group,"","","", RecomputationsManager.ElementType.GROUP);
-        DateTime startRecPeriod = null;
-        DateTime endRecPeriod = null;
-        DateTime today = Utils.convertStringtoDate("yyyy-MM-dd", runDate);
-        today.withTime(0, 0, 0, 0);
-        DateTime tomorrow = today.plusDays(1);
-
-        if (changedStatusItem != null) {
-            System.out.println("the changed status is not null for : " + group);
-            String str = changedStatusItem.getStartPeriod();
-            String strend = changedStatusItem.getEndPeriod();
-            startRecPeriod = Utils.convertStringtoDate(formatter, changedStatusItem.getStartPeriod());
-            endRecPeriod = Utils.convertStringtoDate(formatter, changedStatusItem.getEndPeriod());
-            if (startRecPeriod.isBefore(today)) {
-                startRecPeriod = today;
-            }
-            if (!endRecPeriod.isBefore(tomorrow)) {
-                endRecPeriod = tomorrow;
-            }
-        }
-
-//            if (changedStatusItem != null) {
-        for (TimeStatus timestatus : timeStatusList) {
-            DateTime dt = new DateTime(timestatus.getTimestamp(), DateTimeZone.UTC);
-            //  DateTime timestamp = new DateTime(timestatus.getTimestamp());
-
-            if (changedStatusItem != null) {
-
-                System.out.println("the changed status is not null for : " + group);
-
-                if (!dt.isBefore(startRecPeriod) && !dt.isAfter(endRecPeriod)) {
-                    timestatus.setStatus(opsMgr.getIntStatus(changedStatusItem.getStatus()));
-                    overrideByRecomp = Boolean.TRUE;
-                    samples.put(dt, timestatus.getStatus());
-                } else {
-                    if (dt.isAfter(startRecPeriod)) {
-                        if (!samples.containsKey(startRecPeriod)) {
-                            overrideByRecomp = Boolean.TRUE;
-                            samples.put(startRecPeriod, opsMgr.getIntStatus(changedStatusItem.getStatus()));
-                        }
-                        if (dt.isAfter(endRecPeriod)) {
-                            if (!samples.containsKey(endRecPeriod)) {
-                                overrideByRecomp = Boolean.TRUE;
-                                samples.put(endRecPeriod, timestatus.getStatus());
-                            }
-                        }
-                    } else {
-                        samples.put(dt, timestatus.getStatus());
-                    }
-                }
-            } else {
-                samples.put(dt, timestatus.getStatus());
-            }
-        }
-        // Map.Entry<DateTime,Integer> lastEntry= samples.lastEntry();
-        Map.Entry<DateTime, Integer> lastEntry = samples.lastEntry();
-
-        if (startRecPeriod != null && changedStatusItem != null && !samples.containsKey(startRecPeriod)) {
-            overrideByRecomp = Boolean.TRUE;
-            samples.put(startRecPeriod, opsMgr.getIntStatus(changedStatusItem.getStatus()));
-        }
-        if (endRecPeriod != null && endRecPeriod.isBefore(tomorrow) && changedStatusItem != null && !samples.containsKey(endRecPeriod)) {
-
-            overrideByRecomp = Boolean.TRUE;
-            samples.put(endRecPeriod, lastEntry.getValue());
-        }
-        Timeline timeline = new Timeline();
-        timeline.insertDateTimeStamps(samples, true);
-        timeline.setOverrideByRecomp(overrideByRecomp);
-        return timeline;
-    }
-
 }

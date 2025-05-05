@@ -6,6 +6,7 @@
 package argo.batch;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  */
@@ -41,5 +42,17 @@ public class TimeStatus implements Serializable {
     @Override
     public String toString() {
         return "TimeStatus{" + "timestamp=" + timestamp + ", status=" + status + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof TimeStatus)) return false;
+        TimeStatus that = (TimeStatus) o;
+        return timestamp == that.timestamp && Objects.equals(status, that.status);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(timestamp, status);
     }
 }

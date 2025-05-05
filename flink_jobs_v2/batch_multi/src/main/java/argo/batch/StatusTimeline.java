@@ -23,7 +23,6 @@ public class StatusTimeline implements Serializable {
     ArrayList<TimeStatus> timestamps;
     private boolean hasThr;
 
-    private boolean overrideByRecomp;
     public StatusTimeline() {
         group = "";
         function = "";
@@ -31,10 +30,9 @@ public class StatusTimeline implements Serializable {
         hostname = "";
         timestamps = new ArrayList<>();
         hasThr = false;
-        overrideByRecomp=Boolean.FALSE;
     }
 
-    public StatusTimeline(String group, String function, String service, String hostname, String metric, ArrayList<TimeStatus> timestamps,Boolean overrideByRecomp) {
+    public StatusTimeline(String group, String function, String service, String hostname, String metric, ArrayList<TimeStatus> timestamps) {
         this.group = group;
         this.function = function;
         this.service = service;
@@ -42,8 +40,7 @@ public class StatusTimeline implements Serializable {
         this.metric = metric;
         this.timestamps = timestamps;
         hasThr = false;
-        this.overrideByRecomp=overrideByRecomp;
-    }
+     }
 
     public boolean hasThr() {
         return hasThr;
@@ -109,13 +106,19 @@ public class StatusTimeline implements Serializable {
         for (TimeStatus st : timestamps) {
             resultsTimeStatus += st.toString();
         }
-        return "StatusTimeline{" + "group=" + group + ", service=" + service + ", hostname=" + hostname + ", metric=" + metric + ", statusMetrics=" + resultsStatusMetrics + ", timestamps=" + resultsTimeStatus + '}';
-    }
-    public boolean isOverrideByRecomp() {
-        return overrideByRecomp;
+        return "StatusTimeline{" + "group=" + group + ", service=" + service + ", hostname=" + hostname + ", metric=" + metric + ", statusMetrics=" + resultsStatusMetrics+  ", timestamps=" + + '}';
     }
 
-    public void setOverrideByRecomp(boolean overrideByRecomp) {
-        this.overrideByRecomp = overrideByRecomp;
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof StatusTimeline)) return false;
+        StatusTimeline timeline = (StatusTimeline) o;
+        return hasThr == timeline.hasThr && Objects.equals(group, timeline.group) && Objects.equals(function, timeline.function) && Objects.equals(service, timeline.service) && Objects.equals(hostname, timeline.hostname) && Objects.equals(metric, timeline.metric) && Objects.equals(timestamps, timeline.timestamps) ;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(group, function, service, hostname, metric, timestamps, hasThr);
     }
 }

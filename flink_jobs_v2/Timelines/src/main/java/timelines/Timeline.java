@@ -577,5 +577,8 @@ public class Timeline {
     public void setOverrideByRecomp(boolean overrideByRecomp) {
         this.overrideByRecomp = overrideByRecomp;
     }
-    
+
+    public void setSamples(TreeMap<DateTime, Integer> samples) {
+        this.samples = samples;
+    }
 }

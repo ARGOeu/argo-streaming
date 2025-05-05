@@ -77,6 +77,7 @@ public class CalcGroupFunctionTimeline extends RichGroupReduceFunction<StatusTim
         for (StatusTimeline item : in) {
             function = item.getFunction();
             endpointGroup = item.getGroup();
+
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
             for (TimeStatus timestatus : timestatusList) {
@@ -104,7 +105,7 @@ public class CalcGroupFunctionTimeline extends RichGroupReduceFunction<StatusTim
             timestatuCol.add(timestatus);
         }
 
-        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, "", "", "", timestatuCol,Boolean.FALSE);
+        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, "", "", "", timestatuCol);
         statusTimeline.setHasThr(hasThr);
         out.collect(statusTimeline);
     }

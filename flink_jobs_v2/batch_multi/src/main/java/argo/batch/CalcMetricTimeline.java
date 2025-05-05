@@ -1,7 +1,9 @@
 package argo.batch;
 
 import java.io.IOException;
-import java.util.List;
+import java.sql.Time;
+import java.text.ParseException;
+import java.util.*;
 
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 
@@ -9,18 +11,22 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import argo.avro.MetricProfile;
-import java.util.ArrayList;
+
 import java.util.Map.Entry;
-import java.util.TreeMap;
+
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.MetricProfileManager;
 import profilesmanager.OperationsManager;
 
+import profilesmanager.RecomputationsManager;
 import timelines.Timeline;
+import timelines.TimelineAggregator;
+import utils.RecompTimelineBuilder;
 import utils.Utils;
 
 /**
@@ -47,14 +53,18 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
+    private List<String> recs;
+    private RecomputationsManager recMgr;
 
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
+        this.recs = getRuntimeContext().getBroadcastVariable("rec");
+
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
         this.mpsMgr.loadFromList(mps);
@@ -65,6 +75,10 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
+        this.recMgr = new RecomputationsManager();
+
+        this.recMgr.loadJsonString(recs);
+
     }
 
     @Override
@@ -76,6 +90,10 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         String hostname = "";
         String metric = "";
         boolean hasThr = false;
+        DateTime today = Utils.convertStringtoDate("yyyy-MM-dd", runDate);
+        today = today.withTime(0, 0, 0, 0);
+
+        ArrayList<String> recompRequestIds = new ArrayList<>();
         TreeMap<DateTime, Integer> timeStatusMap = new TreeMap<>();
         for (StatusMetric item : in) {
             service = item.getService();
@@ -85,31 +103,41 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             metric = item.getMetric();
             String ts = item.getTimestamp();
             String status = item.getStatus();
-            if (i == 0) {
-                int st = this.opsMgr.getIntStatus(item.getPrevState());
-                timeStatusMap.put(Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", item.getPrevTs()), st);
+           if (i == 0) {
+                DateTime currentTimestamp = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", item.getTimestamp());
+                if (currentTimestamp.isAfter(today)) {
 
+                    int st = this.opsMgr.getIntStatus(item.getPrevState());
+                    timeStatusMap.put(Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", item.getPrevTs()), st);
+                }
             }
             int st = this.opsMgr.getIntStatus(status);
+
             timeStatusMap.put(Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", ts), st);
             if (!item.getOgStatus().equals("")) {
                 hasThr = true;
             }
-            i++;
 
+            i++;
         }
+
         Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timeStatusMap, false);
         timeline.replacePreviousDateStatus(Utils.convertStringtoDate("yyyy-MM-dd", this.runDate), this.opsMgr.getStates(), false);//handle the first timestamp to contain the previous days timestamp status if necessary and the last timestamp to contain the status of the last timelines's entry
+        timeline.optimize();
         ArrayList<TimeStatus> timestatusList = new ArrayList<TimeStatus>();
         for (Entry<DateTime, Integer> entry : timeline.getSamples()) {
             TimeStatus timestatus = new TimeStatus(entry.getKey().getMillis(), entry.getValue());
             timestatusList.add(timestatus);
         }
 
-        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList,Boolean.FALSE);
+        StatusTimeline statusTimeline = new StatusTimeline(endpointGroup, function, service, hostname, metric, timestatusList);
         statusTimeline.setHasThr(hasThr);
         out.collect(statusTimeline);
     }
 
 }
+
+
+
+
