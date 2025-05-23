@@ -343,180 +343,235 @@ public class RecomputationsManager {
                 }
 
             }
-        } catch (ParseException pex) {
-            LOG.error("Parsing date error");
-            throw pex;
-        }
-
-    }
-
-    public void loadJson(File jsonFile) throws IOException, ParseException {
-
-        this.clear();
-
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader(jsonFile));
-
-            JsonParser jsonParser = new JsonParser();
-            JsonElement jRootElement = jsonParser.parse(br);
-            readJson(jRootElement);
-
-        } catch (FileNotFoundException ex) {
-            LOG.error("Could not open file:" + jsonFile.getName());
-            throw ex;
-
-        } finally {
-            // Close quietly without exceptions the buffered reader
-            IOUtils.closeQuietly(br);
-        }
-
-    }
-
-    /**
-     * Load Recompuatation information from a JSON string instead of a File
-     * source. This method is used in execution enviroments where the required
-     * data is provided by broadcast variables
-     */
-    public void loadJsonString(List<String> recJson) throws IOException, ParseException {
-
-        this.clear();
-
-        try {
-
-            JsonParser jsonParser = new JsonParser();
-            JsonElement jRootElement = jsonParser.parse(recJson.get(0));
-            if (jRootElement.isJsonNull()) {
-                return;
+            if (this.changedStatusItems.get(ElementType.METRIC) != null) {
+                sortRecomputationItems(this.changedStatusItems.get(ElementType.METRIC), ElementType.METRIC);
             }
-            readJson(jRootElement);
+            if (this.changedStatusItems.get(ElementType.ENDPOINT) != null) {
+                sortRecomputationItems(this.changedStatusItems.get(ElementType.ENDPOINT), ElementType.ENDPOINT);
+            }
+            if (this.changedStatusItems.get(ElementType.SERVICE) != null) {
+                sortRecomputationItems(this.changedStatusItems.get(ElementType.SERVICE), ElementType.SERVICE);
+            }
 
-        } catch (ParseException pex) {
-            LOG.error("Parsing date error");
-            throw pex;
+    } catch(
+    ParseException pex)
 
-        }
+    {
+        LOG.error("Parsing date error");
+        throw pex;
     }
 
-    /*** Objects of RecomputationElement keeps info about topology elements
-     that are defined to apply recomputations**/
-    public class RecomputationElement {
+}
 
-        private String group;
-        private String service;
-        private String hostname;
-        private String metric;
-        private String startPeriod;
-        private String endPeriod;
+public void loadJson(File jsonFile) throws IOException, ParseException {
 
-        private String status;
-        private ElementType elementType;
+    this.clear();
 
-        public RecomputationElement() {
+    BufferedReader br = null;
+    try {
+        br = new BufferedReader(new FileReader(jsonFile));
+
+        JsonParser jsonParser = new JsonParser();
+        JsonElement jRootElement = jsonParser.parse(br);
+        readJson(jRootElement);
+
+    } catch (FileNotFoundException ex) {
+        LOG.error("Could not open file:" + jsonFile.getName());
+        throw ex;
+
+    } finally {
+        // Close quietly without exceptions the buffered reader
+        IOUtils.closeQuietly(br);
+    }
+
+}
+
+/**
+ * Load Recompuatation information from a JSON string instead of a File
+ * source. This method is used in execution enviroments where the required
+ * data is provided by broadcast variables
+ */
+public void loadJsonString(List<String> recJson) throws IOException, ParseException {
+
+    this.clear();
+
+    try {
+
+        JsonParser jsonParser = new JsonParser();
+        JsonElement jRootElement = jsonParser.parse(recJson.get(0));
+        if (jRootElement.isJsonNull()) {
+            return;
         }
+        readJson(jRootElement);
 
-        public RecomputationElement(String group, String service, String hostname, String metric, String startPeriod, String endPeriod, String status, ElementType type) {
-            this.group = group;
-            this.service = service;
-            this.hostname = hostname;
-            this.metric = metric;
-            this.startPeriod = startPeriod;
-            this.endPeriod = endPeriod;
-            this.status = status;
-            this.elementType = type;
+    } catch (ParseException pex) {
+        LOG.error("Parsing date error");
+        throw pex;
 
-        }
+    }
+}
 
-        public String getGroup() {
-            return group;
-        }
+/*** Objects of RecomputationElement keeps info about topology elements
+ that are defined to apply recomputations**/
+public class RecomputationElement {
 
-        public void setGroup(String group) {
-            this.group = group;
-        }
+    private String group;
+    private String service;
+    private String hostname;
+    private String metric;
+    private String startPeriod;
+    private String endPeriod;
 
-        public String getService() {
-            return service;
-        }
+    private String status;
+    private ElementType elementType;
 
-        public void setService(String service) {
-            this.service = service;
-        }
+    public RecomputationElement() {
+    }
 
-        public String getHostname() {
-            return hostname;
-        }
+    public RecomputationElement(String group, String service, String hostname, String metric, String startPeriod, String endPeriod, String status, ElementType type) {
+        this.group = group;
+        this.service = service;
+        this.hostname = hostname;
+        this.metric = metric;
+        this.startPeriod = startPeriod;
+        this.endPeriod = endPeriod;
+        this.status = status;
+        this.elementType = type;
 
-        public void setHostname(String hostname) {
-            this.hostname = hostname;
-        }
+    }
 
-        public String getMetric() {
-            return metric;
-        }
+    public String getGroup() {
+        return group;
+    }
 
-        public void setMetric(String metric) {
-            this.metric = metric;
-        }
+    public void setGroup(String group) {
+        this.group = group;
+    }
 
-        public String getStartPeriod() {
-            return startPeriod;
-        }
+    public String getService() {
+        return service;
+    }
 
-        public void setStartPeriod(String startPeriod) {
-            this.startPeriod = startPeriod;
-        }
+    public void setService(String service) {
+        this.service = service;
+    }
 
-        public String getEndPeriod() {
-            return endPeriod;
-        }
+    public String getHostname() {
+        return hostname;
+    }
 
-        public void setEndPeriod(String endPeriod) {
-            this.endPeriod = endPeriod;
-        }
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
 
+    public String getMetric() {
+        return metric;
+    }
 
-        public String getStatus() {
-            return status;
-        }
+    public void setMetric(String metric) {
+        this.metric = metric;
+    }
 
-        public void setStatus(String status) {
-            this.status = status;
-        }
+    public String getStartPeriod() {
+        return startPeriod;
+    }
 
-        public ElementType getElementType() {
-            return elementType;
-        }
+    public void setStartPeriod(String startPeriod) {
+        this.startPeriod = startPeriod;
+    }
 
-        public void setElementType(ElementType elementType) {
-            this.elementType = elementType;
-        }
+    public String getEndPeriod() {
+        return endPeriod;
+    }
 
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof RecomputationElement)) return false;
-            RecomputationElement that = (RecomputationElement) o;
-            return Objects.equals(group, that.group) && Objects.equals(service, that.service) && Objects.equals(hostname, that.hostname) && Objects.equals(metric, that.metric) && Objects.equals(startPeriod, that.startPeriod) && Objects.equals(endPeriod, that.endPeriod) && Objects.equals(status, that.status) && elementType == that.elementType;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(group, service, hostname, metric, startPeriod, endPeriod, status, elementType);
-        }
+    public void setEndPeriod(String endPeriod) {
+        this.endPeriod = endPeriod;
     }
 
 
-    /**
-     * Objects of ChangedStatusItem extend RecomputationElement
-     * to keep info about topology items to apply recomputations that
-     * request status change for a specific period
-     */
-    public enum ElementType {
-        GROUP,
-        SERVICE,
-        ENDPOINT,
-        METRIC,
-        NONE
+    public String getStatus() {
+        return status;
     }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public ElementType getElementType() {
+        return elementType;
+    }
+
+    public void setElementType(ElementType elementType) {
+        this.elementType = elementType;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof RecomputationElement)) return false;
+        RecomputationElement that = (RecomputationElement) o;
+        return Objects.equals(group, that.group) && Objects.equals(service, that.service) && Objects.equals(hostname, that.hostname) && Objects.equals(metric, that.metric) && Objects.equals(startPeriod, that.startPeriod) && Objects.equals(endPeriod, that.endPeriod) && Objects.equals(status, that.status) && elementType == that.elementType;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(group, service, hostname, metric, startPeriod, endPeriod, status, elementType);
+    }
+}
+
+
+/**
+ * Objects of ChangedStatusItem extend RecomputationElement
+ * to keep info about topology items to apply recomputations that
+ * request status change for a specific period
+ */
+public enum ElementType {
+    GROUP,
+    SERVICE,
+    ENDPOINT,
+    METRIC,
+    NONE
+}
+
+public static void sortRecomputationItems(List<RecomputationElement> items, ElementType elementType) {
+    Collections.sort(items, new Comparator<RecomputationElement>() {
+        public int compare(RecomputationElement a, RecomputationElement b) {
+            int priorityA = getPriority(a, elementType);
+            int priorityB = getPriority(b, elementType);
+            return Integer.compare(priorityA, priorityB);
+        }
+    });
+}
+
+private static int getPriority(RecomputationElement item, ElementType elementType) {
+    boolean hasGroup = item.group != null;
+    boolean hasService = item.service != null;
+    boolean hasHostname = item.hostname != null;
+
+    if (elementType.equals(ElementType.METRIC)) {
+        if (hasHostname && hasService && hasGroup) return 8;
+        if (hasHostname && hasGroup) return 7;
+        if (hasService && hasGroup) return 6;
+        if (hasHostname && hasService) return 5;
+        if (hasGroup) return 4;
+        if (hasService) return 3;
+        if (hasHostname) return 2;
+        return 1; // Only metric
+    } else if (elementType.equals(ElementType.ENDPOINT)) {
+        // hostname is always set, vary by service + group
+        if (hasService && hasGroup) return 4;
+        if (hasGroup) return 3;
+        if (hasService) return 2;
+        return 1; // Only hostname
+    } else if (elementType.equals(ElementType.SERVICE)) {
+        // service is always set, vary by group
+        if (hasGroup) return 2;
+        return 1; // Only service
+    }
+
+    // Fallback if none match
+    return 0;
+}
+
+
 }

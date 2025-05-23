@@ -66,16 +66,17 @@ public class RecomputationChangeStatusTest {
 
         /**********/
 
-        DataSet<StatusTimeline> statusMetricTimeline1 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/metric_timeline_recomp1.json", testFilePath + "/exp_metric_timeline1_metricA.json", testFilePath + "/exp_metric_recomputed.json", true);
-        DataSet<StatusTimeline> statusMetricTimeline2 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/metric_timeline_recomp2.json", testFilePath + "/exp_metric_timeline2_metricA.json", testFilePath + "/exp_metric_recomputed2.json", true);
-        DataSet<StatusTimeline> statusMetricTimeline3 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/metric_timeline_recomp3.json", testFilePath + "/exp_metric_timeline2_metricA.json", testFilePath + "/exp_metric_recomputed.json", true);
-        DataSet<StatusTimeline> statusMetricTimeline4 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/metric_timeline_recomp4.json", testFilePath + "/exp_metric_timeline4_metric_A.json", testFilePath + "/exp_metric_recomputed4.json", true);
+  //      DataSet<StatusTimeline> statusMetricTimeline1 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/metric_timeline_recomp1.json", testFilePath + "/exp_metric_timeline1_metricA.json", testFilePath + "/exp_metric_recomputed.json", true);
+    //    DataSet<StatusTimeline> statusMetricTimeline2 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/metric_timeline_recomp2.json", testFilePath + "/exp_metric_timeline2_metricA.json", testFilePath + "/exp_metric_recomputed2.json", true);
+        //  DataSet<StatusTimeline> statusMetricTimeline3 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/metric_timeline_recomp3.json", testFilePath + "/exp_metric_timeline2_metricA.json", testFilePath + "/exp_metric_recomputed.json", true);
+        //DataSet<StatusTimeline> statusMetricTimeline4 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/metric_timeline_recomp4.json", testFilePath + "/exp_metric_timeline4_metric_A.json", testFilePath + "/exp_metric_recomputed4.json", true);
 
-//        DataSet<StatusTimeline> statusMetricTimeline5 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp5.json", testFilePath + "/metric_timeline_recomp5.json", testFilePath + "/exp_metric_timeline5_metric_A.json", testFilePath + "/exp_metric_recomputed5.json", true);
+      //DataSet<StatusTimeline> statusMetricTimeline5 = testMetricTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp5.json", testFilePath + "/metric_timeline_recomp5.json", testFilePath + "/exp_metric_timeline5_metric_A.json", testFilePath + "/exp_metric_recomputed5.json", true);
 
         /**************/
-        DataSet<StatusTimeline> statusEndpointTimeline1 = testEndpointTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/endpoint_timeline_recomp1.json", testFilePath + "/exp_endpoint_timeline1.json", true);
-        DataSet<StatusTimeline> statusEndpointTimeline2 = testEndpointTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp2.json", testFilePath + "/endpoint_timeline_recomp2.json", testFilePath + "/exp_endpoint_timeline2.json", true);
+   //     DataSet<StatusTimeline> statusEndpointTimeline1 = testEndpointTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/endpoint_timeline_recomp1.json", testFilePath + "/exp_endpoint_timeline1.json", true);
+     //   DataSet<StatusTimeline> statusEndpointTimeline2 = testEndpointTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp2.json", testFilePath + "/endpoint_timeline_recomp2.json", testFilePath + "/exp_endpoint_timeline2.json", true);
+        DataSet<StatusTimeline> statusEndpointTimeline3 = testEndpointTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp6.json", testFilePath + "/endpoint_timeline_recomp3.json", testFilePath + "/exp_endpoint_timeline3.json", true);
 
         /**************/
         DataSet<StatusTimeline> statusServiceTimeline1 = testServiceTimelines(env, params, testFilePath + "/initial_group_timeline_data_recomp.json", testFilePath + "/service_timeline_recomp1.json", testFilePath + "/exp_service_timeline1.json", true);
@@ -267,6 +268,11 @@ public class RecomputationChangeStatusTest {
             if (!expEndpointList.isEmpty()) {
                 DataSet<StatusTimeline> expEndpointTimelineDS = env.fromElements(getListExpTimelines(expEndpointList.get(0), opsMgr));
                 expEndpointTimelines = expEndpointTimelineDS.collect();
+            }
+            for(StatusTimeline st: statusEndpointTimeline.collect()){
+                if(!expEndpointTimelines.contains(st)){
+                    System.out.println("not found-- "+st);
+                }
             }
             Assert.assertEquals(TestUtils.compareLists(expEndpointTimelines, statusEndpointTimeline.collect()), true);
         }

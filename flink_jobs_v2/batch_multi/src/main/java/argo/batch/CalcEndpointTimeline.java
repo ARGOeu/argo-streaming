@@ -132,6 +132,9 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
                 mergedTimeline.optimize();
             }
         }
+        if(endpointGroup.equals("Group_B") && service.equals("Service_B")&& hostname.equals("Hostname_A")){
+            System.out.println("here ");
+        }
 // Attempt to find if there's a recomputation status change request for the current endpoint
         ArrayList<RecomputationsManager.RecomputationElement> recompItems = recMgr.findChangedStatusItem(
                 endpointGroup, service, hostname, null, RecomputationsManager.ElementType.ENDPOINT);
