@@ -1,6 +1,7 @@
 package argo.batch;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.List;
 
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
@@ -11,16 +12,21 @@ import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+
 import org.joda.time.DateTimeZone;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.OperationsManager;
 
+import profilesmanager.RecomputationsManager;
 import timelines.Timeline;
 import timelines.TimelineAggregator;
+import utils.RecompTimelineBuilder;
+import utils.Utils;
 
 /**
  * Accepts a list o status metrics grouped by the fields: endpoint group,
@@ -46,14 +52,17 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
     private OperationsManager opsMgr;
     private String runDate;
     private HashMap<String, String> serviceFunctionsMap;
+    private List<String> recs;
+    private RecomputationsManager recMgr;
 
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
 
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
+        this.recs = getRuntimeContext().getBroadcastVariable("rec");
         // Initialize aggregation profile manager
         this.apsMgr = new AggregationProfileManager();
 
@@ -64,33 +73,43 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
 
         this.runDate = params.getRequired("run.date");
         this.serviceFunctionsMap = this.apsMgr.retrieveServiceOperations();
+        this.recMgr = new RecomputationsManager();
+
+        this.recMgr.loadJsonString(recs);
+
     }
 
     @Override
     public void reduce(Iterable<StatusTimeline> in, Collector<StatusTimeline> out) throws Exception {
 
+        String hostname = "";
         String service = "";
         String endpointGroup = "";
         String function = "";
-        HashMap<String, Timeline> timelinelist = new HashMap<String, Timeline>();
+        HashMap<String, Timeline> timelinelist = new HashMap<>();
         boolean hasThr = false;
+        ArrayList<String> recompRequestIds = new ArrayList<>();
+
         for (StatusTimeline item : in) {
             service = item.getService();
             endpointGroup = item.getGroup();
             function = item.getFunction();
+            hostname = item.getHostname();
+
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
             TreeMap<DateTime, Integer> samples = new TreeMap<DateTime, Integer>();
             for (TimeStatus timestatus : timestatusList) {
                 DateTime dt = new DateTime(timestatus.getTimestamp(), DateTimeZone.UTC);
                 samples.put(dt, timestatus.getStatus());
             }
+
             Timeline timeline = new Timeline();
             timeline.insertDateTimeStamps(samples, true);
-
             timelinelist.put(item.getHostname(), timeline);
             if (item.hasThr()) {
                 hasThr = true;
             }
+
         }
 
         String operation = serviceFunctionsMap.get(service);
@@ -104,6 +123,19 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
 
+        ArrayList<RecomputationsManager.RecomputationElement> recompItems = recMgr.findChangedStatusItem(endpointGroup, service, null, null, RecomputationsManager.ElementType.SERVICE);
+
+        if (!recompItems.isEmpty()) { // If a recomputation request is found for this metric
+            for (RecomputationsManager.RecomputationElement recompItem : recompItems) {
+                TreeMap<DateTime, Integer> recomputedSamples = (TreeMap<DateTime, Integer>) mergedTimeline.getSamplesMap().clone();
+                mergedTimeline.bulkInsert(RecompTimelineBuilder.calcRecomputations(
+                        recomputedSamples, // existing timeline samples
+                        recompItem,                     // recomputation details
+                        runDate,                        // the current day of execution
+                        this.opsMgr                     // operations manager to interpret statuses
+                ).entrySet());
+            }
+        }
         ArrayList<TimeStatus> timestatuCol = new ArrayList();
         for (Map.Entry<DateTime, Integer> entry : mergedTimeline.getSamples()) {
             TimeStatus timestatus = new TimeStatus(entry.getKey().getMillis(), entry.getValue());

@@ -9,6 +9,7 @@ import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -90,16 +91,16 @@ public class RecomputationManagerTest {
         Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T14:05:44Z"));
         Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T15:02:44Z"));
         Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T15:03:45Z"));
-        RecomputationsManager.ExcludedMetric exMetric1 = recMgr.new ExcludedMetric(null, null, null, "metric1", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
-        RecomputationsManager.ExcludedMetric exMetric2 = recMgr.new ExcludedMetric(null, null, "host2.example.com", "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
-        RecomputationsManager.ExcludedMetric exMetric3 = recMgr.new ExcludedMetric("grnet", null, null, "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
-        RecomputationsManager.ExcludedMetric exMetric4 = recMgr.new ExcludedMetric("grnet", "cloud.storage", null, "webcheck", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
-        ArrayList<RecomputationsManager.ExcludedMetric> exMetrics = new ArrayList<>();
+        RecomputationsManager.RecomputationElement exMetric1 = recMgr.new RecomputationElement(null, null, null, "metric1", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z","EXCLUDED", RecomputationsManager.ElementType.METRIC);
+        RecomputationsManager.RecomputationElement exMetric2 = recMgr.new RecomputationElement(null, null, "host2.example.com", "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z","EXCLUDED", RecomputationsManager.ElementType.METRIC);
+        RecomputationsManager.RecomputationElement exMetric3 = recMgr.new RecomputationElement("grnet", null, null, "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z","EXCLUDED", RecomputationsManager.ElementType.METRIC);
+        RecomputationsManager.RecomputationElement exMetric4 = recMgr.new RecomputationElement("grnet", "cloud.storage", null, "webcheck", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z","EXCLUDED", RecomputationsManager.ElementType.METRIC);
+        List<RecomputationsManager.RecomputationElement> exMetrics = new ArrayList<>();
         exMetrics.add(exMetric1);
         exMetrics.add(exMetric2);
         exMetrics.add(exMetric3);
         exMetrics.add(exMetric4);
-        Assert.assertEquals(exMetrics, recMgr.excludedMetrics);
+        Assert.assertEquals(exMetrics, recMgr.changedStatusItems.get(RecomputationsManager.ElementType.METRIC));
 
         Assert.assertEquals(exMetric1, recMgr.findMetricExcluded(null, null, null, "metric1"));
         Assert.assertEquals(exMetric2, recMgr.findMetricExcluded(null, null, "host2.example.com", "metric2"));

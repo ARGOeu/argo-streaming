@@ -55,7 +55,6 @@ public class  GroupTrendsCounter extends RichFlatMapFunction<GroupTrends, Tuple8
     @Override
     public void flatMap(GroupTrends t, Collector< Tuple8< String, String, String, String, String, Integer, Integer,String>> out) throws Exception {
 
-
         int criticalstatus = this.opsMgr.getIntStatus("CRITICAL");
         int warningstatus = this.opsMgr.getIntStatus("WARNING");
         int unknownstatus = this.opsMgr.getIntStatus("UNKNOWN");

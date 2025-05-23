@@ -60,7 +60,7 @@ public class MetricTrendsCounter extends RichFlatMapFunction<MetricTrends, Tuple
      */
     @Override
     public void flatMap(MetricTrends t, Collector<Tuple8<String, String, String, String, String, Integer, Integer,String>> out) throws Exception {
-    //  if(t.getGroup().equals("Group_1") && t.getService().equals("Service_1B") && t.getEndpoint().equals("Hostname_4") && t.getMetric().equals("Metric_B")){
+
         int criticalstatus = this.opsMgr.getIntStatus("CRITICAL");
         int warningstatus = this.opsMgr.getIntStatus("WARNING");
         int unknownstatus = this.opsMgr.getIntStatus("UNKNOWN");

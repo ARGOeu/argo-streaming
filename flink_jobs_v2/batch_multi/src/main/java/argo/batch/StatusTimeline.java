@@ -40,7 +40,7 @@ public class StatusTimeline implements Serializable {
         this.metric = metric;
         this.timestamps = timestamps;
         hasThr = false;
-    }
+     }
 
     public boolean hasThr() {
         return hasThr;
@@ -106,6 +106,19 @@ public class StatusTimeline implements Serializable {
         for (TimeStatus st : timestamps) {
             resultsTimeStatus += st.toString();
         }
-        return "StatusTimeline{" + "group=" + group + ", service=" + service + ", hostname=" + hostname + ", metric=" + metric + ", statusMetrics=" + resultsStatusMetrics + ", timestamps=" + resultsTimeStatus + '}';
+        return "StatusTimeline{" + "group=" + group + ", service=" + service + ", hostname=" + hostname + ", metric=" + metric + ", statusMetrics=" + resultsStatusMetrics+  ", timestamps=" + + '}';
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof StatusTimeline)) return false;
+        StatusTimeline timeline = (StatusTimeline) o;
+        return hasThr == timeline.hasThr && Objects.equals(group, timeline.group) && Objects.equals(function, timeline.function) && Objects.equals(service, timeline.service) && Objects.equals(hostname, timeline.hostname) && Objects.equals(metric, timeline.metric) && Objects.equals(timestamps, timeline.timestamps) ;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(group, function, service, hostname, metric, timestamps, hasThr);
     }
 }

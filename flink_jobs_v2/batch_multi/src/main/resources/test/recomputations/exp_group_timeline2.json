@@ -1,0 +1,1 @@
+[{"group":"Group_A","status_history":[{"status":"CRITICAL","timestamp":"2025-04-30T00:00:00Z"},{"status":"OK","timestamp":"2025-04-30T11:00:00Z"}],"hasThr":true},{"group":"Group_B","status_history":[{"status":"OK","timestamp":"2025-04-30T00:00:00Z"}],"hasThr":true}]

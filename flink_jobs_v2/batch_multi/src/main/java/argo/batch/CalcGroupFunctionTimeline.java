@@ -77,6 +77,7 @@ public class CalcGroupFunctionTimeline extends RichGroupReduceFunction<StatusTim
         for (StatusTimeline item : in) {
             function = item.getFunction();
             endpointGroup = item.getGroup();
+
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
             for (TimeStatus timestatus : timestatusList) {
