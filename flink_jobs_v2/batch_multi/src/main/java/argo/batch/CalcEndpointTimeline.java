@@ -49,8 +49,7 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
     private DowntimeManager downtimeMgr;
     private List<Downtime> downtime;
     private DateTime now;
-    private List<String> recs;
-    private RecomputationsManager recMgr;
+    private List<HashMap<String, List<RecomputationsManager.RecomputationElement>>> rec;
 
     @Override
     public void open(Configuration parameters) throws IOException, ParseException {
@@ -60,8 +59,9 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
-        this.recs = getRuntimeContext().getBroadcastVariable("rec");
+        this.rec = getRuntimeContext().getBroadcastVariable("rec");
 
+        RecomputationsManager.endpointRecomputationItems=this.rec.get(0);
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
         this.mpsMgr.loadFromList(mps);
@@ -75,8 +75,6 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
         this.downtime = getRuntimeContext().getBroadcastVariable("down");
         this.downtimeMgr = new DowntimeManager();
         this.downtimeMgr.loadFromList(downtime);
-        this.recMgr = new RecomputationsManager();
-        this.recMgr.loadJsonString(recs);
 
         this.runDate = params.getRequired("run.date");
         this.operation = this.apsMgr.getMetricOpByProfile();
@@ -117,8 +115,6 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
 
         }
 
-
-
         TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt(), runDate);
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(operation));
 
@@ -132,11 +128,8 @@ public class CalcEndpointTimeline extends RichGroupReduceFunction<StatusTimeline
                 mergedTimeline.optimize();
             }
         }
-        if(endpointGroup.equals("Group_B") && service.equals("Service_B")&& hostname.equals("Hostname_A")){
-            System.out.println("here ");
-        }
 // Attempt to find if there's a recomputation status change request for the current endpoint
-        ArrayList<RecomputationsManager.RecomputationElement> recompItems = recMgr.findChangedStatusItem(
+        ArrayList<RecomputationsManager.RecomputationElement> recompItems = RecomputationsManager.findChangedStatusItem(
                 endpointGroup, service, hostname, null, RecomputationsManager.ElementType.ENDPOINT);
 
         if (!recompItems.isEmpty()) { // If a recomputation request is found for this metric

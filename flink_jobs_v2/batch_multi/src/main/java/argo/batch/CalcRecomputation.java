@@ -43,11 +43,9 @@ public class CalcRecomputation extends RichGroupReduceFunction<StatusMetric, Sta
     private List<GroupGroup> ggp;
     private MetricProfileManager mpsMgr;
     private String runDate;
-    private List<String> rec;
-    private RecomputationsManager recMgr;
+    private List<HashMap<String, List<RecomputationsManager.RecomputationElement>>> rec;
     private List<String> ops;
     private OperationsManager opsMgr;
-
     @Override
     public void open(Configuration parameters) throws IOException, ParseException {
         // Get data from broadcast variable
@@ -55,14 +53,12 @@ public class CalcRecomputation extends RichGroupReduceFunction<StatusMetric, Sta
 
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
         this.rec = getRuntimeContext().getBroadcastVariable("rec");
+        RecomputationsManager.metricRecomputationItems=this.rec.get(0);
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
 
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
         this.mpsMgr.loadFromList(mps);
-        // Initialize endpoint group manager
-        this.recMgr = new RecomputationsManager();
-        this.recMgr.loadJsonString(rec);
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
 
@@ -97,7 +93,7 @@ public class CalcRecomputation extends RichGroupReduceFunction<StatusMetric, Sta
 
         }
 
-        ArrayList<RecomputationsManager.RecomputationElement> recompItems = recMgr.findChangedStatusItem(
+        ArrayList<RecomputationsManager.RecomputationElement> recompItems = RecomputationsManager.findChangedStatusItem(
                 endpointGroup, // The endpoint group associated with the metric
                 service,       // The service associated with the metric
                 hostname,      // The hostname for the metric

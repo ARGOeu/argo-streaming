@@ -53,8 +53,6 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
-    private List<String> recs;
-    private RecomputationsManager recMgr;
 
     @Override
     public void open(Configuration parameters) throws IOException, ParseException {
@@ -63,7 +61,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
-        this.recs = getRuntimeContext().getBroadcastVariable("rec");
+        //     this.recs = getRuntimeContext().getBroadcastVariable("rec");
 
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
@@ -75,10 +73,6 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
-        this.recMgr = new RecomputationsManager();
-
-        this.recMgr.loadJsonString(recs);
-
     }
 
     @Override
@@ -103,7 +97,7 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             metric = item.getMetric();
             String ts = item.getTimestamp();
             String status = item.getStatus();
-           if (i == 0) {
+            if (i == 0) {
                 DateTime currentTimestamp = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", item.getTimestamp());
                 if (currentTimestamp.isAfter(today)) {
 

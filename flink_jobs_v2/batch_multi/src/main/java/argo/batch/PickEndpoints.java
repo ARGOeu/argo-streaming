@@ -3,6 +3,7 @@ package argo.batch;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +48,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
     private List<MetricProfile> mps;
     private List<GroupEndpoint> egp;
     private List<GroupGroup> ggp;
-    private List<String> rec;
+    private List<Map<String, ArrayList<Map<String, Date>>>> rec;
     private List<String> cfg;
     private List<String> thr;
     private List<String> ops;
@@ -56,11 +57,9 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
     private MetricProfileManager mpsMgr;
     private EndpointGroupManager egpMgr;
     private GroupGroupManager ggpMgr;
-    private RecomputationsManager recMgr;
     private ReportManager cfgMgr;
     private ThresholdManager thrMgr;
     private AggregationProfileManager apsMgr;
-
     private String egroupType;
 
     @Override
@@ -70,15 +69,13 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
         this.egp = getRuntimeContext().getBroadcastVariable("egp");
         this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
         this.ggp = getRuntimeContext().getBroadcastVariable("ggp");
-        this.rec = getRuntimeContext().getBroadcastVariable("rec");
+     ///   this.rec = getRuntimeContext().getBroadcastVariable("rec");
         this.cfg = getRuntimeContext().getBroadcastVariable("conf");
         this.thr = getRuntimeContext().getBroadcastVariable("thr");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
-
-        // Initialize Recomputation manager
-        this.recMgr = new RecomputationsManager();
-        this.recMgr.loadJsonString(rec);
+        this.rec= getRuntimeContext().getBroadcastVariable("rec");
+        RecomputationsManager.monEngines=this.rec.get(0);
 
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
@@ -124,17 +121,17 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
         String ts = md.getTimestamp();
 
         // Filter By monitoring engine
-        if (recMgr.isMonExcluded(monHost, ts) == true) {
+        if (RecomputationsManager.isMonExcluded(monHost, ts)) {
             return;
         }
 
         // Filter By aggregation profile
-        if (apsMgr.checkService(aprof, service) == false) {
+        if (!apsMgr.checkService(aprof, service)) {
             return;
         }
 
         // Filter By metric profile
-        if (mpsMgr.checkProfileServiceMetric(prof, service, metric) == false) {
+        if (!mpsMgr.checkProfileServiceMetric(prof, service, metric)) {
             return;
         }
 
@@ -142,7 +139,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
         ArrayList<String> groupnames = egpMgr.getGroup(egroupType, hostname, service);
 
         for (String groupname : groupnames) {
-            if (ggpMgr.checkSubGroup(groupname) == true) {
+            if (ggpMgr.checkSubGroup(groupname)) {
                 // Create a StatusMetric output
                 String timestamp2 = md.getTimestamp().split("Z")[0];
                 String[] tsToken = timestamp2.split("T");

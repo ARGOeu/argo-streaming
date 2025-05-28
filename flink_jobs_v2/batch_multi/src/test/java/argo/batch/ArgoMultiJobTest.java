@@ -22,6 +22,7 @@ import org.joda.time.DateTimeZone;
 import org.junit.Assert;
 import org.junit.Test;
 import profilesmanager.OperationsManager;
+import profilesmanager.RecomputationsManager;
 import profilesmanager.ReportManager;
 import trends.calculations.*;
 import trends.flipflops.*;
@@ -37,8 +38,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -88,6 +88,13 @@ public class ArgoMultiJobTest {
     private static ReportManager confMgr;
     private static ReportManager cfgMgr;
 
+    private static DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> metricRecomputedDS;
+    private static DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> endpointRecomputedDS;
+    private static DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> serviceRecomputedDS;
+    private static DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> groupRecomputedDS;
+    private static DataSource<Map<String, ArrayList<Map<String, Date>>>> monEngineRecDS;
+    private static DataSource<Map<String, ArrayList<Map<String, String>>>> groupsRecDS;
+
     public ArgoMultiJobTest() {
     }
 
@@ -118,10 +125,20 @@ public class ArgoMultiJobTest {
         apsDS = env.fromElements(amr.getResourceJSON(ApiResource.AGGREGATION));
         opsDS = env.fromElements(amr.getResourceJSON(ApiResource.OPS));
 
+
         recDS = env.fromElements("");
         if (amr.getResourceJSON(ApiResource.RECOMPUTATIONS) != null) {
             recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
         }
+        RecomputationsManager.loadJsonString(recDS.collect());
+
+        metricRecomputedDS = env.fromElements(RecomputationsManager.metricRecomputationItems);
+        endpointRecomputedDS = env.fromElements(RecomputationsManager.endpointRecomputationItems);
+        serviceRecomputedDS = env.fromElements(RecomputationsManager.serviceRecomputationItems);
+        groupRecomputedDS = env.fromElements(RecomputationsManager.groupRecomputationItems);
+        monEngineRecDS = env.fromElements(RecomputationsManager.monEngines);
+        groupsRecDS = env.fromElements(RecomputationsManager.groups);
+
 
         mtagsDS = env.fromElements("");
         if (amr.getResourceJSON(ApiResource.MTAGS) != null) {
@@ -169,7 +186,7 @@ public class ArgoMultiJobTest {
         AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat<MetricData>(pin, MetricData.class);
         DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 
-        DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
+        DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(monEngineRecDS, "rec");
         URL exppdataURL = ArgoMultiJobTest.class.getResource("/test/exppdata.avro");
 
         Path exppin = new Path(exppdataURL.getPath());
@@ -217,7 +234,7 @@ public class ArgoMultiJobTest {
         //**************** Test PickEndpoints
         DataSet<StatusMetric> mdataTrimDS = mdataPrevTotalDS.flatMap(new PickEndpoints(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(recDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
+                .withBroadcastSet(monEngineRecDS, "rec").withBroadcastSet(cfgDS, "conf").withBroadcastSet(thrDS, "thr")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
 
         URL expPickdataURL = ArgoMultiJobTest.class.getResource("/test/pickdata.json");
@@ -249,7 +266,7 @@ public class ArgoMultiJobTest {
         //************** Test CalcPrevStatus
         stDetailDS = mdataTotalDS.groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
-                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops");
 
         URL calcPrevStatusURL = ArgoMultiJob.class.getResource("/test/expCalcPrevStatus.json");
         DataSet<String> calcPrevStatusString = env.readTextFile(calcPrevStatusURL.toString());
@@ -273,7 +290,7 @@ public class ArgoMultiJobTest {
         //Create StatusMetricTimeline dataset for endpoints
         recomputedData = stDetailDS.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcRecomputation(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(metricRecomputedDS, "rec");
 
         URL calcRecompDataURL = ArgoMultiJob.class.getResource("/test/exp_recomp_data.json");
         DataSet<String> calcRecompDataString = env.readTextFile(calcRecompDataURL.toString());
@@ -288,7 +305,7 @@ public class ArgoMultiJobTest {
 
         statusMetricTimeline = recomputedData.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps");
 
         ArrayList<String> opsJson = new ArrayList();
         opsJson.add(amr.getResourceJSON(ApiResource.OPS));
@@ -296,22 +313,22 @@ public class ArgoMultiJobTest {
         URL expMetricTimelineURL = ArgoMultiJob.class.getResource("/test/expMetricTimeline.json");
         DataSet<String> expMetricTimelineString = env.readTextFile(expMetricTimelineURL.toString());
         List<String> expMetricTimelineList = expMetricTimelineString.collect();
-        OperationsManager opsMgr=new OperationsManager();
+        OperationsManager opsMgr = new OperationsManager();
         opsMgr.loadJsonString(opsJson);
         List<StatusTimeline> expMetricTimelines = new ArrayList();
         if (!calcRecompDataList.isEmpty()) {
-            DataSet<StatusTimeline> expMetricTimelineDS = env.fromElements(getListExpTimelines(expMetricTimelineList.get(0),opsMgr));
+            DataSet<StatusTimeline> expMetricTimelineDS = env.fromElements(getListExpTimelines(expMetricTimelineList.get(0), opsMgr));
             expMetricTimelines = expMetricTimelineDS.collect();
         }
 
-       Assert.assertEquals(TestUtils.compareLists(expMetricTimelines, statusMetricTimeline.collect()), true);
+        Assert.assertEquals(TestUtils.compareLists(expMetricTimelines, statusMetricTimeline.collect()), true);
 
         //*************** Test Endpoint  Timeline
         //Create StatusMetricTimeline dataset for endpoints
         statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
                 .reduceGroup(new CalcEndpointTimeline(params, now)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(downDS, "down").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(downDS, "down").withBroadcastSet(endpointRecomputedDS, "rec");
 
         ArrayList<String> aggrJson = new ArrayList();
         aggrJson.add(amr.getResourceJSON(ApiResource.AGGREGATION));
@@ -321,23 +338,24 @@ public class ArgoMultiJobTest {
         List<String> expEndpointTimelineList = expEndpointTimelineString.collect();
         List<StatusTimeline> expEndpointTimelines = new ArrayList();
         if (!expEndpointTimelineList.isEmpty()) {
-            DataSet<StatusTimeline> expEndpointTimelineDS = env.fromElements(getListExpTimelines(expEndpointTimelineList.get(0),opsMgr));
+            DataSet<StatusTimeline> expEndpointTimelineDS = env.fromElements(getListExpTimelines(expEndpointTimelineList.get(0), opsMgr));
             expEndpointTimelines = expEndpointTimelineDS.collect();
         }
+
         Assert.assertEquals(TestUtils.compareLists(expEndpointTimelines, statusEndpointTimeline.collect()), true);
 
 
         statusServiceTimeline = statusEndpointTimeline.groupBy("group", "service")
                 .reduceGroup(new CalcServiceTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(serviceRecomputedDS, "rec");
 
         URL expServiceTimelineURL = ArgoMultiJob.class.getResource("/test/expServiceTimeline.json");
         DataSet<String> expServiceTimelineString = env.readTextFile(expServiceTimelineURL.toString());
         List<String> expServiceTimelineList = expServiceTimelineString.collect();
         List<StatusTimeline> expServiceTimelines = new ArrayList();
         if (!expEndpointTimelineList.isEmpty()) {
-            DataSet<StatusTimeline> expServiceTimelineDS = env.fromElements(getListExpTimelines(expServiceTimelineList.get(0),opsMgr));
+            DataSet<StatusTimeline> expServiceTimelineDS = env.fromElements(getListExpTimelines(expServiceTimelineList.get(0), opsMgr));
             expServiceTimelines = expServiceTimelineDS.collect();
         }
         Assert.assertEquals(TestUtils.compareLists(expServiceTimelines, statusServiceTimeline.collect()), true);
@@ -353,7 +371,7 @@ public class ArgoMultiJobTest {
         List<String> expFunctionlineList = expFunctionString.collect();
         List<StatusTimeline> expFunctionTimelines = new ArrayList();
         if (!expFunctionlineList.isEmpty()) {
-            DataSet<StatusTimeline> expFunctionTimelineDS = env.fromElements(getListExpTimelines(expFunctionlineList.get(0),opsMgr));
+            DataSet<StatusTimeline> expFunctionTimelineDS = env.fromElements(getListExpTimelines(expFunctionlineList.get(0), opsMgr));
             expFunctionTimelines = expFunctionTimelineDS.collect();
         }
 
@@ -363,14 +381,14 @@ public class ArgoMultiJobTest {
         statusGroupTimeline = statusEndGroupFunctionTimeline.groupBy("group")
                 .reduceGroup(new CalcGroupTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(groupRecomputedDS, "rec");
 
         URL expEndpointGroupTimelineURL = ArgoMultiJob.class.getResource("/test/expEndpointGroupTimeline.json");
         DataSet<String> expEndpointGroupString = env.readTextFile(expEndpointGroupTimelineURL.toString());
         List<String> expEndpointGrouplineList = expEndpointGroupString.collect();
         List<StatusTimeline> expEndpointGroupTimelines = new ArrayList();
         if (!expFunctionlineList.isEmpty()) {
-            DataSet<StatusTimeline> exEndpointGroupTimelineDS = env.fromElements(getListExpTimelines(expEndpointGrouplineList.get(0),opsMgr));
+            DataSet<StatusTimeline> exEndpointGroupTimelineDS = env.fromElements(getListExpTimelines(expEndpointGrouplineList.get(0), opsMgr));
             expEndpointGroupTimelines = exEndpointGroupTimelineDS.collect();
         }
 
@@ -423,6 +441,7 @@ public class ArgoMultiJobTest {
                 expStatusServRes = prepareStatusData(expStatusServDS.collect());
 
             }
+
             Assert.assertEquals(TestUtils.compareLists(expStatusServRes, stServiceDS.collect()), true);
             DataSet<StatusMetric> stEndGroupDS = statusGroupTimeline.flatMap(new CalcStatusEndGroup(params))
                     .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
@@ -557,7 +576,7 @@ public class ArgoMultiJobTest {
             Assert.assertEquals(TestUtils.compareLists(expectedServAr, serviceArDS.collect()), true);
             DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params, now)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
-                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(cfgDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
+                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(downDS, "down").withBroadcastSet(cfgDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(groupsRecDS, "rec");
             List<TestUtils.ArItem> groupArData = loadExpectedArData(groupExpectedData, TestUtils.LEVEL.GROUP, env);
             List<EndpointGroupAR> expectedGroupAr = TestUtils.prepareGroupR(groupArData, params.get("run.date"), cfgMgr.ggroup, ggpDS.collect());
 
@@ -648,8 +667,10 @@ public class ArgoMultiJobTest {
             }
 
             sm.setInfo("{}");
-            sm.setMessage(null);
 
+            if(sm.getMessage().equals("")) {
+                sm.setMessage(null);
+            }
             sm.setSummary(null);
             String timestamp2 = sm.getTimestamp().split("Z")[0];
             String[] tsToken = timestamp2.split("T");
@@ -670,11 +691,11 @@ public class ArgoMultiJobTest {
             }
 
             sm.setInfo("{}");
-            if (sm.getMessage()== null || sm.getMessage().equals("")) {
+            if (sm.getMessage() == null || sm.getMessage().equals("")) {
                 sm.setMessage(null);
 
             }
-             if (sm.getOgStatus() == null) {
+            if (sm.getOgStatus() == null) {
                 sm.setOgStatus("");
             }
             if (sm.getRuleApplied() == null) {
@@ -913,11 +934,17 @@ public class ArgoMultiJobTest {
                 recompRequestId = jItem.get("recompRequestId").getAsString();
 
             }
+           if(group.equals("Group_X") && service.equals("Service_X")  && hostname.equals("Hostname_X") && metric.equals("Metric_X")){
+               System.out.println("here");
+           }
+
             String message = "";
             if (jItem.has("message") && !jItem.get("message").isJsonNull()) {
                 message = jItem.get("message").getAsString();
             }
-
+            if (jItem.has("hasThr") && !jItem.get("hasThr").isJsonNull()) {
+                hasThr = jItem.get("hasThr").getAsBoolean();
+            }
             StatusMetric stm = new StatusMetric();
             stm.setGroup(group);
             stm.setService(service);
@@ -996,12 +1023,12 @@ public class ArgoMultiJobTest {
                 timeStatusList.add(new TimeStatus(ts, statusInt));
 
             }
-            StatusTimeline statusTimeline = new StatusTimeline(group, function,service, hostname, metric,timeStatusList );
+            StatusTimeline statusTimeline = new StatusTimeline(group, function, service, hostname, metric, timeStatusList);
             statusTimeline.setHasThr(hasThr);
             results.add(statusTimeline);
         }
 
-        StatusTimeline[] rArr = new StatusTimeline[ results.size()];
+        StatusTimeline[] rArr = new StatusTimeline[results.size()];
         rArr = results.toArray(rArr);
         return rArr;
     }

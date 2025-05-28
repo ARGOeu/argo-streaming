@@ -40,8 +40,6 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
     private List<GroupGroup> ggp;
     private MetricProfileManager mpsMgr;
     private String runDate;
-    private List<String> rec;
-    private RecomputationsManager recMgr;
     private List<String> ops;
     private OperationsManager opsMgr;
 
@@ -51,15 +49,11 @@ public class CalcPrevStatus extends RichGroupReduceFunction<StatusMetric, Status
         this.runDate = params.getRequired("run.date");
 
         this.mps = getRuntimeContext().getBroadcastVariable("mps");
-        this.rec = getRuntimeContext().getBroadcastVariable("rec");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
 
         // Initialize metric profile manager
         this.mpsMgr = new MetricProfileManager();
         this.mpsMgr.loadFromList(mps);
-        // Initialize endpoint group manager
-        this.recMgr = new RecomputationsManager();
-        this.recMgr.loadJsonString(rec);
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
 
