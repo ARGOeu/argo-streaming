@@ -64,7 +64,7 @@ public class TestUtils {
             boolean found = false;
             while (iterB.hasNext()) {
                 Object oB = iterB.next();
-                if (oA.toString().equals(oB.toString())) {
+                if (oA.equals(oB)) {
                     iterB.remove();
                     found = true;
                     break;
@@ -467,7 +467,7 @@ public class TestUtils {
         ArrayList<EndpointAR> endpointList = new ArrayList<>();
         for (ArItem arItem : arList) {
 
-            EndpointAR endpar = new EndpointAR(dateInt, "04edb428-01e6-4286-87f1-050546736f7c", arItem.getHostname(), arItem.getService(), arItem.getGroup(), arItem.getAvailability(), arItem.getReliability(), arItem.getUp(), arItem.getUnknown(), arItem.getDown(), "");
+            EndpointAR endpar = new EndpointAR(dateInt, "04edb428-01e6-4286-87f1-050546736f7c", arItem.getHostname(), arItem.getService(), arItem.getGroup(), arItem.getAvailability(), arItem.getReliability(), arItem.getUp(), arItem.getUnknown(), arItem.getDown(), "{}");
             endpointList.add(endpar);
         }
         return endpointList;

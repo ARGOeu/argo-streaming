@@ -3,7 +3,11 @@ package argo.batch;
 import java.io.IOException;
 import java.text.ParseException;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 
 import org.apache.flink.configuration.Configuration;
@@ -28,18 +32,14 @@ public class ExcludeMetricData extends RichFlatMapFunction<MetricData,MetricData
 	
 	static Logger LOG = LoggerFactory.getLogger(ArgoMultiJob.class);
 	
-	private List<String> rec;
-	private RecomputationsManager recMgr;
+	private List<Map<String, ArrayList<Map<String, Date>>>> rec;
 
 	@Override
 	public void open(Configuration parameters) throws IOException, ParseException {
 		// Get recomputation data from broadcast variable
+
 		this.rec = getRuntimeContext().getBroadcastVariable("rec");
-		
-		// Initialize Recomputation manager
-		this.recMgr = new RecomputationsManager();
-		this.recMgr.loadJsonString(rec);
-	
+        RecomputationsManager.monEngines=this.rec.get(0);
 	}
 
 	@Override
@@ -52,7 +52,7 @@ public class ExcludeMetricData extends RichFlatMapFunction<MetricData,MetricData
 
 		// Check if monitoring host and metric data coincide with exclusions by monitoring
 		// engine in the current available recomputations
-		if (recMgr.isMonExcluded(monHost, ts) == true) return;
+		if (RecomputationsManager.isMonExcluded(monHost, ts)) return;
 		
 		// if not excluded collect the result in the output
 		out.collect(md);

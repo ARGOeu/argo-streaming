@@ -106,4 +106,16 @@ public class ServiceAR {
     public String toString() {
         return "(" + this.dateInt + "," + this.report  + "," + this.name + "," + this.group + "," + this.a + "," + this.r + "," + this.up + "," + this.unknown + "," + this.down + ")";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ServiceAR)) return false;
+        ServiceAR serviceAR = (ServiceAR) o;
+        return dateInt == serviceAR.dateInt && Double.compare(a, serviceAR.a) == 0 && Double.compare(r, serviceAR.r) == 0 && Double.compare(up, serviceAR.up) == 0 && Double.compare(unknown, serviceAR.unknown) == 0 && Double.compare(down, serviceAR.down) == 0 && Objects.equals(report, serviceAR.report) && Objects.equals(name, serviceAR.name) && Objects.equals(group, serviceAR.group);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(dateInt, report, name, group, a, r, up, unknown, down);
+    }
 }

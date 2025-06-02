@@ -95,4 +95,15 @@ public class EndpointGroupAR {
 		return "(" + this.dateInt+ "," + this.report + "," + this.name + "," + this.group + "," + this.weight + "," + this.a + "," + this.r + ","  + this.up + ","  + this.unknown + ","  + this.down  + ")";
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof EndpointGroupAR)) return false;
+		EndpointGroupAR that = (EndpointGroupAR) o;
+		return dateInt == that.dateInt && weight == that.weight && Double.compare(a, that.a) == 0 && Double.compare(r, that.r) == 0 && Double.compare(up, that.up) == 0 && Double.compare(unknown, that.unknown) == 0 && Double.compare(down, that.down) == 0 && Objects.equals(report, that.report) && Objects.equals(name, that.name) && Objects.equals(group, that.group);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(dateInt, report, name, group, weight, a, r, up, unknown, down);
+	}
 }

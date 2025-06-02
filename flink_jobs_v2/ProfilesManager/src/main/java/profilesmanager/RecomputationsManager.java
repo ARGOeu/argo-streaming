@@ -28,44 +28,54 @@ public class RecomputationsManager {
 
     private static final Logger LOG = Logger.getLogger(RecomputationsManager.class.getName());
 
-    public Map<String, ArrayList<Map<String, String>>> groups;
+    public static Map<String, ArrayList<Map<String, String>>> groups;
     // Recomputations for filtering monitoring engine results
-    public Map<String, ArrayList<Map<String, Date>>> monEngines;
+    public static Map<String, ArrayList<Map<String, Date>>> monEngines;
     // public ArrayList<RecomputationElement> excludedMetrics;// a list of excluded metrics
-    public HashMap<ElementType, List<RecomputationElement>> changedStatusItems;
+    public static HashMap<String, List<RecomputationElement>> metricRecomputationItems;
+    public static HashMap<String, List<RecomputationElement>> endpointRecomputationItems;
+    public static HashMap<String, List<RecomputationElement>> serviceRecomputationItems;
+    public static HashMap<String, List<RecomputationElement>> groupRecomputationItems;
 
     public RecomputationsManager() {
-        this.groups = new HashMap<String, ArrayList<Map<String, String>>>();
-        this.monEngines = new HashMap<String, ArrayList<Map<String, Date>>>();
+        groups = new HashMap<String, ArrayList<Map<String, String>>>();
+        monEngines = new HashMap<String, ArrayList<Map<String, Date>>>();
         //    this.excludedMetrics = new ArrayList<>();
-        this.changedStatusItems = new HashMap<>();
+        metricRecomputationItems = new HashMap<>();
+        metricRecomputationItems = new HashMap<>();
+        endpointRecomputationItems = new HashMap<>();
+        serviceRecomputationItems = new HashMap<>();
+        groupRecomputationItems = new HashMap<>();
     }
 
     // Clear all the recomputation data
-    public void clear() {
-        this.groups = new HashMap<String, ArrayList<Map<String, String>>>();
-        this.monEngines = new HashMap<String, ArrayList<Map<String, Date>>>();
+    public static void clear() {
+        groups = new HashMap<String, ArrayList<Map<String, String>>>();
+        monEngines = new HashMap<String, ArrayList<Map<String, Date>>>();
         //  this.excludedMetrics = new ArrayList<>();
-        this.changedStatusItems = new HashMap<>();
+        metricRecomputationItems = new HashMap<>();
+        endpointRecomputationItems = new HashMap<>();
+        serviceRecomputationItems = new HashMap<>();
+        groupRecomputationItems = new HashMap<>();
     }
 
     // Insert new recomputation data for a specific endpoint group
-    public void insert(String group, String start, String end) {
+    public static void insert(String group, String start, String end) {
 
         Map<String, String> temp = new HashMap<String, String>();
         temp.put("start", start);
         temp.put("end", end);
 
-        if (this.groups.containsKey(group) == false) {
-            this.groups.put(group, new ArrayList<Map<String, String>>());
+        if (groups.containsKey(group) == false) {
+            groups.put(group, new ArrayList<Map<String, String>>());
         }
 
-        this.groups.get(group).add(temp);
+        groups.get(group).add(temp);
 
     }
 
     // Insert new recomputation data for a specific monitoring engine
-    public void insertMon(String monHost, String start, String end) throws ParseException {
+    public static void insertMon(String monHost, String start, String end) throws ParseException {
 
         Map<String, Date> temp = new HashMap<String, Date>();
         SimpleDateFormat tsW3C = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -73,47 +83,60 @@ public class RecomputationsManager {
         temp.put("s", tsW3C.parse(start));
         temp.put("e", tsW3C.parse(end));
 
-        if (this.monEngines.containsKey(monHost) == false) {
-            this.monEngines.put(monHost, new ArrayList<Map<String, Date>>());
+        if (monEngines.containsKey(monHost) == false) {
+            monEngines.put(monHost, new ArrayList<Map<String, Date>>());
         }
 
-        this.monEngines.get(monHost).add(temp);
+        monEngines.get(monHost).add(temp);
 
     }
     // Insert new recomputation data for a specific endpoint group
 
-    public void insertExcludedMetrics(String group, String service, String hostname, String metric, String start, String end) {
+    public static void insertExcludedMetrics(String group, String service, String hostname, String metric, String start, String end) {
 
         RecomputationElement excludedMetric = new RecomputationElement(group, service, hostname, metric, start, end, "EXCLUDED", ElementType.METRIC);
-        List<RecomputationElement> recomputationElements = new ArrayList<>();
-        if (this.changedStatusItems.containsKey(ElementType.METRIC)) {
-            recomputationElements = this.changedStatusItems.get(ElementType.METRIC);
+        List<RecomputationElement> elementList = new ArrayList<>();
+        if (metricRecomputationItems.get(excludedMetric.getMetric()) != null) {
+            elementList = metricRecomputationItems.get(excludedMetric.getMetric());
         }
-        recomputationElements.add(excludedMetric);
-        this.changedStatusItems.put(ElementType.METRIC, recomputationElements);
+        elementList.add(excludedMetric);
+        metricRecomputationItems.put(excludedMetric.getMetric(), elementList);
 
     }
 
     // Check if metric is excluded in recomputations
 //
-    public RecomputationElement findMetricExcluded(String group, String service, String hostname, String metric) {
+    public static RecomputationElement findMetricExcluded(String group, String service, String hostname, String metric) {
         boolean isExcluded = false;
-        for (RecomputationElement excludedMetric : this.changedStatusItems.get(ElementType.METRIC)) {
-            if (excludedMetric.metric == null || excludedMetric.metric.equals(metric)) {
+        for (RecomputationElement excludedMetric : metricRecomputationItems.get(metric)) {
+            if (excludedMetric.metric.equals(metric)) {
                 isExcluded = isEqualGroup(excludedMetric, group, service, hostname, ElementType.METRIC);
                 if (isExcluded) {
                     return excludedMetric;
                 }
-            } else if (excludedMetric.metric.equals(metric)) {
-                return excludedMetric;
             }
+
         }
         return null;
     }
 
+    public static ArrayList<RecomputationElement> findChangedStatusItem(String group, String service, String hostname, String metric, ElementType elementType) {
+        List<RecomputationElement> changedStatusItemsList = new ArrayList<>();
+        switch (elementType) {
+            case METRIC:
+                changedStatusItemsList = metricRecomputationItems.get(metric);
+                break;
+            case ENDPOINT:
+                changedStatusItemsList = endpointRecomputationItems.get(hostname);
+                break;
+            case SERVICE:
+                changedStatusItemsList = serviceRecomputationItems.get(service);
+                break;
+            case GROUP:
+                changedStatusItemsList = groupRecomputationItems.get(group);
+                break;
+        }
 
-    public ArrayList<RecomputationElement> findChangedStatusItem(String group, String service, String hostname, String metric, ElementType elementType) {
-        List<RecomputationElement> changedStatusItemsList = this.changedStatusItems.get(elementType);
         ArrayList<RecomputationElement> recomputationElements = new ArrayList<>();
         if (changedStatusItemsList != null) {
             for (RecomputationElement item : changedStatusItemsList) {
@@ -145,7 +168,7 @@ public class RecomputationsManager {
         return recomputationElements;
     }
 
-    private boolean isEqualGroup(RecomputationElement excludedMetric, String group, String service, String hostname, ElementType elementType) {
+    private static boolean isEqualGroup(RecomputationElement excludedMetric, String group, String service, String hostname, ElementType elementType) {
         if (excludedMetric.getGroup() == null || excludedMetric.getGroup().equals(group)) {
             if (!elementType.equals(ElementType.SERVICE)) {
                 return isEqualService(excludedMetric, service, hostname, elementType);
@@ -156,7 +179,7 @@ public class RecomputationsManager {
         return false;
     }
 
-    private boolean isEqualService(RecomputationElement excludedMetric, String service, String hostname, ElementType elementType) {
+    private static boolean isEqualService(RecomputationElement excludedMetric, String service, String hostname, ElementType elementType) {
 
         if (excludedMetric.getService() == null || excludedMetric.getService().equals(service)) {
             if (!elementType.equals(ElementType.ENDPOINT)) {
@@ -168,7 +191,7 @@ public class RecomputationsManager {
         return false;
     }
 
-    private boolean isEqualHostname(RecomputationElement excludedMetric, String hostname, ElementType elementType) {
+    private static boolean isEqualHostname(RecomputationElement excludedMetric, String hostname, ElementType elementType) {
         if (excludedMetric.getHostname() == null || excludedMetric.getHostname().equals(hostname)) {
             return true;
         }
@@ -177,12 +200,12 @@ public class RecomputationsManager {
     }
 
     // Check if group is excluded in recomputations
-    public boolean isExcluded(String group) {
-        return this.groups.containsKey(group);
+    public static boolean isExcluded(String group) {
+        return groups.containsKey(group);
     }
 
     // Check if a recomputation period is valid for target date
-    public boolean validPeriod(String target, String start, String end) throws ParseException {
+    public static boolean validPeriod(String target, String start, String end) throws ParseException {
 
         SimpleDateFormat dmy = new SimpleDateFormat("yyyy-MM-dd");
         Date tDate = dmy.parse(target);
@@ -193,12 +216,12 @@ public class RecomputationsManager {
 
     }
 
-    public ArrayList<Map<String, String>> getPeriods(String group, String targetDate) throws ParseException {
+    public static ArrayList<Map<String, String>> getPeriods(String group, String targetDate) throws ParseException {
         ArrayList<Map<String, String>> periods = new ArrayList<Map<String, String>>();
 
-        if (this.groups.containsKey(group)) {
-            for (Map<String, String> period : this.groups.get(group)) {
-                if (this.validPeriod(targetDate, period.get("start"), period.get("end"))) {
+        if (groups.containsKey(group)) {
+            for (Map<String, String> period : groups.get(group)) {
+                if (validPeriod(targetDate, period.get("start"), period.get("end"))) {
                     periods.add(period);
                 }
             }
@@ -209,14 +232,14 @@ public class RecomputationsManager {
     }
 
     // 
-    public boolean isMonExcluded(String monHost, String inputTs) throws ParseException {
+    public static boolean isMonExcluded(String monHost, String inputTs) throws ParseException {
 
-        if (this.monEngines.containsKey(monHost) == false) {
+        if (!monEngines.containsKey(monHost)) {
             return false;
         }
         SimpleDateFormat tsW3C = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         Date targetDate = tsW3C.parse(inputTs);
-        for (Map<String, Date> item : this.monEngines.get(monHost)) {
+        for (Map<String, Date> item : monEngines.get(monHost)) {
 
             if (!(targetDate.before(item.get("s")) || targetDate.after(item.get("e")))) {
                 return true;
@@ -226,7 +249,7 @@ public class RecomputationsManager {
         return false;
     }
 
-    private void readJson(JsonElement jRootElement) throws ParseException {
+    private static void readJson(JsonElement jRootElement) throws ParseException {
         try {
             JsonArray jRootObj = jRootElement.getAsJsonArray();
             String id = "";
@@ -248,7 +271,7 @@ public class RecomputationsManager {
                     // Get the excluded
                     JsonArray jExclude = item.getAsJsonObject().get("exclude").getAsJsonArray();
                     for (JsonElement subitem : jExclude) {
-                        this.insert(subitem.getAsString(), start, end);
+                        insert(subitem.getAsString(), start, end);
                     }
                     JsonArray jExcludeMetrics = new JsonArray();
                     if (item.getAsJsonObject().has("exclude_metrics")) {
@@ -271,7 +294,7 @@ public class RecomputationsManager {
                         if (subitemMetric.getAsJsonObject().get("metric") != null) {
                             metric = subitemMetric.getAsJsonObject().get("metric").getAsString();
                         }
-                        this.insertExcludedMetrics(group, service, hostname, metric, start, end);
+                        insertExcludedMetrics(group, service, hostname, metric, start, end);
                     }
 
                 }
@@ -283,7 +306,7 @@ public class RecomputationsManager {
                         String monHost = subitem.getAsJsonObject().get("host").getAsString();
                         String monStart = subitem.getAsJsonObject().get("start_time").getAsString();
                         String monEnd = subitem.getAsJsonObject().get("end_time").getAsString();
-                        this.insertMon(monHost, monStart, monEnd);
+                        insertMon(monHost, monStart, monEnd);
                     }
                 }
                 // Get the excluded Monitoring sources
@@ -322,37 +345,68 @@ public class RecomputationsManager {
                         // Priority logic
                         if (changedItem.getMetric() != null) {
                             elementType = ElementType.METRIC;
-                        } else if (changedItem.getHostname() != null) {
-                            elementType = ElementType.ENDPOINT;
-                        } else if (changedItem.getService() != null) {
-                            elementType = ElementType.SERVICE;
-                        } else if (changedItem.getGroup() != null) {
-                            elementType = ElementType.GROUP;
-                        }
-                        if (elementType != null) {
-
-                            changedItem.setElementType(elementType);
-                            List<RecomputationElement> list = changedStatusItems.get(elementType);
+                            List<RecomputationElement> list = metricRecomputationItems.get(changedItem.getMetric());
                             if (list == null) {
                                 list = new ArrayList<>();
-                                changedStatusItems.put(elementType, list);
                             }
                             list.add(changedItem);
+                            metricRecomputationItems.put(changedItem.getMetric(), list);
+
+                        } else if (changedItem.getHostname() != null) {
+                            elementType = ElementType.ENDPOINT;
+                            List<RecomputationElement> list = endpointRecomputationItems.get(changedItem.getHostname());
+                            if (list == null) {
+                                list = new ArrayList<>();
+                            }
+                            list.add(changedItem);
+                            endpointRecomputationItems.put(changedItem.getHostname(), list);
+
+                        } else if (changedItem.getService() != null) {
+                            elementType = ElementType.SERVICE;
+                            List<RecomputationElement> list = serviceRecomputationItems.get(changedItem.getService());
+                            if (list == null) {
+                                list = new ArrayList<>();
+                            }
+                            list.add(changedItem);
+                            serviceRecomputationItems.put(changedItem.getService(), list);
+
+                        } else if (changedItem.getGroup() != null) {
+                            elementType = ElementType.GROUP;
+
+
+                            changedItem.setElementType(elementType);
+                            List<RecomputationElement> list = groupRecomputationItems.get(changedItem.getGroup());
+                            if (list == null) {
+                                list = new ArrayList<>();
+                            }
+                            list.add(changedItem);
+                            groupRecomputationItems.put(changedItem.getGroup(), list);
                         }
                     }
-                }
 
+                }
+             }
+            if (metricRecomputationItems != null) {
+                sortRecomputationItems(metricRecomputationItems, ElementType.METRIC);
             }
-        } catch (ParseException pex) {
+            if (endpointRecomputationItems != null) {
+                sortRecomputationItems(endpointRecomputationItems, ElementType.ENDPOINT);
+            }
+            if (serviceRecomputationItems != null) {
+                sortRecomputationItems(serviceRecomputationItems, ElementType.SERVICE);
+            }
+
+        } catch (
+                ParseException pex) {
             LOG.error("Parsing date error");
             throw pex;
         }
 
     }
 
-    public void loadJson(File jsonFile) throws IOException, ParseException {
+    public static void loadJson(File jsonFile) throws IOException, ParseException {
 
-        this.clear();
+        clear();
 
         BufferedReader br = null;
         try {
@@ -378,9 +432,9 @@ public class RecomputationsManager {
      * source. This method is used in execution enviroments where the required
      * data is provided by broadcast variables
      */
-    public void loadJsonString(List<String> recJson) throws IOException, ParseException {
+    public static void loadJsonString(List<String> recJson) throws IOException, ParseException {
 
-        this.clear();
+        clear();
 
         try {
 
@@ -400,7 +454,7 @@ public class RecomputationsManager {
 
     /*** Objects of RecomputationElement keeps info about topology elements
      that are defined to apply recomputations**/
-    public class RecomputationElement {
+    public static class RecomputationElement {
 
         private String group;
         private String service;
@@ -519,4 +573,49 @@ public class RecomputationsManager {
         METRIC,
         NONE
     }
+
+    public static void sortRecomputationItems(HashMap<String,List<RecomputationElement>> items, ElementType elementType) {
+
+        for (String key : items.keySet()) {
+
+            List<RecomputationElement> elements = items.get(key);
+
+            Collections.sort(elements, new Comparator<RecomputationElement>() {
+                public int compare(RecomputationElement a, RecomputationElement b) {
+                    int priorityA = getPriority(a, elementType);
+                    int priorityB = getPriority(b, elementType);
+                    return Integer.compare(priorityA, priorityB);
+                }
+            });
+            items.put(key,elements);
+        }
+    }
+
+    private static int getPriority(RecomputationElement item, ElementType elementType) {
+        boolean hasGroup = item.group != null;
+        boolean hasService = item.service != null;
+        boolean hasHostname = item.hostname != null;
+
+        if (elementType.equals(ElementType.METRIC)) {
+            if (hasHostname && hasService && hasGroup) return 4;
+            if ((hasHostname && hasService) ||  (hasService && hasGroup) || (hasHostname && hasGroup)) return 3;
+            if (hasGroup || hasService) return 2;
+            if (hasHostname) return 2;
+            return 1; // Only metric
+        } else if (elementType.equals(ElementType.ENDPOINT)) {
+            // hostname is always set, vary by service + group
+            if (hasService && hasGroup) return 3;
+            if (hasGroup || hasService) return 2;
+            return 1; // Only hostname
+        } else if (elementType.equals(ElementType.SERVICE)) {
+            // service is always set, vary by group
+            if (hasGroup) return 2;
+            return 1; // Only service
+        }
+
+        // Fallback if none match
+        return 0;
+    }
+
+
 }

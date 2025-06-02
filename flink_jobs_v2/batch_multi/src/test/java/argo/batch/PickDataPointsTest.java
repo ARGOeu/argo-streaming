@@ -7,11 +7,13 @@ import java.io.File;
 import java.io.FileReader;
 
 import java.net.URL;
-import java.util.List;
+import java.util.*;
 
+import argo.amr.ApiResource;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.AvroInputFormat;
+import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.core.fs.Path;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,11 +23,7 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import junit.framework.Assert;
-import profilesmanager.AggregationProfileManager;
-import profilesmanager.EndpointGroupManager;
-import profilesmanager.GroupGroupManager;
-import profilesmanager.MetricProfileManager;
-import profilesmanager.ThresholdManager;
+import profilesmanager.*;
 
 public class PickDataPointsTest {
 
@@ -146,7 +144,10 @@ public class PickDataPointsTest {
 		recStr = br.readLine();
 		br.close();
 		DataSet<String> recDS = env.fromElements(recStr);
-		
+		RecomputationsManager.loadJsonString(recDS.collect());
+
+
+
 		String thrStr = new String();
 		br = new BufferedReader(new FileReader(thrFile));
 		recStr = br.readLine();
@@ -176,8 +177,12 @@ public class PickDataPointsTest {
 		// Clean the metric data by testing the ExcludeMetricData flatmap function with
 		// recomputation information to exclude bad-mon01.example.org data from 02:00 to
 		// 06:00 (broadcast variable)
+
+		DataSource<Map<String, ArrayList<Map<String, Date>>>> monEngineRecDS= env.fromElements(RecomputationsManager.monEngines);
+
+
 		DataSet<StatusMetric> clearMd = md.flatMap(new PickEndpoints(null)).withBroadcastSet(cfgDS, "conf")
-				.withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops").withBroadcastSet(mpsDS, "mps")
+				.withBroadcastSet(monEngineRecDS, "rec").withBroadcastSet(opsDS, "ops").withBroadcastSet(mpsDS, "mps")
 				.withBroadcastSet(ggpDS, "ggp").withBroadcastSet(egpDS, "egp").withBroadcastSet(thrDS, "thr")
 				.withBroadcastSet(apDS, "aps");
 

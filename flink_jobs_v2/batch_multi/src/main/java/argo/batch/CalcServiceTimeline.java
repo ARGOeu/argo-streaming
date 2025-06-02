@@ -52,8 +52,7 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
     private OperationsManager opsMgr;
     private String runDate;
     private HashMap<String, String> serviceFunctionsMap;
-    private List<String> recs;
-    private RecomputationsManager recMgr;
+    private List<HashMap<String, List<RecomputationsManager.RecomputationElement>>> rec;
 
     @Override
     public void open(Configuration parameters) throws IOException, ParseException {
@@ -62,7 +61,8 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
         // Get data from broadcast variables
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
-        this.recs = getRuntimeContext().getBroadcastVariable("rec");
+        this.rec = getRuntimeContext().getBroadcastVariable("rec");
+        RecomputationsManager.serviceRecomputationItems=this.rec.get(0);
         // Initialize aggregation profile manager
         this.apsMgr = new AggregationProfileManager();
 
@@ -73,11 +73,7 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
 
         this.runDate = params.getRequired("run.date");
         this.serviceFunctionsMap = this.apsMgr.retrieveServiceOperations();
-        this.recMgr = new RecomputationsManager();
-
-        this.recMgr.loadJsonString(recs);
-
-    }
+      }
 
     @Override
     public void reduce(Iterable<StatusTimeline> in, Collector<StatusTimeline> out) throws Exception {
@@ -123,7 +119,7 @@ public class CalcServiceTimeline extends RichGroupReduceFunction<StatusTimeline,
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
 
-        ArrayList<RecomputationsManager.RecomputationElement> recompItems = recMgr.findChangedStatusItem(endpointGroup, service, null, null, RecomputationsManager.ElementType.SERVICE);
+        ArrayList<RecomputationsManager.RecomputationElement> recompItems = RecomputationsManager.findChangedStatusItem(endpointGroup, service, null, null, RecomputationsManager.ElementType.SERVICE);
 
         if (!recompItems.isEmpty()) { // If a recomputation request is found for this metric
             for (RecomputationsManager.RecomputationElement recompItem : recompItems) {

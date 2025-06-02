@@ -44,12 +44,10 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
 
     private List<String> aps;
     private List<String> ops;
-    private List<String> recs;
+    private List<HashMap<String, List<RecomputationsManager.RecomputationElement>>> rec;
 
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
-    private RecomputationsManager recMgr;
-
     private String runDate;
 
     @Override
@@ -59,7 +57,8 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
         // Get data from broadcast variables
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
-        this.recs = getRuntimeContext().getBroadcastVariable("rec");
+        this.rec = getRuntimeContext().getBroadcastVariable("rec");
+        RecomputationsManager.groupRecomputationItems=this.rec.get(0);
         // Initialize aggregation profile manager
         this.apsMgr = new AggregationProfileManager();
 
@@ -67,9 +66,6 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
         // Initialize operations manager
         this.opsMgr = new OperationsManager();
         this.opsMgr.loadJsonString(ops);
-        this.recMgr = new RecomputationsManager();
-
-        this.recMgr.loadJsonString(recs);
 
         this.runDate = params.getRequired("run.date");
 
@@ -112,7 +108,7 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
 
         // Find a recomputation request for the given endpoint group.
         // The search is specific to the group (ElementType.GROUP) to find changes in the status.
-        ArrayList<RecomputationsManager.RecomputationElement> recompItems = recMgr.findChangedStatusItem(
+        ArrayList<RecomputationsManager.RecomputationElement> recompItems = RecomputationsManager.findChangedStatusItem(
                 endpointGroup,   // The endpoint group for which the recomputation is being checked
                 null,             // No specific service filter
                 null,             // No specific hostname filter

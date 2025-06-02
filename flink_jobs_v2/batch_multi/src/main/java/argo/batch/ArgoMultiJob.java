@@ -14,6 +14,7 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import profilesmanager.RecomputationsManager;
 import trends.calculations.ServiceTrends;
 import trends.flipflops.ZeroServiceFlipFlopFilter;
 import trends.status.EndpointTrendsCounter;
@@ -51,9 +52,7 @@ import trends.status.MetricTrendsCounter;
 import trends.status.ServiceTrendsCounter;
 import utils.Utils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import org.apache.flink.api.common.JobID;
 import org.joda.time.DateTime;
@@ -207,6 +206,14 @@ public class ArgoMultiJob {
         if (amr.getResourceJSON(ApiResource.RECOMPUTATIONS) != null) {
             recDS = env.fromElements(amr.getResourceJSON(ApiResource.RECOMPUTATIONS));
         }
+        RecomputationsManager.loadJsonString(recDS.collect());
+
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> metricRecomputedDS=env.fromElements(RecomputationsManager.metricRecomputationItems);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> endpointRecomputedDS=env.fromElements(RecomputationsManager.endpointRecomputationItems);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> serviceRecomputedDS=env.fromElements(RecomputationsManager.serviceRecomputationItems);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> groupRecomputedDS=env.fromElements(RecomputationsManager.groupRecomputationItems);
+        DataSource<Map<String, ArrayList<Map<String, Date>>>> monEngineRecDS=env.fromElements(RecomputationsManager.monEngines);
+        DataSource<Map<String, ArrayList<Map<String, String>>>> groupsRecDS=env.fromElements(RecomputationsManager.groups);
 
         DataSource<String> mtagsDS = env.fromElements("");
         if (amr.getResourceJSON(ApiResource.MTAGS) != null) {
@@ -287,7 +294,7 @@ public class ArgoMultiJob {
             AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat(pin, MetricData.class);
             DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 
-            DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(recDS, "rec");
+            DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(monEngineRecDS,"rec");
 
             // Find the latest day
             DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
@@ -310,8 +317,8 @@ public class ArgoMultiJob {
         // Discard unused data and attach endpoint group as information
         DataSet<StatusMetric> mdataTrimDS = allMetricData.flatMap(new PickEndpoints(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(recDS, "rec").withBroadcastSet(confDS, "conf").withBroadcastSet(thrDS, "thr")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps");
+                .withBroadcastSet(confDS, "conf").withBroadcastSet(thrDS, "thr")
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps").withBroadcastSet(monEngineRecDS,"rec");
 
         // Combine prev and todays metric data with the generated missing metric
         // data
@@ -324,28 +331,28 @@ public class ArgoMultiJob {
         // Create status detail data set
         DataSet<StatusMetric> stDetailDS = mdataTotalDS.distinct("group", "service", "hostname", "metric", "status", "timestamp").groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
-                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
+                .withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops");
 
         DataSet<StatusMetric> statusMetricRecomputated = stDetailDS.distinct("group", "service", "hostname", "metric", "status", "timestamp").groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcRecomputation(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(metricRecomputedDS, "rec");
 
 
         DataSet<StatusTimeline> statusMetricTimeline = statusMetricRecomputated.groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcMetricTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps");
 
         //Create StatusMetricTimeline dataset for endpoints
         DataSet<StatusTimeline> statusEndpointTimeline = statusMetricTimeline.groupBy("group", "service", "hostname")
                 .reduceGroup(new CalcEndpointTimeline(params, now)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(downDS, "down").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(downDS, "down").withBroadcastSet(endpointRecomputedDS, "rec");
 
 
         DataSet<StatusTimeline> statusServiceTimeline = statusEndpointTimeline.groupBy("group", "service")
                 .reduceGroup(new CalcServiceTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(serviceRecomputedDS, "rec");
 
         DataSet<StatusTimeline> statusEndGroupFunctionTimeline = statusServiceTimeline.groupBy("group", "function")
                 .reduceGroup(new CalcGroupFunctionTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
@@ -355,7 +362,7 @@ public class ArgoMultiJob {
         DataSet<StatusTimeline> statusGroupTimeline = statusEndGroupFunctionTimeline.groupBy("group")
                 .reduceGroup(new CalcGroupTimeline(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                 .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
-                .withBroadcastSet(apsDS, "aps").withBroadcastSet(recDS, "rec");
+                .withBroadcastSet(apsDS, "aps").withBroadcastSet(groupRecomputedDS, "rec");
 
         if (calcStatus) {
             //Calculate endpoint timeline timestamps             
@@ -402,10 +409,9 @@ public class ArgoMultiJob {
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(confDS, "conf");
 
-            // DataSet<StatusTimeline> statusGroupTimelineAR = statusGroupTimeline.flatMap(new ExcludeGroupMetrics(params)).withBroadcastSet(recDS, "rec").withBroadcastSet(opsDS, "ops");
             DataSet<EndpointGroupAR> endpointGroupArDS = statusGroupTimeline.flatMap(new CalcGroupAR(params, now)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
-                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(recDS, "rec");
+                    withBroadcastSet(ggpDS, "ggp").withBroadcastSet(confDS, "conf").withBroadcastSet(weightDS, "weight").withBroadcastSet(groupsRecDS, "rec");
 
             MongoEndpointArOutput endpointARMongoOut = new MongoEndpointArOutput(dbURI, "endpoint_ar", dbMethod, reportID, runDate, clearMongo);
             MongoServiceArOutput serviceARMongoOut = new MongoServiceArOutput(dbURI, "service_ar", dbMethod, reportID, runDate, clearMongo);
