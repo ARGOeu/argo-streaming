@@ -932,6 +932,7 @@ public class StatusManager {
                     }
                     // If metric indeed updated -> aggregate endpoint
                     if (updMetric) {
+
                         // calculate endpoint new status
                         int endpNewStatus = aggregate("", endpointNode, ts);
                         // check if status changed
@@ -985,6 +986,7 @@ public class StatusManager {
                 }
                 // if endpoint indeed updated -> aggregate service
                 if (updEndpoint) {
+
                     // calculate service new status
                     int servNewStatus = aggregate(service, serviceNode, ts);
                     // check if status changed

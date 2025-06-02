@@ -50,7 +50,7 @@ public class MongoStatusOutput implements OutputFormat<String> {
     private String uri;
 
     // constructor
-    public MongoStatusOutput(String uri, String metricName, String serviceName, String endpointName, String egroupName, String method, String report) {
+    public MongoStatusOutput(String uri, String metricName, String endpointName,String serviceName,  String egroupName, String method, String report) {
 
         if (method.equalsIgnoreCase("upsert")) {
             this.method = MongoMethod.UPSERT;
@@ -76,7 +76,7 @@ public class MongoStatusOutput implements OutputFormat<String> {
     }
 
     // constructor
-    public MongoStatusOutput(String host, int port, String db, String metricName, String serviceName, String endpointName, String egroupName, MongoMethod method,
+    public MongoStatusOutput(String host, int port, String db, String metricName, String endpointName, String serviceName, String egroupName, MongoMethod method,
             String report) {
         this.mongoHost = host;
         this.mongoPort = port;
@@ -117,6 +117,7 @@ public class MongoStatusOutput implements OutputFormat<String> {
      * results than Endpoint, Service or Endpoint Group ones.
      */
     private Document prepDoc(StatusEvent record) {
+
         Document doc = new Document("report", this.report)
                 .append("endpoint_group", record.getGroup());
 
