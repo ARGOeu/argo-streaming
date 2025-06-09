@@ -1,4 +1,4 @@
-requests==2.22.0
+requests==2.32.4
 responses==0.10.7
 pytest==5.3.1
 snakebite-py3==3.0.5
