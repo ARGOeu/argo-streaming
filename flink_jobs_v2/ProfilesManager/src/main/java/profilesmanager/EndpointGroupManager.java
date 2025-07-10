@@ -641,4 +641,18 @@ public class EndpointGroupManager implements Serializable {
 
     }
 
+    public ArrayList<String> getGroupAllTopo(String hostname, String service) {
+        String keyPart = hostname + "|" + service;
+
+        for (String key : topologyGrouplist.keySet()) {
+            if (key.contains(keyPart)) {
+                Map<String, EndpointItem> sublist = topologyGrouplist.get(key);
+                if (sublist != null) {
+                    return new ArrayList<String>(sublist.keySet());
+                }
+            }
+        }
+
+        return new ArrayList<String>();
+    }
 }

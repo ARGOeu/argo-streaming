@@ -493,7 +493,7 @@ public class AmsStreamStatus {
             String service = item.getService();
             String hostname = item.getHostname();
 
-            ArrayList<String> groups = egp.getGroup(hostname, service);
+            ArrayList<String> groups = egp.getGroupAllTopo(hostname, service);
             for (String groupItem : groups) {
                 Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
 

@@ -50,7 +50,8 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
     public void flatMap(Tuple2<String, MetricData> in, Collector<Point> out) throws Exception {
 
         ArrayList<Tuple8> tuples = parsePerformanceData(in.f0, in.f1); //parsing MetricData to retrieve actual data and the info representing performance
-        for (Tuple8<String, String, String, String, String, String, String, String> tuple : tuples) {
+
+         for (Tuple8<String, String, String, String, String, String, String, String> tuple : tuples) {
 
             HashMap<String, String> tags = new HashMap<>();
             tags.put("group", tuple.f2);
@@ -68,7 +69,7 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date date = sdf.parse(tuple.f1);
             Point p = Point.measurement(tuple.f0).time(date.getTime(), WritePrecision.MS).addTags(tags).addFields(fields);
-            
+
             out.collect(p);
         }
     }

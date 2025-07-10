@@ -349,10 +349,10 @@ public class AmsIngestMetric {
             }
             try {
 
-                ArrayList<String> groups = egp.getGroup(item.getHostname(), item.getService());
+                ArrayList<String> groups = egp.getGroupAllTopo(item.getHostname(), item.getService());
                 if (groups.isEmpty()) {
                     loadTopology(currTimestampDate);
-                    groups = egp.getGroup(item.getHostname(), item.getService());
+                    groups = egp.getGroupAllTopo(item.getHostname(), item.getService());
                 }
                 for (String groupItem : groups) {
                     Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();

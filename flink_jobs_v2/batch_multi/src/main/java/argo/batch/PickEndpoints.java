@@ -119,8 +119,10 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
         String metric = md.getMetric();
         String monHost = md.getMonitoringHost();
         String ts = md.getTimestamp();
-
-        // Filter By monitoring engine
+        if (md.getService().equals("eu.seadatanet.org.gui-edmerp") && md.getHostname().equals("edmerp.seadatanet.org") && md.getMetric().equals("eu.seadatanet.org.gui-edmerp-post")) {
+            System.out.println("here");
+        }
+            // Filter By monitoring engine
         if (RecomputationsManager.isMonExcluded(monHost, ts)) {
             return;
         }
@@ -174,6 +176,7 @@ public class PickEndpoints extends RichFlatMapFunction<MetricData, StatusMetric>
                 String info = this.egpMgr.getInfo(groupname, egroupType, md.getHostname(), md.getService());
 
                 StatusMetric sm = new StatusMetric(groupname, "", md.getService(), md.getHostname(), md.getMetric(), status, md.getTimestamp(), dateInt, timeInt, md.getSummary(), md.getMessage(), "", "", actualData, ogStatus, ruleApplied, info, "");
+
                 out.collect(sm);
             }
 

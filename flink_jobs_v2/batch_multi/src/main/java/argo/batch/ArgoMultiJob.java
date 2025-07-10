@@ -14,6 +14,7 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import org.apache.flink.metrics.Metric;
 import profilesmanager.RecomputationsManager;
 import trends.calculations.ServiceTrends;
 import trends.flipflops.ZeroServiceFlipFlopFilter;
@@ -208,16 +209,15 @@ public class ArgoMultiJob {
         }
         RecomputationsManager.loadJsonString(recDS.collect());
 
-        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> metricRecomputedDS=env.fromElements(RecomputationsManager.metricRecomputationItems);
-        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> endpointRecomputedDS=env.fromElements(RecomputationsManager.endpointRecomputationItems);
-        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> serviceRecomputedDS=env.fromElements(RecomputationsManager.serviceRecomputationItems);
-        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> groupRecomputedDS=env.fromElements(RecomputationsManager.groupRecomputationItems);
-        DataSource<Map<String, ArrayList<Map<String, Date>>>> monEngineRecDS=env.fromElements(RecomputationsManager.monEngines);
-        DataSource<Map<String, ArrayList<Map<String, String>>>> groupsRecDS=env.fromElements(RecomputationsManager.groups);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> metricRecomputedDS = env.fromElements(RecomputationsManager.metricRecomputationItems);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> endpointRecomputedDS = env.fromElements(RecomputationsManager.endpointRecomputationItems);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> serviceRecomputedDS = env.fromElements(RecomputationsManager.serviceRecomputationItems);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> groupRecomputedDS = env.fromElements(RecomputationsManager.groupRecomputationItems);
+        DataSource<Map<String, ArrayList<Map<String, Date>>>> monEngineRecDS = env.fromElements(RecomputationsManager.monEngines);
+        DataSource<Map<String, ArrayList<Map<String, String>>>> groupsRecDS = env.fromElements(RecomputationsManager.groups);
 
         DataSource<String> mtagsDS = env.fromElements("");
         if (amr.getResourceJSON(ApiResource.MTAGS) != null) {
-
             mtagsDS = env.fromElements(amr.getResourceJSON(ApiResource.MTAGS));
         }
         DataSet<Weight> weightDS = env.fromElements(new Weight());
@@ -294,7 +294,8 @@ public class ArgoMultiJob {
             AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat(pin, MetricData.class);
             DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 
-            DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(monEngineRecDS,"rec");
+
+            DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(monEngineRecDS, "rec");
 
             // Find the latest day
             DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
@@ -318,7 +319,7 @@ public class ArgoMultiJob {
         DataSet<StatusMetric> mdataTrimDS = allMetricData.flatMap(new PickEndpoints(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(confDS, "conf").withBroadcastSet(thrDS, "thr")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps").withBroadcastSet(monEngineRecDS,"rec");
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps").withBroadcastSet(monEngineRecDS, "rec");
 
         // Combine prev and todays metric data with the generated missing metric
         // data
@@ -332,6 +333,7 @@ public class ArgoMultiJob {
         DataSet<StatusMetric> stDetailDS = mdataTotalDS.distinct("group", "service", "hostname", "metric", "status", "timestamp").groupBy("group", "service", "hostname", "metric")
                 .sortGroup("timestamp", Order.ASCENDING).reduceGroup(new CalcPrevStatus(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops");
+
 
         DataSet<StatusMetric> statusMetricRecomputated = stDetailDS.distinct("group", "service", "hostname", "metric", "status", "timestamp").groupBy("group", "service", "hostname", "metric").sortGroup("timestamp", Order.ASCENDING)
                 .reduceGroup(new CalcRecomputation(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")

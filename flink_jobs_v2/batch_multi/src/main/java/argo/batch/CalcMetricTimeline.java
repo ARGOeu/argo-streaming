@@ -97,6 +97,11 @@ public class CalcMetricTimeline extends RichGroupReduceFunction<StatusMetric, St
             metric = item.getMetric();
             String ts = item.getTimestamp();
             String status = item.getStatus();
+                if (item.getGroup().equals("B2ACCESS CDI") && item.getService().equals("b2access.unity") && item.getHostname().equals("b2access.eudat.eu") && item.getMetric().equals("eudat.b2access.unity.login-local")) {
+                    System.out.println("in calc metric " + item.getGroup() + " " + item.getService() + " " + item.getHostname() + " " + item.getMetric() + " " + item.getTimestamp() + " " + item.getStatus()+" "+item.getPrevTs()+" "+item.getPrevState());
+                }
+
+
             if (i == 0) {
                 DateTime currentTimestamp = Utils.convertStringtoDate("yyyy-MM-dd'T'HH:mm:ss'Z'", item.getTimestamp());
                 if (currentTimestamp.isAfter(today)) {
