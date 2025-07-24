@@ -2,8 +2,64 @@
 
 All notable changes in argo-streaming project are documented here
 
+## [v3.0.0](https://github.com/ARGOeu/argo-streaming/releases/tag/v3.0.0) - (2025-07-24)
 
-## 2.1.2 - (2023-05-10)
+### Added:
+- ARGO-4326 Combined tenant implementation added to batch_multi, flink_jobs_v3 ([#396](https://github.com/ARGOeu/argo-streaming/pull/396))
+- ARGO-4312 Performance data ingestion proof of concept in python ([#397](https://github.com/ARGOeu/argo-streaming/pull/397))
+- ARGO-4312 Ingest performance data to timeseries database ([#398](https://github.com/ARGOeu/argo-streaming/pull/398))
+- add tentant name to point for influx db ([#409](https://github.com/ARGOeu/argo-streaming/pull/409))
+- Add healthcheck script ([#422](https://github.com/ARGOeu/argo-streaming/pull/422))
+- ARGO-4904 ARGO-4893 Support new type of recomputations that changes statuses directly (Lot1) / Issue during excluding metric egi.cloud.openstack-vm from fedcloud SITES ([#439](https://github.com/ARGOeu/argo-streaming/pull/439))
+- ARGO-5069 Add CHANGELOG.md ([#445](https://github.com/ARGOeu/argo-streaming/pull/445))
+
+
+### Fixed:
+- ARGO-4337 Handle issue for not existing service in Aggregation Profiles ([#399](https://github.com/ARGOeu/argo-streaming/pull/399))
+- ARGO-4372 Investigate potential issue with downtimes end and prolongue within same day ([#401](https://github.com/ARGOeu/argo-streaming/pull/401))
+- ARGO-4396 Include latest fixes on flink_jobs_v2 to flink_jobs_v3 ([#406](https://github.com/ARGOeu/argo-streaming/pull/406))
+- fix ingestion job to both write in hdfs and in influx db ([#408](https://github.com/ARGOeu/argo-streaming/pull/408))
+- ARGO-4466 Issue with topology sync during removing APEL service from metric profiles ([#411](https://github.com/ARGOeu/argo-streaming/pull/411))
+- ARGO-4558: ARGO Streaming: Fix broken History Url in Notifications ([#413](https://github.com/ARGOeu/argo-streaming/pull/413))
+- ARGO-4615 Handle duplicate entries in dataset ([#415](https://github.com/ARGOeu/argo-streaming/pull/415))
+- ARGO-4879 Streaming job fails due to null pointer exception when argo web-api is unreachable ([#426](https://github.com/ARGOeu/argo-streaming/pull/426))
+- ARGO-4879 Streaming job fails due to null pointer exception when argo web-api is unreachable ([#427](https://github.com/ARGOeu/argo-streaming/pull/427))
+- ARGO-4884 Missing statuses at the beginning of day for cert validity checks ([#428](https://github.com/ARGOeu/argo-streaming/pull/428))
+- ARGO-4893 Issue during excluding metric egi.cloud.openstack-vm from fedcloud SITES ([#429](https://github.com/ARGOeu/argo-streaming/pull/429))
+- ARGO-4879 Streaming job fails due to null pointer exception when argo web-api is unreachable ([#430](https://github.com/ARGOeu/argo-streaming/pull/430))
+- ARGO-4879 Streaming job fails due to null pointer exception when argo web-api is unreachable ([#438](https://github.com/ARGOeu/argo-streaming/pull/438))
+- ARGO-5009 Overwriten status during status recomputation request for same metric ([#440](https://github.com/ARGOeu/argo-streaming/pull/440))
+- ARGO-5059 Ingestion job seems to request topology from api on each data published to influx ([#444](https://github.com/ARGOeu/argo-streaming/pull/444))
+
+### Changed:
+- Bump hadoop-client from 2.6.0 to 2.7.3.2.6.5.0-292 in /flink_jobs_v3/stream-status ([#393](https://github.com/ARGOeu/argo-streaming/pull/393))
+- ARGO-4286 Log4j dependency - vulnerability issue ([#394](https://github.com/ARGOeu/argo-streaming/pull/394))
+- Bump requests from 2.22.0 to 2.31.0 in /bin ([#395](https://github.com/ARGOeu/argo-streaming/pull/395))
+- Bump org.apache.avro:avro from 1.10.2 to 1.11.3 in /flink_jobs/ProfilesManager ([#402](https://github.com/ARGOeu/argo-streaming/pull/402))
+- Bump org.apache.avro:avro from 1.10.2 to 1.11.3 in /flink_jobs_v2/ProfilesManager ([#403](https://github.com/ARGOeu/argo-streaming/pull/403))
+- Bump org.apache.avro:avro from 1.10.2 to 1.11.3 in /flink_jobs_v3/profiles-manager ([#404](https://github.com/ARGOeu/argo-streaming/pull/404))
+- bump dependency avro ([#405](https://github.com/ARGOeu/argo-streaming/pull/405))
+- AROG-4451 Handle topology sync during ingestion of performance data ([#410](https://github.com/ARGOeu/argo-streaming/pull/410))
+- Bump pymongo from 3.10.0 to 4.6.3 in /bin ([#412](https://github.com/ARGOeu/argo-streaming/pull/412))
+- Bump requests from 2.22.0 to 2.32.0 in /bin ([#414](https://github.com/ARGOeu/argo-streaming/pull/414))
+- ARGO-4659 Make flinkv2 jobs able to write to Mongo 6.0 ([#416](https://github.com/ARGOeu/argo-streaming/pull/416))
+- ARGO-4670 Confirm that flink_jobs_v3 containes the same features and fixes as flink_jobs_v2 ([#417](https://github.com/ARGOeu/argo-streaming/pull/417))
+- ARGO-4671 Investigate moving to HDFS version compatible with flink 1.17 ([#418](https://github.com/ARGOeu/argo-streaming/pull/418))
+- clear poms for flink1.17 ([#419](https://github.com/ARGOeu/argo-streaming/pull/419))
+- update poms to be cleared ([#420](https://github.com/ARGOeu/argo-streaming/pull/420))
+- update poms and sync the ingestion jobs ([#421](https://github.com/ARGOeu/argo-streaming/pull/421))
+- update script for ams configuration ([#423](https://github.com/ARGOeu/argo-streaming/pull/423))
+- Bump commons-io:commons-io from 2.10.0 to 2.14.0 in /flink_jobs/OperationsManager ([#424](https://github.com/ARGOeu/argo-streaming/pull/424))
+- Bump org.apache.avro:avro from 1.10.2 to 1.11.4 in /flink_jobs/ProfilesManager ([#425](https://github.com/ARGOeu/argo-streaming/pull/425))
+- ARGO-4922 Update flink healthcheck script with checks for taskmanager… ([#431](https://github.com/ARGOeu/argo-streaming/pull/431))
+- Before mongo6 ([#432](https://github.com/ARGOeu/argo-streaming/pull/432))
+- Try mongo-driver-sync v4.7.2 ([#433](https://github.com/ARGOeu/argo-streaming/pull/433))
+- use mongo 3.x driver in multijob ([#434](https://github.com/ARGOeu/argo-streaming/pull/434))
+- ARGO-4949 Set argo-web-api verify to false for multijob and streaming… ([#435](https://github.com/ARGOeu/argo-streaming/pull/435))
+- Add mongo 3.x driver to multijob and streaming job ([#436](https://github.com/ARGOeu/argo-streaming/pull/436))
+- Revert "ARGO-4949 Set argo-web-api verify to false for multijob and streaming…" ([#437](https://github.com/ARGOeu/argo-streaming/pull/437))
+
+## [v2.1.2](https://github.com/ARGOeu/argo-streaming/releases/tag/v2.1.2) - (2023-05-10)
 
 ### Added:
 - ARGO-4257 Create flink_jobs_v3 moduled project and add modules migrated to flink 1.17
@@ -20,7 +76,7 @@ All notable changes in argo-streaming project are documented here
 - ARGO-4188 minor fix for missing metric profiles
 
 
-## 2.1.1 - (2023-02-02)
+## [2.1.1](https://github.com/ARGOeu/argo-streaming/releases/tag/v.2.1.1) - (2023-02-02)
 
 ### Added:
 
@@ -39,7 +95,7 @@ All notable changes in argo-streaming project are documented here
 - ARGO-4132 Fix class cast issue due to Avro SpecificDatumReader caching
 - ARGO-4123 Issue with generating events when there is a downtime
 
-## 2.1.0 - (2022-12-05)
+## [v2.1.0](https://github.com/ARGOeu/argo-streaming/releases/tag/v2.1.0-1) - (2022-12-05)
 
 ### Added:
 
@@ -64,7 +120,7 @@ All notable changes in argo-streaming project are documented here
 - ARGO-3922 Fix streaming job exception when handling ui urls with spaces
 - ARGO-3921 Import fix in argo-streaming multijob
 
-## 2.0 - (2022-06-29)
+## [v2.0.0](https://github.com/ARGOeu/argo-streaming/releases/tag/V.2.0.0-1) - (2022-06-29)
 
 ### Added:
 
@@ -163,7 +219,7 @@ All notable changes in argo-streaming project are documented here
 - ARGO-3480 Fix has_threshold_rule to output boolean value in mongo instead of string
 - ARGO-3414 Fix thresholds init issue in batch jobs that use argo-web-api
 
-## 1.5 - (2021-07-22)
+## [v1.5.0](https://github.com/ARGOeu/argo-streaming/releases/tag/v1.5.0) - (2021-07-22)
 
 ### Added:
 
@@ -203,7 +259,7 @@ All notable changes in argo-streaming project are documented here
 - ARGO-3197 Optimize status trend metric results in single collection
 - ARGO-3186 Convert daily dates to integer format to help trends range queries in argo-web-api
 
-## 1.4 - (2020-12-17)
+## [v1.4.0](https://github.com/ARGOeu/argo-streaming/releases/tag/v1.4.0) - (2020-12-17)
 
 ### Added:
 
@@ -226,7 +282,7 @@ All notable changes in argo-streaming project are documented here
 - ARGO-2627 Fix sync ingestion conditional in status streming job
 
 
-## 1.3 - (2019-11-07)
+## [v1.3.0](https://github.com/ARGOeu/argo-streaming/releases/tag/V1.3-1) - (2019-11-07)
 
 ### Added:
 
@@ -244,7 +300,7 @@ Fixed:
 - ARGO-1785 Fix excluded monitoring data for previous day
 
 
-## 1.2 - (2019-03-22)
+## [v1.2.0](https://github.com/ARGOeu/argo-streaming/releases/tag/v1.2) - (2019-03-22)
 
 ### Added:
 - ARGO-1480 Argo engine automation: ensure mongodb indexes
@@ -262,7 +318,7 @@ Fixed:
 
 
 
-## 1.1 - (2018-11-09)
+## [v1.1.0](https://github.com/ARGOeu/argo-streaming/releases/tag/v1.1) - (2018-11-09)
 
 ### Added:
 - ARGO-1464 Update requests dep to 2.20
@@ -298,7 +354,7 @@ Fixed:
 
 
 
-## 1.0 - (2018-06-13)
+## [v1.0.0](https://github.com/ARGOeu/argo-streaming/releases/tag/v1.0) - (2018-06-13)
 
 ### Added:
 - ARGO-904 Finalize job runner class. Refactor cli argument usage
@@ -346,7 +402,7 @@ Fixed:
 
 
 
-## 0.1 - (2017-06-31)
+## [v0.1.0](https://github.com/ARGOeu/argo-streaming/releases/tag/v0.1) - (2017-06-31)
 
 ### Added:
 - ARGO-614 AMS subscriber stream to Hbase
