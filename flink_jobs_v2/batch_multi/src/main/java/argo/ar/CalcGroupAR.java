@@ -70,8 +70,7 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
     private ReportManager confMgr;
     private List<Weight> weight;
     private String ggroupType;
-    private RecomputationsManager recMgr;
-    private List<String> rec;
+    private List<Map<String, ArrayList<Map<String, String>>>> rec;
     private DateTime now;
 
     /**
@@ -121,9 +120,7 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
 
         this.ggroupType = this.repMgr.ggroup;
         this.rec = getRuntimeContext().getBroadcastVariable("rec");
-        // Initialize metric profile manager
-        this.recMgr = new RecomputationsManager();
-        this.recMgr.loadJsonString(rec);
+        RecomputationsManager.groups=this.rec.get(0);
 
     }
 
@@ -173,8 +170,8 @@ public class CalcGroupAR extends RichFlatMapFunction<StatusTimeline, EndpointGro
 
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
-        if (this.recMgr.isExcluded(in.getGroup())) {
-            ArrayList<Map<String, String>> periods = this.recMgr.getPeriods(in.getGroup(), this.runDate);
+        if (RecomputationsManager.isExcluded(in.getGroup())) {
+            ArrayList<Map<String, String>> periods = RecomputationsManager.getPeriods(in.getGroup(), this.runDate);
             for (Map<String, String> interval : periods) {
                 timeline.fillWithStatus(interval.get("start"), interval.get("end"), this.opsMgr.getDefaultUnknownInt(), now);
                 timeline.optimize();

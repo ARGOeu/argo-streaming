@@ -20,14 +20,15 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+
 /**
  * APIResourceManager class fetches remote argo-web-api resources such as report
  * configuration, profiles, topology, weights in JSON format
  */
 public class ApiResourceManager {
 
-    private EnumMap<ApiResource, String> data = new EnumMap(ApiResource.class);
-
+    
+    private EnumMap<ApiResource, String> data = new EnumMap<>(ApiResource.class);
     private String endpoint;
     private String token;
     private String reportID;
@@ -44,6 +45,7 @@ public class ApiResourceManager {
     private String weightsID;
     private RequestManager requestManager;
     private ApiResponseParser apiResponseParser;
+    private boolean isSourceTopoAll;
     private boolean isCombined;
     //private boolean verify;
     //private int timeoutSec;
@@ -300,8 +302,12 @@ public class ApiResourceManager {
      * Retrieves the topology endpoint content and stores it to the enum map
      */
     public void getRemoteTopoEndpoints() {
+        String combinedparam="";
+        if(isSourceTopoAll){
+        combinedparam="&mode=combined";
+        }
         String path = "https://%s/api/v2/topology/endpoints/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date);
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
@@ -312,8 +318,13 @@ public class ApiResourceManager {
      * Retrieves the topology groups content and stores it to the enum map
      */
     public void getRemoteTopoGroups() {
+        String combinedparam="";
+        if(isSourceTopoAll){
+        combinedparam="&mode=combined";
+        }
+      
         String path = "https://%s/api/v2/topology/groups/by_report/%s?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.reportName, this.date);
+        String fullURL = String.format(path, this.endpoint, this.reportName, this.date+combinedparam);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.TOPOGROUPS, this.apiResponseParser.getJsonData(content, true));
@@ -548,6 +559,7 @@ public class ApiResourceManager {
             this.getRemoteThresholds();
         }
         // Go to topology
+   
         this.getRemoteTopoEndpoints();
         this.getRemoteTopoGroups();
         // get weights
@@ -568,6 +580,13 @@ public class ApiResourceManager {
     public void setIsCombined(boolean isCombined) {
         this.isCombined = isCombined;
     }
+ 
+    public void setIsSourceTopoAll(boolean isSourceTopoAll) {
+        this.isSourceTopoAll = isSourceTopoAll;
+    }
+
+
+    
 
     public static DateTime convertStringtoDate(String format, String dateStr) throws ParseException {
 
@@ -584,5 +603,20 @@ public class ApiResourceManager {
         DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
         String dateString = date.toString(dtf);
         return dateString;
+    }
+    /**
+     * Retrieves the topology endpoint content and stores it to the enum map
+     */
+    public void getAllRemoteTopoEndpoints() {
+        String combinedparam="";
+        if(isSourceTopoAll){
+            combinedparam="&mode=combined";
+        }
+        String path = "https://%s/api/v2/topology/endpoints?date=%s";
+        String fullURL = String.format(path, this.endpoint, this.date+combinedparam);
+        String content = this.requestManager.getResource(fullURL);
+
+        this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
+
     }
 }

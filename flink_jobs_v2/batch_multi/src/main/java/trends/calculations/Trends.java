@@ -146,4 +146,16 @@ public class Trends {
         return "(" + this.group + "," + this.service + "," + this.endpoint + "," + this.metric + "," + this.status + "," + this.flipflop + ","
                 + this.status + "," + this.duration + ")";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Trends)) return false;
+        Trends trends1 = (Trends) o;
+        return flipflop == trends1.flipflop && trends == trends1.trends && duration == trends1.duration && Objects.equals(group, trends1.group) && Objects.equals(service, trends1.service) && Objects.equals(endpoint, trends1.endpoint) && Objects.equals(metric, trends1.metric) && Objects.equals(status, trends1.status) && Objects.equals(tags, trends1.tags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(group, service, endpoint, metric, flipflop, status, trends, duration, tags);
+    }
 }

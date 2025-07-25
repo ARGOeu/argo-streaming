@@ -14,11 +14,11 @@ language governing permissions and limitations under the License. -->
     <parent>
         <groupId>flink.jobs.v2</groupId>
         <artifactId>flink_jobs_v2</artifactId>
-        <version>2.1.2</version>
+        <version>3.0.0</version>
     </parent> 
     <groupId>argo.streaming</groupId>
     <artifactId>streaming-status</artifactId>
-    <version>2.1.2</version>
+    <version>3.0.0</version>
     <packaging>jar</packaging>
 
     <name>ARGO Streaming status job</name>
@@ -66,19 +66,21 @@ language governing permissions and limitations under the License. -->
          <dependency>
             <groupId>ams.connector</groupId>
             <artifactId>ams-connector</artifactId>
-            <version>2.1.2</version>
+            <version>3.0.0</version>
             <type>jar</type>
         </dependency>
+       
+       
         <dependency>
             <groupId>api.resource.manager</groupId>
             <artifactId>ApiResourceManager</artifactId>
-            <version>2.1.2</version>
+            <version>3.0.0</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>profiles.manager</groupId>
             <artifactId>ProfilesManager</artifactId>
-            <version>2.1.2</version>
+            <version>3.0.0</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -150,18 +152,18 @@ language governing permissions and limitations under the License. -->
             <version>1.4</version>
             <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/xerces/xercesImpl -->
+        <!-- https:/mvnrepository.com/artifact/xerces/xercesImpl -->
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
             <version>2.12.2</version>
         </dependency>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-            <version>3.12.11</version>
-            <scope>compile</scope>
-        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver -->
+				<dependency>
+				    <groupId>org.mongodb</groupId>
+				    <artifactId>mongo-java-driver</artifactId>
+				    <version>3.8.2</version>
+				</dependency>
         <!-- https://mvnrepository.com/artifact/com.github.tomakehurst/wiremock -->
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
@@ -174,7 +176,7 @@ language governing permissions and limitations under the License. -->
             <artifactId>joda-time</artifactId>
             <version>1.6</version>
         </dependency>
-        
+         
     </dependencies>
 
     <profiles>
@@ -221,12 +223,13 @@ language governing permissions and limitations under the License. -->
                     <artifactId>gson</artifactId>
                     <version>2.7</version>
                 </dependency>
-                <dependency>
-                    <groupId>org.mongodb</groupId>
-                    <artifactId>mongo-java-driver</artifactId>
-                    <version>3.12.11</version>
-                    <scope>compile</scope>
-                </dependency>
+                
+                <!-- https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver -->
+				<dependency>
+				    <groupId>org.mongodb</groupId>
+				    <artifactId>mongo-java-driver</artifactId>
+				    <version>3.8.2</version>
+				</dependency>
                 <dependency>
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>

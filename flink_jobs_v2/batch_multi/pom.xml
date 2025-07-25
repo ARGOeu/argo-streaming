@@ -15,11 +15,11 @@ language governing permissions and limitations under the License. -->
     <parent>
         <groupId>flink.jobs.v2</groupId>
         <artifactId>flink_jobs_v2</artifactId>
-        <version>2.1.2</version>
+        <version>3.0.0</version>
     </parent> 
     <groupId>argo.batch</groupId>
     <artifactId>ArgoMultiJob</artifactId>
-    <version>2.1.2</version>
+    <version>3.0.0</version>
     <packaging>jar</packaging>
    
     <name>Argo Multi Job</name>
@@ -127,13 +127,14 @@ language governing permissions and limitations under the License. -->
         </dependency>
 
 
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-            <version>3.12.11</version>
-        </dependency>
 
-
+        <!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
+       <!-- https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver -->
+<dependency>
+    <groupId>org.mongodb</groupId>
+    <artifactId>mongo-java-driver</artifactId>
+    <version>3.8.2</version>
+</dependency>
         <!-- explicitly add a standard loggin framework, as Flink does not (in 
         the future) have a hard dependency on one specific framework by default -->
         <dependency>
@@ -175,19 +176,19 @@ language governing permissions and limitations under the License. -->
         <dependency>
             <groupId>timeline.manager</groupId>
             <artifactId>Timelines</artifactId>
-            <version>2.1.2</version>
+            <version>3.0.0</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>profiles.manager</groupId>
             <artifactId>ProfilesManager</artifactId>
-            <version>2.1.2</version>
+            <version>3.0.0</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>api.resource.manager</groupId>
             <artifactId>ApiResourceManager</artifactId>
-            <version>2.1.2</version>
+            <version>3.0.0</version>
             <type>jar</type>
         </dependency>
 
@@ -250,11 +251,12 @@ language governing permissions and limitations under the License. -->
                     <version>2.2.4</version>
                 </dependency>
 
-                <dependency>
-                    <groupId>org.mongodb</groupId>
-                    <artifactId>mongo-java-driver</artifactId>
-                    <version>3.12.11</version>
-                </dependency>
+              	<!-- https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver -->
+				<dependency>
+				    <groupId>org.mongodb</groupId>
+				    <artifactId>mongo-java-driver</artifactId>
+				    <version>3.8.2</version>
+				</dependency>
 
                 <dependency>
                     <groupId>org.apache.httpcomponents</groupId>

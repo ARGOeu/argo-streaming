@@ -52,9 +52,9 @@ public class DowntimeManager {
             this.endTime = endTime;
         }
 
-        public String toString(){
-			return String.format("(%s,%s,%s,%s)",hostname,service,startTime,endTime);
-		}
+        public String toString() {
+            return String.format("(%s,%s,%s,%s)", hostname, service, startTime, endTime);
+        }
 
     }
 
@@ -76,22 +76,23 @@ public class DowntimeManager {
      * Returns the downtime period (if any) for a specific service endpoint:
      * (hostname,service)
      */
-    public ArrayList<String> getPeriod(String hostname, String service) {
+    public ArrayList<String[]> getPeriod(String hostname, String service) {
 
-        ArrayList<String> period = new ArrayList<String>();
+        ArrayList<String[]> periods = new ArrayList<String[]>();
 
         for (DowntimeItem item : this.list) {
 
             if (item.hostname.equals(hostname)) {
                 if (item.service.equals(service)) {
-                    period.add(item.startTime);
-                    period.add(item.endTime);
-                    return period;
+                    String[] period = new String[2];
+                    period[0] = item.startTime;
+                    period[1] = item.endTime;
+                    periods.add(period);
+
                 }
             }
         }
-
-        return null;
+        return periods;
 
     }
 
@@ -192,4 +193,5 @@ public class DowntimeManager {
     public String toString() {
         return Arrays.toString(list.toArray());
     }
+    
 }

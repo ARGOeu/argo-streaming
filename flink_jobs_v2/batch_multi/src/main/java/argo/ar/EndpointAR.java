@@ -1,4 +1,7 @@
 package argo.ar;
+
+import java.util.Objects;
+
 public class EndpointAR {
 	
 	private int dateInt;
@@ -104,5 +107,17 @@ public class EndpointAR {
 	
 	public String toString() {
 		return "(" + this.dateInt+ "," + this.report + "," + this.name + "," + this.service + "," + this.group + "," + this.a + "," + this.r + ","  + this.up + ","  + this.unknown + ","  + this.down  + ")";
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof EndpointAR)) return false;
+		EndpointAR that = (EndpointAR) o;
+		return dateInt == that.dateInt && Double.compare(a, that.a) == 0 && Double.compare(r, that.r) == 0 && Double.compare(up, that.up) == 0 && Double.compare(unknown, that.unknown) == 0 && Double.compare(down, that.down) == 0 && Objects.equals(report, that.report) && Objects.equals(name, that.name) && Objects.equals(service, that.service) && Objects.equals(group, that.group) && Objects.equals(info, that.info);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(dateInt, report, name, service, group, a, r, up, unknown, down, info);
 	}
 }

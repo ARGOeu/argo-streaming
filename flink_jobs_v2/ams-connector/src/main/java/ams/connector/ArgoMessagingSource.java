@@ -139,8 +139,8 @@ public class ArgoMessagingSource extends RichSourceFunction<String> {
 				int offset=client.offset(); 
 				// mofify the offset of the subscription to point to the offset index of the date. 
 				// if date is null then the index points to the latest offset (max)
-	            client.modifyOffset(offset); 
-			}
+                               client.modifyOffset(offset); 
+		 	}
 			
 		} catch (KeyManagementException e) {
 			e.printStackTrace();

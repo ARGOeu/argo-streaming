@@ -1,6 +1,9 @@
 package argo.batch;
 
 import com.google.gson.Gson;
+import com.mongodb.ConnectionString;
+import com.mongodb.client.MongoClient;
+
 import java.io.IOException;
 
 import org.apache.flink.api.common.io.OutputFormat;
@@ -8,21 +11,20 @@ import org.apache.flink.configuration.Configuration;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.avro.generic.GenericData;
+
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 /**
@@ -32,7 +34,9 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
     public enum MongoMethod {
         INSERT, UPSERT
-    };
+    }
+
+    ;
 
     // Select the type of status input
     public enum StatusType {
@@ -55,11 +59,13 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
     private boolean clearMongo;
     private int date;
     private ObjectId nowId;
+    private String uri;
 
     // constructor
     public MongoStatusOutput(String uri, String col, String method, StatusType sType, String report, String date, boolean clearMongo) {
         this.date = Integer.parseInt(date.replace("-", ""));
         this.report = report;
+
 
         if (method.equalsIgnoreCase("upsert")) {
             this.method = MongoMethod.UPSERT;
@@ -69,15 +75,15 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
         this.sType = sType;
         this.report = report;
-
-        MongoClientURI mURI = new MongoClientURI(uri);
-        String[] hostParts = mURI.getHosts().get(0).split(":");
+        this.uri = uri;
+        ConnectionString connectionString = new ConnectionString(this.uri);
+        String[] hostParts = connectionString.getHosts().get(0).split(":");
         String hostname = hostParts[0];
         int port = Integer.parseInt(hostParts[1]);
 
         this.mongoHost = hostname;
         this.mongoPort = port;
-        this.dbName = mURI.getDatabase();
+        this.dbName = connectionString.getDatabase();
         this.colName = col;
         this.clearMongo = clearMongo;
 
@@ -85,7 +91,7 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
     // constructor
     public MongoStatusOutput(String host, int port, String db, String col, MongoMethod method, StatusType sType,
-            String report, String date, boolean clearMongo) {
+                             String report, String date, boolean clearMongo) {
 
         this.date = Integer.parseInt(date.replace("-", ""));
         this.report = report;
@@ -98,11 +104,15 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
         this.sType = sType;
         this.report = report;
         this.clearMongo = clearMongo;
+        this.uri = "mongodb://" + this.mongoHost + ":" + this.mongoPort;
 
     }
 
     private void initMongo() {
-        this.mClient = new MongoClient(mongoHost, mongoPort);
+        ConnectionString connectionString = new ConnectionString(this.uri);
+
+        this.mClient = MongoClients.create(connectionString);
+
         this.mDB = mClient.getDatabase(dbName);
         this.mCol = mDB.getCollection(colName);
         if (this.clearMongo) {
@@ -165,7 +175,6 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
                     // append original status and threshold rule applied
                     .append("original_status", record.getOgStatus())
                     .append("threshold_rule_applied", record.getRuleApplied());
-
             String info = record.getInfo();
             doc.append("info", parseInfo(info));
 
@@ -226,10 +235,11 @@ public class MongoStatusOutput implements OutputFormat<StatusMetric> {
 
             // Filter for upsert to be prepared according to StatusType of input
             Bson f = prepFilter(record);
-            UpdateOptions opts = new UpdateOptions().upsert(true);
+            ReplaceOptions opts = new ReplaceOptions().upsert(true);
 
             mCol.replaceOne(f, doc, opts);
         } else {
+
             mCol.insertOne(doc);
         }
     }

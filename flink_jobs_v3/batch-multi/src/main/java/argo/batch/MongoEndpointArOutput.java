@@ -2,9 +2,7 @@ package argo.batch;
 
 import argo.ar.EndpointAR;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.mongodb.ConnectionString;
 import java.io.IOException;
 
 import org.apache.flink.api.common.io.OutputFormat;
@@ -12,12 +10,12 @@ import org.apache.flink.configuration.Configuration;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
 import java.util.Iterator;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
@@ -48,6 +46,7 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
     private String report;
     private int date;
     private ObjectId nowId;
+    private String uri;
 
     // constructor
     public MongoEndpointArOutput(String uri, String col, String method, String report, String date, boolean clearMongo) {
@@ -59,15 +58,16 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
         } else {
             this.method = MongoMethod.INSERT;
         }
+        this.uri = uri;
+        ConnectionString connectionString = new ConnectionString(this.uri);
 
-        MongoClientURI mURI = new MongoClientURI(uri);
-        String[] hostParts = mURI.getHosts().get(0).split(":");
+        String[] hostParts = connectionString.getHosts().get(0).split(":");
         String hostname = hostParts[0];
         int port = Integer.parseInt(hostParts[1]);
 
         this.mongoHost = hostname;
         this.mongoPort = port;
-        this.dbName = mURI.getDatabase();
+        this.dbName = connectionString.getDatabase();
         this.colName = col;
         this.clearMongo = clearMongo;
 
@@ -84,10 +84,14 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
         this.colName = col;
         this.method = method;
         this.clearMongo = clearMongo;
+        this.uri = "mongodb://" + this.mongoHost + ":" + this.mongoPort;
+
     }
 
     private void initMongo() {
-        this.mClient = new MongoClient(mongoHost, mongoPort);
+        ConnectionString connectionString = new ConnectionString(this.uri);
+
+        this.mClient = MongoClients.create(connectionString);
         this.mDB = mClient.getDatabase(dbName);
         this.mCol = mDB.getCollection(colName);
         if (this.clearMongo) {
@@ -132,7 +136,7 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
             Bson f = Filters.and(Filters.eq("report", record.getReport()), Filters.eq("date", record.getDateInt()),
                     Filters.eq("name", record.getName()), Filters.eq("service", record.getService()), Filters.eq("supergroup", record.getGroup()));
 
-            UpdateOptions opts = new UpdateOptions().upsert(true);
+            ReplaceOptions opts = new ReplaceOptions().upsert(true);
 
             mCol.replaceOne(f, doc, opts);
         } else {
@@ -162,7 +166,6 @@ public class MongoEndpointArOutput implements OutputFormat<EndpointAR> {
         // configure
 
     }
-
 
     private Document parseInfo(String info) {
         Gson g = new Gson();

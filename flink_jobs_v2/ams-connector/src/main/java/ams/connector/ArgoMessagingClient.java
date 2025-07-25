@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.Base64;
 
@@ -433,7 +432,6 @@ public class ArgoMessagingClient {
         postModifyOffset.addHeader("Accept", "application/json");
         postModifyOffset.addHeader("x-api-key", this.token);
         postModifyOffset.addHeader("Content-type", "application/json");
-        System.out.println("modify offset is :" + offset);
         String body = "{\"offset\":" + offset + "}";
 
         StringEntity postBody = new StringEntity(body);

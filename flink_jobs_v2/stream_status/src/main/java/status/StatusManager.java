@@ -41,7 +41,7 @@ public class StatusManager {
 
     // Initialize logger
     static Logger LOG = LoggerFactory.getLogger(StatusManager.class);
-    
+
     // Name of the report used
     private String report;
 
@@ -72,10 +72,10 @@ public class StatusManager {
     String tsLatest;
     int looseInterval = 1440;
     int strictInterval = 1440;
-    boolean  level_group=true;
-    boolean level_service=true;
-    boolean level_endpoint=true;
-    boolean level_metric=true;
+    boolean level_group = true;
+    boolean level_service = true;
+    boolean level_endpoint = true;
+    boolean level_metric = true;
 
     public boolean isLevel_group() {
         return level_group;
@@ -108,8 +108,6 @@ public class StatusManager {
     public void setLevel_metric(boolean level_metric) {
         this.level_metric = level_metric;
     }
-
-    
 
     public void setReport(String report) {
         this.report = report;
@@ -687,23 +685,29 @@ public class StatusManager {
 
     public boolean hasDowntime(String timestamp, String hostname, String service) {
         String dayStamp = timestamp.split("T")[0];
-        ArrayList<String> period = this.dc.getDowntimePeriod(dayStamp, hostname, service);
+        ArrayList<String[]> periods = this.dc.getDowntimePeriod(dayStamp, hostname, service);
         // if no period was found return immediately fals
-        if (period == null) {
+        if (periods == null) {
             return false;
         }
 
-        // else check if ts lower than period's start time (first element in array list)
-        if (timestamp.compareTo(period.get(0)) < 0) {
-            return false;
-        }
-        // else check if ts higher than period's end time (second element in array list)
-        if (timestamp.compareTo(period.get(1)) > 0) {
-            return false;
-        }
+        boolean isDowntime=false;
+        for (String[] period : periods) {
+           boolean noDowntime=false;
+            // else check if ts lower than period's start time (first element in array list)
+            if (timestamp.compareTo(period[0]) < 0) {
+                noDowntime=true;
+            }
+            // else check if ts higher than period's end time (second element in array list)
+            if (timestamp.compareTo(period[1]) > 0) {
+               noDowntime=true;
+            }
+            if(!noDowntime){              
+                  isDowntime=true;
+            }
 
-        // else everything is ok and timestamp belongs inside element's downtime period
-        return true;
+        }
+        return isDowntime;
     }
 
     /**
@@ -906,7 +910,7 @@ public class StatusManager {
                             if (metricNode.item.status != status || repeat) {
                                 if (repeat && metricNode.item.status == status) {
                                     isReminder = true;
-                              }
+                                }
                                 // generate event
                                 evtMetric = genEvent("metric", group, service, hostname, metric, ops.getStrStatus(status),
                                         monHost, ts, ops.getStrStatus(oldMetricStatus), oldMetricTS, repeat, summary, message, isReminder);
@@ -914,8 +918,8 @@ public class StatusManager {
                                 // Create metric status level object
                                 statusMetric = new String[]{evtMetric.getStatus(), evtMetric.getPrevStatus(), evtMetric.getTsMonitored(), evtMetric.getPrevTs()};
                                 evtMetric.setStatusMetric(statusMetric);
-                                if(level_metric){
-                                   results.add(eventToString(evtMetric));
+                                if (level_metric) {
+                                    results.add(eventToString(evtMetric));
                                 }
                                 metricNode.item.status = status;
                                 metricNode.item.timestamp = ts;
@@ -928,6 +932,7 @@ public class StatusManager {
                     }
                     // If metric indeed updated -> aggregate endpoint
                     if (updMetric) {
+
                         // calculate endpoint new status
                         int endpNewStatus = aggregate("", endpointNode, ts);
                         // check if status changed
@@ -970,7 +975,7 @@ public class StatusManager {
                         Map<String, ArrayList<String>> metricStatuses = getMetricStatuses(endpointNode, ops);
                         evtEndpoint.setMetricNames(metricStatuses.get("metrics").toArray(new String[0]));
                         evtEndpoint.setMetricStatuses(metricStatuses.get("statuses").toArray(new String[0]));
-                        if(level_endpoint){
+                        if (level_endpoint) {
                             results.add(eventToString(evtEndpoint));
                         }
                         endpointNode.item.status = endpNewStatus;
@@ -981,6 +986,7 @@ public class StatusManager {
                 }
                 // if endpoint indeed updated -> aggregate service
                 if (updEndpoint) {
+
                     // calculate service new status
                     int servNewStatus = aggregate(service, serviceNode, ts);
                     // check if status changed
@@ -1010,7 +1016,7 @@ public class StatusManager {
                     evtService.setStatusEndpoint(statusEndpoint);
                     evtService.setStatusService(statusService);
 
-                    if(level_service){
+                    if (level_service) {
                         results.add(eventToString(evtService));
                     }
                     serviceNode.item.status = servNewStatus;
@@ -1056,8 +1062,8 @@ public class StatusManager {
                 evtEgroup.setStatusEndpoint(statusEndpoint);
                 evtEgroup.setStatusService(statusService);
                 evtEgroup.setStatusEgroup(statusEgroup);
-                if(level_group){
-                     results.add(eventToString(evtEgroup));
+                if (level_group) {
+                    results.add(eventToString(evtEgroup));
                 }
                 groupNode.item.status = groupNewStatus;
                 groupNode.item.genTs = ts;
@@ -1069,7 +1075,7 @@ public class StatusManager {
             LOG.info("Downtime encountered for group:{},service:{},host:{} - events will be discarded", group, service, hostname);
             results.clear();
         }
-
+        
         return results;
 
     }
@@ -1217,7 +1223,7 @@ public class StatusManager {
         return false;
 
     }
-    
+
     public boolean checkIfExistDowntime(String timestamp) {
 
         return this.dc.getCache().keySet().contains(timestamp);

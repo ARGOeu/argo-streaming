@@ -9,6 +9,7 @@ import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -28,12 +29,11 @@ public class RecomputationManagerTest {
         URL resJsonFile = RecomputationManagerTest.class.getResource("/profiles/recomp.json");
         File jsonFile = new File(resJsonFile.toURI());
 
-        RecomputationsManager recMgr = new RecomputationsManager();
-        recMgr.loadJson(jsonFile);
+        RecomputationsManager.loadJson(jsonFile);
 
-        assertEquals(recMgr.isExcluded("GR-01-AUTH"), true);
-        assertEquals(recMgr.isExcluded("HG-03-AUTH"), true);
-        assertEquals(recMgr.isExcluded("GR-04-IASA"), false);
+        assertEquals(RecomputationsManager.isExcluded("GR-01-AUTH"), true);
+        assertEquals(RecomputationsManager.isExcluded("HG-03-AUTH"), true);
+        assertEquals(RecomputationsManager.isExcluded("GR-04-IASA"), false);
 
         // Check period functionality
         ArrayList<Map<String, String>> gr01list = new ArrayList<Map<String, String>>();
@@ -71,42 +71,59 @@ public class RecomputationManagerTest {
         siteBlist.add(siteBmap);
         siteClist.add(siteCmap);
 
-        Assert.assertEquals(recMgr.getPeriods("GR-01-AUTH", "2013-12-08"), gr01list);
-        Assert.assertEquals(recMgr.getPeriods("SITE-A", "2013-12-08"), siteAlist);
-        Assert.assertEquals(recMgr.getPeriods("SITE-B", "2013-12-08"), siteBlist);
+        Assert.assertEquals(RecomputationsManager.getPeriods("GR-01-AUTH", "2013-12-08"), gr01list);
+        Assert.assertEquals(RecomputationsManager.getPeriods("SITE-A", "2013-12-08"), siteAlist);
+        Assert.assertEquals(RecomputationsManager.getPeriods("SITE-B", "2013-12-08"), siteBlist);
 
         // check monitoring exclusions
-        Assert.assertEquals(false, recMgr.isMonExcluded("monA", "2013-12-08T11:03:43Z"));
-        Assert.assertEquals(false, recMgr.isMonExcluded("monA", "2013-12-08T11:03:44Z"));
-        Assert.assertEquals(true, recMgr.isMonExcluded("monA", "2013-12-08T12:06:44Z"));
-        Assert.assertEquals(true, recMgr.isMonExcluded("monA", "2013-12-08T14:05:44Z"));
-        Assert.assertEquals(true, recMgr.isMonExcluded("monA", "2013-12-08T15:02:44Z"));
-        Assert.assertEquals(false, recMgr.isMonExcluded("monA", "2013-12-08T15:03:45Z"));
+        Assert.assertEquals(false, RecomputationsManager.isMonExcluded("monA", "2013-12-08T11:03:43Z"));
+        Assert.assertEquals(false, RecomputationsManager.isMonExcluded("monA", "2013-12-08T11:03:44Z"));
+        Assert.assertEquals(true, RecomputationsManager.isMonExcluded("monA", "2013-12-08T12:06:44Z"));
+        Assert.assertEquals(true, RecomputationsManager.isMonExcluded("monA", "2013-12-08T14:05:44Z"));
+        Assert.assertEquals(true, RecomputationsManager.isMonExcluded("monA", "2013-12-08T15:02:44Z"));
+        Assert.assertEquals(false, RecomputationsManager.isMonExcluded("monA", "2013-12-08T15:03:45Z"));
 
         // check monitoring exclusions
-        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T11:03:43Z"));
-        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T11:03:44Z"));
-        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T12:06:44Z"));
-        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T14:05:44Z"));
-        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T15:02:44Z"));
-        Assert.assertEquals(false, recMgr.isMonExcluded("monB", "2013-12-08T15:03:45Z"));
-        RecomputationsManager.ExcludedMetric exMetric1 = recMgr.new ExcludedMetric(null, null, null, "metric1", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
-        RecomputationsManager.ExcludedMetric exMetric2 = recMgr.new ExcludedMetric(null, null, "host2.example.com", "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
-        RecomputationsManager.ExcludedMetric exMetric3 = recMgr.new ExcludedMetric("grnet", null, null, "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
-        RecomputationsManager.ExcludedMetric exMetric4 = recMgr.new ExcludedMetric("grnet", "cloud.storage", null, "webcheck", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z");
-        ArrayList<RecomputationsManager.ExcludedMetric> exMetrics = new ArrayList<>();
-        exMetrics.add(exMetric1);
-        exMetrics.add(exMetric2);
-        exMetrics.add(exMetric3);
-        exMetrics.add(exMetric4);
-        Assert.assertEquals(exMetrics, recMgr.excludedMetrics);
+        Assert.assertEquals(false, RecomputationsManager.isMonExcluded("monB", "2013-12-08T11:03:43Z"));
+        Assert.assertEquals(false, RecomputationsManager.isMonExcluded("monB", "2013-12-08T11:03:44Z"));
+        Assert.assertEquals(false, RecomputationsManager.isMonExcluded("monB", "2013-12-08T12:06:44Z"));
+        Assert.assertEquals(false, RecomputationsManager.isMonExcluded("monB", "2013-12-08T14:05:44Z"));
+        Assert.assertEquals(false, RecomputationsManager.isMonExcluded("monB", "2013-12-08T15:02:44Z"));
+        Assert.assertEquals(false, RecomputationsManager.isMonExcluded("monB", "2013-12-08T15:03:45Z"));
+        RecomputationsManager.RecomputationElement exMetric1 = new RecomputationsManager.RecomputationElement(null, null, null, "metric1", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z", "EXCLUDED", RecomputationsManager.ElementType.METRIC);
+        RecomputationsManager.RecomputationElement exMetric2 = new RecomputationsManager.RecomputationElement(null, null, "host2.example.com", "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z", "EXCLUDED", RecomputationsManager.ElementType.METRIC);
+        RecomputationsManager.RecomputationElement exMetric3 = new RecomputationsManager.RecomputationElement("grnet", null, null, "metric2", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z", "EXCLUDED", RecomputationsManager.ElementType.METRIC);
+        RecomputationsManager.RecomputationElement exMetric4 = new RecomputationsManager.RecomputationElement("grnet", "cloud.storage", null, "webcheck", "2013-12-08T12:03:44Z", "2013-12-08T13:03:44Z", "EXCLUDED", RecomputationsManager.ElementType.METRIC);
+        List<RecomputationsManager.RecomputationElement> exMetrics = new ArrayList<>();
+        HashMap<String, List> expMetricsMap = new HashMap<>();
+        List<RecomputationsManager.RecomputationElement> exMetrics1 = new ArrayList<>();
 
-        Assert.assertEquals(exMetric1, recMgr.findMetricExcluded(null, null, null, "metric1"));
-        Assert.assertEquals(exMetric2, recMgr.findMetricExcluded(null, null, "host2.example.com", "metric2"));
-        Assert.assertEquals(exMetric3, recMgr.findMetricExcluded("grnet", null, null, "metric2"));
-        Assert.assertEquals(exMetric4, recMgr.findMetricExcluded("grnet", "cloud.storage", null, "webcheck"));
-        Assert.assertEquals(null, recMgr.findMetricExcluded("grnet", null, null, "webcheck"));
-       
+
+        List<RecomputationsManager.RecomputationElement> exMetrics1List = new ArrayList<>();
+        exMetrics1List.add(exMetric1);
+        expMetricsMap.put(exMetric1.getMetric(), exMetrics1List);
+
+        List<RecomputationsManager.RecomputationElement> exMetrics2List = new ArrayList<>();
+        exMetrics2List.add(exMetric2);
+        expMetricsMap.put(exMetric2.getMetric(), exMetrics2List);
+
+
+        exMetrics2List.add(exMetric3);
+        expMetricsMap.put(exMetric3.getMetric(), exMetrics2List);
+
+        List<RecomputationsManager.RecomputationElement> exMetrics4List = new ArrayList<>();
+        exMetrics4List.add(exMetric4);
+        expMetricsMap.put(exMetric4.getMetric(), exMetrics4List);
+
+
+        Assert.assertEquals(expMetricsMap, RecomputationsManager.metricRecomputationItems);
+
+        Assert.assertEquals(exMetric1, RecomputationsManager.findMetricExcluded(null, null, null, "metric1"));
+        Assert.assertEquals(exMetric2, RecomputationsManager.findMetricExcluded(null, null, "host2.example.com", "metric2"));
+        Assert.assertEquals(exMetric3, RecomputationsManager.findMetricExcluded("grnet", null, null, "metric2"));
+        Assert.assertEquals(exMetric4, RecomputationsManager.findMetricExcluded("grnet", "cloud.storage", null, "webcheck"));
+        Assert.assertEquals(null, RecomputationsManager.findMetricExcluded("grnet", null, null, "webcheck"));
+
 
     }
 

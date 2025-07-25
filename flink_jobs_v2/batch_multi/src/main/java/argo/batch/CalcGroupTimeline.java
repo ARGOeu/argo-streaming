@@ -1,7 +1,9 @@
 package argo.batch;
 
 import java.io.IOException;
-import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import org.apache.flink.api.common.functions.RichGroupReduceFunction;
 
@@ -12,16 +14,15 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
 import org.joda.time.DateTimeZone;
 import profilesmanager.AggregationProfileManager;
 import profilesmanager.OperationsManager;
 
+import profilesmanager.RecomputationsManager;
 import timelines.Timeline;
 import timelines.TimelineAggregator;
+import utils.RecompTimelineBuilder;
+import utils.Utils;
 
 /**
  * Accepts a list o status metrics grouped by the fields: endpoint group,
@@ -43,17 +44,21 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
 
     private List<String> aps;
     private List<String> ops;
+    private List<HashMap<String, List<RecomputationsManager.RecomputationElement>>> rec;
+
     private AggregationProfileManager apsMgr;
     private OperationsManager opsMgr;
     private String runDate;
 
     @Override
-    public void open(Configuration parameters) throws IOException {
+    public void open(Configuration parameters) throws IOException, ParseException {
 
         this.runDate = params.getRequired("run.date");
         // Get data from broadcast variables
         this.aps = getRuntimeContext().getBroadcastVariable("aps");
         this.ops = getRuntimeContext().getBroadcastVariable("ops");
+        this.rec = getRuntimeContext().getBroadcastVariable("rec");
+        RecomputationsManager.groupRecomputationItems=this.rec.get(0);
         // Initialize aggregation profile manager
         this.apsMgr = new AggregationProfileManager();
 
@@ -69,12 +74,16 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
     @Override
     public void reduce(Iterable<StatusTimeline> in, Collector<StatusTimeline> out) throws Exception {
         String endpointGroup = "";
+        String function = "";
 
         HashMap<String, Timeline> timelinelist = new HashMap<>();
         boolean hasThr = false;
+        ArrayList<String> recompRequestIds = new ArrayList<>();
 
         for (StatusTimeline item : in) {
             endpointGroup = item.getGroup();
+            function = item.getFunction();
+
             ArrayList<TimeStatus> timestatusList = item.getTimestamps();
             TreeMap<DateTime, Integer> samples = new TreeMap<>();
             for (TimeStatus timestatus : timestatusList) {
@@ -88,13 +97,37 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
             if (item.hasThr()) {
                 hasThr = true;
             }
-        }
+
+          }
 
         String groupOperation = this.apsMgr.retrieveProfileOperation();
-        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist,this.opsMgr.getDefaultExcludedInt(), runDate);
+        TimelineAggregator timelineAggregator = new TimelineAggregator(timelinelist, this.opsMgr.getDefaultExcludedInt(), runDate);
         timelineAggregator.aggregate(this.opsMgr.getTruthTable(), this.opsMgr.getIntOperation(groupOperation));
 
         Timeline mergedTimeline = timelineAggregator.getOutput(); //collect all timelines that correspond to the group service endpoint group , merge them in order to create one timeline
+
+        // Find a recomputation request for the given endpoint group.
+        // The search is specific to the group (ElementType.GROUP) to find changes in the status.
+        ArrayList<RecomputationsManager.RecomputationElement> recompItems = RecomputationsManager.findChangedStatusItem(
+                endpointGroup,   // The endpoint group for which the recomputation is being checked
+                null,             // No specific service filter
+                null,             // No specific hostname filter
+                null,             // No specific metric filter
+                RecomputationsManager.ElementType.GROUP // Element type set to GROUP for group-level recomputation
+        );
+
+        if (!recompItems.isEmpty()) { // If a recomputation request is found for this metric
+            for (RecomputationsManager.RecomputationElement recompItem : recompItems) {
+                TreeMap<DateTime,Integer> recomputedSamples=(TreeMap<DateTime,Integer>)mergedTimeline.getSamplesMap().clone();
+                mergedTimeline.bulkInsert(RecompTimelineBuilder.calcRecomputations(
+                        recomputedSamples, // existing timeline samples
+                        recompItem,                     // recomputation details
+                        runDate,                        // the current day of execution
+                        this.opsMgr                     // operations manager to interpret statuses
+                ).entrySet());
+            }
+
+        }
 
         ArrayList<TimeStatus> timestatuCol = new ArrayList();
         for (Map.Entry<DateTime, Integer> entry : mergedTimeline.getSamples()) {
@@ -106,5 +139,4 @@ public class CalcGroupTimeline extends RichGroupReduceFunction<StatusTimeline, S
         statusTimeline.setHasThr(hasThr);
         out.collect(statusTimeline);
     }
-
 }

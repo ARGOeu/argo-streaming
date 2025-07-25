@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>flink.jobs.v2</groupId>
     <artifactId>flink_jobs_v2</artifactId>
-    <version>2.1.2</version>
+    <version>3.0.0</version>
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -20,6 +20,7 @@
          <module>ams_ingest_metric</module>         
          <module>ams_ingest_sync</module>
         <module>ams-connector</module>
+        <module>influxdb.connector</module>
     </modules>
     <dependencyManagement>
         <dependencies>

@@ -70,13 +70,13 @@ class ArgoAmsClient:
             resource_path = resource_path.format(group_id)
         # if a resource item is not specified get all items
         if item_id is None:
-            return "".join(["https://", self.host, resource_path, "?key=", self.admin_key])
+            return "".join(["https://", self.host, resource_path])
         else:
             # if a specific item is given check if an additional api action is specified on item (like :acl on topics)
             if action is not None:
                 return "".join(
-                    ["https://", self.host, resource_path, "/", item_id, ":", action, "?key=", self.admin_key])
-            return "".join(["https://", self.host, resource_path, "/", item_id, "?key=", self.admin_key])
+                    ["https://", self.host, resource_path, "/", item_id, ":", action])
+            return "".join(["https://", self.host, resource_path, "/", item_id])
 
     def post_resource(self, url, data):
         """
@@ -92,7 +92,8 @@ class ArgoAmsClient:
         # Set up headers
         headers = dict()
         headers.update({
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'x-api-key': self.admin_key
         })
         # do the post requests
         r = requests.post(url, headers=headers, verify=self.verify, data=json.dumps(data), proxies=self.proxies)
@@ -120,10 +121,14 @@ class ArgoAmsClient:
         # Set up headers
         headers = dict()
         headers.update({
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'x-api-key': self.admin_key
         })
         # do the put request
+        if not data:
+            data = {}
         r = requests.put(url, headers=headers, verify=self.verify, data=json.dumps(data), proxies=self.proxies)
+
         # if successful return json data (or empty json)
         if 200 == r.status_code:
             if r.text == "":
@@ -147,7 +152,8 @@ class ArgoAmsClient:
         # Set up headers
         headers = dict()
         headers.update({
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'x-api-key': self.admin_key
         })
         # do the get resource
         r = requests.get(url, headers=headers, verify=self.verify, proxies=self.proxies)
@@ -235,7 +241,7 @@ class ArgoAmsClient:
         """
         url = self.get_url("topics", topic, project, "metrics")
         metrics =  self.get_resource(url)["metrics"]
-        
+
         for metric in metrics:
             if metric["metric"] == "topic.number_of_messages":
                 ts = metric["timeseries"]
@@ -535,7 +541,7 @@ class ArgoAmsClient:
         else:
             username = "ams_{}_{}".format(tenant.lower(), role)
 
-        
+
         url = self.get_url("users", username)
         data = {"projects": [{"project": project_name, "roles": [role]}]}
         return self.post_resource(url, data)
@@ -615,7 +621,7 @@ class ArgoAmsClient:
         if users is None:
             users = {}
 
-        
+
 
         # For each expected topic check if it was indeed found in AMS or if it's missing
         for item in topics_lookup:
@@ -674,7 +680,7 @@ class ArgoAmsClient:
         # For each missing sub attempt to create it in AMS
         for sub in missing["subs"]:
             # create sub
-            if sub.startswith("archive") and sub.endswith("metric"): 
+            if sub.startswith("archive") and sub.endswith("metric"):
                 topic = "metric_data"
             if sub.endswith("metric"):
                 topic = "metric_data"
@@ -684,7 +690,7 @@ class ArgoAmsClient:
                 continue
 
             sub_new = self.create_tenant_sub(tenant, topic, sub)
-            
+
             log.info("Tenant:{} - created missing subscription: {} on topic: {}".format(tenant, sub_new["name"],
                                                                                         sub_new["topic"]))
 

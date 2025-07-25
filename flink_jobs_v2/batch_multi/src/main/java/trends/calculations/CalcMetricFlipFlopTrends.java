@@ -5,11 +5,14 @@ package trends.calculations;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 import argo.batch.StatusTimeline;
 import argo.batch.TimeStatus;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
+
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.util.Collector;
 import org.joda.time.DateTime;
@@ -43,9 +46,9 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
      * final Endpoint Timeline. The type of metric aggregation is defined in the
      * aggregation profile managed by the AggregationManager
      *
-     * @param in An Iterable collection of MonTimeline objects
+     * @param in  An Iterable collection of MonTimeline objects
      * @param out A Collector list of MonTimeline to acquire the produced
-     * endpoint timelines.
+     *            endpoint timelines.
      */
     @Override
     public void flatMap(StatusTimeline in, Collector<MetricTrends> out) throws Exception {
@@ -59,24 +62,24 @@ public class CalcMetricFlipFlopTrends implements FlatMapFunction<StatusTimeline,
         service = in.getService();
         endpointGroup = in.getGroup();
         ArrayList<TimeStatus> timestatusList = in.getTimestamps();
-     
-        TreeMap<DateTime, Integer> timestampMap = new TreeMap();
+
+             TreeMap<DateTime, Integer> timestampMap = new TreeMap();
         for (TimeStatus ts : timestatusList) {
             timestampMap.put(new DateTime(ts.getTimestamp(), DateTimeZone.UTC), ts.getStatus());
         }
 
-       Timeline timeline = new Timeline();
+        Timeline timeline = new Timeline();
         timeline.insertDateTimeStamps(timestampMap, false);
         HashMap<String, Timeline> timelineMap = new HashMap<>();
         timelineMap.put("timeline", timeline);
         int flipflop = timeline.calcStatusChanges();
-    
+
         if (endpointGroup != null && service != null && hostname != null && metric != null) {
 
             MetricTrends metricTrends = new MetricTrends(endpointGroup, service, hostname, metric, timeline, flipflop);
             out.collect(metricTrends);
         }
-        }
-   
+    }
+
 
 }

@@ -23,3 +23,9 @@ conf.cfg
 .classpath
 .project
 .settings/
+/flink_jobs_v3/HdfsFileMerger/target/
+/flink_jobs_v2/influxdb.connector/target/
+/flink_jobs_v3/influxdb.connector/target/
+
+# vscode
+.vscode/

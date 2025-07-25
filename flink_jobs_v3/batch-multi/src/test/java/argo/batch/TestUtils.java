@@ -221,10 +221,13 @@ public class TestUtils {
                     initialTimeline.setExcludedInt(opsMgr.getDefaultExcludedInt());
 
                     initialTimeline.aggregate(timeline, opsMgr.getTruthTable(), op);
-                    if (level.equals(LEVEL.HOSTNAME)) {
-                        ArrayList<String> downPeriod = downMgr.getPeriod(hostname, service);
-                        if (downPeriod != null && !downPeriod.isEmpty()) {
-                            initialTimeline.fillWithStatus(downPeriod.get(0), downPeriod.get(1), opsMgr.getDefaultDownInt(), now);
+                         if (level.equals(LEVEL.HOSTNAME)) {
+                        ArrayList<String[]> downPeriods = downMgr.getPeriod(hostname, service);
+                        if (downPeriods != null && !downPeriods.isEmpty()) {
+                            for (String[] downPeriod : downPeriods) {
+
+                                initialTimeline.fillWithStatus(downPeriod[0], downPeriod[1], opsMgr.getDefaultDownInt(), now);
+                            }
                         }
 
                     }

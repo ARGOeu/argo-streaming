@@ -344,7 +344,8 @@ public class ApiResponseParser {
 
          results.removeAll(yesterdayResults);
          return results;
-    }
+    }   
+    
 
 }
 

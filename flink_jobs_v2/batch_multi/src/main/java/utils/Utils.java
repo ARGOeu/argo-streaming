@@ -7,6 +7,7 @@ package utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -74,7 +75,7 @@ public class Utils {
         }
     }
 
-    public static boolean checkParameters(ParameterTool params,String... vars) {
+    public static boolean checkParameters(ParameterTool params, String... vars) {
 
         for (String var : vars) {
 
@@ -128,5 +129,4 @@ public class Utils {
         int minutesInt = minutes.getMinutes();
         return minutesInt;
     }
-
 }
