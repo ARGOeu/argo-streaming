@@ -1,31 +1,31 @@
 package argo.streaming;
 
 import Utils.IntervalType;
-import static Utils.IntervalType.DAY;
-import static Utils.IntervalType.HOURS;
-import static Utils.IntervalType.MINUTES;
 import ams.connector.ArgoMessagingSink;
 import ams.connector.ArgoMessagingSource;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Properties;
-
+import argo.amr.ApiResource;
+import argo.amr.ApiResourceManager;
+import argo.avro.Downtime;
+import argo.avro.GroupEndpoint;
+import argo.avro.MetricData;
+import argo.avro.MetricProfile;
+import com.esotericsoftware.minlog.Log;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.codec.binary.Base64;
-
+import org.apache.commons.lang.StringUtils;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction;
@@ -41,24 +41,20 @@ import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import argo.amr.ApiResource;
-import argo.amr.ApiResourceManager;
-import argo.avro.Downtime;
-import argo.avro.GroupEndpoint;
-import argo.avro.MetricData;
-import argo.avro.MetricProfile;
-import org.apache.commons.lang.StringUtils;
-import org.apache.flink.api.common.JobID;
-import org.apache.flink.core.fs.FileSystem;
 import org.slf4j.MDC;
 import profilesmanager.EndpointGroupManager;
 import profilesmanager.MetricProfileManager;
 import status.StatusManager;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Properties;
 
 /**
  * Flink Job : Streaming status computation with multiple destinations (hbase,
@@ -92,24 +88,26 @@ import status.StatusManager;
  * DAYS, HOURS, MINUTES eg. 1h, 2d, 30m to define the period . Any of these
  * formats is transformed to minutes in the computations if not defined the
  * default value is 1440m
- *
+ * <p>
  * --interval.strict(Optional)interval to repeat events for CRITICAL . it can be
  * in the format of DAYS, HOURS, MINUTES eg. 1h, 2d, 30m to define the period .
  * Any of these formats is transformed to minutes in the computations if not
  * defined the default value is 1440m
- *
+ * <p>
  * -- latest.offset (Optional) boolean true/false, to define if the argo
  * messaging source should set offset at the latest or at the start of the
  * runDate. By default, if not defined , the offset should be the latest.
  * --level_group,level_service,level_endpoint, level_metric, if ON level alerts
  * are generated,if OFF level alerts are disabled.if no level is defined in
  * parameters then all levels are generated
- *
+ * <p>
  * --sync.interval(Optional) , the interval to sync with the argo web api source
  * (metric profiles, topology, downtimes) it can be * in the format of DAYS,
  * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
  * the parameter is not configured
- *
+ * --check.api.interval: the interval to check the argo-web api connection,by default 24h. it can be * in the format of DAYS,
+ *  * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
+ *  * the parameter is not configured
  */
 public class AmsStreamStatus {
     // setup logger
@@ -127,7 +125,7 @@ public class AmsStreamStatus {
      * Sets configuration parameters to streaming enviroment
      *
      * @param config A StatusConfig object that holds configuration parameters
-     * for this job
+     *               for this job
      * @return Stream execution enviroment
      */
     private static StreamExecutionEnvironment setupEnvironment(StatusConfig config) {
@@ -152,7 +150,7 @@ public class AmsStreamStatus {
 
     public static boolean hasHbaseArgs(ParameterTool paramTool) {
         String hbaseArgs[] = {"hbase.master", "hbase.master.port", "hbase.zk.quorum", "hbase.namespace",
-            "hbase.table"};
+                "hbase.table"};
         return hasArgs(hbaseArgs, paramTool);
     }
 
@@ -245,10 +243,16 @@ public class AmsStreamStatus {
         if (parameterTool.has("api.timeout")) {
             amr.setTimeoutSec(parameterTool.getInt("api.timeout"));
         }
-
-        amr.setReportID(reportID);
-        amr.getRemoteAll();
-
+        try {
+            amr.setReportID(reportID);
+            amr.getRemoteAll();
+        } catch (UnknownHostException e) {
+            // DNS resolution failure — API domain does not exist
+            Log.error("UnknownHostException: API endpoint not found: ", e.getMessage());
+            throw new RuntimeException("API domain not found: ", e); // Wrap in a RuntimeException
+        } catch (Exception e) {
+            Log.error("Exception in main due to web api error connection : ", e.getMessage());
+        }
         // set ams client batch and interval to default values
         int batch = 1;
         long interval = 100L;
@@ -267,12 +271,15 @@ public class AmsStreamStatus {
         String syncInterval = null;
         if (parameterTool.has("sync.interval")) {
             syncInterval = parameterTool.get("sync.interval");
-
         }
 
-        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
-        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, syncInterval, apiInterval);
 
+        String checkApiInterval = null;
+        if (parameterTool.has("check.api.interval")) {
+            checkApiInterval = parameterTool.get("check.api.interval");
+        }
+        ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
+        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, syncInterval, apiInterval, checkApiInterval);
         if (parameterTool.has("ams.verify")) {
             boolean verify = parameterTool.getBoolean("ams.verify");
             amsMetric.setVerify(verify);
@@ -395,6 +402,9 @@ public class AmsStreamStatus {
 
         public StatusConfig config;
         private ApiResourceManager amr;
+        private transient Thread endpointSchedulerThread;
+        boolean isCorrectEndpoint = true;
+        private volatile boolean isRunning = true;
 
         public MetricDataWithGroup(StatusConfig config) {
             LOG.info("Created new Status map");
@@ -419,26 +429,38 @@ public class AmsStreamStatus {
             }
 
             this.amr.setReportID(config.reportID);
-            this.amr.getRemoteAll();
 
-            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
-            ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
-
-            mps = new MetricProfileManager();
-            mps.loadFromList(mpsList);
-            String validMetricProfile = mps.getProfiles().get(0);
-            ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
-
-            // Trim profile services
-            ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
-            // Use optimized Endpoint Group Manager
-            for (GroupEndpoint egpItem : egpList) {
-                if (validServices.contains(egpItem.getService())) {
-                    egpTrim.add(egpItem);
-                }
-            }
             egp = new EndpointGroupManager();
-            egp.loadFromList(egpTrim);
+            mps = new MetricProfileManager();
+
+            try {
+                this.amr.getRemoteAll();
+
+                ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
+                ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
+
+                //    mps = new MetricProfileManager();
+                mps.loadFromList(mpsList);
+                String validMetricProfile = mps.getProfiles().get(0);
+                ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
+
+                // Trim profile services
+                ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
+                // Use optimized Endpoint Group Manager
+                for (GroupEndpoint egpItem : egpList) {
+                    if (validServices.contains(egpItem.getService())) {
+                        egpTrim.add(egpItem);
+                    }
+                }
+                //  egp = new EndpointGroupManager();
+                egp.loadFromList(egpTrim);
+            } catch (UnknownHostException e) {
+                // DNS resolution failure — API domain does not exist
+                Log.error("UnknownHostException: API endpoint not found:", e.getMessage());
+                throw new RuntimeException("API domain not found: ", e); // Wrap in a RuntimeException
+            } catch (Exception e) {
+                Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
+            }
 
         }
 
@@ -447,8 +469,8 @@ public class AmsStreamStatus {
          * metric data with group information
          *
          * @param value Input metric data in base64 encoded format from AMS
-         * service
-         * @param out Collection of generated Tuple2<MetricData,String> objects
+         *              service
+         * @param out   Collection of generated Tuple2<MetricData,String> objects
          */
         @Override
         public void flatMap1(String value, Collector<Tuple2<String, MetricData>> out)
@@ -482,7 +504,7 @@ public class AmsStreamStatus {
                 curItem.f1 = item;
 
                 out.collect(curItem);
-                System.out.println("item enriched: " + curItem.toString());
+                //  System.out.println("item enriched: " + curItem.toString());
             }
 
         }
@@ -494,29 +516,35 @@ public class AmsStreamStatus {
                 // Update mps
                 ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
                 mps = new MetricProfileManager();
-                mps.loadFromList(mpsList);
+                try {
+                    mps.loadFromList(mpsList);
+                } catch (Exception e) {
+                    Log.error("Exception in MetricDataWithGroup flatMap2 loading metric profile due to web api error connection : ", e.getMessage());
+                }
+
             } else if (value.f0.equalsIgnoreCase("group_endpoints")) {
                 // Update egp
                 ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpointJSON(value.f1);
+
                 egp = new EndpointGroupManager();
-
-                String validMetricProfile = mps.getProfiles().get(0);
-                ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
-                // Trim profile services
-                ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
-                // Use optimized Endpoint Group Manager
-                for (GroupEndpoint egpItem : egpList) {
-                    if (validServices.contains(egpItem.getService())) {
-                        egpTrim.add(egpItem);
+                try {
+                    String validMetricProfile = mps.getProfiles().get(0);
+                    ArrayList<String> validServices = mps.getProfileServices(validMetricProfile);
+                    // Trim profile services
+                    ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
+                    // Use optimized Endpoint Group Manager
+                    for (GroupEndpoint egpItem : egpList) {
+                        if (validServices.contains(egpItem.getService())) {
+                            egpTrim.add(egpItem);
+                        }
                     }
+
+                    // load next topology into a temporary endpoint group manager
+                    egp.loadFromList(egpTrim);
+                } catch (Exception e) {
+                    Log.error("Exception in MetricDataWithGroup flatMap2 loading metric profile due to web api error connection : ", e.getMessage());
                 }
-                ArrayList<GroupEndpoint> test = egpTrim;
-
-                // load next topology into a temporary endpoint group manager
-                egp.loadFromList(egpTrim);
-
             }
-
         }
 
     }
@@ -544,6 +572,9 @@ public class AmsStreamStatus {
         boolean level_service;
         boolean level_endpoint;
         boolean level_metric;
+        private transient Thread endpointSchedulerThread;
+        boolean isCorrectEndpoint = true;
+        private volatile boolean isRunning = true;
 
         public StatusMap(StatusConfig config, int looseInterval, int strictInterval, boolean level_group, boolean level_service, boolean level_endpoint, boolean level_metric) {
             LOG.info("Created new Status map");
@@ -564,8 +595,7 @@ public class AmsStreamStatus {
          * @throws URISyntaxException
          */
         @Override
-        public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
-
+        public void open(Configuration parameters) {
             pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 
             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
@@ -574,38 +604,44 @@ public class AmsStreamStatus {
             if (config.apiProxy != null) {
                 this.amr.setProxy(config.apiProxy);
             }
-
-            this.amr.setReportID(config.reportID);
-            this.amr.getRemoteAll();
-
-            String opsJSON = this.amr.getResourceJSON(ApiResource.OPS);
-            String apsJSON = this.amr.getResourceJSON(ApiResource.AGGREGATION);
-            ArrayList<String> opsList = new ArrayList();
-            opsList.add(opsJSON);
-            ArrayList<String> apsList = new ArrayList();
-            apsList.add(apsJSON);
-            ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
-            ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
-            ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
-
-            // create a new status manager
             sm = new StatusManager();
-            sm.setLooseInterval(looseInterval);
-            sm.setStrictInterval(strictInterval);
-            // sm.setTimeout(config.timeout);
-            sm.setReport(config.report);
-            sm.setGroupType(this.amr.getEgroup());
-            // load all the connector data
-            sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsList);
-            sm.setLevel_group(level_group);
-            sm.setLevel_service(level_service);
-            sm.setLevel_endpoint(level_endpoint);
-            sm.setLevel_metric(level_metric);
 
-            // Set the default status as integer
-            initStatus = sm.getOps().getIntStatus(config.initStatus);
-            LOG.info("Initialized status manager:" + pID + " (with critical timeout:" + sm.getStrictInterval() + " and warning/unknown/missing timeout " + sm.getLooseInterval() + ")");
+            try {
 
+                this.amr.setReportID(config.reportID);
+                this.amr.getRemoteAll();
+
+                String opsJSON = this.amr.getResourceJSON(ApiResource.OPS);
+                String apsJSON = this.amr.getResourceJSON(ApiResource.AGGREGATION);
+                ArrayList<String> opsList = new ArrayList();
+                opsList.add(opsJSON);
+                ArrayList<String> apsList = new ArrayList();
+                apsList.add(apsJSON);
+                ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+                ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
+                ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
+
+                sm.setStrictInterval(strictInterval);
+                // sm.setTimeout(config.timeout);
+                sm.setReport(config.report);
+                sm.setGroupType(this.amr.getEgroup());
+                // load all the connector data
+                sm.loadAll(config.runDate, downList, egpListFull, mpsList, apsList, opsList);
+                sm.setLevel_group(level_group);
+                sm.setLevel_service(level_service);
+                sm.setLevel_endpoint(level_endpoint);
+                sm.setLevel_metric(level_metric);
+
+                // Set the default status as integer
+                initStatus = sm.getOps().getIntStatus(config.initStatus);
+                LOG.info("Initialized status manager:" + pID + " (with critical timeout:" + sm.getStrictInterval() + " and warning/unknown/missing timeout " + sm.getLooseInterval() + ")");
+            } catch (UnknownHostException e) {
+                // DNS resolution failure — API domain does not exist
+                Log.error("UnknownHostException: API endpoint not found:", e.getMessage());
+                throw new RuntimeException("API domain not found: ", e); // Wrap in a RuntimeException
+            } catch (Exception e) {
+                Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
+            }
         }
 
         /**
@@ -613,8 +649,8 @@ public class AmsStreamStatus {
          * status events
          *
          * @param value Input metric data in base64 encoded format from AMS
-         * service
-         * @param out Collection of generated status events as json strings
+         *              service
+         * @param out   Collection of generated status events as json strings
          */
         @Override
         public void flatMap1(Tuple2<String, MetricData> value, Collector<String> out)
@@ -632,76 +668,101 @@ public class AmsStreamStatus {
             String message = item.getMessage();
             String summary = item.getSummary();
             String dayStamp = tsMon.split("T")[0];
-
-            if (!sm.checkIfExistDowntime(dayStamp)) {
-                this.amr.setDate(dayStamp);
-                this.amr.getRemoteDowntimes();
-                ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
-                sm.addDowntimeSet(dayStamp, downList);
-            }
-
-            // if daily generation is enable check if has day changed?
-            if (config.daily && sm.hasDayChanged(sm.getTsLatest(), tsMon)) {
-                ArrayList<String> eventsDaily = sm.dumpStatus(tsMon);
-                sm.setTsLatest(tsMon);
-                for (String event : eventsDaily) {
-                    out.collect(event);
-                    LOG.info("sm-" + pID + ": daily event produced: " + event);
+            try {
+                if (!sm.checkIfExistDowntime(dayStamp)) {
+                    this.amr.setDate(dayStamp);
+                    this.amr.getRemoteDowntimes();
+                    ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+                    sm.addDowntimeSet(dayStamp, downList);
                 }
-            }
 
-            // check if group is handled by this operator instance - if not
-            // construct the group based on sync data
-            if (!sm.hasGroup(group)) {
-                // Get start of the day to create new entries
-                Date dateTS = sm.setDate(tsMon);
-                sm.addNewGroup(group, initStatus, dateTS);
-            }
+                // if daily generation is enable check if has day changed?
+                if (config.daily && sm.hasDayChanged(sm.getTsLatest(), tsMon)) {
+                    ArrayList<String> eventsDaily = sm.dumpStatus(tsMon);
+                    sm.setTsLatest(tsMon);
+                    for (String event : eventsDaily) {
+                        out.collect(event);
+                        LOG.info("sm-" + pID + ": daily event produced: " + event);
+                    }
+                }
 
-            ArrayList<String> events = sm.setStatus(group, service, hostname, metric, status, monHost, tsMon, summary, message);
+                // check if group is handled by this operator instance - if not
+                // construct the group based on sync data
+                if (!sm.hasGroup(group)) {
+                    // Get start of the day to create new entries
+                    Date dateTS = sm.setDate(tsMon);
+                    sm.addNewGroup(group, initStatus, dateTS);
+                }
 
-            for (String event : events) {
-                out.collect(event);
-                LOG.info("sm-" + pID + ": event produced: " + item);
+                ArrayList<String> events = sm.setStatus(group, service, hostname, metric, status, monHost, tsMon, summary, message);
+
+                for (String event : events) {
+                    out.collect(event);
+                    LOG.info("sm-" + pID + ": event produced: " + item);
+                }
+            } catch (Exception e) {
+                System.out.println("error in StatusMap flatmap 1");
+
             }
         }
 
         public void flatMap2(Tuple2<String, String> value, Collector<String> out) throws IOException, ParseException {
 
             if (value.f0.equalsIgnoreCase("metric_profile")) {
+
                 // Update mps
-                ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
-                sm.mps = new MetricProfileManager();
-                sm.mps.loadFromList(mpsList);
+                try {
+                    sm.mps = new MetricProfileManager();
+
+                    ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
+                     sm.mps.loadFromList(mpsList);
+                } catch (Exception e) {
+                    System.out.println("error in statusMap flatmap2 metric profiles");
+                }
+
             } else if (value.f0.equals("group_endpoints")) {
                 // Update egp
-                ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpointJSON(value.f1);
 
-                String validMetricProfile = sm.mps.getProfiles().get(0);
-                ArrayList<String> validServices = sm.mps.getProfileServices(validMetricProfile);
-                // Trim profile services
-                ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
-                // Use optimized Endpoint Group Manager
-                for (GroupEndpoint egpItem : egpList) {
-                    if (validServices.contains(egpItem.getService())) {
-                        egpTrim.add(egpItem);
+                try {
+                    EndpointGroupManager egpNext = new EndpointGroupManager();
+                    ArrayList<GroupEndpoint> egpList = SyncParse.parseGroupEndpointJSON(value.f1);
+
+                    String validMetricProfile = sm.mps.getProfiles().get(0);
+                    ArrayList<String> validServices = sm.mps.getProfileServices(validMetricProfile);
+                    // Trim profile services
+                    ArrayList<GroupEndpoint> egpTrim = new ArrayList<GroupEndpoint>();
+                    // Use optimized Endpoint Group Manager
+                    for (GroupEndpoint egpItem : egpList) {
+                        if (validServices.contains(egpItem.getService())) {
+                            egpTrim.add(egpItem);
+                        }
                     }
-                }
-                // load next topology into a temporary endpoint group manager
-                EndpointGroupManager egpNext = new EndpointGroupManager();
-                egpNext.loadFromList(egpTrim);
+                    // load next topology into a temporary endpoint group manager
+                    egpNext.loadFromList(egpTrim);
 
-                // Use existing topology manager inside status manager to make a comparison
-                // with the new topology stored in the temp endpoint group manager
-                // update topology also sets the next topology manager as status manager current 
-                // topology manager only after removal of decomissioned items
-                sm.updateTopology(egpNext);
+                    // Use existing topology manager inside status manager to make a comparison
+                    // with the new topology stored in the temp endpoint group manager
+                    // update topology also sets the next topology manager as status manager current
+                    // topology manager only after removal of decomissioned items
+                    sm.updateTopology(egpNext);
+
+                } catch (Exception e) {
+                    System.out.println("error in statusMap flatmap2 endpoints");
+                }
 
             } else if (value.f0.equalsIgnoreCase("downtimes")) {
                 String pDate = Instant.now().toString().split("T")[0];
-                ArrayList<Downtime> downList = SyncParse.parseDowntimesJSON(value.f1);
-                // Update downtime cache in status manager
-                sm.addDowntimeSet(pDate, downList);
+                try {
+                    ArrayList<Downtime> downList = SyncParse.parseDowntimesJSON(value.f1);
+
+                    // Update downtime cache in status manager
+                    sm.addDowntimeSet(pDate, downList);
+
+                } catch (Exception e) {
+                    System.out.println("error in StatusMap flatmap 2 downtimes");
+                }
+
+
             }
 
         }
@@ -888,6 +949,33 @@ public class AmsStreamStatus {
             this.intervalValue = intervalValue;
         }
 
+        public static IntervalStruct parseInterval(String intervalParam) {
+            if (intervalParam == null) {
+                return new IntervalStruct(IntervalType.DAY, 24); // default 1 day
+            }
+
+            String regex = "\\d+(h|d|m)$";
+            if (!intervalParam.matches(regex)) {
+                return new IntervalStruct(IntervalType.DAY, 24); // default
+            }
+
+            IntervalType intervalType;
+            int intervalValue;
+
+            if (intervalParam.endsWith("h")) {
+                intervalType = IntervalType.HOURS;
+                intervalValue = Integer.parseInt(intervalParam.replace("h", "")) * 60;
+            } else if (intervalParam.endsWith("d")) {
+                intervalType = IntervalType.DAY;
+                intervalValue = Integer.parseInt(intervalParam.replace("d", "")) * 24 * 60;
+            } else { // ends with m
+                intervalType = IntervalType.MINUTES;
+                intervalValue = Integer.parseInt(intervalParam.replace("m", ""));
+            }
+
+            return new IntervalStruct(intervalType, intervalValue);
+        }
+
     }
 
     public static IntervalStruct parseInterval(String intervalParam) {
@@ -960,5 +1048,6 @@ public class AmsStreamStatus {
             return false;
         }
     }
+
 
 }

@@ -2,6 +2,7 @@ package argo.streaming;
 
 import java.io.Serializable;
 
+import argo.amr.ApiResourceManager;
 import org.apache.flink.api.java.utils.ParameterTool;
 
 public class StatusConfig implements Serializable {
@@ -48,6 +49,7 @@ public class StatusConfig implements Serializable {
     // Raw parameters
     public final ParameterTool pt;
 
+
     public StatusConfig(ParameterTool pt) {
         this.pt = pt;
 
@@ -93,7 +95,6 @@ public class StatusConfig implements Serializable {
         }
 
         this.daily = pt.getBoolean("daily", false);
-
     }
 
     public ParameterTool getParameters() {
