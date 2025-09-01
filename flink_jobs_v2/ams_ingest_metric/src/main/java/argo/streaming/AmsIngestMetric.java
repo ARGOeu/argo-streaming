@@ -6,6 +6,7 @@ import argo.avro.GroupEndpoint;
 
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
+
 import com.esotericsoftware.minlog.Log;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
@@ -74,8 +75,8 @@ import profilesmanager.EndpointGroupManager;
  * the api endpoint --api.token the api token --api.interval the api interval
  * --api.timeout 1
  * --check.api.interval: the interval to check the argo-web api connection,by default 24h. it can be * in the format of DAYS,
- *  * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
- *  * the parameter is not configured
+ * * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
+ * * the parameter is not configured
  */
 public class AmsIngestMetric {
 
@@ -356,25 +357,26 @@ public class AmsIngestMetric {
 
                 }
             }
-            try {
 
-                ArrayList<String> groups = egp.getGroupAllTopo(item.getHostname(), item.getService());
-                System.out.println(" MetricDataWithGroup size " + egp.getGroupList().size());
-                if (groups.isEmpty()) {
+            ArrayList<String> groups = egp.getGroupAllTopo(item.getHostname(), item.getService());
+            if (groups.isEmpty()) {
+                try {
                     loadTopology(currTimestampDate);
                     groups = egp.getGroupAllTopo(item.getHostname(), item.getService());
-                }
-                for (String groupItem : groups) {
-                    Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
-                    curItem.f0 = groupItem;
-                    curItem.f1 = item;
+                    lastCheckTimestamp = now;
 
-                    out.collect(curItem);
+                } catch (Exception e) {
+                    Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
+                    lastCheckTimestamp = now;
                 }
-            } catch (Exception e) {
-                Log.error("Exception in StatusMap due to web api error connection : ", e.getMessage());
+             }
+            for (String groupItem : groups) {
+                Tuple2<String, MetricData> curItem = new Tuple2<String, MetricData>();
+                curItem.f0 = groupItem;
+                curItem.f1 = item;
+
+                out.collect(curItem);
             }
-
         }
 
         private void loadTopology(String currTimestampDate) {

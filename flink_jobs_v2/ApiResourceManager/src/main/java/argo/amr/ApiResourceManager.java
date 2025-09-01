@@ -586,9 +586,9 @@ public class ApiResourceManager {
         String path = "https://%s/api/v2/topology/endpoints?date=%s";
         String fullURL = String.format(path, this.endpoint, this.date + combinedparam);
         String content = this.requestManager.getResource(fullURL);
-
-        this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
-
+        if (content != null) {
+            this.data.put(ApiResource.TOPOENDPOINTS, this.apiResponseParser.getJsonData(content, true));
+        }
     }
 
     public boolean isIsCombined() {
