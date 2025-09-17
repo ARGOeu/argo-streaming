@@ -108,11 +108,11 @@ def summarize(result_running, result_completed, result_taskmanagers):
     summary = "OK"
     errors = []
     for tenant in result_running:
-        if result_running[tenant]["ingest_metric"] == False:
+        if result_running[tenant]["ingest_metric"] == "CRITICAL":
             summary = "ERROR"
             errors.append("ERROR - " + tenant + ": ingest metric data off")
         for item in result_running[tenant]["streaming"]:
-            if result_running[tenant]["streaming"][item] == False:
+            if result_running[tenant]["streaming"][item] == "CRITICAL":
                 summary = "ERROR"
                 errors.append("ERROR - " + tenant + ": streaming off for " + item)
 
