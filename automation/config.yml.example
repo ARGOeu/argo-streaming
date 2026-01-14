@@ -1,0 +1,19 @@
+---
+
+automation:
+  ams_endpoint: localhost:8443
+  ams_event_token: s3cr3t
+  ams_event_project: ARGO-MON-AUTOMATION-PROJECT
+  ams_event_subscription: events-subscription
+  ams_admin_token: admin-s3cr3t
+
+  oidc_token_url: localhost:8080
+  oidc_client_id: tenant.status.integration.service
+  oidc_client_secret: s3cr3t
+
+  mon_api_endpoint: localhost:9443
+
+  mongodb_url: localhost:27017 
+  tenant_db_prefix: argo_
+
+  argo_ops_email: argo_ops@localhost
