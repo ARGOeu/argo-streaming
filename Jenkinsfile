@@ -24,7 +24,6 @@ pipeline {
                 pytest --junit-xml=${PROJECT_DIR}/junit.xml --cov=${PROJECT_DIR} --cov-report=xml
                 """
                 junit '**/junit.xml'
-                cobertura coberturaReportFile: '**/coverage.xml'
             }
             post {
                 always {
@@ -45,7 +44,6 @@ pipeline {
                 mvn clean package cobertura:cobertura -Dcobertura.report.format=xml -f ${PROJECT_DIR}/flink_jobs_v2/pom.xml
                 """
                 junit '**/target/surefire-reports/*.xml'
-                cobertura coberturaReportFile: '**/target/site/cobertura/coverage.xml'
                 archiveArtifacts artifacts: '**/target/*.jar'
             }
             post {
