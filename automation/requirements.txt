@@ -1,0 +1,4 @@
+requests==2.32.5
+argo-ams-library==1.0.0
+PyYAML==6.0.3
+pymongo=4.16.0

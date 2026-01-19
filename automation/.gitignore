@@ -1,0 +1,17 @@
+config.yml
+venv/
+.venv/
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+.idea/
+.vscode/
+*.swp
+
+*.log
+
