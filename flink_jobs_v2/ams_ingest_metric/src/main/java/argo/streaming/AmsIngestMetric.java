@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 
 import com.esotericsoftware.minlog.Log;
+import influxdb.connector.InfluxDBSink;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
@@ -36,7 +37,6 @@ import com.google.gson.JsonParser;
 
 import argo.avro.MetricData;
 import com.influxdb.client.write.Point;
-import influxdb.connector.InfluxDBSink;
 
 import java.util.ArrayList;
 import java.util.Arrays;

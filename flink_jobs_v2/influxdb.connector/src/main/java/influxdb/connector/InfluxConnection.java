@@ -1,42 +1,33 @@
 package influxdb.connector;
 
+
 import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.InfluxDBClientFactory;
 import com.influxdb.client.InfluxDBClientOptions;
-import com.influxdb.client.WriteApiBlocking;
+import com.influxdb.client.WriteApi;
 import com.influxdb.client.write.Point;
 import com.influxdb.exceptions.InfluxException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.UnknownHostException;
 import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author cthermolia
- */
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 public class InfluxConnection {
 
-    static Logger LOG = LoggerFactory.getLogger(InfluxConnection.class);
+    private static final Logger LOG = LoggerFactory.getLogger(InfluxConnection.class);
 
-    public InfluxConnection() {
-    }
+    private final InfluxDBClient client;
+    private final WriteApi writeApi;
 
-    public InfluxDBClient buildConnection(String url, String token, String org, String bucket, String proxy, int proxyport) throws UnknownHostException {
-        InfluxDBClient cl = null;
-        //try {
-        InfluxDBClientOptions options = null;
-        if (proxy != null) {
-         
-            Proxy proxyHost = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(proxy, proxyport));
-            OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder()
-                    .proxy(proxyHost);
+    public InfluxConnection(String url, String token, String org, String bucket,String proxy,int proxyPort) {
 
-            if (okHttpBuilder == null) {
-                throw new NullPointerException();
-            }
+        InfluxDBClientOptions options;
+
+        if (proxy != null && !proxy.isEmpty()) {
+            Proxy proxyHost = new Proxy( Proxy.Type.HTTP, new InetSocketAddress(proxy, proxyPort));
+
+            OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder().proxy(proxyHost);
 
             options = InfluxDBClientOptions.builder()
                     .url(url)
@@ -45,7 +36,6 @@ public class InfluxConnection {
                     .authenticateToken(token.toCharArray())
                     .okHttpClient(okHttpBuilder)
                     .build();
-            
         } else {
             options = InfluxDBClientOptions.builder()
                     .url(url)
@@ -53,28 +43,54 @@ public class InfluxConnection {
                     .org(org)
                     .authenticateToken(token.toCharArray())
                     .build();
-
         }
-        cl = InfluxDBClientFactory.create(options);
-        
-       
 
-        if (cl == null) {
-            throw new NullPointerException("ERROR: InfluxDBClient is null ");
+        this.client = InfluxDBClientFactory.create(options);
+
+        if (this.client == null) {
+            throw new NullPointerException("ERROR: InfluxDBClient is null");
         }
-        return cl;
+
+        // Create WriteApi ONCE
+        this.writeApi = client.makeWriteApi();
+
+        LOG.info("InfluxDB connection initialized");
     }
 
-    public boolean singlePointWrite(InfluxDBClient client, Point point) {
-        boolean flag = false;
-       try {
-        WriteApiBlocking writeApi = client.getWriteApiBlocking();
-        writeApi.writePoint(point);
-        flag = true;
-        } catch (InfluxException e) {
-            LOG.error("ERROR WRITE TO INFLUX" + e.getMessage());
+    /**
+     * Thread-safe, async write
+     */
+    public void write(Point point) {
+        try {
+            writeApi.writePoint(point);
+           } catch (InfluxException e) {
+            LOG.error("ERROR WRITE TO INFLUX", e);
         }
-        return flag;
     }
 
+    /**
+     * Flush buffered data
+     */
+    public void flush() {
+        writeApi.flush();
+    }
+
+    /**
+     * Proper shutdown
+     */
+    public void close() {
+        try {
+            LOG.info("Closing InfluxDB WriteApi");
+            writeApi.close();
+        } catch (Exception e) {
+            LOG.warn("Error closing WriteApi", e);
+        }
+
+        try {
+            LOG.info("Closing InfluxDB client");
+            client.close();
+        } catch (Exception e) {
+            LOG.warn("Error closing InfluxDB client", e);
+        }
+    }
 }

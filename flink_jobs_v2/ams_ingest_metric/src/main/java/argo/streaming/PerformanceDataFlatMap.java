@@ -68,7 +68,6 @@ public class PerformanceDataFlatMap extends RichFlatMapFunction< Tuple2<String, 
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date date = sdf.parse(tuple.f1);
             Point p = Point.measurement(tuple.f0).time(date.getTime(), WritePrecision.MS).addTags(tags).addFields(fields);
-            
             out.collect(p);
         }
     }
