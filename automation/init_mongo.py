@@ -9,7 +9,7 @@ def init_mongo(connection_string: str, db_name: str) -> bool:
     """Initialise indexes in mongodb"""
 
     # Connect to MongoDB and get the database
-    client = MongoClient(connection_string)
+    client: MongoClient = MongoClient(connection_string)
     db = client[db_name]
 
     # types of indexing

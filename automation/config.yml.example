@@ -13,7 +13,19 @@ automation:
 
   mon_api_endpoint: localhost:9443
 
+  web_api_endpoint: localhost:8081
+  web_api_token: api-s3cr3t
+
   mongodb_url: localhost:27017 
   tenant_db_prefix: argo_
 
   argo_ops_email: argo_ops@localhost
+
+# The tenants section is automatically configured by engine - don't edit manually
+#
+# tenants:
+#  TENANTFOO:
+#    id: tenant-foo-uuid
+#    ams_token: ams_s3cr3t
+#    web_api_token: web_api_s3cr3t
+
