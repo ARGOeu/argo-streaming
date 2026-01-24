@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import enum
-import http.client
 import json
 import logging
 import threading
@@ -12,15 +10,16 @@ from datetime import datetime, timezone
 from enum import Enum
 
 import requests
-import yaml
 from argo_ams_library import ArgoMessagingService
 
+from argo_config import ArgoConfig
 from init_ams import init_ams
+from init_compute_engine import init_compute_engine
 from init_mongo import init_mongo
 
 REQUEST_TIMEOUT = 30
 TOKEN_REFRESH_BUFFER = 60
-LOOP_DELAY = 5
+LOOP_DELAY = 0.2
 
 
 logger = logging.getLogger(__name__)
@@ -29,6 +28,7 @@ logger = logging.getLogger(__name__)
 class JobName(Enum):
     INIT_MONGO = "INIT_MONGO"
     INIT_AMS = "INIT_AMS"
+    INIT_COMPUTE_ENGINE = "INIT_COMPUTE_ENGINE"
 
 
 class JobStatus(Enum):
@@ -40,31 +40,10 @@ class JobStatus(Enum):
     UNKNOWN = "UNKNOWN"
 
 
-class Config:
-    """Loads and holds the configuration from a yaml file"""
-
-    def __init__(self, path: str):
-        with open(path) as f:
-            data = yaml.safe_load(f)["automation"]
-
-        self.ams_endpoint = data.get("ams_endpoint")
-        self.ams_event_token = data.get("ams_event_token")
-        self.ams_event_project = data.get("ams_event_project")
-        self.ams_event_subscription = data.get("ams_event_subscription")
-        self.ams_admin_token = data.get("ams_admin_token")
-        self.oidc_token_url = data.get("oidc_token_url")
-        self.oidc_client_id = data.get("oidc_client_id")
-        self.oidc_client_secret = data.get("oidc_client_secret")
-        self.mon_api_endpoint = data.get("mon_api_endpoint")
-        self.mongodb_url = data.get("mongodb_url")
-        self.tenant_db_prefix = data.get("tenant_db_prefix")
-        self.argo_ops_email = data.get("argo_ops_email")
-
-
 class MonApiClient:
     """Client to do status updates to argo mon api"""
 
-    def __init__(self, config: Config):
+    def __init__(self, config: ArgoConfig):
         self.config = config
         self._access_token = None
         self._token_expires_at = 0
@@ -152,7 +131,7 @@ class MonApiClient:
             )
         except requests.HTTPError as e:
             if e.response.status_code == 404:
-                logger.warn(
+                logger.warning(
                     f"tenant: {tenant_name} ({tenant_id}) does not exist in mon api"
                 )
             else:
@@ -164,7 +143,7 @@ class MonApiClient:
 class ArgoAutomator:
     """ArgoAutomator listens to AMS for events and runs background tasks(jobs) in threads"""
 
-    def __init__(self, config: Config, max_workers: int = 10):
+    def __init__(self, config: ArgoConfig, max_workers: int = 10):
         logger.info("initialising automator...")
         self.config = config
         self.mon_api = MonApiClient(config)
@@ -199,13 +178,17 @@ class ArgoAutomator:
                 return
 
             if job_name == JobName.INIT_MONGO.value:
-                logger.debug("YO started init mongo")
                 self.executor.submit(self.job_init_mongo, tenant_id, tenant_name)
                 return
             if job_name == JobName.INIT_AMS.value:
-                logger.debug("YO starterd init ams")
                 self.executor.submit(self.job_init_ams, tenant_id, tenant_name)
                 return
+            if job_name == JobName.INIT_COMPUTE_ENGINE.value:
+                self.executor.submit(
+                    self.job_init_compute_engine, tenant_id, tenant_name
+                )
+                return
+
         except Exception as e:
             logger.exception(f"Failed to process event: {e}")
 
@@ -251,6 +234,48 @@ class ArgoAutomator:
         except Exception as e:
             logger.exception(f"job failed for tenant {tenant_name}: {e}")
 
+    def job_init_compute_engine(self, tenant_id: str, tenant_name: str):
+        """Job placeholder to init compute engine"""
+        try:
+            logger.info(
+                f"job started: initialising compute engine for tenant {tenant_name} with id: {tenant_id}"
+            )
+
+            self.mon_api.update_status(
+                tenant_id,
+                tenant_name,
+                JobName.INIT_COMPUTE_ENGINE.value,
+                JobStatus.IN_PROGRESS.value,
+                "Initialising Compute Engine",
+            )
+
+            job_done = init_compute_engine(self.config, tenant_id, tenant_name)
+
+            if job_done:
+                self.mon_api.update_status(
+                    tenant_id,
+                    tenant_name,
+                    JobName.INIT_COMPUTE_ENGINE.value,
+                    JobStatus.COMPLETED.value,
+                    "Compute engine initialised succesfully",
+                )
+                logger.info(
+                    f"job completed: initialising compute engine for tenant {tenant_name}"
+                )
+            else:
+                self.mon_api.update_status(
+                    tenant_id,
+                    tenant_name,
+                    JobName.INIT_COMPUTE_ENGINE.value,
+                    JobStatus.FAILED.value,
+                    "Compute engine failed to initialise",
+                )
+                logger.error(
+                    f"job failed: initialising compute engine for tenant {tenant_name}"
+                )
+        except Exception as e:
+            logger.exception(f"job failed for tenant {tenant_name}: {e}")
+
     def job_init_ams(self, tenant_id: str, tenant_name: str):
         """Job placeholder to init ams"""
         try:
@@ -267,10 +292,9 @@ class ArgoAutomator:
             )
 
             job_done = init_ams(
-                self.config.ams_endpoint,
-                self.config.ams_admin_token,
+                self.config,
+                tenant_id,
                 tenant_name,
-                self.config.argo_ops_email,
             )
 
             if job_done:
@@ -352,7 +376,7 @@ def main():
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
 
-    config = Config(args.config)
+    config = ArgoConfig(args.config)
 
     automator = ArgoAutomator(config, 10)
     automator.run()

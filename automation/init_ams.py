@@ -3,18 +3,21 @@ import logging
 from argo_ams_library import (AmsServiceException, AmsUser, AmsUserProject,
                               ArgoMessagingService)
 
+from argo_config import ArgoConfig
+
 logger = logging.getLogger(__name__)
 
 
 def init_ams(
-    ams_endpoint: str, ams_admin_token: str, tenant_name: str, argo_ops_email: str
+    config: ArgoConfig,
+    tenant_id: str,
+    tenant_name: str,
 ) -> bool:
     """Initialise project, topic and subscriptions to ams"""
-
     # create admin client for ams to create new project
     ams = ArgoMessagingService(
-        endpoint=ams_endpoint,
-        token=ams_admin_token,
+        endpoint=config.ams_endpoint,
+        token=config.ams_admin_token,
     )
 
     # Create project - skip if it exists
@@ -32,7 +35,7 @@ def init_ams(
     # Recreate the ams client for using the specific project (ams library necessity to select new project)
 
     ams = ArgoMessagingService(
-        endpoint=ams_endpoint, token=ams_admin_token, project=tenant_name
+        endpoint=config.ams_endpoint, token=config.ams_admin_token, project=tenant_name
     )
 
     admin_username = f"{tenant_name}_admin"
@@ -53,17 +56,25 @@ def init_ams(
                 AmsUser(
                     name=username,
                     projects=[AmsUserProject(project=tenant_name, roles=[role])],
-                    email=argo_ops_email,
+                    email=config.argo_ops_email,
                 )
             )
 
             if user:
                 logger.info(f"ams project {tenant_name} - user created: {username}")
+                if role == "consumer":
+                    config.set_tenant_ams_access(tenant_id, tenant_name, user.token)
+
         except AmsServiceException as e:
             if e.code == 409:
                 logger.warning(
                     f"ams project {tenant_name} - user {username} already exists"
                 )
+                if role == "consumer":
+                    user = ams.get_user(username)
+                    if user:
+                        config.set_tenant_ams_access(tenant_id, tenant_name, user.token)
+
             else:
                 logger.error(
                     f"ams project {tenant_name} - could not set up user: {username}"
