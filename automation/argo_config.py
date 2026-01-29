@@ -34,6 +34,7 @@ class ArgoConfig:
         self.argo_ops_email = automation.get("argo_ops_email")
         self.web_api_endpoint = automation.get("web_api_endpoint")
         self.web_api_token = automation.get("web_api_token")
+        self.default_ops_profile_file = automation.get("default_ops_profile_file")
 
     def save(self) -> None:
         """Save current configuration back to yaml file"""

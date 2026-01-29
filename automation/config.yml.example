@@ -16,10 +16,11 @@ automation:
   web_api_endpoint: localhost:8081
   web_api_token: api-s3cr3t
 
-  mongodb_url: localhost:27017 
+  mongodb_url: mongodb://localhost:27017 
   tenant_db_prefix: argo_
 
   argo_ops_email: argo_ops@localhost
+  default_ops_profile_file: ./default.ops.json
 
 # The tenants section is automatically configured by engine - don't edit manually
 #

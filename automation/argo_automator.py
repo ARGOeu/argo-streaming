@@ -20,6 +20,8 @@ from init_mongo import init_mongo
 REQUEST_TIMEOUT = 30
 TOKEN_REFRESH_BUFFER = 60
 LOOP_DELAY = 0.2
+JOB_WAIT = 5
+JOB_WAIT_RETRY = 5
 
 
 logger = logging.getLogger(__name__)
@@ -208,7 +210,11 @@ class ArgoAutomator:
             )
 
             job_done = init_mongo(
-                self.config.mongodb_url, self.config.tenant_db_prefix + tenant_name
+                self.config,
+                tenant_id,
+                tenant_name,
+                self.config.mongodb_url,
+                self.config.tenant_db_prefix + tenant_name,
             )
 
             if job_done:
@@ -237,6 +243,31 @@ class ArgoAutomator:
     def job_init_compute_engine(self, tenant_id: str, tenant_name: str):
         """Job placeholder to init compute engine"""
         try:
+
+            logger.info("init_compute_engine: waiting for init_mongo to finish")
+            job_mongo = self.mon_api.get_status(
+                tenant_id, tenant_name, JobName.INIT_MONGO.value
+            )
+            retries = 0
+            while job_mongo["status"] != JobStatus.COMPLETED.value:
+                time.sleep(JOB_WAIT)
+                job_mongo = self.mon_api.get_status(
+                    tenant_id, tenant_name, JobName.INIT_MONGO.value
+                )
+                retries = retries + 1
+                if retries > JOB_WAIT_RETRY:
+                    logger.error(
+                        "init_compute_engine: exausted retries waiting for init_mongo to finish... aborting"
+                    )
+                    self.mon_api.update_status(
+                        tenant_id,
+                        tenant_name,
+                        JobName.INIT_COMPUTE_ENGINE.value,
+                        JobStatus.FAILED.value,
+                        "Initialising Compute Engine failed",
+                    )
+                    return
+
             logger.info(
                 f"job started: initialising compute engine for tenant {tenant_name} with id: {tenant_id}"
             )
