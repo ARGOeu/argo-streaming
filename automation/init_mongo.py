@@ -1,11 +1,21 @@
 import logging
 
 from pymongo import ASCENDING, DESCENDING, MongoClient
+from pymongo.uri_parser import parse_uri
+
+from argo_config import ArgoConfig
+from argo_web_api import ArgoWebApi
 
 logger = logging.getLogger(__name__)
 
 
-def init_mongo(connection_string: str, db_name: str) -> bool:
+def init_mongo(
+    config: ArgoConfig,
+    tenant_id: str,
+    tenant_name: str,
+    connection_string: str,
+    db_name: str,
+) -> bool:
     """Initialise indexes in mongodb"""
 
     # Connect to MongoDB and get the database
@@ -49,4 +59,13 @@ def init_mongo(connection_string: str, db_name: str) -> bool:
                 f"db: {db_name} failed to create index on {collection_name}: {e}"
             )
             return False
+    # if mongo was initialised correctly - update the status in argo-web-api tenant
+
+    web_api = ArgoWebApi(config)
+    parsed = parse_uri(connection_string)
+    mongo_host, mongo_port = parsed["nodelist"][0]
+    web_api.update_tenant_db_info(
+        tenant_id, tenant_name, "ar", mongo_host, mongo_port, db_name
+    )
+
     return True
