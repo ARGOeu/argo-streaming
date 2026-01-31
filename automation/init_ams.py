@@ -47,7 +47,7 @@ def init_ams(
         (admin_username, "project_admin"),
         (consumer_username, "consumer"),
         (publisher_username, "publisher"),
-        (archiver_username, "publisher"),
+        (archiver_username, "consumer"),
     ]
 
     for username, role in user_roles:
