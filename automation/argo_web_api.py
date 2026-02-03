@@ -21,6 +21,7 @@ class ArgoWebApi:
         tenant_name: str,
         username: str,
         role: str,
+        component: str
     ):
         """Http call to web-api to create a user"""
         logger.debug(
@@ -31,6 +32,7 @@ class ArgoWebApi:
             "name": username,
             "email": self.config.argo_ops_email,
             "roles": [role],
+            "component": component
         }
 
         url = f"https://{self.config.web_api_endpoint}/api/v2/admin/tenants/{tenant_id}/users"
@@ -128,12 +130,12 @@ class ArgoWebApi:
             f"tenant: {tenant_name} ({tenant_id}) - web-api ops profile created"
         )
 
-    def get_username(
-        self, tenant_id: str, tenant_name: str, username: str
+    def get_component_user(
+        self, tenant_id: str, tenant_name: str, component: str
     ) -> Optional[Dict]:
-        """Http call to web-api to check if a username exists"""
+        """Http call to web-api to check if a component user exists"""
         logger.debug(
-            f"tenant: {tenant_name} ({tenant_id}) - web-api checking username: {username}..."
+            f"tenant: {tenant_name} ({tenant_id}) - web-api checking user for component: {component}..."
         )
 
         url = f"https://{self.config.web_api_endpoint}/api/v2/admin/tenants/{tenant_id}/users"
@@ -146,7 +148,7 @@ class ArgoWebApi:
 
         users = response.json().get("data")
         if users:
-            return next((user for user in users if user["name"] == username), None)
+            return next((user for user in users if user.get("component") == component), None)
         return None
 
     def get_user(self, tenant_id: str, tenant_name: str, user_id: str):
