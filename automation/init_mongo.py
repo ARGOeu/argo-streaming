@@ -24,6 +24,7 @@ def init_mongo(
 
     # types of indexing
     index_desc_dateint_id = [("date_integer", DESCENDING), ("id", ASCENDING)]
+    index_desc_dateint_name = [("date_integer", DESCENDING), ("name", ASCENDING)]
     index_dateint_report = [("date_integer", ASCENDING), ("report", ASCENDING)]
     index_dateint_host = [("date_integer", ASCENDING), ("host", ASCENDING)]
     index_report_dateint = [("report", ASCENDING), ("date_integer", ASCENDING)]
@@ -45,6 +46,9 @@ def init_mongo(
         ("status_services", index_report_dateint),
         ("threshold_profiles", index_desc_dateint_id),
         ("weights", index_desc_dateint_id),
+        ("topology_endpoints",index_desc_dateint_id),
+        ("topology_groups",index_desc_dateint_id),
+        ("topology_service_types",index_desc_dateint_name)
     ]
 
     for collection_name, index_type in indexes:

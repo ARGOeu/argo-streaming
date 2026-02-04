@@ -23,23 +23,23 @@ def init_compute_engine(
     poem_username = f"argo_poem_admin_{tenant_name}"
     poem_viewer_username = f"argo_poem_viewer_{tenant_name}"
 
-    # map users and roles and create them
-    user_roles = [
-        (engine_username, "admin"),
-        (monbox_username, "admin"),
-        (probe_username, "viewer"),
-        (ui_username, "admin_ui"),
-        (poem_username, "admin"),
-        (poem_viewer_username, "viewer"),
+    # map users roles and components
+    users_roles_comps = [
+        (engine_username, "admin", "engine"),
+        (monbox_username, "admin", "monbox"),
+        (probe_username, "viewer", "probe"),
+        (ui_username, "admin_ui", "ui"),
+        (poem_username, "admin", "poem-admin"),
+        (poem_viewer_username, "viewer", "poem-viewer"),
     ]
 
     engine_user_key = None
 
-    for username, role in user_roles:
+    for username, role, component in users_roles_comps:
 
         logger.info(f"engine tenant {tenant_name} - creating user: {username}")
-        # check if user exists already
-        user = web_api.get_username(tenant_id, tenant_name, username)
+        # check if user for specific component exists
+        user = web_api.get_component_user(tenant_id, tenant_name, username)
         if user:
             # user exists
             logger.info(f"engine tenant {tenant_name} - user: {username} exists!")
@@ -48,7 +48,7 @@ def init_compute_engine(
 
         else:
             # create the user
-            user = web_api.create_user(tenant_id, tenant_name, username, role)
+            user = web_api.create_user(tenant_id, tenant_name, username, role, component)
             if user and username == engine_username:
                 engine_user_key = user.get("api_key")
 
