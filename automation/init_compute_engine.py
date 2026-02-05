@@ -48,7 +48,9 @@ def init_compute_engine(
 
         else:
             # create the user
-            user = web_api.create_user(tenant_id, tenant_name, username, role, component)
+            user = web_api.create_user(
+                tenant_id, tenant_name, username, role, component
+            )
             if user and username == engine_username:
                 engine_user_key = user.get("api_key")
 

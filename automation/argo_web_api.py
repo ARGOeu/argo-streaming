@@ -16,12 +16,7 @@ class ArgoWebApi:
         self.config = config
 
     def create_user(
-        self,
-        tenant_id: str,
-        tenant_name: str,
-        username: str,
-        role: str,
-        component: str
+        self, tenant_id: str, tenant_name: str, username: str, role: str, component: str
     ):
         """Http call to web-api to create a user"""
         logger.debug(
@@ -32,7 +27,7 @@ class ArgoWebApi:
             "name": username,
             "email": self.config.argo_ops_email,
             "roles": [role],
-            "component": component
+            "component": component,
         }
 
         url = f"https://{self.config.web_api_endpoint}/api/v2/admin/tenants/{tenant_id}/users"
@@ -95,6 +90,28 @@ class ArgoWebApi:
             f"tenant: {tenant_name} ({tenant_id}) - web-api updating db conf updated"
         )
 
+    def get_reports(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        tenant_access_token: str,
+    ):
+        """Retrieve report names and report ids for specific tenant"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - retrieving report information from web-api..."
+        )
+        url = f"https://{self.config.web_api_endpoint}/api/v2/reports"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+
+        response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+
+        results = response.json().get("data")
+        return {item["info"]["name"]: item["id"] for item in results}
+
     def create_ops_profile(
         self,
         tenant_id: str,
@@ -148,7 +165,9 @@ class ArgoWebApi:
 
         users = response.json().get("data")
         if users:
-            return next((user for user in users if user.get("component") == component), None)
+            return next(
+                (user for user in users if user.get("component") == component), None
+            )
         return None
 
     def get_user(self, tenant_id: str, tenant_name: str, user_id: str):

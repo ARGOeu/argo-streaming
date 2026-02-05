@@ -1,0 +1,165 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import subprocess
+import sys
+from datetime import datetime, timedelta
+
+from argo_config import ArgoConfig
+from argo_web_api import ArgoWebApi
+
+logger = logging.getLogger(__name__)
+
+
+def run_batch(
+    config: ArgoConfig,
+    tenant_name: str,
+    report_id: str,
+    cur_date_str: str,
+    prev_date_str: str,
+    tenant_web_api_token: str,
+    dry_run: bool,
+):
+    """Function that composes the appropriate cli command to submit a batch job execution in flink"""
+
+    cmd = [
+        config.flink_path,
+        "run",
+        "-c",
+        "argo.batch.ArgoMultiJob",
+        config.batch_jar_path,
+        "--run.date",
+        cur_date_str,
+        "--mongo.uri",
+        f"{config.mongodb_url}/{config.tenant_db_prefix}{tenant_name}",
+        "--pdata",
+        f"{config.hdfs_path}/{tenant_name}/mdata/{prev_date_str}",
+        "--mdata",
+        f"{config.hdfs_path}/{tenant_name}/mdata/{cur_date_str}",
+        "--api.endpoint",
+        config.web_api_endpoint,
+        "--mongo.method",
+        "insert",
+        "--clear.mongo",
+        "true",
+        "--api.token",
+        tenant_web_api_token,
+        "--report.id",
+        report_id,
+    ]
+
+    if dry_run:
+        print(("\033[92m" + " ".join(str(x) for x in cmd) + "\033[0m"))
+        return 0
+    else:
+        try:
+            subprocess.run(cmd, check=True)
+        except Exception as e:
+            logger.error(f"Batch Job Error: {e}")
+            return 1
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Argo Automator")
+    parser.add_argument(
+        "-c",
+        "--config",
+        default="config.yml",
+        help="Path to configuration file (default: config.yml)",
+    )
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set logging level (default: INFO)",
+    )
+    parser.add_argument(
+        "-d",
+        "--date",
+        type=str,
+        help="set computation date as YYYY-MM-DD",
+    )
+    parser.add_argument(
+        "-t",
+        "--tenant",
+        required=True,
+        type=str,
+        help="select tenant name for computation",
+    )
+    parser.add_argument(
+        "-r",
+        "--report",
+        required=True,
+        type=str,
+        help="select report name for computation",
+    )
+    parser.add_argument(
+        "--dry-run",
+        help="Runs in test mode without actually submitting the job",
+        action="store_true",
+        dest="dry_run",
+    )
+
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        level=getattr(logging, args.log_level),
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+
+    config = ArgoConfig(args.config)
+
+    if not config.flink_path:
+        logging.error(
+            f"You need to set-up the run.flink_path parameter in your configuration file {args.config}"
+        )
+        return 1
+
+    if not config.batch_jar_path:
+        logging.error(
+            f"You need to set-up the run.batch_jar_path parameter in your configuration file {args.config}"
+        )
+        return 1
+
+    web_api = ArgoWebApi(config)
+
+    ref_date = datetime.strptime(args.date, "%Y-%m-%d") if args.date else datetime.now()
+    prev_date_str = (ref_date - timedelta(days=1)).strftime("%Y-%m-%d")
+    cur_date_str = ref_date.strftime("%Y-%m-%d")
+
+    # check if tenant exists in config
+    tenant = config.tenants.get(args.tenant, {})
+    if not tenant or not tenant.get("id", {}) or not tenant.get("web_api_token", {}):
+        logging.error(f"Tenant {args.tenant} not configured in compute engine")
+        return 1
+
+    # check if report exists
+    report_id = (
+        config.tenants.get(args.tenant, {}).get("reports", {}).get(args.report, {})
+    )
+    if not report_id:
+        # try to update the tenant report configuration
+        reports = web_api.get_reports(
+            tenant["id"], args.tenant, tenant["web_api_token"]
+        )
+        config.set_tenant_reports(tenant["id"], args.tenant, reports)
+
+        # check again if report is included in the updated web-api result
+        report_id = (
+            config.tenants.get(args.tenant, {}).get("reports", {}).get(args.report, {})
+        )
+        if not report_id:
+            logging.error(
+                f"Tenant {args.tenant} does not include a report named: {args.report}"
+            )
+            return 1
+
+    return run_batch(
+        config, args.tenant, report_id, cur_date_str, prev_date_str, tenant.get("web_api_token"), args.dry_run
+    )
+
+
+if __name__ == "__main__":
+    sys.exit(main())
