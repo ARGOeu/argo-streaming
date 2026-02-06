@@ -46,9 +46,9 @@ def init_mongo(
         ("status_services", index_report_dateint),
         ("threshold_profiles", index_desc_dateint_id),
         ("weights", index_desc_dateint_id),
-        ("topology_endpoints",index_desc_dateint_id),
-        ("topology_groups",index_desc_dateint_id),
-        ("topology_service_types",index_desc_dateint_name)
+        ("topology_endpoints", index_desc_dateint_id),
+        ("topology_groups", index_desc_dateint_id),
+        ("topology_service_types", index_desc_dateint_name),
     ]
 
     for collection_name, index_type in indexes:
