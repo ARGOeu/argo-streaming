@@ -1,4 +1,5 @@
 import logging
+from enum import Enum
 from typing import Dict, Optional
 
 import requests
@@ -8,6 +9,12 @@ from argo_config import ArgoConfig
 logger = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 30
+
+
+class TopoItem(Enum):
+    ENDPOINTS = "endpoints"
+    GROUPS = "groups"
+    SERVICE_TYPES = "service-types"
 
 
 class ArgoWebApi:
@@ -90,6 +97,28 @@ class ArgoWebApi:
             f"tenant: {tenant_name} ({tenant_id}) - web-api updating db conf updated"
         )
 
+    def get_topology(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        tenant_access_token: str,
+        topology_item: TopoItem,
+    ):
+        """Retrieve topology items for specific tenant"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - retrieving report information from web-api..."
+        )
+        url = f"https://{self.config.web_api_endpoint}/api/v2/topology/{topology_item.value}"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+
+        response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+
+        return response.json().get("data")
+
     def get_reports(
         self,
         tenant_id: str,
@@ -109,8 +138,14 @@ class ArgoWebApi:
         response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
 
-        results = response.json().get("data")
-        return {item["info"]["name"]: item["id"] for item in results}
+        return response.json().get("data")
+
+    def get_report_ids(
+        self, tenant_id: str, tenant_name: str, tenant_access_token: str
+    ):
+        """Retrieve report names and ids for specific tenant"""
+        reports = self.get_reports(tenant_id, tenant_name, tenant_access_token)
+        return {item["info"]["name"]: item["id"] for item in reports}
 
     def create_ops_profile(
         self,
@@ -146,6 +181,30 @@ class ArgoWebApi:
         logger.info(
             f"tenant: {tenant_name} ({tenant_id}) - web-api ops profile created"
         )
+
+    def update_ready_state(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        payload: object,
+    ):
+        """Http call to web-api to update the readiness state for a specific tenant"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - web-api update readiness state..."
+        )
+
+        url = f"https://{self.config.web_api_endpoint}/api/v2/admin/tenants/{tenant_id}/ready"
+        headers = {
+            "x-api-key": self.config.web_api_token,
+            "Accept": "application/json",
+        }
+
+        response = requests.put(
+            url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+        )
+        response.raise_for_status()
+
+        logger.info(f"tenant: {tenant_name} ({tenant_id}) - web-api readiness updated")
 
     def get_component_user(
         self, tenant_id: str, tenant_name: str, component: str

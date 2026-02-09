@@ -61,7 +61,7 @@ def run_batch(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Argo Automator")
+    parser = argparse.ArgumentParser(description="Argo Run Batch")
     parser.add_argument(
         "-c",
         "--config",
@@ -141,7 +141,7 @@ def main():
     )
     if not report_id:
         # try to update the tenant report configuration
-        reports = web_api.get_reports(
+        reports = web_api.get_report_ids(
             tenant["id"], args.tenant, tenant["web_api_token"]
         )
         config.set_tenant_reports(tenant["id"], args.tenant, reports)

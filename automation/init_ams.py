@@ -1,11 +1,7 @@
 import logging
 
-from argo_ams_library import (
-    AmsServiceException,
-    AmsUser,
-    AmsUserProject,
-    ArgoMessagingService,
-)
+from argo_ams_library import (AmsServiceException, AmsUser, AmsUserProject,
+                              ArgoMessagingService)
 
 from argo_config import ArgoConfig
 
