@@ -64,7 +64,7 @@ def run_ingest(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Argo Automator")
+    parser = argparse.ArgumentParser(description="Argo Run Ingest")
     parser.add_argument(
         "-c",
         "--config",

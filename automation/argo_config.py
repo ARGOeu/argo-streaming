@@ -38,6 +38,7 @@ class ArgoConfig:
         self.web_api_token = automation.get("web_api_token")
         self.default_ops_profile_file = automation.get("default_ops_profile_file")
         self.hdfs_path = run.get("hdfs_path")
+        self.hdfs_check_path = run.get("hdfs_check_path")
         self.flink_path = run.get("flink_path")
         self.batch_jar_path = run.get("batch_jar_path")
         self.ingest_jar_path = run.get("ingest_jar_path")

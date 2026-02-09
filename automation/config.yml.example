@@ -24,8 +24,10 @@ automation:
 
 run:
   hdfs_path: hdfs://localhost:9000/user/argo/test/tenants/
+  hdfs_check_path: http://localhost:50070/user/argo/test/tenants
   flink_path: /opt/flink/bin/flink
-  batch_jar_path: /opt/argo/jars/multijob.jar 
+  batch_jar_path: /opt/argo/jars/multijob.jar
+  ingest_jar_path: /opt/argo/jars/ingest.jar 
 
 # The tenants section is automatically configured by engine - don't edit manually
 #

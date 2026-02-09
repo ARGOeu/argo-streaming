@@ -13,6 +13,7 @@ import requests
 from argo_ams_library import ArgoMessagingService
 
 from argo_config import ArgoConfig
+from check_readiness import check_readiness
 from init_ams import init_ams
 from init_compute_engine import init_compute_engine
 from init_mongo import init_mongo
@@ -31,6 +32,7 @@ class JobName(Enum):
     INIT_MONGO = "INIT_MONGO"
     INIT_AMS = "INIT_AMS"
     INIT_COMPUTE_ENGINE = "INIT_COMPUTE_ENGINE"
+    CHECK_READINESS = "CHECK_READINESS"
 
 
 class JobStatus(Enum):
@@ -178,7 +180,9 @@ class ArgoAutomator:
                     f"ams job {job_name} event for tenant: {tenant_name} ({tenant_id}) discarded"
                 )
                 return
-
+            if job_name == JobName.CHECK_READINESS.value:
+                self.executor.submit(self.job_check_readiness, tenant_id, tenant_name)
+                return
             if job_name == JobName.INIT_MONGO.value:
                 self.executor.submit(self.job_init_mongo, tenant_id, tenant_name)
                 return
@@ -193,6 +197,54 @@ class ArgoAutomator:
 
         except Exception as e:
             logger.exception(f"Failed to process event: {e}")
+
+    def job_check_readiness(self, tenant_id: str, tenant_name: str):
+        """Job placeholder to check readiness mongo"""
+        try:
+            logger.info(
+                f"job started: initialising check readiness tenant {tenant_name} with id: {tenant_id}"
+            )
+            # To do stuff here
+            self.mon_api.update_status(
+                tenant_id,
+                tenant_name,
+                JobName.CHECK_READINESS.value,
+                JobStatus.IN_PROGRESS.value,
+                "Running checks for tenant readiness",
+            )
+
+            # run the checks and collect information
+            job_done = check_readiness(
+                self.config,
+                tenant_id,
+                tenant_name,
+            )
+
+            
+            if job_done:
+                self.mon_api.update_status(
+                    tenant_id,
+                    tenant_name,
+                    JobName.CHECK_READINESS.value,
+                    JobStatus.COMPLETED.value,
+                    "Check readiness completed succesfully",
+                )
+                logger.info(
+                    f"job completed: check_readiness for tenant {tenant_name}"
+                )
+            else:
+                self.mon_api.update_status(
+                    tenant_id,
+                    tenant_name,
+                    JobName.CHECK_READINESS.value,
+                    JobStatus.FAILED.value,
+                    "Check readiness failed to complete!",
+                )
+                logger.error(f"job failed: check readiness for tenant {tenant_name}")
+        except Exception as e:
+            logger.exception(f"job failed for tenant {tenant_name}: {e}")
+
+
 
     def job_init_mongo(self, tenant_id: str, tenant_name: str):
         """Job placeholder to init mongo"""
