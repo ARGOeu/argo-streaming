@@ -42,7 +42,7 @@ def check_hdfs(config: ArgoConfig, tenant_id: str, tenant_name: str) -> bool:
     return False
 
 
-def check_readiness(config: ArgoConfig, tenant_id: str, tenant_name: str) -> object:
+def check_readiness(config: ArgoConfig, tenant_id: str, tenant_name: str) -> bool:
     """Checks tenants readiness by doing web-api requests to see if topology and
     reports are defined and also by checking if data are present both in ams and hdfs"""
 
@@ -88,7 +88,8 @@ def check_readiness(config: ArgoConfig, tenant_id: str, tenant_name: str) -> obj
 
     reports = web_api.get_reports(tenant_id, tenant_name, tenant_token)
 
-    if len(reports) < 0:
+    if len(reports) <= 0:
+        reports_ready = False
         reports_msg = "Tenant has no reports!"
 
     # check metric data in hdfs
@@ -112,6 +113,4 @@ def check_readiness(config: ArgoConfig, tenant_id: str, tenant_name: str) -> obj
 
     # update the payload to web-api
     result = web_api.update_ready_state(tenant_id, tenant_name, payload)
-    if result:
-        return True
-    return False
+    return True
