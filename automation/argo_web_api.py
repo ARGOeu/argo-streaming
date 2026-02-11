@@ -135,8 +135,18 @@ class ArgoWebApi:
             "Accept": "application/json",
         }
 
-        response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
+        try:
+            response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+            response.raise_for_status()
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - has no reports"
+                )
+                return []
+            else:
+                raise
 
         return response.json().get("data")
 
