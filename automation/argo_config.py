@@ -80,5 +80,5 @@ class ArgoConfig:
             return
         cur_tenant_id = cur_tenant.get("id")
         if not cur_tenant_id or cur_tenant_id != tenant_id:
-            cur_tenant["tenant_id"] = tenant_id
+            cur_tenant["id"] = tenant_id
             logger.info(f"engine config - tenant {tenant_name} tenant_id prop set")
