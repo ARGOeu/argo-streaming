@@ -103,7 +103,7 @@ language governing permissions and limitations under the License. -->
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>1.11.1</version>
+            <version>1.11.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -177,7 +177,7 @@ language governing permissions and limitations under the License. -->
                 <dependency>
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
-                    <version>1.11.1</version>
+                    <version>1.11.5</version>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.flink</groupId>
