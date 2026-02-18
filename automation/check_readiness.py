@@ -107,7 +107,7 @@ def check_readiness(config: ArgoConfig, tenant_id: str, tenant_name: str) -> boo
         "topology": {"ready": topology_ready, "message": " ".join(topology_msg)},
         "reports": {"ready": reports_ready, "message": reports_msg},
         "last_check": datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y:%m:%dT%H:%M:%SZ"
+            "%Y-%m-%dT%H:%M:%SZ"
         ),
     }
 
