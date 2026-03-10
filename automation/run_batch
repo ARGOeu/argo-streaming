@@ -41,7 +41,7 @@ def run_batch(
         config.web_api_endpoint,
         "--mongo.method",
         "insert",
-        "--clear.mongo",
+        "--clearMongo",
         "true",
         "--api.token",
         tenant_web_api_token,
