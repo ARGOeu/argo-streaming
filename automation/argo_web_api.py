@@ -179,6 +179,11 @@ class ArgoWebApi:
                 url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
             )
             response.raise_for_status()
+            logger.info(
+                f"tenant: {tenant_name} ({tenant_id}) - web-api ops profile created"
+            )
+            return response.json()["data"]["id"]
+
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 409:
                 logger.warning(
@@ -188,9 +193,149 @@ class ArgoWebApi:
             else:
                 raise
 
-        logger.info(
-            f"tenant: {tenant_name} ({tenant_id}) - web-api ops profile created"
+    def create_metric_profile(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        tenant_access_token: str,
+        payload: object,
+    ):
+        """Http call to web-api to create metric profile"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - web-api creating default metric profile..."
         )
+
+        url = f"https://{self.config.web_api_endpoint}/api/v2/metric_profiles"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+            )
+            response.raise_for_status()
+            logger.info(
+                f"tenant: {tenant_name} ({tenant_id}) - web-api metric profile created"
+            )
+            return response.json()["data"]["id"]
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 409:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - web-api metric profile already exists"
+                )
+                return
+            else:
+                raise
+
+    def create_aggregation_profile(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        tenant_access_token: str,
+        payload: object,
+    ):
+        """Http call to web-api to create aggregation profile"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - web-api creating default aggregation profile..."
+        )
+
+        url = f"https://{self.config.web_api_endpoint}/api/v2/aggregation_profiles"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+            )
+            response.raise_for_status()
+            logger.info(
+                f"tenant: {tenant_name} ({tenant_id}) - web-api aggregation profile created"
+            )
+            return response.json()["data"]["id"]
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 409:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - web-api aggregation profile already exists"
+                )
+                return
+            else:
+                raise
+
+    def create_default_report(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        tenant_access_token: str,
+        payload: object,
+    ):
+        """Http call to web-api to create report"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - web-api creating default report..."
+        )
+
+        url = f"https://{self.config.web_api_endpoint}/api/v2/reports"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+            )
+            response.raise_for_status()
+            logger.info(
+                f"tenant: {tenant_name} ({tenant_id}) - web-api default report created"
+            )
+            return response.json()["data"]["id"]
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 409:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - web-api default report already exists"
+                )
+                return
+            else:
+                raise
+
+    def create_topology_service_types(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        tenant_access_token: str,
+        payload: object,
+    ):
+        """Http call to web-api to create service types"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - web-api creating default service-types..."
+        )
+
+        url = f"https://{self.config.web_api_endpoint}/api/v2/topology/service-types"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+            )
+            response.raise_for_status()
+            logger.info(
+                f"tenant: {tenant_name} ({tenant_id}) - web-api topology service-types created"
+            )
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 409:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - web-api topology service-types already exist for specific date"
+                )
+                return
+            else:
+                raise
+
 
     def update_ready_state(
         self,

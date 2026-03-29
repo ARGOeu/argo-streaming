@@ -1,0 +1,33 @@
+{
+    "disabled": false,
+    "info": {
+        "name": "Default",
+        "description": "Default A/R Report"
+    },
+    "computations": {
+        "ar": true,
+        "status": true,
+        "trends": [
+            "flapping",
+            "status",
+            "tags"
+        ]
+    },
+    "thresholds": {
+        "availability": 80,
+        "reliability": 90,
+        "uptime": 0.8,
+        "unknown": 0.1,
+        "downtime": 0.1
+    },
+    "topology_schema": {
+        "group": {
+            "type": "PROJECT",
+            "group": {
+                "type": "SERVICEGROUPS"
+            }
+        }
+    },
+    "profiles": [],
+    "filter_tags": []
+}

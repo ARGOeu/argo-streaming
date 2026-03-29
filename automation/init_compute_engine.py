@@ -61,9 +61,51 @@ def init_compute_engine(
         config.set_tenant_web_api_access(tenant_id, tenant_name, engine_user_key)
         config.save()
 
+        ops_id = None
+        metric_id = None
+        agg_id = None
+
         with open(config.default_ops_profile_file, "r") as f:
 
-            payload = json.load(f)
-            web_api.create_ops_profile(tenant_id, tenant_name, engine_user_key, payload)
+            ops_payload = json.load(f)
+            ops_id = web_api.create_ops_profile(
+                tenant_id, tenant_name, engine_user_key, ops_payload
+            )
+
+        with open(config.default_metric_profile_file, "r") as f:
+
+            metric_payload = json.load(f)
+            metric_id = web_api.create_metric_profile(
+                tenant_id, tenant_name, engine_user_key, metric_payload
+            )
+
+        with open(config.default_agg_profile_file, "r") as f:
+
+            agg_payload = json.load(f)
+            agg_payload["namespace"] = tenant_name
+            agg_payload["metric_profile"]["id"] = metric_id
+            agg_id = web_api.create_aggregation_profile(
+                tenant_id, tenant_name, engine_user_key, agg_payload
+            )
+
+        with open(config.default_report_file, "r") as f:
+
+            report_payload = json.load(f)
+            profiles = [
+                {"id": ops_id, "type": "operations"},
+                {"id": metric_id, "type": "metric"},
+                {"id": agg_id, "type": "aggregation"},
+            ]
+            report_payload["profiles"] = profiles
+            web_api.create_default_report(
+                tenant_id, tenant_name, engine_user_key, report_payload
+            )
+
+        with open(config.default_services_file, "r") as f:
+
+            services_payload = json.load(f)
+            web_api.create_topology_service_types(
+                tenant_id, tenant_name, engine_user_key, services_payload
+            )
 
     return True
