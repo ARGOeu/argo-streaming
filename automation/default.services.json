@@ -1,0 +1,26 @@
+[
+    {
+        "name": "api",
+        "title": "API",
+        "description": "A generic rest api service accessible through http protocol",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "iam",
+        "title": "Identity Management",
+        "description": "A generic identity management service",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "webportal",
+        "title": "Webportal",
+        "description": "A generic web service accessible through http protocol",
+        "tags": [
+            "topology"
+        ]
+    }
+]

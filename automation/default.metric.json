@@ -1,0 +1,27 @@
+{
+    "name": "default_metric",
+    "description": "Default metric profile",
+    "services": [
+        {
+            "service": "api",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "webportal",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "iam",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        }
+    ]
+}
