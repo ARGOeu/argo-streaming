@@ -357,8 +357,9 @@ public class ApiResourceManager {
     }
 
     public void getRemoteRecomputations() throws UnknownHostException {
-        String path = "https://%s/api/v2/recomputations?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.date);
+
+        String path = "https://%s/api/v2/recomputations?date=%s&report=%s";
+        String fullURL = String.format(path, this.endpoint, this.date,this.reportName);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.RECOMPUTATIONS, this.apiResponseParser.getJsonData(content, true));
