@@ -120,7 +120,7 @@ public class ApiResourceManagerTest {
                 .willReturn(aResponse().withBody(jsonDowntimes)));
         stubFor(get(urlEqualTo("/api/v2/weights/3b9602ed-49ec-42f3-8df7-7c35331ebf69?date=2020-11-01"))
                 .willReturn(aResponse().withBody(jsonWeights)));
-        stubFor(get(urlEqualTo("/api/v2/recomputations?date=2020-11-01"))
+        stubFor(get(urlEqualTo("/api/v2/recomputations?date=2020-11-01&report=Critical"))
                 .willReturn(aResponse().withBody(jsonRecomp)));
         stubFor(get(urlEqualTo("/api/v2/metrics/by_report/Critical"))
                 .willReturn(aResponse().withBody(jsonMetricTags)));
