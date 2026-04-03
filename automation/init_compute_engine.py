@@ -22,6 +22,7 @@ def init_compute_engine(
     ui_username = f"argo_ui_{tenant_name}"
     poem_username = f"argo_poem_admin_{tenant_name}"
     poem_viewer_username = f"argo_poem_viewer_{tenant_name}"
+    connector_username = f"argo_connector_{tenant_name}"
 
     # map users roles and components
     users_roles_comps = [
@@ -31,6 +32,7 @@ def init_compute_engine(
         (ui_username, "admin_ui", "ui"),
         (poem_username, "admin", "poem-admin"),
         (poem_viewer_username, "viewer", "poem-viewer"),
+        (connector_username,"admin","connector")
     ]
 
     engine_user_key = None
