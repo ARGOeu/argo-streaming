@@ -128,7 +128,7 @@ def main():
         return 1
 
     return run_ingest(
-        config, args.tenant, args.dry_run, tenant.get("ams_token"), args.verify
+        config, args.tenant, tenant.get("ams_token"), args.dry_run, args.verify
     )
 
 
