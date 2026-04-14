@@ -70,7 +70,7 @@ def init_ams(
                 logger.warning(
                     f"ams project {tenant_name} - user {username} already exists"
                 )
-                if role == "consumer":
+                if role == "consumer" and username == consumer_username:
                     user = ams.get_user(username)
                     if user:
                         config.set_tenant_ams_access(tenant_id, tenant_name, user.token)
