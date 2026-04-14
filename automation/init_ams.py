@@ -62,7 +62,7 @@ def init_ams(
 
             if user:
                 logger.info(f"ams project {tenant_name} - user created: {username}")
-                if role == "consumer":
+                if role == "consumer" and username == consumer_username:
                     config.set_tenant_ams_access(tenant_id, tenant_name, user.token)
 
         except AmsServiceException as e:
