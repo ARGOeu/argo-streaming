@@ -44,6 +44,7 @@ class ArgoConfig:
         self.hdfs_path = run.get("hdfs_path")
         self.hdfs_check_path = run.get("hdfs_check_path")
         self.flink_path = run.get("flink_path")
+        self.flink_url = run.get("flink_url")
         self.batch_jar_path = run.get("batch_jar_path")
         self.ingest_jar_path = run.get("ingest_jar_path")
 

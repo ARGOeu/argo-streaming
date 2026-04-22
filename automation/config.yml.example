@@ -26,6 +26,7 @@ run:
   hdfs_path: hdfs://localhost:9000/user/argo/test/tenants/
   hdfs_check_path: http://localhost:50070/user/argo/test/tenants
   flink_path: /opt/flink/bin/flink
+  flink_url: http://localhost:8081
   batch_jar_path: /opt/argo/jars/multijob.jar
   ingest_jar_path: /opt/argo/jars/ingest.jar 
 
