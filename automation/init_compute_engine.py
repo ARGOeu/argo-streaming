@@ -1,10 +1,37 @@
 import json
 import logging
-
+import os
+from jinja2 import Environment, FileSystemLoader
 from argo_config import ArgoConfig
 from argo_web_api import ArgoWebApi
 
+from init_ingest import run_ingest
+
 logger = logging.getLogger(__name__)
+
+TEMPLATE_FILE = "default.cron.j2"
+CRON_DIR = "/etc/cron.d"
+VERIFY = "false"
+
+
+def init_computations(config: ArgoConfig, tenant_name: str) -> bool:
+    """Create cron file for default computations"""
+    template_dir = os.path.dirname(os.path.abspath(__file__))
+
+    env = Environment(loader=FileSystemLoader(template_dir), keep_trailing_newline=True)
+    template = env.get_template(TEMPLATE_FILE)
+    content = template.render(tenant=tenant_name)
+
+    filepath = os.path.join(CRON_DIR, f"argo_{tenant_name}")
+    try:
+        with open(filepath, "w") as f:
+            f.write(content)
+        os.chmod(filepath, 0o644)
+        return True
+    except PermissionError:
+        logger.error("Permission error while creating computation cron file")
+
+    return False
 
 
 def init_compute_engine(
@@ -32,7 +59,7 @@ def init_compute_engine(
         (ui_username, "admin_ui", "ui"),
         (poem_username, "admin", "poem-admin"),
         (poem_viewer_username, "viewer", "poem-viewer"),
-        (connector_username,"admin","connector")
+        (connector_username, "admin", "connector"),
     ]
 
     engine_user_key = None
@@ -109,5 +136,29 @@ def init_compute_engine(
             web_api.create_topology_service_types(
                 tenant_id, tenant_name, engine_user_key, services_payload
             )
+
+    # initialize computations by establishing cron jobs
+    if not init_computations(config, tenant_name):
+        return False
+
+    # enable ingestion job
+    tenant = config.tenants.get(tenant_name, {})
+
+    if not tenant or not tenant.get("ams_token"):
+        raise ValueError(
+            f"Tenant {tenant_name} not found or missing ams_token in config"
+        )
+
+    run_result = run_ingest(
+        config=config,
+        tenant_name=tenant_name,
+        tenant_ams_token=tenant.get("ams_token"),
+        dry_run=False,
+        verify=VERIFY,
+    )
+
+    if run_result == 1:
+        logger.error("Ingestion could not be enabled")
+        return False
 
     return True
