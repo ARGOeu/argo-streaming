@@ -1,11 +1,52 @@
 import logging
-
+import requests
 from argo_ams_library import (AmsServiceException, AmsUser, AmsUserProject,
                               ArgoMessagingService)
 
 from argo_config import ArgoConfig
 
 logger = logging.getLogger(__name__)
+
+REQUEST_TIMEOUT = 30
+
+# use http request to create component user because ams library doesn't support it
+def create_ams_component_account(ams_endpoint: str, ams_token: str, username: str, email: str, project: str, role: str,  component: str, component_project: str): 
+
+    payload = {
+        "email": email,
+        "projects": [
+            {
+                "project": project,
+                "roles": [role]
+            }
+        ],
+    }
+
+    if component and component_project:
+        payload["component"] = component
+        payload["component_project"] = component_project
+
+    url = f"https://{ams_endpoint}/v1/users/{username}"
+    headers = {
+        "x-api-key": ams_token,
+        "Accept": "application/json",
+    }
+    try:
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+            )
+            response.raise_for_status()
+            logger.info(
+                f"ams user: {username} created for project: {project}"
+            )
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 409:
+            logger.warning(
+                f"ams user: {username} for project: {project} already exists!"
+            )
+        else:
+            raise
 
 
 def init_ams(
@@ -42,16 +83,19 @@ def init_ams(
     consumer_username = f"{tenant_name}_consumer"
     publisher_username = f"{tenant_name}_publisher"
     archiver_username = f"{tenant_name}_archiver"
-    # map users and roles and create them
+    # map users and roles and component info, and create them
     user_roles = [
-        (admin_username, "project_admin"),
-        (consumer_username, "consumer"),
-        (publisher_username, "publisher"),
-        (archiver_username, "consumer"),
+        (admin_username, "project_admin", None, None),
+        (consumer_username, "consumer", "argo-engine", tenant_name),
+        (publisher_username, "publisher", "argo-monbox", tenant_name),
+        (archiver_username, "consumer", "argo-archiver", tenant_name),
     ]
 
-    for username, role in user_roles:
+    for username, role, component, component_admin in user_roles:
         try:
+
+            user = create_ams_component_account(config.ams_endpoint, config.ams_admin_token, username, config.argo_ops_email, tenant_name, role, component, component_admin)
+
             user = ams.create_user(
                 AmsUser(
                     name=username,
