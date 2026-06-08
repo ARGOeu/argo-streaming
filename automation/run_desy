@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+import requests
+import uuid
+import json
+import os
+
+from urllib.parse import urlparse
+
+from argo_config import ArgoConfig
+from argo_web_api import ArgoWebApi, TopoItem
+from init_desy import get_desy_feed, update_desy_topology, create_desy_cron, remove_desy_cron
+
+logger = logging.getLogger(__name__)
+
+REQUEST_TIMEOUT = 30
+TEMPLATE_FILE = "desy.cron.j2"
+CRON_DIR = "/etc/cron.d"
+
+
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Argo Run Desy Marketplace Integration"
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        default="config.yml",
+        help="Path to configuration file (default: config.yml)",
+    ),
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set logging level (default: INFO)",
+    )
+    parser.add_argument(
+        "-t",
+        "--tenant",
+        required=True,
+        type=str,
+        help="select tenant name for integration",
+    )
+ 
+    parser.add_argument(
+        "--no-verify",
+        action="store_const",
+        const="false",
+        default="true",
+        dest="verify",
+        help="Disable verification",
+    )
+
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        level=getattr(logging, args.log_level),
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+
+    config = ArgoConfig(args.config)
+    feed_url = get_desy_feed(config, args.tenant)
+    if feed_url:
+        update_desy_topology(config, args.tenant, feed_url)
+    else:
+        remove_desy_cron(args.tenant)
+    
+
+
+if __name__ == "__main__":
+    sys.exit(main())

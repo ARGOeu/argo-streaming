@@ -97,6 +97,38 @@ class ArgoWebApi:
             f"tenant: {tenant_name} ({tenant_id}) - web-api updating db conf updated"
         )
 
+    def get_topology_feed(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        tenant_access_token: str,
+    ):
+        """Retrieve topology feed for specific tenant"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - retrieving topology feed from web-api..."
+        )
+        url = f"https://{self.config.web_api_endpoint}/api/v2/feeds/topology"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+
+        try:
+            response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+            response.raise_for_status()
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - has no topology feed"
+                )
+                return []
+            else:
+                raise
+
+        return response.json().get("data")
+
+
     def get_topology(
         self,
         tenant_id: str,
@@ -121,7 +153,7 @@ class ArgoWebApi:
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
                 logger.warning(
-                    f"tenant: {tenant_name} ({tenant_id}) - has no reports"
+                    f"tenant: {tenant_name} ({tenant_id}) - has no topology"
                 )
                 return []
             else:
@@ -301,6 +333,43 @@ class ArgoWebApi:
             else:
                 raise
 
+
+    def create_topology_groups(
+            self,
+            tenant_id: str,
+            tenant_name: str,
+            tenant_access_token: str,
+            payload: object,
+        ):
+        """Http call to web-api to create topology groups"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - web-api creating topology groups..."
+        )
+
+        url = f"https://{self.config.web_api_endpoint}/api/v2/topology/groups"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+            )
+            response.raise_for_status()
+            logger.info(
+                f"tenant: {tenant_name} ({tenant_id}) - web-api topology groups created"
+            )
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 409:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - web-api topology groups already exist for specific date"
+                )
+                return
+            else:
+                raise
+
+
     def create_topology_service_types(
         self,
         tenant_id: str,
@@ -331,6 +400,76 @@ class ArgoWebApi:
             if e.response.status_code == 409:
                 logger.warning(
                     f"tenant: {tenant_name} ({tenant_id}) - web-api topology service-types already exist for specific date"
+                )
+                return
+            else:
+                raise
+
+    def create_topology_endpoints(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        tenant_access_token: str,
+        payload: object,
+    ):
+        """Http call to web-api to create endpoints"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - web-api creating endpoints..."
+        )
+
+        url = f"https://{self.config.web_api_endpoint}/api/v2/topology/endpoints?force=true"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+            )
+            response.raise_for_status()
+            logger.info(
+                f"tenant: {tenant_name} ({tenant_id}) - web-api topology endpoints created"
+            )
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 409:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - web-api topology endpoints already exist for specific date"
+                )
+                return
+            else:
+                raise
+
+    def create_topology_groups(
+        self,
+        tenant_id: str,
+        tenant_name: str,
+        tenant_access_token: str,
+        payload: object,
+    ):
+        """Http call to web-api to create groups"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - web-api creating groups..."
+        )
+
+        url = f"https://{self.config.web_api_endpoint}/api/v2/topology/groups?force=true"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+            )
+            response.raise_for_status()
+            logger.info(
+                f"tenant: {tenant_name} ({tenant_id}) - web-api topology groups created"
+            )
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 409:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - web-api topology groups already exist for specific date"
                 )
                 return
             else:
