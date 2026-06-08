@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+import requests
+import uuid
+import json
+
+from urllib.parse import urlparse
+
+from argo_config import ArgoConfig
+from argo_web_api import ArgoWebApi, TopoItem
+
+logger = logging.getLogger(__name__)
+
+REQUEST_TIMEOUT = 30
+
+
+def get_desy_topology(url: str):
+    """Retrieve topology from desy marketplace"""
+    logger.debug(f"retrieving topology from desy marketplace: {url}")
+
+    try:
+        response = requests.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 404:
+            logger.warning(f"desy marketplace has no topology: {url}")
+            return []
+        else:
+            raise
+
+    return response.json()
+
+
+def get_existing_topo_endpoints(
+    config: ArgoConfig, tenant_id: str, tenant_name: str, tenant_web_api_token: str
+):
+
+    web_api = ArgoWebApi(config)
+    return web_api.get_topology(
+        tenant_id, tenant_name, tenant_web_api_token, TopoItem.ENDPOINTS
+    )
+
+
+def get_existing_topo_groups(
+    config: ArgoConfig, tenant_id: str, tenant_name: str, tenant_web_api_token: str
+):
+
+    web_api = ArgoWebApi(config)
+    return web_api.get_topology(
+        tenant_id, tenant_name, tenant_web_api_token, TopoItem.GROUPS
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Argo Run Desy Marketplace Integration"
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        default="config.yml",
+        help="Path to configuration file (default: config.yml)",
+    ),
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set logging level (default: INFO)",
+    )
+    parser.add_argument(
+        "-t",
+        "--tenant",
+        required=True,
+        type=str,
+        help="select tenant name for integration",
+    )
+    parser.add_argument(
+        "-u",
+        "--url",
+        required=True,
+        type=str,
+        help="desy marketplace url",
+    )
+    parser.add_argument(
+        "--no-verify",
+        action="store_const",
+        const="false",
+        default="true",
+        dest="verify",
+        help="Disable verification",
+    )
+
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        level=getattr(logging, args.log_level),
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+
+    config = ArgoConfig(args.config)
+
+    tenant = config.tenants.get(args.tenant)
+
+    desy = get_desy_topology(args.url)
+    endpoints = get_existing_topo_endpoints(
+        config, tenant["id"], tenant, tenant["web_api_token"]
+    )
+    groups = get_existing_topo_groups(
+        config, tenant["id"], tenant, tenant["web_api_token"]
+    )
+
+    map_endpoints = {}
+    map_groups = {}
+    new_endpoints = []
+    new_groups = []
+
+    for item in endpoints:
+        info_URL = item.get("tags").get("info_URL")
+        if info_URL:
+            map_endpoints[info_URL] = item
+
+    for item in groups:
+        subgroup = item.get("subgroup")
+        if info_URL:
+            map_groups[subgroup] = item
+
+    added_endpoints = False
+    added_groups = False
+
+    for item in desy:
+
+        item_url = item.get("webpage_url")
+        item_name = item.get("name")
+
+        endpoint_exists = map_endpoints.get(item_url)
+        subgroup_exists = map_groups.get(item_name)
+
+        if subgroup_exists:
+            new_groups.append(subgroup_exists)
+        else:
+            new_groups.append(
+                {
+                    "group": args.tenant,
+                    "type": "PROJECT",
+                    "subgroup": item_name,
+                }
+            )
+            added_groups = True
+
+        if endpoint_exists:
+            new_endpoints.append(endpoint_exists)
+        else:
+            # create the new endpoint
+            item_uuid = str(uuid.uuid4())
+            hostname = urlparse(item_url).hostname
+            new_endpoints.append(
+                {
+                    "group": item_name,
+                    "type": "SERVICEGROUPS",
+                    "service": "webportal",
+                    "hostname": f"{hostname}_{item_uuid}",
+                    "tags": {
+                        "hostname": hostname,
+                        "info_ID": item_uuid,
+                        "info_URL": item_url,
+                        "monitored": "1",
+                    },
+                }
+            )
+            added_endpoints = True
+
+   
+
+    if not added_endpoints and not added_groups:
+        if len(new_endpoints) == len(endpoints) and len(new_groups) == len(groups):
+            print("Topology remains the same")
+            return
+
+    print(json.dumps(new_endpoints,indent=4))
+    print("Topology changes will upload")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

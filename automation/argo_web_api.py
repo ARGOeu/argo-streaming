@@ -121,7 +121,7 @@ class ArgoWebApi:
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
                 logger.warning(
-                    f"tenant: {tenant_name} ({tenant_id}) - has no reports"
+                    f"tenant: {tenant_name} ({tenant_id}) - has no topology"
                 )
                 return []
             else:
@@ -300,6 +300,43 @@ class ArgoWebApi:
                 return
             else:
                 raise
+
+
+    def create_topology_groups(
+            self,
+            tenant_id: str,
+            tenant_name: str,
+            tenant_access_token: str,
+            payload: object,
+        ):
+        """Http call to web-api to create topology groups"""
+        logger.debug(
+            f"tenant: {tenant_name} ({tenant_id}) - web-api creating topology groups..."
+        )
+
+        url = f"https://{self.config.web_api_endpoint}/api/v2/topology/groups"
+        headers = {
+            "x-api-key": tenant_access_token,
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+            )
+            response.raise_for_status()
+            logger.info(
+                f"tenant: {tenant_name} ({tenant_id}) - web-api topology groups created"
+            )
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 409:
+                logger.warning(
+                    f"tenant: {tenant_name} ({tenant_id}) - web-api topology groups already exist for specific date"
+                )
+                return
+            else:
+                raise
+
 
     def create_topology_service_types(
         self,
