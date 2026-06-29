@@ -14,6 +14,7 @@ import argo.avro.GroupGroup;
 import argo.avro.MetricData;
 import argo.avro.MetricProfile;
 import argo.avro.Weight;
+import org.apache.flink.core.fs.FileSystem;
 import profilesmanager.RecomputationsManager;
 import trends.calculations.ServiceTrends;
 import trends.flipflops.ZeroServiceFlipFlopFilter;
@@ -282,26 +283,54 @@ public class ArgoMultiJob {
 
             }
         }
+
+
+
         DataSet<MetricData> allMetricData = null;
+
         for (Path[] path : tenantPaths) {
-            // todays metric data
+
+            // Today's metric data
             Path in = path[0];
-            AvroInputFormat<MetricData> mdataAvro = new AvroInputFormat(in, MetricData.class);
+
+            AvroInputFormat<MetricData> mdataAvro =
+                    new AvroInputFormat<>(in, MetricData.class);
+
             DataSet<MetricData> mdataDS = env.createInput(mdataAvro);
 
-            // previous metric data
+            DataSet<MetricData> mdataPrevTotalDS;
+
+            // Previous metric data
             Path pin = path[1];
-            AvroInputFormat<MetricData> pdataAvro = new AvroInputFormat(pin, MetricData.class);
-            DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
 
-            DataSet<MetricData> pdataCleanDS = pdataDS.flatMap(new ExcludeMetricData()).withBroadcastSet(monEngineRecDS,"rec");
+            FileSystem fs = pin.getFileSystem();
 
-            // Find the latest day
-            DataSet<MetricData> pdataMin = pdataCleanDS.groupBy("service", "hostname", "metric")
-                    .sortGroup("timestamp", Order.DESCENDING).first(1);
+            if (fs.exists(pin)) {
 
-            // Union todays data with the latest statuses from previous day
-            DataSet<MetricData> mdataPrevTotalDS = mdataDS.union(pdataMin);
+                AvroInputFormat<MetricData> pdataAvro =
+                        new AvroInputFormat<>(pin, MetricData.class);
+
+                DataSet<MetricData> pdataDS = env.createInput(pdataAvro);
+
+                DataSet<MetricData> pdataCleanDS =
+                        pdataDS
+                                .flatMap(new ExcludeMetricData())
+                                .withBroadcastSet(monEngineRecDS, "rec");
+
+                DataSet<MetricData> pdataMin =
+                        pdataCleanDS
+                                .groupBy("service", "hostname", "metric")
+                                .sortGroup("timestamp", Order.DESCENDING)
+                                .first(1);
+
+                // Today's data + previous day's latest statuses
+                mdataPrevTotalDS = mdataDS.union(pdataMin);
+
+            } else {
+
+                // Previous day folder does not exist, use only today's data
+                mdataPrevTotalDS = mdataDS;
+            }
 
             if (allMetricData == null) {
                 allMetricData = mdataPrevTotalDS;
@@ -309,6 +338,7 @@ public class ArgoMultiJob {
                 allMetricData = allMetricData.union(mdataPrevTotalDS);
             }
         }
+
         DataSet<StatusMetric> fillMissDS = allMetricData.reduceGroup(new FillMissing(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(opsDS, "ops").withBroadcastSet(confDS, "conf").withBroadcastSet(nempsDS, "nemps")
@@ -365,10 +395,11 @@ public class ArgoMultiJob {
                 .withBroadcastSet(apsDS, "aps").withBroadcastSet(groupRecomputedDS, "rec");
 
         if (calcStatus) {
-            //Calculate endpoint timeline timestamps             
+            //Calculate endpoint timeline timestamps
 
             DataSet<StatusMetric> stMetricDS = statusMetricRecomputated.flatMap(new MapStatusMetricTags(calcTagTrends)).withBroadcastSet(mtagsDS, "mtags").withBroadcastSet(egpDS, "egp")
                     .withBroadcastSet(confDS, "conf");
+
             DataSet<StatusMetric> stEndpointDS = statusEndpointTimeline.flatMap(new CalcStatusEndpoint(params)).withBroadcastSet(mpsDS, "mps").withBroadcastSet(opsDS, "ops")
                     .withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(confDS, "conf");
@@ -399,11 +430,11 @@ public class ArgoMultiJob {
         }
 
         if (calcAR) {
-            //Calculate endpoint a/r 
+            //Calculate endpoint a/r
             DataSet<EndpointAR> endpointArDS = statusEndpointTimeline.flatMap(new CalcEndpointAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
                     withBroadcastSet(ggpDS, "ggp").withBroadcastSet(confDS, "conf");
-            //Calculate endpoint timeline timestamps 
+            //Calculate endpoint timeline timestamps
 
             DataSet<ServiceAR> serviceArDS = statusServiceTimeline.flatMap(new CalcServiceAR(params)).withBroadcastSet(mpsDS, "mps")
                     .withBroadcastSet(apsDS, "aps").withBroadcastSet(opsDS, "ops").withBroadcastSet(egpDS, "egp").
@@ -477,7 +508,7 @@ public class ArgoMultiJob {
             }
 
             if (calcStatusTrends) {
-                //flatMap dataset to tuples and count the apperances of each status type to the timeline 
+                //flatMap dataset to tuples and count the apperances of each status type to the timeline
                 DataSet<Tuple8<String, String, String, String, String, Integer, Integer, String>> metricStatusTrendsData = metricTrends.flatMap(new MetricTrendsCounter()).withBroadcastSet(opsDS, "ops").withBroadcastSet(mtagsDS, "mtags");
 
                 //filter dataset for each status type and write to mongo db
@@ -486,7 +517,7 @@ public class ArgoMultiJob {
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_METRIC, "status_trends_metrics", metricStatusTrendsData, "unknown");
 
                 /*=============================================================================================*/
-                //flatMap dataset to tuples and count the apperances of each status type to the timeline 
+                //flatMap dataset to tuples and count the apperances of each status type to the timeline
                 DataSet<Tuple8<String, String, String, String, String, Integer, Integer, String>> endpointStatusTrendsData = endpointTrends.flatMap(new EndpointTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
 
@@ -507,7 +538,7 @@ public class ArgoMultiJob {
                  * ********************************************************************************************
                  */
                 //group data by group   and count flip flops
-                //flatMap dataset to tuples and count the apperances of each status type to the timeline 
+                //flatMap dataset to tuples and count the apperances of each status type to the timeline
                 DataSet<Tuple8<String, String, String, String, String, Integer, Integer, String>> groupStatusTrendsData = groupTrends.flatMap(new GroupTrendsCounter()).withBroadcastSet(opsDS, "ops");
                 //filter dataset for each status type and write to mongo db
                 filterByStatusAndWriteMongo(MongoTrendsOutput.TrendsType.TRENDS_STATUS_GROUP, "status_trends_groups", groupStatusTrendsData, "critical");
