@@ -247,6 +247,7 @@ public class ApiResourceManager {
 
             String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
             String fullURL = String.format(path, this.endpoint, this.metricID, yesterdaystr);
+
             yesterdayContent = this.apiResponseParser.getJsonData(this.requestManager.getResource(fullURL), false);
 
         }

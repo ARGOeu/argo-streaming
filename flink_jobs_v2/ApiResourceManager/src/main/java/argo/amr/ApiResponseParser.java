@@ -333,11 +333,11 @@ public class ApiResponseParser {
     public List<MetricProfile> getListNewMetrics(String content, String yesterdayContent) {
 
         List<MetricProfile> results = new ArrayList<MetricProfile>();
+        results = getListMetrics(content);
 
         if (yesterdayContent == null) {
             return results;
         }
-        results = getListMetrics(content);
 
         List<MetricProfile> yesterdayResults = new ArrayList<MetricProfile>();
         yesterdayResults = getListMetrics(yesterdayContent);
