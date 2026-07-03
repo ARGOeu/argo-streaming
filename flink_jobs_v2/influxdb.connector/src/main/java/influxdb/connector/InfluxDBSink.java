@@ -45,6 +45,7 @@ public class InfluxDBSink extends RichSinkFunction<Point> implements Serializabl
     private transient InfluxDBClient client;
     private transient InfluxConnection connection;
     private ParameterTool params;
+    private  boolean influx_verify = true;
 
     public InfluxDBSink(ParameterTool params) {
 
@@ -64,9 +65,12 @@ public class InfluxDBSink extends RichSinkFunction<Point> implements Serializabl
         proxyPORT = params.getInt("influx.proxyport", 0);
 
         url = endpoint + ":" + port;
-
+        if(params.has("influx.verify")) {
+            influx_verify = params.getBoolean("influx.verify");
+            System.out.println("VERIFY--- "+influx_verify);
+        }
         LOG.info("Opening InfluxDB sink for {}", url);
-        connection = new InfluxConnection(url, token, org, bucket, proxyURL, proxyPORT);
+        connection = new InfluxConnection(url, token, org, bucket, proxyURL, proxyPORT,influx_verify);
     }
 
     @Override
