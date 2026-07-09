@@ -241,16 +241,18 @@ public class ApiResourceManager {
         JsonObject jRoot = jElement.getAsJsonObject();
         String mpDate = jRoot.get("date").getAsString();
         String yesterdayContent = null;
-        if (mpDate.equals(date)) {
-            DateTime yesterday = convertStringtoDate("yyyy-MM-dd", mpDate).minusDays(1);
-            String yesterdaystr = convertDateToString("yyyy-MM-dd", yesterday);
 
-            String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
-            String fullURL = String.format(path, this.endpoint, this.metricID, yesterdaystr);
-
-            yesterdayContent = this.apiResponseParser.getJsonData(this.requestManager.getResource(fullURL), false);
-
+        if (!mpDate.equals(this.date)) {
+            return new MetricProfile[0];
         }
+        DateTime yesterday = convertStringtoDate("yyyy-MM-dd", mpDate).minusDays(1);
+        String yesterdaystr = convertDateToString("yyyy-MM-dd", yesterday);
+
+        String path = "https://%s/api/v2/metric_profiles/%s?date=%s";
+        String fullURL = String.format(path, this.endpoint, this.metricID, yesterdaystr);
+
+        yesterdayContent = this.apiResponseParser.getJsonData(this.requestManager.getResource(fullURL), false);
+
         List<MetricProfile> newentries = this.apiResponseParser.getListNewMetrics(content, yesterdayContent);
 
         MetricProfile[] rArr = new MetricProfile[newentries.size()];
@@ -360,7 +362,7 @@ public class ApiResourceManager {
     public void getRemoteRecomputations() throws UnknownHostException {
 
         String path = "https://%s/api/v2/recomputations?date=%s&report=%s";
-        String fullURL = String.format(path, this.endpoint, this.date,this.reportName);
+        String fullURL = String.format(path, this.endpoint, this.date, this.reportName);
         String content = this.requestManager.getResource(fullURL);
 
         this.data.put(ApiResource.RECOMPUTATIONS, this.apiResponseParser.getJsonData(content, true));
