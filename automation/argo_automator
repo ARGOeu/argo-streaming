@@ -18,6 +18,7 @@ from init_ams import init_ams
 from init_compute_engine import init_compute_engine
 from init_mongo import init_mongo
 from init_desy import init_desy
+from init_node_registry import init_node_registry
 
 REQUEST_TIMEOUT = 30
 TOKEN_REFRESH_BUFFER = 60
@@ -189,7 +190,9 @@ class ArgoAutomator:
                 self.executor.submit(self.job_init_mongo, tenant_id, tenant_name)
                 return
             if job_name == JobName.INIT_INTEGRATION_TOPO.value:
-                self.executor.submit(self.job_init_desy, tenant_id, tenant_name)
+                # we need another event prop to decide between desy and node-registry
+                feed_type=props.get("feed_type")
+                self.executor.submit(self.job_init_topo_integration, tenant_id, tenant_name, feed_type)
                 return
             if job_name == JobName.INIT_AMS.value:
                 self.executor.submit(self.job_init_ams, tenant_id, tenant_name)
@@ -297,13 +300,25 @@ class ArgoAutomator:
         except Exception as e:
             logger.exception(f"job failed for tenant {tenant_name}: {e}")
 
-    def job_init_desy(self, tenant_id: str, tenant_name: str):
+    def job_init_topo_integration(self, tenant_id: str, tenant_name: str, feed_type:str):
         """Job to initialise desy integration"""
         try:
 
-            
+            if feed_type not in ["DESY_MARKETPLACE", "NODE_REGISTRY"]:
+                self.mon_api.update_status(
+                    tenant_id,
+                    tenant_name,
+                    JobName.INIT_INTEGRATION_TOPO.value,
+                    JobStatus.FAILED.value,
+                    "Desy Marketplace topology integration failed to initialize",
+                )
+                logger.error(
+                    f"job failed: initialising topo integaration for tenant {tenant_name} - invalid feed type: {feed_type}"
+                )
+
+
             logger.info(
-                f"job started: initialising desy integration for tenant {tenant_name} with id: {tenant_id}"
+                f"job started: initialising  topo integration: {feed_type} for tenant {tenant_name} with id: {tenant_id}"
             )
 
             self.mon_api.update_status(
@@ -311,10 +326,13 @@ class ArgoAutomator:
                 tenant_name,
                 JobName.INIT_INTEGRATION_TOPO.value,
                 JobStatus.IN_PROGRESS.value,
-                "Initialising Desy Marketplace topology integration",
+                f"Initialising {feed_type} topology integration",
             )
 
-            job_done = init_desy(self.config, tenant_name)
+            if feed_type == "DESY_MARKETPLACE":
+                job_done = init_desy(self.config, tenant_name)
+            else:
+                job_done = init_node_registry(self.config, tenant_name)
 
             if job_done:
                 self.mon_api.update_status(
@@ -322,10 +340,10 @@ class ArgoAutomator:
                     tenant_name,
                     JobName.INIT_INTEGRATION_TOPO.value,
                     JobStatus.COMPLETED.value,
-                    "Desy Marketplace topology integration initialised succesfully",
+                    f"{feed_type} topology integration initialised succesfully",
                 )
                 logger.info(
-                    f"job completed: initialising desy integration for tenant {tenant_name}"
+                    f"job completed: initialising {feed_type} integration for tenant {tenant_name}"
                 )
             else:
                 self.mon_api.update_status(
@@ -333,7 +351,7 @@ class ArgoAutomator:
                     tenant_name,
                     JobName.INIT_INTEGRATION_TOPO.value,
                     JobStatus.FAILED.value,
-                    "Desy Marketplace topology integration failed to initialize",
+                    f"{feed_type} topology integration failed to initialize",
                 )
                 logger.error(
                     f"job failed: initialising desy integaration for tenant {tenant_name}"

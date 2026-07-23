@@ -1,6 +1,8 @@
 ---
 
 automation:
+  node_registry_endpoint: https://node-registry.example.foo
+  node_registry_token: node-registry-s3cr3t
   ams_endpoint: localhost:8443
   ams_event_token: s3cr3t
   ams_event_project: ARGO-MON-AUTOMATION-PROJECT

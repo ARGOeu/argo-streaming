@@ -22,6 +22,8 @@ class ArgoConfig:
         self.automation = automation
         self.tenants = tenants
         self.run = run
+        self.node_registry_url = automation.get("node_registry_url")
+        self.node_registry_token = automation.get("node_registry_token")
         self.ams_endpoint = automation.get("ams_endpoint")
         self.ams_event_token = automation.get("ams_event_token")
         self.ams_event_project = automation.get("ams_event_project")
