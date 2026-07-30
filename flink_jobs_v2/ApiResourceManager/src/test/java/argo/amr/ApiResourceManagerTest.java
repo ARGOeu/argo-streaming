@@ -184,6 +184,8 @@ public class ApiResourceManagerTest {
         amr2.setVerify(false);
 
         amr2.getRemoteAll();
+        amr2.getRemoteDowntimes();
+
         // test amr2 downtime list
         Downtime[] dtl = amr2.getListDowntimes();
         assertEquals("downtime list size", 3, dtl.length);

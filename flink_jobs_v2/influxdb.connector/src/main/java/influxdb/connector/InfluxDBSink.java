@@ -67,7 +67,6 @@ public class InfluxDBSink extends RichSinkFunction<Point> implements Serializabl
         url = endpoint + ":" + port;
         if(params.has("influx.verify")) {
             influx_verify = params.getBoolean("influx.verify");
-            System.out.println("VERIFY--- "+influx_verify);
         }
         LOG.info("Opening InfluxDB sink for {}", url);
         connection = new InfluxConnection(url, token, org, bucket, proxyURL, proxyPORT,influx_verify);
