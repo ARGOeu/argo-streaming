@@ -1,5 +1,6 @@
 package argo.amr;
 
+import argo.mon.api.ArgoMonApiInitializer;
 import argo.avro.Downtime;
 import argo.avro.GroupEndpoint;
 import argo.avro.GroupGroup;
@@ -12,6 +13,8 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.text.ParseException;
@@ -48,8 +51,11 @@ public class ApiResourceManager {
     private ApiResponseParser apiResponseParser;
     private boolean isSourceTopoAll;
     private boolean isCombined;
+    private ArgoMonApiInitializer argoMonApiInitializer;
     //private boolean verify;
     //private int timeoutSec;
+    private RequestManager argoMonRequestManager;
+    static Logger LOG = LoggerFactory.getLogger(ApiResourceManager.class);
 
     public ApiResourceManager(String endpoint, String token) {
         this.endpoint = endpoint;
@@ -67,6 +73,34 @@ public class ApiResourceManager {
         this.requestManager = new RequestManager("", this.token);
 
         this.apiResponseParser = new ApiResponseParser(this.reportName, this.metricID, this.aggregationID, this.opsID, this.threshID, this.tenant, this.egroup);
+    }
+
+//    public ApiResourceManager(String endpoint, String token, ArgoMonApiInitializer argoMonApiInitializer) {
+//        this.endpoint = endpoint;
+//        this.token = token;
+//        this.metricID = "";
+//        this.aggregationID = "";
+//        this.opsID = "";
+//        this.threshID = "";
+//        this.reportName = "";
+//        this.reportID = "";
+//        this.date = "";
+//        this.weightsID = "";
+//        this.tenant = "";
+//        this.egroup = "";
+//        this.requestManager = new RequestManager("", this.token);
+//
+//        this.apiResponseParser = new ApiResponseParser(this.reportName, this.metricID, this.aggregationID, this.opsID, this.threshID, this.tenant, this.egroup);
+//        this.argoMonApiInitializer = argoMonApiInitializer;
+//    }
+
+
+    public ArgoMonApiInitializer getArgoMonApiInitializer() {
+        return argoMonApiInitializer;
+    }
+
+    public void setArgoMonApiInitializer(ArgoMonApiInitializer argoMonApiInitializer) {
+        this.argoMonApiInitializer = argoMonApiInitializer;
     }
 
     public void setProxy(String proxy) {
@@ -165,6 +199,7 @@ public class ApiResourceManager {
 
     public void setDate(String date) {
         this.date = date;
+       // this.argoMonApiInitializer.setRunDate(this.date);
     }
 
     public RequestManager getRequestManager() {
@@ -352,11 +387,63 @@ public class ApiResourceManager {
      * Retrieves the downtimes content and stores it to the enum map
      */
     public void getRemoteDowntimes() throws UnknownHostException {
-        String path = "https://%s/api/v2/downtimes?date=%s";
-        String fullURL = String.format(path, this.endpoint, this.date);
-        String content = this.requestManager.getResource(fullURL);
-        this.data.put(ApiResource.DOWNTIMES, this.apiResponseParser.getJsonData(content, false));
 
+        if (argoMonApiInitializer==null) {
+            getDowntimesFromWebApi();
+            return;
+        }
+
+        argoMonApiInitializer.setTenant(tenant);
+        argoMonApiInitializer.setArgoMonApiToken();
+
+        argoMonRequestManager = new RequestManager("", argoMonApiInitializer.getArgoMonApiToken(),true);
+
+        argoMonRequestManager.setProxy(argoMonApiInitializer.getArgoMonApiProxy());
+        argoMonRequestManager.setTimeoutSec(argoMonApiInitializer.getArgoMonApiTimeout());
+
+        if (decideApi()) {
+            getDowntimesFromArgoMonApi();
+        } else {
+            getDowntimesFromWebApi();
+        }
+    }
+
+    private void getDowntimesFromWebApi() throws UnknownHostException {
+
+        String path = "https://%s/api/v2/downtimes?date=%s";
+        String fullURL = String.format(path, endpoint, date);
+
+        String content = requestManager.getResource(fullURL);
+
+        data.put(
+                ApiResource.DOWNTIMES,
+                apiResponseParser.getJsonData(content, false)
+        );
+    }
+    private void getDowntimesFromArgoMonApi() throws UnknownHostException {
+
+        String path = "https://%s/v1/automation/tenants/%s/downtimes/daily?date=%s";
+        String fullURL = String.format(
+                path,
+                argoMonApiInitializer.getArgoMonApiEndpoint(),
+                tenant,
+                this.date
+        );
+
+        String content = argoMonRequestManager.getResource(fullURL);
+
+        data.put(
+                ApiResource.DOWNTIMES,
+                apiResponseParser.getArgoMonApiDowntimeJsonData(content, false)
+        );
+    }
+    public  void getRemoteFeedTopologyIsExternal() throws UnknownHostException {
+
+        String path = "https://%s/v1/automation/tenants/%s/feeds/topology/is-external";
+        String fullURL = String.format(path, this.argoMonApiInitializer.getArgoMonApiEndpoint(),this.tenant);
+
+        String content = this.argoMonRequestManager.getResource(fullURL);
+        this.data.put(ApiResource.FEEDTOPOLOGY, String.valueOf(this.apiResponseParser.getIsExternalFeedTopology(content)));
     }
 
     public void getRemoteRecomputations() throws UnknownHostException {
@@ -574,6 +661,7 @@ public class ApiResourceManager {
         }
         // get downtimes
         this.getRemoteDowntimes();
+
         // get recomptations
         this.getRemoteRecomputations();
         this.getRemoteMetricTags();
@@ -623,6 +711,28 @@ public class ApiResourceManager {
         DateTimeFormatter dtf = DateTimeFormat.forPattern(format);
         String dateString = date.toString(dtf);
         return dateString;
+    }
+
+
+
+    public  boolean decideApi() throws UnknownHostException {
+        boolean useStatusApi = false;
+
+        if (argoMonApiInitializer.getCheckFeed()) {
+
+            if (!argoMonApiInitializer.hasStatusApiParams()) {
+                LOG.error("Not all parameters required to connect to the Monitoring Status API are defined.");
+                System.exit(0);
+            }
+
+
+            getRemoteFeedTopologyIsExternal();
+
+            boolean isExternal = Boolean.parseBoolean(this.data.get(ApiResource.FEEDTOPOLOGY));
+            useStatusApi = !isExternal;
+        }
+
+        return useStatusApi;
     }
 
 }

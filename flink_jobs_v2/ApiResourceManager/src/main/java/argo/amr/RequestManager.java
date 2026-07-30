@@ -39,11 +39,14 @@ public class RequestManager {
     private boolean verify;
     static Logger LOG = LoggerFactory.getLogger(RequestManager.class);
 
+    private boolean hasBearerToken;
+
     public RequestManager(String proxy, String token, int timeoutSec, boolean verify) {
         this.proxy = proxy;
         this.token = token;
         this.timeoutSec = timeoutSec;
         this.verify = verify;
+        this.hasBearerToken = false;
     }
 
     public RequestManager(String proxy, String token) {
@@ -51,6 +54,22 @@ public class RequestManager {
         this.token = token;
         this.timeoutSec = 30;
         this.verify = true;
+        this.hasBearerToken = false;
+    }
+
+    public RequestManager(String proxy, String token,boolean hasBearerToken) {
+        this.proxy = proxy;
+        this.token = token;
+        this.timeoutSec = 30;
+        this.verify = true;
+        this.hasBearerToken = hasBearerToken;
+    }
+    public boolean isHasBearerToken() {
+        return hasBearerToken;
+    }
+
+    public void setHasBearerToken(boolean hasBearerToken) {
+        this.hasBearerToken = hasBearerToken;
     }
 
     /**
@@ -58,7 +77,7 @@ public class RequestManager {
      * content (expected in json format)
      *
      * @param fullURL String containing the full url representation of the
-     * argo-web-api resource
+     *                argo-web-api resource
      * @return A string representation of the resource json content
      * @throws ClientProtocolException
      * @throws IOException
@@ -67,12 +86,18 @@ public class RequestManager {
      * @throws KeyManagementException
      */
 
+
     public String getResource(String fullURL) throws UnknownHostException {
 
         Request r = Request.Get(fullURL)
                 .addHeader("Accept", "application/json")
-                .addHeader("Content-type", "application/json")
-                .addHeader("x-api-key", this.token);
+                .addHeader("Content-Type", "application/json");
+
+        if (hasBearerToken) {
+            r.addHeader("Authorization", "Bearer " + token);
+        } else {
+            r.addHeader("x-api-key", token);
+        }
 
         if (!this.proxy.isEmpty()) {
             r = r.viaProxy(proxy);
@@ -93,24 +118,24 @@ public class RequestManager {
             }
         } catch (UnknownHostException e) {
             // DNS resolution failure — API domain does not exist
-            LOG.error("UnknownHostException: API endpoint not found: "+fullURL, e.getMessage());
+            LOG.error("UnknownHostException: API endpoint not found: " + fullURL, e.getMessage());
             // Throw the exception again
-            throw new UnknownHostException("API domain not found: "+fullURL+ e.getMessage());
+            throw new UnknownHostException("API domain not found: " + fullURL + e.getMessage());
         } catch (ConnectException e) {
             // Network error or API not reachable (e.g. timeout, refused connection)
-            LOG.error("ConnectException: Could not connect to API: "+ fullURL,e.getMessage());
+            LOG.error("ConnectException: Could not connect to API: " + fullURL, e.getMessage());
         } catch (SocketTimeoutException e) {
             // API is very slow or not responding
-            LOG.error("SocketTimeoutException: API did not respond in time: "+ fullURL,e.getMessage());
+            LOG.error("SocketTimeoutException: API did not respond in time: " + fullURL, e.getMessage());
         } catch (SSLException e) {
             // SSL errors (certs, handshake, etc.)
-            LOG.error("SSLException: SSL error while connecting to API: "+ fullURL,e.getMessage());
+            LOG.error("SSLException: SSL error while connecting to API: " + fullURL, e.getMessage());
         } catch (IOException e) {
             // General I/O error
-            LOG.error("IOException: General IO failure while accessing API: "+ fullURL,e.getMessage());
+            LOG.error("IOException: General IO failure while accessing API: " + fullURL, e.getMessage());
         } catch (Exception e) {
             // Unexpected error
-            LOG.error("Unexpected exception: "+ e.getMessage());
+            LOG.error("Unexpected exception: " + e.getMessage());
         }
 
         return content;
@@ -154,7 +179,6 @@ public class RequestManager {
         }
         return false;
     }
-
 
 
     /**

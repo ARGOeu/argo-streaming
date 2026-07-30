@@ -1,41 +1,11 @@
 package argo.batch;
 
+import argo.mon.api.ArgoMonApiInitializer;
 import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
-import argo.ar.CalcEndpointAR;
-import argo.ar.CalcGroupAR;
-import argo.ar.CalcServiceAR;
-import argo.ar.EndpointAR;
-import argo.ar.EndpointGroupAR;
-import argo.ar.ServiceAR;
-import argo.avro.Downtime;
-import argo.avro.GroupEndpoint;
-import argo.avro.GroupGroup;
-import argo.avro.MetricData;
-import argo.avro.MetricProfile;
-import argo.avro.Weight;
-import org.apache.flink.core.fs.FileSystem;
-import profilesmanager.RecomputationsManager;
-import trends.calculations.ServiceTrends;
-import trends.flipflops.ZeroServiceFlipFlopFilter;
-import trends.status.EndpointTrendsCounter;
-import trends.calculations.CalcEndpointFlipFlopTrends;
-import trends.calculations.CalcGroupFlipFlopTrends;
-import trends.calculations.CalcMetricFlipFlopTrends;
-import trends.calculations.CalcServiceFlipFlopTrends;
-import trends.calculations.EndpointTrends;
-import trends.calculations.GroupTrends;
-import trends.flipflops.MapEndpointTrends;
-import trends.flipflops.MapGroupTrends;
-import trends.flipflops.MapMetricTrends;
-import trends.flipflops.MapServiceTrends;
-import trends.calculations.MetricTrends;
-import trends.calculations.MongoTrendsOutput;
-import trends.status.StatusAndDurationFilter;
-import trends.calculations.Trends;
-import trends.flipflops.ZeroEndpointFlipFlopFilter;
-import trends.flipflops.ZeroGroupFlipFlopFilter;
-import trends.flipflops.ZeroMetricFlipFlopFilter;
+import argo.ar.*;
+import argo.avro.*;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
@@ -44,21 +14,21 @@ import org.apache.flink.api.java.io.AvroInputFormat;
 import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import profilesmanager.RecomputationsManager;
 import profilesmanager.ReportManager;
-import trends.status.GroupTrendsCounter;
-import trends.status.MetricTrendsCounter;
-import trends.status.ServiceTrendsCounter;
+import trends.calculations.*;
+import trends.flipflops.*;
+import trends.status.*;
 import utils.Utils;
 
 import java.util.*;
-
-import org.apache.flink.api.common.JobID;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.slf4j.MDC;
 
 /**
  * Implements an ARGO Status Batch Job in flink
@@ -89,12 +59,19 @@ import org.slf4j.MDC;
  * If not set tags calculations will be defined from the report
  * <p>
  * <p>
- * --source-data(Optinal): tenant, all, feeds-only . Defines from where the source data can be received. if not defined or is tenant the data are received from the tenant (the tenant does not combine data), if value is feeds-only the data are received from
+ * --source-data(Optional): tenant, all, feeds-only . Defines from where the source data can be received. if not defined or is tenant the data are received from the tenant (the tenant does not combine data), if value is feeds-only the data are received from
  * the tenant list defined in the feeds data(the tenant is acting as a gatherer without data on it's own), if is all the source data are received both from the tenant and the tenants list in the feeds data (the tenant already exists and has data to combine)
  * <p>
  * <p>
- * --source-topo(Optinal): tenant, all . Defines from where the source topology can be received. if not defined or is tenant the data are received from the tenant (the tenant either is not combining data or acts as a gatherer without topologies on its own),
+ * --source-topo(Optional): tenant, all . Defines from where the source topology can be received. if not defined or is tenant the data are received from the tenant (the tenant either is not combining data or acts as a gatherer without topologies on its own),
  * , if is all the source data are received both from the tenant and the tenants list in the feeds data and needs a parameter to be added to the api request to receive the topology (the tenant has it's own topologies)
+ * --check.feed(Optional): true, false. Defines if feed topology will be checked to decide the source of downtimes. if false, argo-web-api is the source, if true there will be a check and if feed type is external argo-web-api is the source else is the monitoring status api. If not defined argo-web-api is the default source
+ * --keycloak.url(Optional), the keycloak url the compute engine service accesses to obtain a token
+ * --argo.mon.api.endpoint(Optional), the argo monitoring api url to be the source of downtimes
+ * --argo.mon.client.secret(Optional), the secret of the compute engine service
+ * --argo.mon.client.id(Optional), the client id of the compute engine service
+ * --argo.mon.api.timeout: set timeout (in seconds) when connecting to status-api
+ * --argo.mon.api.proxy: optional address for argo-mon-api proxy to be used (http://proxy.example.com)
  */
 public class ArgoMultiJob {
 
@@ -128,6 +105,8 @@ public class ArgoMultiJob {
 
     private static Enum sourceData = Combined.TENANT;
     private static Enum sourceTopo = Combined.TENANT;
+
+    private static boolean checkFeed = false;
 
     public static void main(String[] args) throws Exception {
 
@@ -172,8 +151,15 @@ public class ArgoMultiJob {
         String apiToken = params.getRequired("api.token");
         reportID = params.getRequired("report.id");
 
+        if (params.has("check.feed")) {
+            checkFeed = params.getBoolean("check.feed");
+        }
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
-
+        if (checkFeed) {
+            ArgoMonApiInitializer argoMonApiInitializer = new ArgoMonApiInitializer();
+            initializeArgoMonApiInitializer(argoMonApiInitializer, params);
+            amr.setArgoMonApiInitializer(argoMonApiInitializer);
+        }
         // fetch
         // set params
         if (params.has("api.proxy")) {
@@ -189,6 +175,14 @@ public class ArgoMultiJob {
         amr.setReportID(reportID);
         amr.setDate(runDate);
         amr.getRemoteAll();
+
+        DataSet<Downtime> downDS = env.fromElements(new Downtime());
+
+        Downtime[] downtimes = amr.getListDowntimes();
+
+        if (downtimes.length > 0) {
+            downDS = env.fromElements(downtimes);
+        }
 
         DataSource<String> confDS = env.fromElements(amr.getResourceJSON(ApiResource.CONFIG));
         // Get conf data 
@@ -209,12 +203,12 @@ public class ArgoMultiJob {
         }
         RecomputationsManager.loadJsonString(recDS.collect());
 
-        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> metricRecomputedDS=env.fromElements(RecomputationsManager.metricRecomputationItems);
-        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> endpointRecomputedDS=env.fromElements(RecomputationsManager.endpointRecomputationItems);
-        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> serviceRecomputedDS=env.fromElements(RecomputationsManager.serviceRecomputationItems);
-        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> groupRecomputedDS=env.fromElements(RecomputationsManager.groupRecomputationItems);
-        DataSource<Map<String, ArrayList<Map<String, Date>>>> monEngineRecDS=env.fromElements(RecomputationsManager.monEngines);
-        DataSource<Map<String, ArrayList<Map<String, String>>>> groupsRecDS=env.fromElements(RecomputationsManager.groups);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> metricRecomputedDS = env.fromElements(RecomputationsManager.metricRecomputationItems);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> endpointRecomputedDS = env.fromElements(RecomputationsManager.endpointRecomputationItems);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> serviceRecomputedDS = env.fromElements(RecomputationsManager.serviceRecomputationItems);
+        DataSource<HashMap<String, List<RecomputationsManager.RecomputationElement>>> groupRecomputedDS = env.fromElements(RecomputationsManager.groupRecomputationItems);
+        DataSource<Map<String, ArrayList<Map<String, Date>>>> monEngineRecDS = env.fromElements(RecomputationsManager.monEngines);
+        DataSource<Map<String, ArrayList<Map<String, String>>>> groupsRecDS = env.fromElements(RecomputationsManager.groups);
 
         DataSource<String> mtagsDS = env.fromElements("");
         if (amr.getResourceJSON(ApiResource.MTAGS) != null) {
@@ -228,7 +222,6 @@ public class ArgoMultiJob {
             weightDS = env.fromElements(amr.getListWeights());
         }
 
-        DataSet<Downtime> downDS = env.fromElements(new Downtime());
         // begin with empty threshold datasource
         DataSource<String> thrDS = env.fromElements("");
         // check if report information from argo-web-api contains a threshold profile ID
@@ -252,10 +245,6 @@ public class ArgoMultiJob {
             ggpDS = env.fromElements(amr.getListGroupGroups());
         }
 
-        Downtime[] listDowntimes = amr.getListDowntimes();
-        if (listDowntimes.length > 0) {
-            downDS = env.fromElements(amr.getListDowntimes());
-        }
 
         List<String> tenantList = new ArrayList<>();
         if (sourceData.equals(Combined.TENANT) || sourceData.equals(Combined.ALL)) {
@@ -283,7 +272,6 @@ public class ArgoMultiJob {
 
             }
         }
-
 
 
         DataSet<MetricData> allMetricData = null;
@@ -348,7 +336,7 @@ public class ArgoMultiJob {
         DataSet<StatusMetric> mdataTrimDS = allMetricData.flatMap(new PickEndpoints(params))
                 .withBroadcastSet(mpsDS, "mps").withBroadcastSet(egpDS, "egp").withBroadcastSet(ggpDS, "ggp")
                 .withBroadcastSet(confDS, "conf").withBroadcastSet(thrDS, "thr")
-                .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps").withBroadcastSet(monEngineRecDS,"rec");
+                .withBroadcastSet(opsDS, "ops").withBroadcastSet(apsDS, "aps").withBroadcastSet(monEngineRecDS, "rec");
 
         // Combine prev and todays metric data with the generated missing metric
         // data
@@ -646,6 +634,42 @@ public class ArgoMultiJob {
     private static void configJID() {//config the JID in the log4j.properties
         String jobId = getJID();
         MDC.put("JID", jobId);
+
+    }
+
+    private static boolean hasStatusApiParams(ParameterTool params) {
+
+        return params.has("keycloak.url") && params.has("argo.mon.api.endpoint") && params.has("argo.mon.client.secret") && params.has("argo.mon.client.id");
+    }
+
+    private static void initializeArgoMonApiInitializer(ArgoMonApiInitializer argoMonApiInitializer, ParameterTool params) {
+
+        if (params.has("keycloak.url")) {
+            argoMonApiInitializer.setKeycloakUrl(params.get("keycloak.url"));
+        }
+
+        if (params.has("argo.mon.api.endpoint")) {
+            argoMonApiInitializer.setArgoMonApiEndpoint(params.get("argo.mon.api.endpoint"));
+        }
+
+        if (params.has("argo.mon.client.secret")) {
+            argoMonApiInitializer.setArgoMonClientSecret(params.get("argo.mon.client.secret"));
+        }
+
+        if (params.has("argo.mon.client.id")) {
+            argoMonApiInitializer.setArgoMonClientID(params.get("argo.mon.client.id"));
+        }
+
+        if (params.has("argo.mon.api.timeout")) {
+            argoMonApiInitializer.setArgoMonApiTimeout(params.getInt("argo.mon.api.timeout"));
+        }
+        if (params.has("argo.mon.api.proxy")) {
+            argoMonApiInitializer.setArgoMonApiProxy(params.get("argo.mon.api.proxy"));
+        }
+        if (!argoMonApiInitializer.hasStatusApiParams()) {
+            LOG.error("Not all parameters required to connect to the Monitoring Status API are defined.");
+            System.exit(0);
+        }
 
     }
 }

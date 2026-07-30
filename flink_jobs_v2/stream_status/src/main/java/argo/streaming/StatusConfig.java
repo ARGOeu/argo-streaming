@@ -2,7 +2,7 @@ package argo.streaming;
 
 import java.io.Serializable;
 
-import argo.amr.ApiResourceManager;
+import argo.mon.api.KeycloakClient;
 import org.apache.flink.api.java.utils.ParameterTool;
 
 public class StatusConfig implements Serializable {
@@ -49,6 +49,14 @@ public class StatusConfig implements Serializable {
     // Raw parameters
     public final ParameterTool pt;
 
+    public boolean checkFeed = false;
+    public String argoMonApiEndpoint;
+    public String argoMonApiToken;
+    public String argoMonApiProxy = "";
+    public long argoMonApiTimeout;
+    public String keycloakUrl;
+    public String argoMonClientSecret;
+    public String argoMonClientID;
 
     public StatusConfig(ParameterTool pt) {
         this.pt = pt;
@@ -95,10 +103,57 @@ public class StatusConfig implements Serializable {
         }
 
         this.daily = pt.getBoolean("daily", false);
+
+        if (pt.has("check.feed")) {
+            this.checkFeed = pt.getBoolean("check.feed", false);
+        }
+
+        if (this.checkFeed) {
+            hasStatusApiParams(pt);
+            //   this.statusApiToken = keycloakToken(pt.get("keycloak.url"), pt.get("argo.mon.client.id"),pt.get("argo.mon.client.secret"));
+            this.argoMonApiEndpoint = pt.getRequired("argo.mon.api.endpoint");
+
+            if (pt.has("keycloak.url")) {
+                this.keycloakUrl = pt.get("keycloak.url", "");
+
+            }
+
+            if (pt.has("argo.mon.api.proxy")) {
+                this.argoMonApiProxy = pt.get("argo.mon.api.proxy", "");
+
+            }
+            if (pt.has("argo.mon.api.timeout")) {
+                this.argoMonApiTimeout = pt.getLong("argo.mon.api.timeout");
+            } else {
+                this.argoMonApiTimeout = 86400000L;
+            }
+
+            if (pt.has("argo.mon.client.secret")) {
+                this.argoMonClientSecret = pt.get("argo.mon.client.secret");
+            }
+
+            if (pt.has("argo.mon.client.id")) {
+                this.argoMonClientID = pt.get("argo.mon.client.id");
+            }
+        }
+    }
+
+    private static boolean hasStatusApiParams(ParameterTool params) {
+
+        return params.has("keycloak.url") && params.has("argo.mon.api.endpoint") && params.has("argo.mon.client.secret") && params.has("argo.mon.client.id");
     }
 
     public ParameterTool getParameters() {
         return this.pt;
+    }
+
+    private static String keycloakToken(String keycloakUrl, String clientId, String secret) {
+        KeycloakClient keycloakClient = new KeycloakClient();
+        try {
+            return keycloakClient.retrieveAccessToken(keycloakUrl, clientId, secret);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
