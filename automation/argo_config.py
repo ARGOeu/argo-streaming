@@ -22,6 +22,8 @@ class ArgoConfig:
         self.automation = automation
         self.tenants = tenants
         self.run = run
+        self.performance_db_url = automation.get("performance_db_url")
+        self.performance_db_token = automation.get("performance_db_token")
         self.node_registry_url = automation.get("node_registry_url")
         self.node_registry_token = automation.get("node_registry_token")
         self.ams_endpoint = automation.get("ams_endpoint")

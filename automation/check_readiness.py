@@ -112,5 +112,5 @@ def check_readiness(config: ArgoConfig, tenant_id: str, tenant_name: str) -> boo
     }
 
     # update the payload to web-api
-    result = web_api.update_ready_state(tenant_id, tenant_name, payload)
+    web_api.update_ready_state(tenant_id, tenant_name, payload)
     return True

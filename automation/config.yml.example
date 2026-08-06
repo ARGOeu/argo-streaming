@@ -8,6 +8,8 @@ automation:
   ams_event_project: ARGO-MON-AUTOMATION-PROJECT
   ams_event_subscription: events-subscription
   ams_admin_token: admin-s3cr3t
+  performance_db_url:  https://perf.example.foo
+  perfomrance_db_token: perf-s3cret
 
   oidc_token_url: localhost:8080
   oidc_client_id: tenant.status.integration.service

@@ -4,8 +4,8 @@ import argparse
 import logging
 import sys
 
-from init_ingest import run_ingest
 from argo_config import ArgoConfig
+from init_ingest import run_ingest
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,14 @@ def main():
         dest="verify",
         help="Disable verification",
     )
+    parser.add_argument(
+        "--performance",
+        action="store_const",
+        const=True,
+        default=False,
+        dest="performance",
+        help="Enable performance",
+    )
 
     args = parser.parse_args()
 
@@ -74,7 +82,7 @@ def main():
         return 1
 
     return run_ingest(
-        config, args.tenant, tenant.get("ams_token"), args.dry_run, args.verify
+        config, args.tenant, tenant.get("ams_token"), tenant.get("web_api_token"), args.dry_run, args.performance, args.verify
     )
 
 

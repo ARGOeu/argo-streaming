@@ -18,7 +18,6 @@ CRON_PREFIX = "argo_node_registry"
 SERVICE_TYPE = "webportal"
 
 
-
 def get_node_registry(url: str, token: str):
     """Retrieve the list of nodes from the node registry"""
     logger.debug(f"retrieving nodes from node registry: {url}")
@@ -129,7 +128,7 @@ def build_group(tenant_name: str, node_name: str) -> dict:
 
 def build_endpoint(node_name: str, capability: dict, item_uuid: str) -> dict:
     item_URL = capability.get("endpoint")
-    hostname = urlparse(item_URL).hostname
+    hostname = str(urlparse(item_URL).hostname)
 
     tags = {
         "hostname": hostname,
@@ -137,11 +136,11 @@ def build_endpoint(node_name: str, capability: dict, item_uuid: str) -> dict:
         "info_URL": item_URL,
         "monitored": "1",
     }
-    labels=""
+
     capability_type = capability.get("capability_type")
     if capability_type:
         tags["info_capability_type"] = capability_type
-        tags["labels"]=capability_type
+        tags["labels"] = capability_type
 
     protocol = capability.get("protocol")
     if protocol:
@@ -156,9 +155,7 @@ def build_endpoint(node_name: str, capability: dict, item_uuid: str) -> dict:
     }
 
 
-def update_node_registry_topology(
-    config: ArgoConfig, tenant_name: str
-):
+def update_node_registry_topology(config: ArgoConfig, tenant_name: str):
 
     url = config.node_registry_url
     token = config.node_registry_token
@@ -248,9 +245,7 @@ def update_node_registry_topology(
                     changed_endpoints = True
             else:
                 item_uuid = str(uuid.uuid4())
-                new_endpoints.append(
-                    build_endpoint(node_name, capability, item_uuid)
-                )
+                new_endpoints.append(build_endpoint(node_name, capability, item_uuid))
                 changed_endpoints = True
 
     if not changed_endpoints and not changed_groups:

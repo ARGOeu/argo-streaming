@@ -16,8 +16,8 @@ from argo_config import ArgoConfig
 from check_readiness import check_readiness
 from init_ams import init_ams
 from init_compute_engine import init_compute_engine
-from init_mongo import init_mongo
 from init_desy import init_desy
+from init_mongo import init_mongo
 from init_node_registry import init_node_registry
 
 REQUEST_TIMEOUT = 30
@@ -198,8 +198,9 @@ class ArgoAutomator:
                 self.executor.submit(self.job_init_ams, tenant_id, tenant_name)
                 return
             if job_name == JobName.INIT_COMPUTE_ENGINE.value:
+                performance=props.get("performance")
                 self.executor.submit(
-                    self.job_init_compute_engine, tenant_id, tenant_name
+                    self.job_init_compute_engine, tenant_id, tenant_name, performance
                 )
                 return
 
@@ -359,7 +360,7 @@ class ArgoAutomator:
         except Exception as e:
             logger.exception(f"job failed for tenant {tenant_name}: {e}")
 
-    def job_init_compute_engine(self, tenant_id: str, tenant_name: str):
+    def job_init_compute_engine(self, tenant_id: str, tenant_name: str, performance: bool):
         """Job placeholder to init compute engine"""
         try:
 
@@ -399,7 +400,7 @@ class ArgoAutomator:
                 "Initialising Compute Engine",
             )
 
-            job_done = init_compute_engine(self.config, tenant_id, tenant_name)
+            job_done = init_compute_engine(self.config, tenant_id, tenant_name, performance)
 
             if job_done:
                 self.mon_api.update_status(
@@ -534,3 +535,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
