@@ -1,4 +1,5 @@
 import logging
+
 import requests
 from argo_ams_library import (AmsServiceException, AmsUser, AmsUserProject,
                               ArgoMessagingService)
@@ -9,17 +10,22 @@ logger = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 30
 
+
 # use http request to create component user because ams library doesn't support it
-def create_ams_component_account(ams_endpoint: str, ams_token: str, username: str, email: str, project: str, role: str,  component: str, component_project: str): 
+def create_ams_component_account(
+    ams_endpoint: str,
+    ams_token: str,
+    username: str,
+    email: str,
+    project: str,
+    role: str,
+    component: str,
+    component_project: str,
+):
 
     payload = {
         "email": email,
-        "projects": [
-            {
-                "project": project,
-                "roles": [role]
-            }
-        ],
+        "projects": [{"project": project, "roles": [role]}],
     }
 
     if component and component_project:
@@ -32,13 +38,11 @@ def create_ams_component_account(ams_endpoint: str, ams_token: str, username: st
         "Accept": "application/json",
     }
     try:
-            response = requests.post(
-                url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
-            )
-            response.raise_for_status()
-            logger.info(
-                f"ams user: {username} created for project: {project}"
-            )
+        response = requests.post(
+            url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
+        )
+        response.raise_for_status()
+        logger.info(f"ams user: {username} created for project: {project}")
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 409:
@@ -93,21 +97,30 @@ def init_ams(
 
     for username, role, component, component_admin in user_roles:
         try:
-
-            user = create_ams_component_account(config.ams_endpoint, config.ams_admin_token, username, config.argo_ops_email, tenant_name, role, component, component_admin)
-
-            user = ams.create_user(
-                AmsUser(
-                    name=username,
-                    projects=[AmsUserProject(project=tenant_name, roles=[role])],
-                    email=config.argo_ops_email,
+            if component and component_admin: 
+                user = create_ams_component_account(
+                    config.ams_endpoint,
+                    config.ams_admin_token,
+                    username,
+                    config.argo_ops_email,
+                    tenant_name,
+                    role,
+                    component,
+                    component_admin,
                 )
-            )
 
-            if user:
-                logger.info(f"ams project {tenant_name} - user created: {username}")
-                if role == "consumer" and username == consumer_username:
-                    config.set_tenant_ams_access(tenant_id, tenant_name, user.token)
+                user = ams.create_user(
+                    AmsUser(
+                        name=username,
+                        projects=[AmsUserProject(project=tenant_name, roles=[role])],
+                        email=config.argo_ops_email,
+                    )
+                )
+
+                if user:
+                    logger.info(f"ams project {tenant_name} - user created: {username}")
+                    if role == "consumer" and username == consumer_username:
+                        config.set_tenant_ams_access(tenant_id, tenant_name, user.token)
 
         except AmsServiceException as e:
             if e.code == 409:

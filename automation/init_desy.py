@@ -1,13 +1,10 @@
-import argparse
 import logging
-import sys
-import requests
-import uuid
-import json
 import os
-from jinja2 import Environment, FileSystemLoader
-
+import uuid
 from urllib.parse import urlparse
+
+import requests
+from jinja2 import Environment, FileSystemLoader
 
 from argo_config import ArgoConfig
 from argo_web_api import ArgoWebApi, TopoItem
@@ -17,7 +14,6 @@ logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT = 30
 TEMPLATE_FILE = "desy.cron.j2"
 CRON_DIR = "/etc/cron.d"
-
 
 
 def get_desy_topology(url: str):
@@ -57,6 +53,7 @@ def create_desy_cron(config: ArgoConfig, tenant_name: str) -> bool:
 
     return False
 
+
 def remove_desy_cron(tenant_name: str) -> bool:
     """Remove cron file for desy integration"""
     logger.info(f"Attempting to remove desy cron file: argo_desy_{tenant_name}")
@@ -72,6 +69,7 @@ def remove_desy_cron(tenant_name: str) -> bool:
         logger.error("Permission error while removing desy integration cron file")
 
     return False
+
 
 def get_desy_feed(config: ArgoConfig, tenant_name: str) -> str:
 
@@ -92,22 +90,17 @@ def get_desy_feed(config: ArgoConfig, tenant_name: str) -> str:
             if feed_url:
                 return feed_url
 
-    logger.warning(
-        f"Tenant has no desy-topology feed - aborting..."
-    )
+    logger.warning("Tenant has no desy-topology feed - aborting...")
     return ""
 
-    
-    
+
 def init_desy(config: ArgoConfig, tenant_name: str) -> bool:
     url = get_desy_feed(config, tenant_name)
     if url:
         create_desy_cron(config, tenant_name)
-        update_desy_topology(config,tenant_name,url)
+        update_desy_topology(config, tenant_name, url)
         return True
     return False
-
-
 
 
 def update_desy_topology(config: ArgoConfig, tenant_name: str, url: str):
@@ -122,7 +115,6 @@ def update_desy_topology(config: ArgoConfig, tenant_name: str, url: str):
 
     # get desy topology from remote endpoint
     desy = get_desy_topology(url)
-
 
     old_endpoints = web_api.get_topology(
         tenant_id, tenant_name, tenant_web_api_token, TopoItem.ENDPOINTS
@@ -158,7 +150,7 @@ def update_desy_topology(config: ArgoConfig, tenant_name: str, url: str):
         old_group = index_old_groups.get(item_name)
 
         if old_group:
-            
+
             # Remove date key because it is not relevant for comparison
             old_group.pop("date", None)
             new_group = {
@@ -248,17 +240,18 @@ def update_desy_topology(config: ArgoConfig, tenant_name: str, url: str):
             changed_endpoints = True
 
     if not changed_endpoints and not changed_groups:
-        if len(new_endpoints) == len(old_endpoints) and len(new_groups) == len(old_groups):
+        if len(new_endpoints) == len(old_endpoints) and len(new_groups) == len(
+            old_groups
+        ):
             logger.info(
                 f"Desy-connector: Topology for tenant {tenant_name} remains the same - no upload"
             )
             return
 
-
     logger.info(
-                f"Desy-connector: Topology changes found for tenant {tenant_name} - will upload"
-            )
-    
+        f"Desy-connector: Topology changes found for tenant {tenant_name} - will upload"
+    )
+
     web_api.create_topology_groups(
         tenant_id, tenant_name, tenant_web_api_token, new_groups
     )

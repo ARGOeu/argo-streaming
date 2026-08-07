@@ -1,10 +1,9 @@
 import logging
 import subprocess
+
 import requests
-import sys
 
 from argo_config import ArgoConfig
-
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,9 @@ def run_ingest(
     config: ArgoConfig,
     tenant_name: str,
     tenant_ams_token: str,
+    tenant_mon_api_token: str,
     dry_run: bool,
+    performance: bool,
     verify: str,
 ):
     """Function that composes the appropriate cli command to submit an ingest job execution in flink"""
@@ -63,6 +64,30 @@ def run_ingest(
         "--tenant",
         tenant_name,
     ]
+
+    if performance:
+        cmd.extend(
+            [
+                "--influx.org",
+                "argo",
+                "--influx.bucket",
+                tenant_name,
+                "--influx.endpoint",
+                config.performance_db_url,
+                "--influx.token",
+                config.performance_db_token,
+                "--influx.port",
+                "8086",
+                "--api.endpoint",
+                config.mon_api_endpoint,
+                "--api.token",
+                tenant_mon_api_token,
+                "--api.interval",
+                "1000",
+                "--api.timeout",
+                "1000",
+            ]
+        )
 
     if dry_run:
         print(("\033[92m" + " ".join(str(x) for x in cmd) + "\033[0m"))

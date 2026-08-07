@@ -1,10 +1,11 @@
 import json
 import logging
 import os
+
 from jinja2 import Environment, FileSystemLoader
+
 from argo_config import ArgoConfig
 from argo_web_api import ArgoWebApi
-
 from init_ingest import run_ingest
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ def init_compute_engine(
     config: ArgoConfig,
     tenant_id: str,
     tenant_name: str,
+    performance: bool,
 ) -> bool:
     """Initialise compute engine users"""
 
@@ -153,7 +155,9 @@ def init_compute_engine(
         config=config,
         tenant_name=tenant_name,
         tenant_ams_token=tenant.get("ams_token"),
+        tenant_mon_api_token=tenant.get("web_api_token"),
         dry_run=False,
+        performance=performance,
         verify=VERIFY,
     )
 

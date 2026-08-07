@@ -39,6 +39,7 @@ Submit an ingestion job for a tenant:
 
 **Options:**
 - `-c /path/to/config.yml` - Specify config file (default: `.config.yml`)
+- `--performance` - Enable ingestion of performance data. By default is not enabled
 - `--no-verify` - Skip verification of remote endpoints like AMS
 - `--dry-run` - Preview what would be submitted without executing
 - `--log-level DEBUG` - Adjust logging verbosity
