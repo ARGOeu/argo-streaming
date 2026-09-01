@@ -311,11 +311,12 @@ class ArgoAutomator:
                     tenant_name,
                     JobName.INIT_INTEGRATION_TOPO.value,
                     JobStatus.FAILED.value,
-                    "Desy Marketplace topology integration failed to initialize",
+                    f"job failed: initialising topo integaration for tenant {tenant_name} - invalid feed type: {feed_type}",
                 )
                 logger.error(
                     f"job failed: initialising topo integaration for tenant {tenant_name} - invalid feed type: {feed_type}"
                 )
+                return
 
 
             logger.info(
