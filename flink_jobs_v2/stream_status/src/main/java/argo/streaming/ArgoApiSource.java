@@ -1,6 +1,7 @@
 package argo.streaming;
 
 import Utils.IntervalType;
+import argo.mon.api.ArgoMonApiInitializer;
 import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
 
@@ -8,7 +9,9 @@ import java.time.Duration;
 import java.time.Instant;
 
 import com.esotericsoftware.minlog.Log;
+import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.slf4j.Logger;
@@ -44,19 +47,34 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String, String>> {
     private IntervalType checkApiIntervalType = IntervalType.HOURS;
     private boolean shouldCheckApi = false;
     private boolean firstRun = true;
+    private transient ArgoMonApiInitializer argoMonApiInitializer;
 
+    public boolean checkFeed = false;
+    public String argoMonApiEndpoint;
+    public String argoMonApiToken;
+    public String argoMonApiProxy = "";
+    public long argoMonApiTimeout;
+    public String keycloakUrl;
+    public String argoMonClientSecret;
+    public String argoMonClientID;
 
-    public ArgoApiSource(String endpoint, String token, String reportID, String syncInterval, Long interval, String checkApiInterval) {
+    public ArgoApiSource(String endpoint, String token, String reportID, String syncInterval, Long interval, String checkApiInterval, ParameterTool params) {
         this.endpoint = endpoint;
         this.token = token;
         this.reportID = reportID;
         this.interval = interval;
         this.verify = true;
+        setCheckApiInterval(checkApiInterval);
+
         if (syncInterval != null) {
             setSyncUpdate(syncInterval);
         }
-
-        setCheckApiInterval(checkApiInterval);
+        if(params.has("check.feed")){
+            this.checkFeed=false;
+        }
+        if(checkFeed) {
+            initializeApiParameters(params);
+        }
     }
 
     private void setSyncUpdate(String syncInterval) {
@@ -161,6 +179,17 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String, String>> {
         this.timeSnapshot = Instant.now();
 
         this.client = new ApiResourceManager(this.endpoint, this.token);
+        if(checkFeed){
+            argoMonApiInitializer = new ArgoMonApiInitializer();
+            argoMonApiInitializer.setCheckFeed(this.checkFeed);
+            argoMonApiInitializer.setKeycloakUrl(this.keycloakUrl);
+            argoMonApiInitializer.setArgoMonApiEndpoint(this.argoMonApiEndpoint);
+            argoMonApiInitializer.setArgoMonClientSecret(this.argoMonClientSecret);
+            argoMonApiInitializer.setArgoMonClientID(this.argoMonClientID);
+            argoMonApiInitializer.setArgoMonApiTimeout((int) this.argoMonApiTimeout);
+            argoMonApiInitializer.setArgoMonApiProxy(this.argoMonApiProxy);
+            client.setArgoMonApiInitializer(argoMonApiInitializer);
+        }
         client.setReportID(this.reportID);
         client.setVerify(this.verify);
         if (this.useProxy) {
@@ -227,6 +256,29 @@ public class ArgoApiSource extends RichSourceFunction<Tuple2<String, String>> {
                 return td.toMinutes() >= this.checkApiInterval;
             default:
                 throw new UnsupportedOperationException("Unsupported interval type: " + checkApiIntervalType);
+        }
+    }
+
+
+    private void initializeApiParameters(ParameterTool params) {
+
+        if (params.has("argo.mon.api.endpoint")) {
+            this.argoMonApiEndpoint = params.get("argo.mon.api.endpoint");
+        }
+
+        if (params.has("argo.mon.client.secret")) {
+            this.argoMonClientSecret = params.get("argo.mon.client.secret");
+        }
+
+        if (params.has("argo.mon.client.id")) {
+            this.argoMonClientID = params.get("argo.mon.client.id");
+        }
+
+        if (params.has("argo.mon.api.timeout")) {
+            this.argoMonApiTimeout = params.getInt("argo.mon.api.timeout");
+        }
+        if (params.has("argo.mon.api.proxy")) {
+            this.argoMonApiProxy = params.get("argo.mon.api.proxy");
         }
     }
 }

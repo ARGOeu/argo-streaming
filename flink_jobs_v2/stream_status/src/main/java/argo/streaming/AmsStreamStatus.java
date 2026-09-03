@@ -3,6 +3,7 @@ package argo.streaming;
 import Utils.IntervalType;
 import ams.connector.ArgoMessagingSink;
 import ams.connector.ArgoMessagingSource;
+import argo.mon.api.ArgoMonApiInitializer;
 import argo.amr.ApiResource;
 import argo.amr.ApiResourceManager;
 import argo.avro.Downtime;
@@ -106,9 +107,18 @@ import java.util.Properties;
  * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
  * the parameter is not configured
  * --check.api.interval: the interval to check the argo-web api connection,by default 24h. it can be * in the format of DAYS,
- *  * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
- *  * the parameter is not configured
+ * * HOURS, MINUTES eg. 1h, 2d, 30m to define the period . By default is 24h , if
+ * * the parameter is not configured
+ * --check.feed(Optional): true, false. Defines if feed topology will be checked to decide the source of downtimes. if false, argo-web-api is the source, if true there will be a check and if feed type is external argo-web-api is the source else is the monitoring status api. If not defined argo-web-api is the default source
+ * --check.feed(Optional): true, false. Defines if feed topology will be checked to decide the source of downtimes. if false, argo-web-api is the source, if true there will be a check and if feed type is external argo-web-api is the source else is the monitoring status api. If not defined argo-web-api is the default source
+ * --keycloak.url(Optional), the keycloak url the compute engine service accesses to obtain a token
+ * --argo.mon.api.endpoint(Optional), the monitoring status api url to be the source of downtimes
+ * --argo.mon.client.secret(Optional), the secret of the compute engine service
+ * --argo.mon.client.id(Optional), the client id of the compute engine service
+ * --argo.mon.api.timeout: set timeout (in seconds) when connecting to status-api
+ * --argo.mon.api.proxy: optional address for argo-mon-api proxy to be used (http://proxy.example.com)
  */
+
 public class AmsStreamStatus {
     // setup logger
 
@@ -120,6 +130,7 @@ public class AmsStreamStatus {
     private static boolean level_service = true;
     private static boolean level_endpoint = true;
     private static boolean level_metric = true;
+    private static boolean checkFeed = false;
 
     /**
      * Sets configuration parameters to streaming enviroment
@@ -232,7 +243,17 @@ public class AmsStreamStatus {
             String strictParam = parameterTool.get("interval.strict");
             strictInterval = getInterval(strictParam);
         }
+        if (parameterTool.has("check.feed")) {
+            checkFeed = true;
+        }
         ApiResourceManager amr = new ApiResourceManager(apiEndpoint, apiToken);
+
+        if (checkFeed) {
+            ArgoMonApiInitializer argoMonApiInitializer = new ArgoMonApiInitializer();
+            initializeArgoMonApiInitializer(argoMonApiInitializer, parameterTool);
+            amr.setArgoMonApiInitializer(argoMonApiInitializer);
+        }
+
 
         // fetch
         // set params
@@ -245,7 +266,9 @@ public class AmsStreamStatus {
         }
         try {
             amr.setReportID(reportID);
+            //   amr.setDate(parameterTool.get("run.date"));
             amr.getRemoteAll();
+
         } catch (UnknownHostException e) {
             // DNS resolution failure — API domain does not exist
             Log.error("UnknownHostException: API endpoint not found: ", e.getMessage());
@@ -279,7 +302,7 @@ public class AmsStreamStatus {
             checkApiInterval = parameterTool.get("check.api.interval");
         }
         ArgoMessagingSource amsMetric = new ArgoMessagingSource(endpoint, port, token, project, subMetric, batch, interval, offsetDt);
-        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, syncInterval, apiInterval, checkApiInterval);
+        ArgoApiSource apiSync = new ArgoApiSource(apiEndpoint, apiToken, reportID, syncInterval, apiInterval, checkApiInterval, parameterTool);
         if (parameterTool.has("ams.verify")) {
             boolean verify = parameterTool.getBoolean("ams.verify");
             amsMetric.setVerify(verify);
@@ -405,6 +428,7 @@ public class AmsStreamStatus {
         private transient Thread endpointSchedulerThread;
         boolean isCorrectEndpoint = true;
         private volatile boolean isRunning = true;
+        private transient ArgoMonApiInitializer argoMonApiInitializer;
 
         public MetricDataWithGroup(StatusConfig config) {
             LOG.info("Created new Status map");
@@ -419,8 +443,19 @@ public class AmsStreamStatus {
          */
         @Override
         public void open(Configuration parameters) throws IOException, ParseException, URISyntaxException {
-
             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+            if(config.checkFeed){
+
+                argoMonApiInitializer = new ArgoMonApiInitializer();
+
+                argoMonApiInitializer.setKeycloakUrl(config.keycloakUrl);
+                argoMonApiInitializer.setArgoMonApiEndpoint(config.argoMonApiEndpoint);
+                argoMonApiInitializer.setArgoMonClientSecret(config.argoMonClientSecret);
+                argoMonApiInitializer.setArgoMonClientID(config.argoMonClientID);
+                argoMonApiInitializer.setArgoMonApiTimeout((int) config.timeout);
+                argoMonApiInitializer.setArgoMonApiProxy(config.argoMonApiProxy);
+                this.amr.setArgoMonApiInitializer(argoMonApiInitializer);
+            }
             this.amr.setDate(config.runDate);
             this.amr.setTimeoutSec((int) config.timeout);
 
@@ -435,7 +470,6 @@ public class AmsStreamStatus {
 
             try {
                 this.amr.getRemoteAll();
-
                 ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
                 ArrayList<GroupEndpoint> egpList = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
@@ -563,7 +597,7 @@ public class AmsStreamStatus {
         public StatusManager sm;
 
         public StatusConfig config;
-
+        private transient ArgoMonApiInitializer argoMonApiInitializer;
         public int initStatus;
         public int looseInterval;
         public int strictInterval;
@@ -599,6 +633,17 @@ public class AmsStreamStatus {
             pID = Integer.toString(getRuntimeContext().getIndexOfThisSubtask());
 
             this.amr = new ApiResourceManager(config.apiEndpoint, config.apiToken);
+            if(checkFeed){
+                argoMonApiInitializer = new ArgoMonApiInitializer();
+                argoMonApiInitializer.setCheckFeed(config.checkFeed);
+                argoMonApiInitializer.setKeycloakUrl(config.keycloakUrl);
+                argoMonApiInitializer.setArgoMonApiEndpoint(config.argoMonApiEndpoint);
+                argoMonApiInitializer.setArgoMonClientSecret(config.argoMonClientSecret);
+                argoMonApiInitializer.setArgoMonClientID(config.argoMonClientID);
+                argoMonApiInitializer.setArgoMonApiTimeout((int) config.timeout);
+                argoMonApiInitializer.setArgoMonApiProxy(config.argoMonApiProxy);
+                 this.amr.setArgoMonApiInitializer(argoMonApiInitializer);
+            }
             this.amr.setDate(config.runDate);
             this.amr.setTimeoutSec((int) config.timeout);
             if (config.apiProxy != null) {
@@ -610,6 +655,7 @@ public class AmsStreamStatus {
 
                 this.amr.setReportID(config.reportID);
                 this.amr.getRemoteAll();
+                Downtime[] downtimes = amr.getListDowntimes();
 
                 String opsJSON = this.amr.getResourceJSON(ApiResource.OPS);
                 String apsJSON = this.amr.getResourceJSON(ApiResource.AGGREGATION);
@@ -617,7 +663,8 @@ public class AmsStreamStatus {
                 opsList.add(opsJSON);
                 ArrayList<String> apsList = new ArrayList();
                 apsList.add(apsJSON);
-                ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+
+                ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(downtimes));
                 ArrayList<MetricProfile> mpsList = new ArrayList<MetricProfile>(Arrays.asList(this.amr.getListMetrics()));
                 ArrayList<GroupEndpoint> egpListFull = new ArrayList<GroupEndpoint>(Arrays.asList(this.amr.getListGroupEndpoints()));
 
@@ -672,7 +719,10 @@ public class AmsStreamStatus {
                 if (!sm.checkIfExistDowntime(dayStamp)) {
                     this.amr.setDate(dayStamp);
                     this.amr.getRemoteDowntimes();
-                    ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(this.amr.getListDowntimes()));
+
+                    Downtime[] downtimes = amr.getListDowntimes();
+
+                    ArrayList<Downtime> downList = new ArrayList<Downtime>(Arrays.asList(downtimes));
                     sm.addDowntimeSet(dayStamp, downList);
                 }
 
@@ -715,7 +765,7 @@ public class AmsStreamStatus {
                     sm.mps = new MetricProfileManager();
 
                     ArrayList<MetricProfile> mpsList = SyncParse.parseMetricJSON(value.f1);
-                     sm.mps.loadFromList(mpsList);
+                    sm.mps.loadFromList(mpsList);
                 } catch (Exception e) {
                     System.out.println("error in statusMap flatmap2 metric profiles");
                 }
@@ -754,7 +804,6 @@ public class AmsStreamStatus {
                 String pDate = Instant.now().toString().split("T")[0];
                 try {
                     ArrayList<Downtime> downList = SyncParse.parseDowntimesJSON(value.f1);
-
                     // Update downtime cache in status manager
                     sm.addDowntimeSet(pDate, downList);
 
@@ -1049,5 +1098,34 @@ public class AmsStreamStatus {
         }
     }
 
+    private static void initializeArgoMonApiInitializer(ArgoMonApiInitializer argoMonApiInitializer, ParameterTool params) {
 
+        if (params.has("keycloak.url")) {
+            argoMonApiInitializer.setKeycloakUrl(params.get("keycloak.url"));
+        }
+
+        if (params.has("argo.mon.api.endpoint")) {
+            argoMonApiInitializer.setArgoMonApiEndpoint(params.get("argo.mon.api.endpoint"));
+        }
+
+        if (params.has("argo.mon.client.secret")) {
+            argoMonApiInitializer.setArgoMonClientSecret(params.get("argo.mon.client.secret"));
+        }
+
+        if (params.has("argo.mon.client.id")) {
+            argoMonApiInitializer.setArgoMonClientID(params.get("argo.mon.client.id"));
+        }
+
+        if (params.has("argo.mon.api.timeout")) {
+            argoMonApiInitializer.setArgoMonApiTimeout(params.getInt("argo.mon.api.timeout"));
+        }
+        if (params.has("argo.mon.api.proxy")) {
+            argoMonApiInitializer.setArgoMonApiProxy(params.get("argo.mon.api.proxy"));
+        }
+        if (!argoMonApiInitializer.hasStatusApiParams()) {
+            LOG.error("Not all parameters required to connect to the Monitoring Status API are defined.");
+            System.exit(0);
+        }
+
+    }
 }
