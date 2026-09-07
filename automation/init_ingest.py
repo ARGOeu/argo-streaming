@@ -79,7 +79,7 @@ def run_ingest(
                 "--influx.port",
                 "8086",
                 "--api.endpoint",
-                config.mon_api_endpoint,
+                config.web_api_endpoint,
                 "--api.token",
                 tenant_mon_api_token,
                 "--api.interval",
