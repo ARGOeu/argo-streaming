@@ -191,7 +191,6 @@ language governing permissions and limitations under the License. -->
             <version>3.0.0</version>
             <type>jar</type>
         </dependency>
-
     </dependencies>
 
     <profiles>
