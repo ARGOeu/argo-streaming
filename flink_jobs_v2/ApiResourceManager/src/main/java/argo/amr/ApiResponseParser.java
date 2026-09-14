@@ -136,7 +136,18 @@ public class ApiResponseParser {
         JsonElement jItem = jData.get(0);
         return jItem.toString();
     }
+    public String getArgoMonApiDowntimeJsonData(String content, boolean asArray) {
 
+        JsonParser jsonParser = new JsonParser();
+        JsonElement jElement = jsonParser.parse(content);
+        JsonObject jRoot = jElement.getAsJsonObject();
+
+        if (jRoot.entrySet().isEmpty()) {
+            return null;
+        }
+
+        return jRoot.toString();
+    }
     /**
      * Parses the report content to extract the report's name and the various
      * profile IDs
@@ -196,6 +207,7 @@ public class ApiResponseParser {
      */
     public List<Downtime> getListDowntimes(String content) {
         List<Downtime> results = new ArrayList<Downtime>();
+
         JsonParser jsonParser = new JsonParser();
         JsonElement jElement = jsonParser.parse(content);
         JsonObject jRoot = jElement.getAsJsonObject();
@@ -344,8 +356,20 @@ public class ApiResponseParser {
 
          results.removeAll(yesterdayResults);
          return results;
-    }   
-    
+    }
+    public Boolean getIsExternalFeedTopology(String content) {
 
+        JsonParser jsonParser = new JsonParser();
+        JsonElement jElement = jsonParser.parse(content);
+        JsonObject jRoot = jElement.getAsJsonObject();
+
+        JsonElement external = jRoot.get("external");
+
+        if (external == null) {
+            return null;
+        }
+
+        return external.getAsBoolean();
+    }
 }
 
