@@ -47,6 +47,18 @@ def run_batch(
         tenant_web_api_token,
         "--report.id",
         report_id,
+        "--check.feed",
+        "true",
+        "--keycloak.url",
+        config.oidc_token_url,
+        "--argo.mon.api.endpoint",
+        mon_api_host,
+        "--argo.mon.client.id",
+        config.oidc_client_id,
+        "--argo.mon.client.secret",
+        config.oidc_client_secret,
+        "--argo.mon.api.timeout",
+        "30",
     ]
 
     if dry_run:
