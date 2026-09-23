@@ -22,5 +22,85 @@
         "tags": [
             "topology"
         ]
+    },
+    {
+        "name": "AAI",
+        "title": "AAI",
+        "description": "Service type represents node's AAI capability",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "Accounting",
+        "title": "Accounting",
+        "description": "Service type represents node's Accounting capability",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "Application_Deployment_Management",
+        "title": "Application Deployment Management",
+        "description": "Service type represents node's Application Deployment Management capability",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "Execution_Framework",
+        "title": "Execution Framework",
+        "description": "Service type represents node's Execution Framework capability",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "Front_Office",
+        "title": "Front Office",
+        "description": "Service type represents node's Front Office capability",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "Helpdesk",
+        "title": "Helpdesk",
+        "description": "Service type represents node's Helpdesk capability",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "Monitoring",
+        "title": "",
+        "description": "Service type represents node's Monitoring capability",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "Order_Management",
+        "title": "Order Management",
+        "description": "Service type represents node's Order Management capability",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "PID",
+        "title": "PID",
+        "description": "Service type represents node's PID capability",
+        "tags": [
+            "topology"
+        ]
+    },
+    {
+        "name": "Resource_Catalogue",
+        "title": "Resource Catalogue",
+        "description": "Service type represents node's Resource_Catalogue capability",
+        "tags": [
+            "topology"
+        ]
     }
 ]
