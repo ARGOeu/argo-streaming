@@ -24,6 +24,46 @@
                 {
                     "name": "api",
                     "operation": "OR"
+                },
+                {
+                    "name": "AAI",
+                    "operation": "OR"
+                },
+                {
+                    "name": "Accounting",
+                    "operation": "OR"
+                },
+                {
+                    "name": "Application_Deployment_Management",
+                    "operation": "OR"
+                },
+                {
+                    "name": "Execution_Framework",
+                    "operation": "OR"
+                },
+                {
+                    "name": "Front_Office",
+                    "operation": "OR"
+                },
+                {
+                    "name": "Helpdesk",
+                    "operation": "OR"
+                },
+                {
+                    "name": "Monitoring",
+                    "operation": "OR"
+                },
+                {
+                    "name": "Order_Management",
+                    "operation": "OR"
+                },
+                {
+                    "name": "PID",
+                    "operation": "OR"
+                },
+                {
+                    "name": "Resource_Catalogue",
+                    "operation": "OR"
                 }
             ]
         }

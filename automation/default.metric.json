@@ -22,6 +22,76 @@
                 "generic.certificate.validity",
                 "generic.http.connect"
             ]
+        },
+        {
+            "service": "AAI",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "Accounting",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "Application_Deployment_Management",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "Execution_Framework",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "Front_Office",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "Helpdesk",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "Monitoring",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "Order_Management",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "PID",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
+        },
+        {
+            "service": "Resource_Catalogue",
+            "metrics": [
+                "generic.certificate.validity",
+                "generic.http.connect"
+            ]
         }
     ]
 }
