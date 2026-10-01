@@ -43,6 +43,7 @@ def create_ams_component_account(
         )
         response.raise_for_status()
         logger.info(f"ams user: {username} created for project: {project}")
+        return response.json()
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 409:
@@ -97,7 +98,8 @@ def init_ams(
 
     for username, role, component, component_admin in user_roles:
         try:
-            if component and component_admin: 
+            if component and component_admin:
+                logger.info("creating component user")
                 user = create_ams_component_account(
                     config.ams_endpoint,
                     config.ams_admin_token,
@@ -108,7 +110,7 @@ def init_ams(
                     component,
                     component_admin,
                 )
-
+            else:
                 user = ams.create_user(
                     AmsUser(
                         name=username,
@@ -117,21 +119,17 @@ def init_ams(
                     )
                 )
 
-                if user:
-                    logger.info(f"ams project {tenant_name} - user created: {username}")
-                    if role == "consumer" and username == consumer_username:
-                        config.set_tenant_ams_access(tenant_id, tenant_name, user.token)
+
+            if user:
+                logger.info(f"ams project {tenant_name} - user created: {username}")
+                if role == "consumer" and username == consumer_username and user["token"]:
+                    config.set_tenant_ams_access(tenant_id, tenant_name, user["token"])
 
         except AmsServiceException as e:
             if e.code == 409:
                 logger.warning(
                     f"ams project {tenant_name} - user {username} already exists"
                 )
-                if role == "consumer" and username == consumer_username:
-                    user = ams.get_user(username)
-                    if user:
-                        config.set_tenant_ams_access(tenant_id, tenant_name, user.token)
-
             else:
                 logger.error(
                     f"ams project {tenant_name} - could not set up user: {username}"
