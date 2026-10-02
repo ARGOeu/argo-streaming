@@ -155,7 +155,7 @@ def init_compute_engine(
         config=config,
         tenant_name=tenant_name,
         tenant_ams_token=tenant.get("ams_token"),
-        tenant_mon_api_token=tenant.get("web_api_token"),
+        tenant_web_api_token=tenant.get("web_api_token"),
         dry_run=False,
         performance=performance,
         verify=VERIFY,
