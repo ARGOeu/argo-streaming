@@ -15,7 +15,24 @@ REQUEST_TIMEOUT = 30
 TEMPLATE_FILE = "node-registry.cron.j2"
 CRON_DIR = "/etc/cron.d"
 CRON_PREFIX = "argo_node_registry"
-SERVICE_TYPE = "webportal"
+DEFAULT_SERVICE_TYPE = "webportal"
+SERVICE_TYPE_MAP = {
+    "AAI": "AAI",
+    "Accounting": "Accounting",
+    "Application Deployment Management": "Application_Deployment_Management",
+    "Execution Framework": "Execution_Framework",
+    "Front Office": "Front_Office",
+    "Helpdesk": "Helpdesk",
+    "Monitoring": "Monitoring",
+    "Order Management": "Order_Management",
+    "PID": "PID",
+    "Resource Catalogue": "Resource_Catalogue",
+}
+
+
+def get_service_type(capability_type: str):
+    """Get the appropriate service type based on capability"""
+    return SERVICE_TYPE_MAP.get(capability_type) or DEFAULT_SERVICE_TYPE
 
 
 def get_node_registry(url: str, token: str):
@@ -149,7 +166,7 @@ def build_endpoint(node_name: str, capability: dict, item_uuid: str) -> dict:
     return {
         "group": node_name,
         "type": "SERVICEGROUPS",
-        "service": SERVICE_TYPE,
+        "service": get_service_type(capability_type),
         "hostname": f"{hostname}_{item_uuid}",
         "tags": tags,
     }
