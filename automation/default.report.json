@@ -29,5 +29,11 @@
         }
     },
     "profiles": [],
-    "filter_tags": []
+    "filter_tags": [
+        {
+            "name": "monitored",
+            "value": "1",
+            "context": "argo.endpoint.filter.tags"
+        }
+    ]
 }
