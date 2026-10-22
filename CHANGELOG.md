@@ -2,6 +2,46 @@
 
 All notable changes in argo-streaming project are documented here
 
+## [v3.1.0] (https://github.com/ARGOeu/argo-streaming/releases/tag/v3.1.0) - (2026-10-21)
+
+- ARGO-5947 Refactor node-registry connector to support node-capability… ([#481](https://github.com/ARGOeu/argo-streaming/pull/481))
+
+### Added
+
+- ARGO-5863 Add dynamic downtime source selection based on tenant feed topology ([#475](https://github.com/ARGOeu/argo-streaming/pull/475))
+- ARGO-5808 automate performance data ingestion ([#476](https://github.com/ARGOeu/argo-streaming/pull/476))
+- ARGO-5787 Support node-registry topology in automation ([#474](https://github.com/ARGOeu/argo-streaming/pull/474))
+- ARGO-5633 Support Desy Marketplace integration in argo automation ([#470](https://github.com/ARGOeu/argo-streaming/pull/470))
+- ARGO-5603 Support ams component account creation in automation ([#468](https://github.com/ARGOeu/argo-streaming/pull/468))
+- ARGO-5503 Automation enable ingestion and computations for new tenant ([#467](https://github.com/ARGOeu/argo-streaming/pull/467))
+- ARGO-5485 Add default profiles and reports to new tenant ([#462](https://github.com/ARGOeu/argo-streaming/pull/462))
+- ARGO-5355 Check readiness ([#458](https://github.com/ARGOeu/argo-streaming/pull/458))
+- ARGO-5351 Computation submit scripts that use the new config.yml ([#457](https://github.com/ARGOeu/argo-streaming/pull/457))
+- ARGO-5334 Create component accounts in tenant automation ([#456](https://github.com/ARGOeu/argo-streaming/pull/456))
+- ARGO-5320 Automate the creation of operations profile for new tenant ([#455](https://github.com/ARGOeu/argo-streaming/pull/455))
+- ARGO-5307 Implement init compute engine automation ([#454](https://github.com/ARGOeu/argo-streaming/pull/454))
+- ARGO-5220 Add foundation for argo-automator python component ([#452](https://github.com/ARGOeu/argo-streaming/pull/452))
+- ARGO-5490 Create connector component account in automation ([#465](https://github.com/ARGOeu/argo-streaming/pull/465))
+
+### Changed
+
+- ARGO-5962 add monitored filter in default report ([#484](https://github.com/ARGOeu/argo-streaming/pull/484))
+- ARGO-5947 Refactor node-registry connector to support node-capability… ([#481](https://github.com/ARGOeu/argo-streaming/pull/481))
+- ARGO-5954 refactor ams user handling ([#482](https://github.com/ARGOeu/argo-streaming/pull/482))
+- ARGO-5934 Handle the new downtime arguments of the argo multi batch job ([#479](https://github.com/ARGOeu/argo-streaming/pull/479))
+- ARGO-5713 new entries not enter when metric profile date is not today ([#472](https://github.com/ARGOeu/argo-streaming/pull/472))
+- ARGO-5708 Ingest job add parameter to connect to influx with verify = false ([#473](https://github.com/ARGOeu/argo-streaming/pull/473))
+
+### Fixed
+
+- Fix case where init topo integration feed is not compatible ([#478](https://github.com/ARGOeu/argo-streaming/pull/478))
+- handle non existing hdfs previous data and previous metric profiles ([#471](https://github.com/ARGOeu/argo-streaming/pull/471))
+- fix request path to recomputations ([#466](https://github.com/ARGOeu/argo-streaming/pull/466))
+- ARGO-5249 Major lag in argo mon production ingestion when publishing influx data ([#453](https://github.com/ARGOeu/argo-streaming/pull/453))
+- getAllRemoteTopoEndpoints null content handling ([#449](https://github.com/ARGOeu/argo-streaming/pull/449))
+- ARGO-4879 Streaming job fails due to null pointer exception when argo web-api is unreachable ([#448](https://github.com/ARGOeu/argo-streaming/pull/448))
+
+
 ## [v3.0.0](https://github.com/ARGOeu/argo-streaming/releases/tag/v3.0.0) - (2025-07-24)
 
 ### Added:
